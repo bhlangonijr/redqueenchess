@@ -287,7 +287,6 @@ public:
 	Board(const Board& board);
 	virtual ~Board();
 
-	const Node& get() const;
 	const void printBoard() const;
 	void doMove(const Move move, MoveBackup& backup);
 	void undoMove(MoveBackup& backup);
@@ -299,11 +298,11 @@ public:
 
 private:
 
+	const Node& get() const;
 	bool putPiece(const PieceTypeByColor piece, const Square square);
 	bool removePiece(const PieceTypeByColor piece, const Square square);
 	void removeCastleRights(const PieceColor color, const CastleRight castle);
 	void setEnPassant(const Square square);
-
 	const Square bitboardToSquare(Bitboard bitboard) const;
 
 	Node& currentBoard;
