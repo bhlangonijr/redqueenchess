@@ -92,29 +92,22 @@ const void Board::printBoard() const
 bool Board::putPiece(const PieceTypeByColor piece, const Square square)
 {
 
-	try {
-		currentBoard.piece.array[piece] |= squareToBitboard[square];
-		currentBoard.pieceColor[pieceColor[piece]] |= squareToBitboard[square];
-		currentBoard.square[square] = piece;
-		currentBoard.pieceCount.array[piece]++;
-	} catch (std::exception &e) {
-		std::cout << "Exception(Board.cpp::putPiece): " << e.what() << std::endl;
-		return false;
-	}
+	currentBoard.piece.array[piece] |= squareToBitboard[square];
+	currentBoard.pieceColor[pieceColor[piece]] |= squareToBitboard[square];
+	currentBoard.square[square] = piece;
+	currentBoard.pieceCount.array[piece]++;
+
 	return true;
 }
 
 bool Board::removePiece(const PieceTypeByColor piece, const Square square)
 {
-	try {
-		currentBoard.piece.array[piece] ^= squareToBitboard[square];
-		currentBoard.pieceColor[pieceColor[piece]] ^= squareToBitboard[square];
-		currentBoard.square[square] = EMPTY;
-		currentBoard.pieceCount.array[piece]--;
-	} catch (std::exception &e) {
-		std::cout << "Exception(Board.cpp::removePiece): " << e.what() << std::endl;
-		return false;
-	}
+
+	currentBoard.piece.array[piece] ^= squareToBitboard[square];
+	currentBoard.pieceColor[pieceColor[piece]] ^= squareToBitboard[square];
+	currentBoard.square[square] = EMPTY;
+	currentBoard.pieceCount.array[piece]--;
+
 	return true;
 }
 
