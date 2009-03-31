@@ -502,7 +502,7 @@ const Square Board::bitboardToSquare(Bitboard x) const {
 	);
 	square = (unsigned int)ret;
 
-#elif
+#else
 
 	square = (unsigned int) index64[((x & -x) * debruijn64) >> 58];
 
