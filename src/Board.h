@@ -34,17 +34,18 @@ namespace BoardTypes{
 //Bitboard type - unsigned long int (8 bytes)
 typedef uint64_t Bitboard;
 
-#define USE_INTRINSIC_BITSCAN									// will use hardware's bitscan
-#define ALL_PIECE_TYPE 			6   							// pawn, knight, bishop, rook, queen, king
-#define ALL_PIECE_TYPE_BY_COLOR 13  							// (black, white) X (pawn, knight, bishop, rook, queen, king) + empty
-#define ALL_PIECE_COLOR			3   							// black, white, none
-#define ALL_SQUARE				64  							// all square A1 .. H8
-#define ALL_RANK				8								// all ranks
-#define ALL_FILE				8								// all files
+#define USE_INTRINSIC_BITSCAN													// will use hardware's bitscan
+#define ALL_PIECE_TYPE 			6   											// pawn, knight, bishop, rook, queen, king
+#define ALL_PIECE_TYPE_BY_COLOR 13  											// (black, white) X (pawn, knight, bishop, rook, queen, king) + empty
+#define ALL_PIECE_COLOR			3   											// black, white, none
+#define ALL_SQUARE				64  											// all square A1 .. H8
+#define ALL_RANK				8												// all ranks
+#define ALL_FILE				8												// all files
 
-#define Bb2Sq2(X)				log2(X)							// Bitboard to square enum version 1
-#define Sq2Bb(X)				squareToBitboard[X] 			// square to bitboard macro
-#define St2Sq(F,R)				(((int)F-96)+((int)R-49)*8)-1	// encode String to Square enum
+#define Bb2Sq2(X)				log2(X)											// Bitboard to square enum version 1
+#define Sq2Bb(X)				squareToBitboard[X] 							// square to bitboard macro
+#define St2Sq(F,R)				(((int)F-96)+((int)R-49)*8)-1					// encode String to Square enum
+#define Sq2RA(X)				(fileBB[squareFile[X]]|rankBB[squareRank[X]])^squareToBitboard[X]  	// Encode Square to Rook Attack
 
 #define INITIAL_WHITE_BITBOARD  	 0xFFFFULL
 #define INITIAL_BLACK_BITBOARD  	 0xFFFF000000000000ULL
@@ -82,6 +83,7 @@ static const Bitboard squareToBitboard[ALL_SQUARE]=
 		0x0010000000000000ULL, 0x0020000000000000ULL, 0x0040000000000000ULL, 0x0080000000000000ULL,
 		0x0100000000000000ULL, 0x0200000000000000ULL, 0x0400000000000000ULL, 0x0800000000000000ULL,
 		0x1000000000000000ULL, 0x2000000000000000ULL, 0x4000000000000000ULL, 0x8000000000000000ULL };
+
 // squares
 enum Square {
 	A1, B1, C1, D1, E1, F1, G1, H1,
@@ -149,6 +151,29 @@ static const Square encodeSquare[ALL_RANK][ALL_FILE]= {
 		{A7, B7, C7, D7, E7, F7, G7, H7},
 		{A8, B8, C8, D8, E8, F8, G8, H8}
 };
+
+
+// bitboard for all ranks
+static const Bitboard rankBB[ALL_RANK]={0x00000000000000FFULL,0x000000000000FF00ULL,0x0000000000FF0000ULL,0x00000000FF000000ULL,
+							  		    0x000000FF00000000ULL,0x0000FF0000000000ULL,0x00FF000000000000ULL,0xFF00000000000000ULL};
+
+// bitboard for all files
+static const Bitboard fileBB[ALL_FILE]={0x0101010101010101ULL,0x0202020202020202ULL,0x0404040404040404ULL,0x0808080808080808ULL,
+										0x1010101010101010ULL,0x2020202020202020ULL,0x4040404040404040ULL,0x8080808080808080ULL};
+
+// bitboard for all rook attacks
+static const Bitboard rookAttacks[ALL_SQUARE]={	Sq2RA(A1), Sq2RA(B1), Sq2RA(C1), Sq2RA(D1), Sq2RA(E1), Sq2RA(F1), Sq2RA(G1), Sq2RA(H1),
+												Sq2RA(A2), Sq2RA(B2), Sq2RA(C2), Sq2RA(D2), Sq2RA(E2), Sq2RA(F2), Sq2RA(G2), Sq2RA(H2),
+												Sq2RA(A3), Sq2RA(B3), Sq2RA(C3), Sq2RA(D3), Sq2RA(E3), Sq2RA(F3), Sq2RA(G3), Sq2RA(H3),
+												Sq2RA(A4), Sq2RA(B4), Sq2RA(C4), Sq2RA(D4), Sq2RA(E4), Sq2RA(F4), Sq2RA(G4), Sq2RA(H4),
+												Sq2RA(A5), Sq2RA(B5), Sq2RA(C5), Sq2RA(D5), Sq2RA(E5), Sq2RA(F5), Sq2RA(G5), Sq2RA(H5),
+												Sq2RA(A6), Sq2RA(B6), Sq2RA(C6), Sq2RA(D6), Sq2RA(E6), Sq2RA(F6), Sq2RA(G6), Sq2RA(H6),
+												Sq2RA(A7), Sq2RA(B7), Sq2RA(C7), Sq2RA(D7), Sq2RA(E7), Sq2RA(F7), Sq2RA(G7), Sq2RA(H7),
+												Sq2RA(A8), Sq2RA(B8), Sq2RA(C8), Sq2RA(D8), Sq2RA(E8), Sq2RA(F8), Sq2RA(G8), Sq2RA(H8) };
+
+// bitboard for all bishop attacks
+//static const Bitboard bishopAttacks[ALL_SQUARE];
+
 // Move representation
 struct Move {
 	Move()
