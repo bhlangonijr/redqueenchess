@@ -34,7 +34,7 @@ namespace BoardTypes{
 //Bitboard type - unsigned long int (8 bytes)
 typedef uint64_t Bitboard;
 
-#define USE_INTRINSIC_BITSCAN																		// will use hardware's bitscan
+#define USE_INTRINSIC_BITSCAN																	    // will use hardware's bitscan
 #define ALL_PIECE_TYPE 			6   																// pawn, knight, bishop, rook, queen, king
 #define ALL_PIECE_TYPE_BY_COLOR 13  																// (black, white) X (pawn, knight, bishop, rook, queen, king) + empty
 #define ALL_PIECE_COLOR			3   																// black, white, none
@@ -46,7 +46,9 @@ typedef uint64_t Bitboard;
 #define Bb2Sq2(X)				log2(X)																// Bitboard to square enum version 1
 #define Sq2Bb(X)				squareToBitboard[X] 												// square to bitboard macro
 #define St2Sq(F,R)				(((int)F-96)+((int)R-49)*8)-1										// encode String to Square enum
-#define Sq2RA(X)				(fileBB[squareFile[X]]|rankBB[squareRank[X]])^squareToBitboard[X]  	// Encode Square to Rook Attack
+#define Sq2RA(X)				(fileBB[squareFile[X]]|rankBB[squareRank[X]])^squareToBitboard[X]	// Encode Square to Rook Attack
+#define Sq2BA(X)				(diagonalA1H8BB[SquareToDiagonalA1H8[X]]| \
+								 diagonalH1A8BB[SquareToDiagonalH1A8[X]])^squareToBitboard[X]		// Encode Square to Bishop Attack
 
 #define INITIAL_WHITE_BITBOARD  	 0xFFFFULL
 #define INITIAL_BLACK_BITBOARD  	 0xFFFF000000000000ULL
@@ -128,10 +130,10 @@ enum Rank { RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8 };
 enum File { FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H };
 
 // diagonals A1..H8
-enum DiagonalA1H8 { A8_A8, B8_A7, C8_A6, D8_A5, E8_A4, F8_A3, G8_A2, H8_A1, B1_H7, C1_H6, D1_H5, F1_H4, F1_H3, G1_H2, H1_H1 };
+enum DiagonalA1H8 { A8_A8, B8_A7, C8_A6, D8_A5, E8_A4, F8_A3, G8_A2, H8_A1, B1_H7, C1_H6, D1_H5, E1_H4, F1_H3, G1_H2, H1_H1 };
 
 // diagonals A1..H8
-enum DiagonalH1A8 { A1_A1, B1_A2, C1_A3,D1_A4, E1_A5, F1_A6, G1_A7, H1_A8, B8_H2, C8_H3, D8_H4, F8_H5, F8_H6, G8_H7, H8_H8 };
+enum DiagonalH1A8 { A1_A1, B1_A2, C1_A3,D1_A4, E1_A5, F1_A6, G1_A7, H1_A8, B8_H2, C8_H3, D8_H4, E8_H5, F8_H6, G8_H7, H8_H8 };
 
 // Rank of a given square
 static const Rank squareRank[ALL_SQUARE]={
@@ -188,10 +190,20 @@ static const Bitboard diagonalA1H8BB[ALL_DIAGONAL]={Sq2Bb(A8),
 													Sq2Bb(B1)|Sq2Bb(C2)|Sq2Bb(D3)|Sq2Bb(E4)|Sq2Bb(F5)|Sq2Bb(G6)|Sq2Bb(H7),
 													Sq2Bb(C1)|Sq2Bb(D2)|Sq2Bb(E3)|Sq2Bb(F4)|Sq2Bb(G5)|Sq2Bb(H6),
 													Sq2Bb(D1)|Sq2Bb(E2)|Sq2Bb(F3)|Sq2Bb(G4)|Sq2Bb(H5),
-													Sq2Bb(F1)|Sq2Bb(F2)|Sq2Bb(G3)|Sq2Bb(H4),
+													Sq2Bb(E1)|Sq2Bb(F2)|Sq2Bb(G3)|Sq2Bb(H4),
 													Sq2Bb(F1)|Sq2Bb(G2)|Sq2Bb(H3),
 													Sq2Bb(G1)|Sq2Bb(H2),
 													Sq2Bb(H1) };
+
+// square to enum diagonal A1..H8
+static const DiagonalA1H8 SquareToDiagonalA1H8[ALL_SQUARE]={H8_A1, B1_H7, C1_H6, D1_H5, E1_H4, F1_H3, G1_H2, H1_H1,
+															G8_A2, H8_A1, B1_H7, C1_H6, D1_H5, E1_H4, F1_H3, G1_H2,
+															F8_A3, G8_A2, H8_A1, B1_H7, C1_H6, D1_H5, E1_H4, F1_H3,
+															E8_A4, F8_A3, G8_A2, H8_A1, B1_H7, C1_H6, D1_H5, E1_H4,
+															D8_A5, E8_A4, F8_A3, G8_A2, H8_A1, B1_H7, C1_H6, D1_H5,
+															C8_A6, D8_A5, E8_A4, F8_A3, G8_A2, H8_A1, B1_H7, C1_H6,
+															B8_A7, C8_A6, D8_A5, E8_A4, F8_A3, G8_A2, H8_A1, B1_H7,
+															A8_A8, B8_A7, C8_A6, D8_A5, E8_A4, F8_A3, G8_A2, H8_A1};
 
 // bitboard for all diagonal H1..A8
 static const Bitboard diagonalH1A8BB[ALL_DIAGONAL]={Sq2Bb(A1),
@@ -205,10 +217,20 @@ static const Bitboard diagonalH1A8BB[ALL_DIAGONAL]={Sq2Bb(A1),
 													Sq2Bb(B8)|Sq2Bb(C7)|Sq2Bb(D6)|Sq2Bb(E5)|Sq2Bb(F4)|Sq2Bb(G3)|Sq2Bb(H2),
 													Sq2Bb(C8)|Sq2Bb(D7)|Sq2Bb(E6)|Sq2Bb(F5)|Sq2Bb(G4)|Sq2Bb(H3),
 													Sq2Bb(D8)|Sq2Bb(E7)|Sq2Bb(F6)|Sq2Bb(G5)|Sq2Bb(H4),
-													Sq2Bb(F8)|Sq2Bb(F7)|Sq2Bb(G6)|Sq2Bb(H5),
+													Sq2Bb(E8)|Sq2Bb(F7)|Sq2Bb(G6)|Sq2Bb(H5),
 													Sq2Bb(F8)|Sq2Bb(G7)|Sq2Bb(H6),
 													Sq2Bb(G8)|Sq2Bb(H7),
 													Sq2Bb(H8) };
+
+// square to enum diagonal A1..H8
+static const DiagonalH1A8 SquareToDiagonalH1A8[ALL_SQUARE]={A1_A1, B1_A2, C1_A3, D1_A4, E1_A5, F1_A6, G1_A7, H1_A8,
+															B1_A2, C1_A3, D1_A4, E1_A5, F1_A6, G1_A7, H1_A8, B8_H2,
+															C1_A3, D1_A4, E1_A5, F1_A6, G1_A7, H1_A8, B8_H2, C8_H3,
+															D1_A4, E1_A5, F1_A6, G1_A7, H1_A8, B8_H2, C8_H3, D8_H4,
+															E1_A5, F1_A6, G1_A7, H1_A8, B8_H2, C8_H3, D8_H4, E8_H5,
+															F1_A6, G1_A7, H1_A8, B8_H2, C8_H3, D8_H4, E8_H5, F8_H6,
+															G1_A7, H1_A8, B8_H2, C8_H3, D8_H4, E8_H5, F8_H6, G8_H7,
+															H1_A8, B8_H2, C8_H3, D8_H4, E8_H5, F8_H6, G8_H7, H8_H8};
 
 // bitboard for all rook attacks
 static const Bitboard rookAttacks[ALL_SQUARE]={	Sq2RA(A1), Sq2RA(B1), Sq2RA(C1), Sq2RA(D1), Sq2RA(E1), Sq2RA(F1), Sq2RA(G1), Sq2RA(H1),
@@ -221,7 +243,14 @@ static const Bitboard rookAttacks[ALL_SQUARE]={	Sq2RA(A1), Sq2RA(B1), Sq2RA(C1),
 												Sq2RA(A8), Sq2RA(B8), Sq2RA(C8), Sq2RA(D8), Sq2RA(E8), Sq2RA(F8), Sq2RA(G8), Sq2RA(H8) };
 
 // bitboard for all bishop attacks
-//static const Bitboard bishopAttacks[ALL_SQUARE];
+static const Bitboard bishopAttacks[ALL_SQUARE]={Sq2BA(A1), Sq2BA(B1), Sq2BA(C1), Sq2BA(D1), Sq2BA(E1), Sq2BA(F1), Sq2BA(G1), Sq2BA(H1),
+												 Sq2BA(A2), Sq2BA(B2), Sq2BA(C2), Sq2BA(D2), Sq2BA(E2), Sq2BA(F2), Sq2BA(G2), Sq2BA(H2),
+												 Sq2BA(A3), Sq2BA(B3), Sq2BA(C3), Sq2BA(D3), Sq2BA(E3), Sq2BA(F3), Sq2BA(G3), Sq2BA(H3),
+												 Sq2BA(A4), Sq2BA(B4), Sq2BA(C4), Sq2BA(D4), Sq2BA(E4), Sq2BA(F4), Sq2BA(G4), Sq2BA(H4),
+												 Sq2BA(A5), Sq2BA(B5), Sq2BA(C5), Sq2BA(D5), Sq2BA(E5), Sq2BA(F5), Sq2BA(G5), Sq2BA(H5),
+												 Sq2BA(A6), Sq2BA(B6), Sq2BA(C6), Sq2BA(D6), Sq2BA(E6), Sq2BA(F6), Sq2BA(G6), Sq2BA(H6),
+												 Sq2BA(A7), Sq2BA(B7), Sq2BA(C7), Sq2BA(D7), Sq2BA(E7), Sq2BA(F7), Sq2BA(G7), Sq2BA(H7),
+												 Sq2BA(A8), Sq2BA(B8), Sq2BA(C8), Sq2BA(D8), Sq2BA(E8), Sq2BA(F8), Sq2BA(G8), Sq2BA(H8) };
 
 // Move representation
 struct Move {
