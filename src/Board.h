@@ -50,10 +50,13 @@ typedef uint64_t Bitboard;
 #define Sq2BA(X)				(diagonalA1H8BB[SquareToDiagonalA1H8[X]]| \
 								 diagonalH1A8BB[SquareToDiagonalH1A8[X]])^squareToBitboard[X]		// Encode Square to Bishop Attack
 
+#define FULL_BB						 0xFFFFFFFFFFFFFFFFULL
 #define INITIAL_WHITE_BITBOARD  	 0xFFFFULL
 #define INITIAL_BLACK_BITBOARD  	 0xFFFF000000000000ULL
 #define INITIAL_WHITE_PAWN_BITBOARD  0xFF00ULL
 #define INITIAL_BLACK_PAWN_BITBOARD  0xFF000000000000ULL
+
+#define bitsBetween(BB,S1,S2)		((squareToBitboard[S1]-1)^(squareToBitboard[S2]-1)) & BB
 
 static const uint64_t debruijn64 = 0x07EDD5E59A4E28C2ULL;
 
