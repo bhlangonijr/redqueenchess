@@ -43,7 +43,7 @@ typedef uint64_t Bitboard;
 #define ALL_FILE				8																	// all files
 #define ALL_DIAGONAL			15																	// all diagonals
 
-#define Bb2Sq2(X)				log2(X)																// Bitboard to square enum version 1
+#define SqBB(S)					0x1ULL << (int)S													// Encode a square enum to a bitboard
 #define Sq2Bb(X)				squareToBitboard[X] 												// square to bitboard macro
 #define St2Sq(F,R)				(((int)F-96)+((int)R-49)*8)-1										// encode String to Square enum
 #define Sq2RA(X)				(fileBB[squareFile[X]]|rankBB[squareRank[X]])^squareToBitboard[X]	// Encode Square to Rook Attack
@@ -56,7 +56,7 @@ typedef uint64_t Bitboard;
 #define INITIAL_WHITE_PAWN_BITBOARD  0xFF00ULL
 #define INITIAL_BLACK_PAWN_BITBOARD  0xFF000000000000ULL
 
-#define bitsBetween(BB,S1,S2)		((squareToBitboard[S1]-1)^(squareToBitboard[S2]-1)) & BB
+#define bitsBetween(BB,S1,S2)		S2 > S1 ? (squareToBitboard[S2]-squareToBitboard[S1]) & BB : (squareToBitboard[S1]-squareToBitboard[S2]) & BB
 
 static const uint64_t debruijn64 = 0x07EDD5E59A4E28C2ULL;
 
@@ -71,25 +71,6 @@ static const uint32_t index64[64] = {
     44, 24, 15,  8, 23,  7,  6,  5
 };
 
-// represents square location within the bitboard - it's simply a power of 2 to distinguish the squares
-static const Bitboard squareToBitboard[ALL_SQUARE]=
-	   {0x0000000000000001ULL, 0x0000000000000002ULL, 0x0000000000000004ULL, 0x0000000000000008ULL,
-		0x0000000000000010ULL, 0x0000000000000020ULL, 0x0000000000000040ULL, 0x0000000000000080ULL,
-		0x0000000000000100ULL, 0x0000000000000200ULL, 0x0000000000000400ULL, 0x0000000000000800ULL,
-		0x0000000000001000ULL, 0x0000000000002000ULL, 0x0000000000004000ULL, 0x0000000000008000ULL,
-		0x0000000000010000ULL, 0x0000000000020000ULL, 0x0000000000040000ULL, 0x0000000000080000ULL,
-		0x0000000000100000ULL, 0x0000000000200000ULL, 0x0000000000400000ULL, 0x0000000000800000ULL,
-		0x0000000001000000ULL, 0x0000000002000000ULL, 0x0000000004000000ULL, 0x0000000008000000ULL,
-		0x0000000010000000ULL, 0x0000000020000000ULL, 0x0000000040000000ULL, 0x0000000080000000ULL,
-		0x0000000100000000ULL, 0x0000000200000000ULL, 0x0000000400000000ULL, 0x0000000800000000ULL,
-		0x0000001000000000ULL, 0x0000002000000000ULL, 0x0000004000000000ULL, 0x0000008000000000ULL,
-		0x0000010000000000ULL, 0x0000020000000000ULL, 0x0000040000000000ULL, 0x0000080000000000ULL,
-		0x0000100000000000ULL, 0x0000200000000000ULL, 0x0000400000000000ULL, 0x0000800000000000ULL,
-		0x0001000000000000ULL, 0x0002000000000000ULL, 0x0004000000000000ULL, 0x0008000000000000ULL,
-		0x0010000000000000ULL, 0x0020000000000000ULL, 0x0040000000000000ULL, 0x0080000000000000ULL,
-		0x0100000000000000ULL, 0x0200000000000000ULL, 0x0400000000000000ULL, 0x0800000000000000ULL,
-		0x1000000000000000ULL, 0x2000000000000000ULL, 0x4000000000000000ULL, 0x8000000000000000ULL };
-
 // squares
 enum Square {
 	A1, B1, C1, D1, E1, F1, G1, H1,
@@ -102,6 +83,16 @@ enum Square {
 	A8, B8, C8, D8, E8, F8, G8, H8,
 	NONE
 };
+
+// represents square location within the bitboard - it's simply a power of 2 to distinguish the squares
+static const Bitboard squareToBitboard[ALL_SQUARE]={SqBB(A1), SqBB(B1), SqBB(C1), SqBB(D1), SqBB(E1), SqBB(F1), SqBB(G1), SqBB(H1),
+													SqBB(A2), SqBB(B2), SqBB(C2), SqBB(D2), SqBB(E2), SqBB(F2), SqBB(G2), SqBB(H2),
+													SqBB(A3), SqBB(B3), SqBB(C3), SqBB(D3), SqBB(E3), SqBB(F3), SqBB(G3), SqBB(H3),
+													SqBB(A4), SqBB(B4), SqBB(C4), SqBB(D4), SqBB(E4), SqBB(F4), SqBB(G4), SqBB(H4),
+													SqBB(A5), SqBB(B5), SqBB(C5), SqBB(D5), SqBB(E5), SqBB(F5), SqBB(G5), SqBB(H5),
+													SqBB(A6), SqBB(B6), SqBB(C6), SqBB(D6), SqBB(E6), SqBB(F6), SqBB(G6), SqBB(H6),
+													SqBB(A7), SqBB(B7), SqBB(C7), SqBB(D7), SqBB(E7), SqBB(F7), SqBB(G7), SqBB(H7),
+													SqBB(A8), SqBB(B8), SqBB(C8), SqBB(D8), SqBB(E8), SqBB(F8), SqBB(G8), SqBB(H8) };
 
 //colors
 enum PieceColor {
