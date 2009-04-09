@@ -28,6 +28,8 @@
 
 #include "Board.h"
 #include "StringUtil.h"
+#include "Inline.h"
+
 using namespace BoardTypes;
 
 Board::Board() : currentBoard(*(new Node()))
@@ -493,14 +495,14 @@ const Square Board::bitboardToSquare(Bitboard x) const {
 
 #ifdef USE_INTRINSIC_BITSCAN
 
-	Bitboard ret;
-	__asm__
-	(
-			"bsfq %[x], %[ret]"
-			:[ret] "=r" (ret)
-			:[x] "mr" (x)
-	);
-	square = (unsigned int)ret;
+	unsigned char ret;
+
+	ret = _BitScanForward64(&square, x);
+
+	if (!ret) {
+		return Square(NONE);
+	}
+
 
 #else
 
