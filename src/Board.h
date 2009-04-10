@@ -56,7 +56,7 @@ typedef uint64_t Bitboard;
 #define INITIAL_WHITE_PAWN_BITBOARD  0xFF00ULL
 #define INITIAL_BLACK_PAWN_BITBOARD  0xFF000000000000ULL
 
-#define bitsBetween(BB,S1,S2)		S2 > S1 ? (squareToBitboard[S2]-squareToBitboard[S1]) & BB : (squareToBitboard[S1]-squareToBitboard[S2]) & BB
+#define bitsBetween(BB,S1,S2)		(squareToBitboard[S2]|(squareToBitboard[S2]-squareToBitboard[S1])) & BB
 
 static const uint64_t debruijn64 = 0x07EDD5E59A4E28C2ULL;
 
@@ -401,6 +401,11 @@ private:
 	void removeCastleRights(const PieceColor color, const CastleRight castle);
 	void setEnPassant(const Square square);
 	const Square bitboardToSquare(Bitboard bitboard) const;
+
+	void setOccupiedNeighbor(const Bitboard mask, const Square start, Square& minor, Square& major);
+
+	const Bitboard getRookAttacks(const Square square);
+	const Bitboard getRookAttacks(const Square square, const Bitboard occupied);
 
 	Node& currentBoard;
 };

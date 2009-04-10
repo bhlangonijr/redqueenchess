@@ -91,6 +91,7 @@ const void Board::printBoard() const
 
 }
 
+// put a piece in the board and store piece info
 bool Board::putPiece(const PieceTypeByColor piece, const Square square)
 {
 
@@ -101,7 +102,7 @@ bool Board::putPiece(const PieceTypeByColor piece, const Square square)
 
 	return true;
 }
-
+// remove a piece from the board and erase piece info
 bool Board::removePiece(const PieceTypeByColor piece, const Square square)
 {
 
@@ -113,6 +114,7 @@ bool Board::removePiece(const PieceTypeByColor piece, const Square square)
 	return true;
 }
 
+// do a move and set backup info into struct MoveBackup
 void Board::doMove(const Move move, MoveBackup& backup)
 {
 
@@ -252,6 +254,7 @@ void Board::doMove(const Move move, MoveBackup& backup)
 
 }
 
+// undo a move based on struct MoveBackup
 void Board::undoMove(MoveBackup& backup)
 {
 
@@ -301,6 +304,7 @@ void Board::undoMove(MoveBackup& backup)
 
 }
 
+// set initial classic position to the board
 void Board::setInitialPosition()
 {
 
@@ -442,11 +446,13 @@ void Board::loadFromString(const std::string startPosMoves) {
 
 }
 
+// get castle rights
 const CastleRight Board::getCastleRights(PieceColor color) const
 {
 	return currentBoard.castleRight[color];
 }
 
+// remove castle rights passed as params
 void Board::removeCastleRights(const PieceColor color, const CastleRight castle)
 {
 	switch (castle) {
@@ -474,21 +480,25 @@ void Board::removeCastleRights(const PieceColor color, const CastleRight castle)
 	}
 }
 
+// get
 const PieceColor Board::getSideToMove() const
 {
 	return currentBoard.sideToMove;
 }
 
+// get en passant
 const Square Board::getEnPassant() const
 {
 	return currentBoard.enPassant;
 }
 
+// set en passant
 void Board::setEnPassant(const Square square)
 {
 	currentBoard.enPassant=square;
 }
 
+// get the bit index from a bitboard
 const Square Board::bitboardToSquare(Bitboard x) const {
 
 	unsigned int square = 0;
@@ -512,3 +522,87 @@ const Square Board::bitboardToSquare(Bitboard x) const {
 
 	return Square( square );
 }
+
+// lookup and set the nearest bits given a starting square index in the bitboard - downside and upside
+void Board::setOccupiedNeighbor(const Bitboard mask, const Square start, Square& minor, Square& major)
+{
+
+	unsigned int minorInt=0;
+	unsigned int majorInt=63;
+
+	Bitboard lowerHalf = squareToBitboard[start]-1;
+	Bitboard lowerMask= mask & lowerHalf;
+	Bitboard upperMask= mask & ~lowerHalf;
+
+#ifdef USE_INTRINSIC_BITSCAN
+
+	unsigned char ret;
+
+	ret = _BitScanReverse64(&minorInt, lowerMask);
+
+	if (!ret) {
+		minorInt=0;
+	}
+
+	ret = _BitScanForward64(&majorInt, upperMask);
+
+	if (!ret) {
+		majorInt=63;
+	}
+
+
+#else
+
+	majorInt = (unsigned int) index64[((upperMask & -upperMask) * debruijn64) >> 58];
+
+	// from Gerd Isenberg
+	union {
+		double d;
+		struct {
+			unsigned int mantissal : 32;
+			unsigned int mantissah : 20;
+			unsigned int exponent : 11;
+			unsigned int sign : 1;
+		};
+	} ud;
+	ud.d = (double)(lowerMask & ~(lowerMask >> 32));
+	minorInt = ud.exponent - 1023;
+
+
+#endif
+
+	minor = Square(minorInt);
+	major = Square(majorInt);
+
+}
+
+// overload method - gets current occupied squares in the board
+const Bitboard Board::getRookAttacks(const Square square) {
+	return getRookAttacks(square, currentBoard.pieceColor[WHITE] & currentBoard.pieceColor[BLACK]);
+}
+
+// return a bitboard with attacked squares by the rook in the given square
+const Bitboard Board::getRookAttacks(const Square square, const Bitboard occupied) {
+
+	Square minor;
+	Square major;
+
+	this->setOccupiedNeighbor((fileBB[squareFile[square]] & occupied) ^ squareToBitboard[square], square, minor, major);
+
+	Bitboard fileAttacks = bitsBetween(fileBB[squareFile[square]], minor, major) ^ squareToBitboard[square];
+
+	this->setOccupiedNeighbor((rankBB[squareRank[square]] & occupied) ^ squareToBitboard[square], square, minor, major);
+
+	Bitboard rankAttacks = bitsBetween(rankBB[squareFile[square]], minor, major) ^ squareToBitboard[square];
+
+	return fileAttacks | rankAttacks;
+}
+
+
+
+
+
+
+
+
+
