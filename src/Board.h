@@ -407,6 +407,12 @@ private:
 	const Bitboard getRookAttacks(const Square square);
 	const Bitboard getRookAttacks(const Square square, const Bitboard occupied);
 
+	const Bitboard getBishopAttacks(const Square square);
+	const Bitboard getBishopAttacks(const Square square, const Bitboard occupied);
+
+	const Bitboard getQueenAttacks(const Square square);
+	const Bitboard getQueenAttacks(const Square square, const Bitboard occupied);
+
 	Node& currentBoard;
 };
 

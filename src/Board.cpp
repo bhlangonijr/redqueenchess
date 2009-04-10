@@ -527,8 +527,8 @@ const Square Board::bitboardToSquare(Bitboard x) const {
 void Board::setOccupiedNeighbor(const Bitboard mask, const Square start, Square& minor, Square& major)
 {
 
-	unsigned int minorInt=0;
-	unsigned int majorInt=63;
+	unsigned int minorInt=A1;
+	unsigned int majorInt=H8;
 
 	Bitboard lowerHalf = squareToBitboard[start]-1;
 	Bitboard lowerMask= mask & lowerHalf;
@@ -541,13 +541,13 @@ void Board::setOccupiedNeighbor(const Bitboard mask, const Square start, Square&
 	ret = _BitScanReverse64(&minorInt, lowerMask);
 
 	if (!ret) {
-		minorInt=0;
+		minorInt=A1;
 	}
 
 	ret = _BitScanForward64(&majorInt, upperMask);
 
 	if (!ret) {
-		majorInt=63;
+		majorInt=H8;
 	}
 
 
@@ -598,7 +598,38 @@ const Bitboard Board::getRookAttacks(const Square square, const Bitboard occupie
 	return fileAttacks | rankAttacks;
 }
 
+// overload method - gets current occupied squares in the board
+const Bitboard Board::getBishopAttacks(const Square square) {
+	return getBishopAttacks(square, currentBoard.pieceColor[WHITE] & currentBoard.pieceColor[BLACK]);
+}
 
+// return a bitboard with attacked squares by the bishop in the given square
+const Bitboard Board::getBishopAttacks(const Square square, const Bitboard occupied) {
+
+	Square minor;
+	Square major;
+
+	this->setOccupiedNeighbor((diagonalA1H8BB[SquareToDiagonalA1H8[square]] & occupied) ^ squareToBitboard[square], square, minor, major);
+
+	Bitboard diagA1H8Attacks = bitsBetween(diagonalA1H8BB[SquareToDiagonalA1H8[square]], minor, major) ^ squareToBitboard[square];
+
+	this->setOccupiedNeighbor((diagonalH1A8BB[SquareToDiagonalH1A8[square]] & occupied) ^ squareToBitboard[square], square, minor, major);
+
+	Bitboard diagH1A8Attacks = bitsBetween(diagonalH1A8BB[SquareToDiagonalH1A8[square]], minor, major) ^ squareToBitboard[square];
+
+	return diagA1H8Attacks | diagH1A8Attacks;
+}
+
+// overload method - gets current occupied squares in the board
+const Bitboard Board::getQueenAttacks(const Square square) {
+	return getQueenAttacks(square, currentBoard.pieceColor[WHITE] & currentBoard.pieceColor[BLACK]);
+}
+
+// return a bitboard with attacked squares by the queen in the given square
+const Bitboard Board::getQueenAttacks(const Square square, const Bitboard occupied) {
+
+	return getBishopAttacks(square, occupied) | getRookAttacks(square, occupied);
+}
 
 
 
