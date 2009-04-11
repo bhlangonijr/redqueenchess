@@ -50,6 +50,9 @@ typedef uint64_t Bitboard;
 #define Sq2BA(X)				(diagonalA1H8BB[SquareToDiagonalA1H8[X]]| \
 								 diagonalH1A8BB[SquareToDiagonalH1A8[X]])^squareToBitboard[X]		// Encode Square to Bishop Attack
 
+#define Sq2UM(X)				~(squareToBitboard[X]-1) 											// Encode Square to BB uppermask
+#define Sq2LM(X)				squareToBitboard[X]-1												// Encode Square to BB lowermask
+
 #define FULL_BB						 0xFFFFFFFFFFFFFFFFULL
 #define INITIAL_WHITE_BITBOARD  	 0xFFFFULL
 #define INITIAL_BLACK_BITBOARD  	 0xFFFF000000000000ULL
@@ -246,6 +249,37 @@ static const Bitboard bishopAttacks[ALL_SQUARE]={Sq2BA(A1), Sq2BA(B1), Sq2BA(C1)
 												 Sq2BA(A7), Sq2BA(B7), Sq2BA(C7), Sq2BA(D7), Sq2BA(E7), Sq2BA(F7), Sq2BA(G7), Sq2BA(H7),
 												 Sq2BA(A8), Sq2BA(B8), Sq2BA(C8), Sq2BA(D8), Sq2BA(E8), Sq2BA(F8), Sq2BA(G8), Sq2BA(H8) };
 
+// bitboard for all knight attacks
+static const Bitboard knightAttacks[ALL_SQUARE]={0x0000000000020400ULL,0x0000000000050800ULL,0x00000000000a1100ULL,0x0000000000142200ULL,0x0000000000284400ULL,0x0000000000508800ULL,0x0000000000a01000ULL,0x0000000000402000ULL,
+												 0x0000000002040004ULL,0x0000000005080008ULL,0x000000000a110011ULL,0x0000000014220022ULL,0x0000000028440044ULL,0x0000000050880088ULL,0x00000000a0100010ULL,0x0000000040200020ULL,
+												 0x0000000204000402ULL,0x0000000508000805ULL,0x0000000a1100110aULL,0x0000001422002214ULL,0x0000002844004428ULL,0x0000005088008850ULL,0x000000a0100010a0ULL,0x0000004020002040ULL,
+												 0x0000020400040200ULL,0x0000050800080500ULL,0x00000a1100110a00ULL,0x0000142200221400ULL,0x0000284400442800ULL,0x0000508800885000ULL,0x0000a0100010a000ULL,0x0000402000204000ULL,
+												 0x0002040004020000ULL,0x0005080008050000ULL,0x000a1100110a0000ULL,0x0014220022140000ULL,0x0028440044280000ULL,0x0050880088500000ULL,0x00a0100010a00000ULL,0x0040200020400000ULL,
+												 0x0204000402000000ULL,0x0508000805000000ULL,0x0a1100110a000000ULL,0x1422002214000000ULL,0x2844004428000000ULL,0x5088008850000000ULL,0xa0100010a0000000ULL,0x4020002040000000ULL,
+												 0x0400040200000000ULL,0x0800080500000000ULL,0x1100110a00000000ULL,0x2200221400000000ULL,0x4400442800000000ULL,0x8800885000000000ULL,0x100010a000000000ULL,0x2000204000000000ULL,
+												 0x0004020000000000ULL,0x0008050000000000ULL,0x00110a0000000000ULL,0x0022140000000000ULL,0x0044280000000000ULL,0x0088500000000000ULL,0x0010a00000000000ULL,0x0020400000000000ULL};
+
+// upper bound bitboard mask
+static const Bitboard upperMaskBitboard[ALL_SQUARE]={Sq2UM(A1), Sq2UM(B1), Sq2UM(C1), Sq2UM(D1), Sq2UM(E1), Sq2UM(F1), Sq2UM(G1), Sq2UM(H1),
+													 Sq2UM(A2), Sq2UM(B2), Sq2UM(C2), Sq2UM(D2), Sq2UM(E2), Sq2UM(F2), Sq2UM(G2), Sq2UM(H2),
+													 Sq2UM(A3), Sq2UM(B3), Sq2UM(C3), Sq2UM(D3), Sq2UM(E3), Sq2UM(F3), Sq2UM(G3), Sq2UM(H3),
+													 Sq2UM(A4), Sq2UM(B4), Sq2UM(C4), Sq2UM(D4), Sq2UM(E4), Sq2UM(F4), Sq2UM(G4), Sq2UM(H4),
+													 Sq2UM(A5), Sq2UM(B5), Sq2UM(C5), Sq2UM(D5), Sq2UM(E5), Sq2UM(F5), Sq2UM(G5), Sq2UM(H5),
+													 Sq2UM(A6), Sq2UM(B6), Sq2UM(C6), Sq2UM(D6), Sq2UM(E6), Sq2UM(F6), Sq2UM(G6), Sq2UM(H6),
+													 Sq2UM(A7), Sq2UM(B7), Sq2UM(C7), Sq2UM(D7), Sq2UM(E7), Sq2UM(F7), Sq2UM(G7), Sq2UM(H7),
+													 Sq2UM(A8), Sq2UM(B8), Sq2UM(C8), Sq2UM(D8), Sq2UM(E8), Sq2UM(F8), Sq2UM(G8), Sq2UM(H8) };
+
+// lower bound bitboard mask
+static const Bitboard lowerMaskBitboard[ALL_SQUARE]={Sq2LM(A1), Sq2LM(B1), Sq2LM(C1), Sq2LM(D1), Sq2LM(E1), Sq2LM(F1), Sq2LM(G1), Sq2LM(H1),
+													 Sq2LM(A2), Sq2LM(B2), Sq2LM(C2), Sq2LM(D2), Sq2LM(E2), Sq2LM(F2), Sq2LM(G2), Sq2LM(H2),
+													 Sq2LM(A3), Sq2LM(B3), Sq2LM(C3), Sq2LM(D3), Sq2LM(E3), Sq2LM(F3), Sq2LM(G3), Sq2LM(H3),
+													 Sq2LM(A4), Sq2LM(B4), Sq2LM(C4), Sq2LM(D4), Sq2LM(E4), Sq2LM(F4), Sq2LM(G4), Sq2LM(H4),
+													 Sq2LM(A5), Sq2LM(B5), Sq2LM(C5), Sq2LM(D5), Sq2LM(E5), Sq2LM(F5), Sq2LM(G5), Sq2LM(H5),
+													 Sq2LM(A6), Sq2LM(B6), Sq2LM(C6), Sq2LM(D6), Sq2LM(E6), Sq2LM(F6), Sq2LM(G6), Sq2LM(H6),
+													 Sq2LM(A7), Sq2LM(B7), Sq2LM(C7), Sq2LM(D7), Sq2LM(E7), Sq2LM(F7), Sq2LM(G7), Sq2LM(H7),
+													 Sq2LM(A8), Sq2LM(B8), Sq2LM(C8), Sq2LM(D8), Sq2LM(E8), Sq2LM(F8), Sq2LM(G8), Sq2LM(H8) };
+
+
 // Move representation
 struct Move {
 	Move()
@@ -384,7 +418,7 @@ public:
 	Board(const Board& board);
 	virtual ~Board();
 
-	const void printBoard() const;
+	const void printBoard();
 	void doMove(const Move move, MoveBackup& backup);
 	void undoMove(MoveBackup& backup);
 	void setInitialPosition();
@@ -402,16 +436,20 @@ private:
 	void setEnPassant(const Square square);
 	const Square bitboardToSquare(Bitboard bitboard) const;
 
+	const void printBitboard(Bitboard bb) const;
+
 	void setOccupiedNeighbor(const Bitboard mask, const Square start, Square& minor, Square& major);
 
 	const Bitboard getRookAttacks(const Square square);
 	const Bitboard getRookAttacks(const Square square, const Bitboard occupied);
-
 	const Bitboard getBishopAttacks(const Square square);
 	const Bitboard getBishopAttacks(const Square square, const Bitboard occupied);
-
 	const Bitboard getQueenAttacks(const Square square);
 	const Bitboard getQueenAttacks(const Square square, const Bitboard occupied);
+	const Bitboard getKnightAttacks(const Square square);
+	const Bitboard getKnightAttacks(const Square square, const Bitboard occupied);
+	const Bitboard getPawnAttacks(const Square square);
+	const Bitboard getPawnAttacks(const Square square, const Bitboard occupied);
 
 	Node& currentBoard;
 };
