@@ -69,7 +69,7 @@ const void Board::printBoard()
 	this->printBitboard( (currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK]));
 	this->printBitboard( (currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK])&lowerMaskBitboard[D4]);
 	this->printBitboard( (currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK])&upperMaskBitboard[D4]);
-	this->printBitboard(this->getRookAttacks(B1));
+	this->printBitboard(this->getKnightAttacks(B1));
 
 	for(int x=0;x<ALL_SQUARE;x++) {
 
@@ -636,12 +636,12 @@ const Bitboard Board::getQueenAttacks(const Square square, const Bitboard occupi
 
 // overload method - gets current occupied squares in the board
 const Bitboard Board::getKnightAttacks(const Square square) {
-	return getKnightAttacks(square, currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK]);
+	return knightAttacks[square];
 }
 
 // return a bitboard with attacked squares by the pawn in the given square
 const Bitboard Board::getKnightAttacks(const Square square, const Bitboard occupied) {
-	return knightAttacks[square];
+	return knightAttacks[square] & occupied;
 }
 
 // overload method - gets current occupied squares in the board
@@ -652,7 +652,10 @@ const Bitboard Board::getPawnAttacks(const Square square) {
 // return a bitboard with attacked squares by the pawn in the given square
 const Bitboard Board::getPawnAttacks(const Square square, const Bitboard occupied) {
 
-	return 0x0ULL; //TODO work in progress....;
+	Bitboard moves;
+	Bitboard captures;
+	// TODO work in progress ...
+	return moves | captures;
 }
 
 
