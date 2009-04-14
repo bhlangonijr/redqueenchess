@@ -231,24 +231,24 @@ static const DiagonalH1A8 SquareToDiagonalH1A8[ALL_SQUARE]={A1_A1, B1_A2, C1_A3,
 															H1_A8, B8_H2, C8_H3, D8_H4, E8_H5, F8_H6, G8_H7, H8_H8};
 
 // bitboard for all rook attacks
-static const Bitboard rookAttacks[ALL_SQUARE]={	Sq2RA(A1), Sq2RA(B1), Sq2RA(C1), Sq2RA(D1), Sq2RA(E1), Sq2RA(F1), Sq2RA(G1), Sq2RA(H1),
-												Sq2RA(A2), Sq2RA(B2), Sq2RA(C2), Sq2RA(D2), Sq2RA(E2), Sq2RA(F2), Sq2RA(G2), Sq2RA(H2),
-												Sq2RA(A3), Sq2RA(B3), Sq2RA(C3), Sq2RA(D3), Sq2RA(E3), Sq2RA(F3), Sq2RA(G3), Sq2RA(H3),
-												Sq2RA(A4), Sq2RA(B4), Sq2RA(C4), Sq2RA(D4), Sq2RA(E4), Sq2RA(F4), Sq2RA(G4), Sq2RA(H4),
-												Sq2RA(A5), Sq2RA(B5), Sq2RA(C5), Sq2RA(D5), Sq2RA(E5), Sq2RA(F5), Sq2RA(G5), Sq2RA(H5),
-												Sq2RA(A6), Sq2RA(B6), Sq2RA(C6), Sq2RA(D6), Sq2RA(E6), Sq2RA(F6), Sq2RA(G6), Sq2RA(H6),
-												Sq2RA(A7), Sq2RA(B7), Sq2RA(C7), Sq2RA(D7), Sq2RA(E7), Sq2RA(F7), Sq2RA(G7), Sq2RA(H7),
-												Sq2RA(A8), Sq2RA(B8), Sq2RA(C8), Sq2RA(D8), Sq2RA(E8), Sq2RA(F8), Sq2RA(G8), Sq2RA(H8) };
+static const Bitboard fileRankAttacks[ALL_SQUARE]={	Sq2RA(A1), Sq2RA(B1), Sq2RA(C1), Sq2RA(D1), Sq2RA(E1), Sq2RA(F1), Sq2RA(G1), Sq2RA(H1),
+													Sq2RA(A2), Sq2RA(B2), Sq2RA(C2), Sq2RA(D2), Sq2RA(E2), Sq2RA(F2), Sq2RA(G2), Sq2RA(H2),
+													Sq2RA(A3), Sq2RA(B3), Sq2RA(C3), Sq2RA(D3), Sq2RA(E3), Sq2RA(F3), Sq2RA(G3), Sq2RA(H3),
+													Sq2RA(A4), Sq2RA(B4), Sq2RA(C4), Sq2RA(D4), Sq2RA(E4), Sq2RA(F4), Sq2RA(G4), Sq2RA(H4),
+													Sq2RA(A5), Sq2RA(B5), Sq2RA(C5), Sq2RA(D5), Sq2RA(E5), Sq2RA(F5), Sq2RA(G5), Sq2RA(H5),
+													Sq2RA(A6), Sq2RA(B6), Sq2RA(C6), Sq2RA(D6), Sq2RA(E6), Sq2RA(F6), Sq2RA(G6), Sq2RA(H6),
+													Sq2RA(A7), Sq2RA(B7), Sq2RA(C7), Sq2RA(D7), Sq2RA(E7), Sq2RA(F7), Sq2RA(G7), Sq2RA(H7),
+													Sq2RA(A8), Sq2RA(B8), Sq2RA(C8), Sq2RA(D8), Sq2RA(E8), Sq2RA(F8), Sq2RA(G8), Sq2RA(H8) };
 
 // bitboard for all bishop attacks
-static const Bitboard bishopAttacks[ALL_SQUARE]={Sq2BA(A1), Sq2BA(B1), Sq2BA(C1), Sq2BA(D1), Sq2BA(E1), Sq2BA(F1), Sq2BA(G1), Sq2BA(H1),
-												 Sq2BA(A2), Sq2BA(B2), Sq2BA(C2), Sq2BA(D2), Sq2BA(E2), Sq2BA(F2), Sq2BA(G2), Sq2BA(H2),
-												 Sq2BA(A3), Sq2BA(B3), Sq2BA(C3), Sq2BA(D3), Sq2BA(E3), Sq2BA(F3), Sq2BA(G3), Sq2BA(H3),
-												 Sq2BA(A4), Sq2BA(B4), Sq2BA(C4), Sq2BA(D4), Sq2BA(E4), Sq2BA(F4), Sq2BA(G4), Sq2BA(H4),
-												 Sq2BA(A5), Sq2BA(B5), Sq2BA(C5), Sq2BA(D5), Sq2BA(E5), Sq2BA(F5), Sq2BA(G5), Sq2BA(H5),
-												 Sq2BA(A6), Sq2BA(B6), Sq2BA(C6), Sq2BA(D6), Sq2BA(E6), Sq2BA(F6), Sq2BA(G6), Sq2BA(H6),
-												 Sq2BA(A7), Sq2BA(B7), Sq2BA(C7), Sq2BA(D7), Sq2BA(E7), Sq2BA(F7), Sq2BA(G7), Sq2BA(H7),
-												 Sq2BA(A8), Sq2BA(B8), Sq2BA(C8), Sq2BA(D8), Sq2BA(E8), Sq2BA(F8), Sq2BA(G8), Sq2BA(H8) };
+static const Bitboard DiagonalAttacks[ALL_SQUARE]={Sq2BA(A1), Sq2BA(B1), Sq2BA(C1), Sq2BA(D1), Sq2BA(E1), Sq2BA(F1), Sq2BA(G1), Sq2BA(H1),
+												   Sq2BA(A2), Sq2BA(B2), Sq2BA(C2), Sq2BA(D2), Sq2BA(E2), Sq2BA(F2), Sq2BA(G2), Sq2BA(H2),
+												   Sq2BA(A3), Sq2BA(B3), Sq2BA(C3), Sq2BA(D3), Sq2BA(E3), Sq2BA(F3), Sq2BA(G3), Sq2BA(H3),
+												   Sq2BA(A4), Sq2BA(B4), Sq2BA(C4), Sq2BA(D4), Sq2BA(E4), Sq2BA(F4), Sq2BA(G4), Sq2BA(H4),
+												   Sq2BA(A5), Sq2BA(B5), Sq2BA(C5), Sq2BA(D5), Sq2BA(E5), Sq2BA(F5), Sq2BA(G5), Sq2BA(H5),
+												   Sq2BA(A6), Sq2BA(B6), Sq2BA(C6), Sq2BA(D6), Sq2BA(E6), Sq2BA(F6), Sq2BA(G6), Sq2BA(H6),
+												   Sq2BA(A7), Sq2BA(B7), Sq2BA(C7), Sq2BA(D7), Sq2BA(E7), Sq2BA(F7), Sq2BA(G7), Sq2BA(H7),
+												   Sq2BA(A8), Sq2BA(B8), Sq2BA(C8), Sq2BA(D8), Sq2BA(E8), Sq2BA(F8), Sq2BA(G8), Sq2BA(H8) };
 
 // bitboard for all knight attacks
 static const Bitboard knightAttacks[ALL_SQUARE]={0x0000000000020400ULL,0x0000000000050800ULL,0x00000000000a1100ULL,0x0000000000142200ULL,0x0000000000284400ULL,0x0000000000508800ULL,0x0000000000a01000ULL,0x0000000000402000ULL,

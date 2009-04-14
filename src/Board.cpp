@@ -654,7 +654,18 @@ const Bitboard Board::getPawnAttacks(const Square square, const Bitboard occupie
 
 	Bitboard moves;
 	Bitboard captures;
-	// TODO work in progress ...
+	// TODO handle enpassant and first pawn double move....
+	if (currentBoard.square[square]==EMPTY) {
+		return 0x0ULL;
+	}
+	else if (pieceColor[currentBoard.square[square]]==WHITE) {
+		moves = (fileRankAttacks[square] & whitePawnAttacks[square]) & ~occupied ;
+		captures = (DiagonalAttacks[square] & whitePawnAttacks[square]) & occupied ;
+	} else {
+		moves = (fileRankAttacks[square] & blackPawnAttacks[square]) & ~occupied ;
+		captures = (DiagonalAttacks[square] & blackPawnAttacks[square]) & occupied ;
+	}
+
 	return moves | captures;
 }
 
