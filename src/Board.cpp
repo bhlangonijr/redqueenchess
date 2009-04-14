@@ -597,12 +597,12 @@ const Bitboard Board::getRookAttacks(const Square square, const Bitboard occupie
 	Square minor;
 	Square major;
 
-	this->setOccupiedNeighbor((fileBB[squareFile[square]] & occupied) ^ squareToBitboard[square], square, minor, major);
-	Bitboard fileAttacks = bitsBetween(fileBB[squareFile[square]], minor, major) ^ squareToBitboard[square];
-	this->setOccupiedNeighbor((rankBB[squareRank[square]] & occupied) ^ squareToBitboard[square], square, minor, major);
-	Bitboard rankAttacks = bitsBetween(rankBB[squareRank[square]], minor, major) ^ squareToBitboard[square];
+	this->setOccupiedNeighbor((fileAttacks[square] & occupied) ^ squareToBitboard[square], square, minor, major);
+	Bitboard file = bitsBetween(fileAttacks[square], minor, major) ^ squareToBitboard[square];
+	this->setOccupiedNeighbor((rankAttacks[square] & occupied) ^ squareToBitboard[square], square, minor, major);
+	Bitboard rank = bitsBetween(rankAttacks[square], minor, major) ^ squareToBitboard[square];
 
-	return fileAttacks | rankAttacks;
+	return file | rank;
 }
 
 // overload method - gets current occupied squares in the board
@@ -616,12 +616,12 @@ const Bitboard Board::getBishopAttacks(const Square square, const Bitboard occup
 	Square minor;
 	Square major;
 
-	this->setOccupiedNeighbor((diagonalA1H8BB[SquareToDiagonalA1H8[square]] & occupied) ^ squareToBitboard[square], square, minor, major);
-	Bitboard diagA1H8Attacks = bitsBetween(diagonalA1H8BB[SquareToDiagonalA1H8[square]], minor, major) ^ squareToBitboard[square];
-	this->setOccupiedNeighbor((diagonalH1A8BB[SquareToDiagonalH1A8[square]] & occupied) ^ squareToBitboard[square], square, minor, major);
-	Bitboard diagH1A8Attacks = bitsBetween(diagonalH1A8BB[SquareToDiagonalH1A8[square]], minor, major) ^ squareToBitboard[square];
+	this->setOccupiedNeighbor((diagA1H8Attacks[square] & occupied) ^ squareToBitboard[square], square, minor, major);
+	Bitboard diagA1H8 = bitsBetween(diagA1H8Attacks[square], minor, major) ^ squareToBitboard[square];
+	this->setOccupiedNeighbor((diagH1A8Attacks[square] & occupied) ^ squareToBitboard[square], square, minor, major);
+	Bitboard diagH1A8 = bitsBetween(diagH1A8Attacks[square], minor, major) ^ squareToBitboard[square];
 
-	return diagA1H8Attacks | diagH1A8Attacks;
+	return diagA1H8 | diagH1A8;
 }
 
 // overload method - gets current occupied squares in the board
@@ -654,22 +654,37 @@ const Bitboard Board::getPawnAttacks(const Square square, const Bitboard occupie
 
 	Bitboard moves;
 	Bitboard captures;
-	// TODO handle enpassant and first pawn double move....
+	Bitboard occ = occupied;
+	// TODO handle first pawn double move....
 	if (currentBoard.square[square]==EMPTY) {
 		return 0x0ULL;
 	}
 	else if (pieceColor[currentBoard.square[square]]==WHITE) {
-		moves = (fileRankAttacks[square] & whitePawnAttacks[square]) & ~occupied ;
-		captures = (DiagonalAttacks[square] & whitePawnAttacks[square]) & occupied ;
+		if (currentBoard.enPassant!=NONE) {
+			occ |= (squareToBitboard[currentBoard.enPassant]<<8)&adjacentSquares[square]; // en passant
+		}
+		moves = (fileAttacks[square] & whitePawnAttacks[square]) & ~occ ;
+		captures = (diagA1H8Attacks[square] & diagH1A8Attacks[square] & whitePawnAttacks[square]) & occ ;
 	} else {
-		moves = (fileRankAttacks[square] & blackPawnAttacks[square]) & ~occupied ;
-		captures = (DiagonalAttacks[square] & blackPawnAttacks[square]) & occupied ;
+		if (currentBoard.enPassant!=NONE) {
+			occ |= (squareToBitboard[currentBoard.enPassant]>>8)&adjacentSquares[square]; // en passant
+		}
+		moves = (fileAttacks[square] & blackPawnAttacks[square]) & ~occ ;
+		captures = (diagA1H8Attacks[square] & diagH1A8Attacks[square] & blackPawnAttacks[square]) & occ ;
 	}
 
 	return moves | captures;
 }
 
+// overload method - gets current occupied squares in the board
+const Bitboard Board::getKingAttacks(const Square square) {
+	return adjacentSquares[square];
+}
 
+// return a bitboard with attacked squares by the King in the given square
+const Bitboard Board::getKingAttacks(const Square square, const Bitboard occupied) {
+	return adjacentSquares[square] & occupied;
+}
 
 
 
