@@ -657,7 +657,7 @@ const Bitboard Board::getPawnAttacks(const Square square, const Bitboard occupie
 	Bitboard occ = occupied;
 
 	if (currentBoard.square[square]==EMPTY) {
-		return 0x0ULL;
+		return EMPTY_BB;
 	}
 	else if (pieceColor[currentBoard.square[square]]==WHITE) {
 		if (currentBoard.enPassant!=NONE) {

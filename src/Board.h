@@ -28,6 +28,7 @@
 #define BOARD_H_
 #include <inttypes.h>
 #include <cmath>
+#include <boost/pool/object_pool.hpp>
 
 namespace BoardTypes{
 
@@ -57,6 +58,7 @@ typedef uint64_t Bitboard;
 #define Sq2LM(X)				squareToBitboard[X]-1												// Encode Square to BB lowermask
 
 #define FULL_BB						 0xFFFFFFFFFFFFFFFFULL
+#define EMPTY_BB					 0x0ULL
 #define INITIAL_WHITE_BITBOARD  	 0xFFFFULL
 #define INITIAL_BLACK_BITBOARD  	 0xFFFF000000000000ULL
 #define INITIAL_WHITE_PAWN_BITBOARD  0xFF00ULL
@@ -356,10 +358,18 @@ static const Bitboard lowerMaskBitboard[ALL_SQUARE]={
 
 // Move representation
 struct Move {
+
+	Move* next;
+
 	Move()
 	{}
-	Move(Square fromSquare, Square toSquare, PieceTypeByColor piece) : from(fromSquare), to(toSquare), promotionPiece(piece)
+	Move(Square fromSquare, Square toSquare, PieceTypeByColor piece) :
+		from(fromSquare), to(toSquare), promotionPiece(piece)
 	{}
+	Move(Move* nextMove, Square fromSquare, Square toSquare, PieceTypeByColor piece) :
+		next(nextMove), from(fromSquare), to(toSquare), promotionPiece(piece)
+	{}
+
 	Square from;
 	Square to;
 	PieceTypeByColor promotionPiece;
@@ -477,6 +487,8 @@ struct Node {
 
 };
 
+typedef boost::object_pool<Move> MovePool;
+
 static const char pieceChar[ALL_PIECE_TYPE_BY_COLOR+1] = "pnbrqkPNBRQK ";
 
 }
@@ -526,6 +538,8 @@ private:
 	const Bitboard getPawnAttacks(const Square square, const Bitboard occupied);
 	const Bitboard getKingAttacks(const Square square);
 	const Bitboard getKingAttacks(const Square square, const Bitboard occupied);
+
+
 
 	Node& currentBoard;
 };
