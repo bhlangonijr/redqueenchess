@@ -64,12 +64,12 @@ const void Board::printBoard()
 		std::cout << square <<", ";
 	}
 	std::cout << "]" << std::endl;
-
+	//testing code
 	//this->printBitboard((fileBB[squareFile[C7]] & (currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK])) ^ squareToBitboard[C7]);
 	this->printBitboard( (currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK]));
-	this->printBitboard( (currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK])&lowerMaskBitboard[D4]);
-	this->printBitboard( (currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK])&upperMaskBitboard[D4]);
-	this->printBitboard(this->getKnightAttacks(B1));
+	this->printBitboard( /*fileAttacks[B2] &*/ whitePawnAttacks[B2]);
+
+	this->printBitboard(this->getPawnAttacks(B2));
 
 	for(int x=0;x<ALL_SQUARE;x++) {
 
@@ -655,7 +655,7 @@ const Bitboard Board::getPawnAttacks(const Square square, const Bitboard occupie
 	Bitboard moves;
 	Bitboard captures;
 	Bitboard occ = occupied;
-	// TODO handle first pawn double move....
+
 	if (currentBoard.square[square]==EMPTY) {
 		return 0x0ULL;
 	}
@@ -663,11 +663,21 @@ const Bitboard Board::getPawnAttacks(const Square square, const Bitboard occupie
 		if (currentBoard.enPassant!=NONE) {
 			occ |= (squareToBitboard[currentBoard.enPassant]<<8)&adjacentSquares[square]; // en passant
 		}
+		if (squareRank[square]==RANK_2) {
+			if (squareToBitboard[square+8]&occ) {
+				occ |= squareToBitboard[square+16]; // double move
+			}
+		}
 		moves = (fileAttacks[square] & whitePawnAttacks[square]) & ~occ ;
 		captures = (diagA1H8Attacks[square] & diagH1A8Attacks[square] & whitePawnAttacks[square]) & occ ;
 	} else {
 		if (currentBoard.enPassant!=NONE) {
 			occ |= (squareToBitboard[currentBoard.enPassant]>>8)&adjacentSquares[square]; // en passant
+		}
+		if (squareRank[square]==RANK_7) {
+			if (squareToBitboard[square-8]&occ) {
+				occ |= squareToBitboard[square-16]; // double move
+			}
 		}
 		moves = (fileAttacks[square] & blackPawnAttacks[square]) & ~occ ;
 		captures = (diagA1H8Attacks[square] & diagH1A8Attacks[square] & blackPawnAttacks[square]) & occ ;
