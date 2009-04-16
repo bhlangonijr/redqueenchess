@@ -546,6 +546,30 @@ private:
 	Node& currentBoard;
 };
 
+// put a piece in the board and store piece info
+inline bool Board::putPiece(const PieceTypeByColor piece, const Square square)
+{
+
+	currentBoard.piece.array[piece] |= squareToBitboard[square];
+	currentBoard.pieceColor[pieceColor[piece]] |= squareToBitboard[square];
+	currentBoard.square[square] = piece;
+	currentBoard.pieceCount.array[piece]++;
+
+	return true;
+}
+// remove a piece from the board and erase piece info
+inline bool Board::removePiece(const PieceTypeByColor piece, const Square square)
+{
+
+	currentBoard.piece.array[piece] ^= squareToBitboard[square];
+	currentBoard.pieceColor[pieceColor[piece]] ^= squareToBitboard[square];
+	currentBoard.square[square] = EMPTY;
+	currentBoard.pieceCount.array[piece]--;
+
+	return true;
+}
+
+
 // get castle rights
 inline const CastleRight Board::getCastleRights(PieceColor color) const
 {
