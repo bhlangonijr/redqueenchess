@@ -98,7 +98,7 @@ enum PieceTypeByColor {
 
 // castle types
 enum CastleRight {
-	NO_CASTLE, KING_SIDE_CASTLE, QUEEN_SIDE_CASTLE, BOTH_SIDE_CASTLE
+	NO_CASTLE=0, KING_SIDE_CASTLE, QUEEN_SIDE_CASTLE, BOTH_SIDE_CASTLE
 };
 
 //ranks - row
@@ -512,17 +512,26 @@ public:
 	void setInitialPosition();
 	void loadFromString(const std::string startPosMoves);
 	const CastleRight getCastleRights(PieceColor color) const;
+	void removeCastleRights(const PieceColor color, const CastleRight castle);
+	void setCastleRights(const PieceColor color, const CastleRight castle);
 	const PieceColor getSideToMove() const;
+	void setSideToMove(const PieceColor color);
 	const Square getEnPassant() const;
+	void setEnPassant(const Square square);
+	const Square bitboardToSquare(const Bitboard bitboard) const;
+	const PieceColor flipSide(const PieceColor color);
+	const Bitboard getAttacksTo(const Square square);
+
+	const Move* generateCaptures(MovePool& movePool);
+	const Move* generateNonCaptures(MovePool& movePool);
+	const Move* generateCheckEvasions(MovePool& movePool);
 
 private:
 
-	const Node& get() const;
+	Node& getBoard();
+	void clearBoard();
 	bool putPiece(const PieceTypeByColor piece, const Square square);
 	bool removePiece(const PieceTypeByColor piece, const Square square);
-	void removeCastleRights(const PieceColor color, const CastleRight castle);
-	void setEnPassant(const Square square);
-	const Square bitboardToSquare(Bitboard bitboard) const;
 
 	const void printBitboard(Bitboard bb) const;
 
@@ -541,11 +550,18 @@ private:
 	const Bitboard getKingAttacks(const Square square);
 	const Bitboard getKingAttacks(const Square square, const Bitboard occupied);
 
-
-
 	Node& currentBoard;
 };
+// get the board structure
+inline Node& Board::getBoard()
+{
+	return currentBoard;
+}
 
+inline void Board::clearBoard()
+{
+	currentBoard.clear();
+}
 // put a piece in the board and store piece info
 inline bool Board::putPiece(const PieceTypeByColor piece, const Square square)
 {
@@ -579,35 +595,25 @@ inline const CastleRight Board::getCastleRights(PieceColor color) const
 // remove castle rights passed as params
 inline void Board::removeCastleRights(const PieceColor color, const CastleRight castle)
 {
-	switch (castle) {
-	case NO_CASTLE:
-		break;
-	case KING_SIDE_CASTLE:
-		if (currentBoard.castleRight[color]==BOTH_SIDE_CASTLE) {
-			currentBoard.castleRight[color]=QUEEN_SIDE_CASTLE;
-		} else if (currentBoard.castleRight[color]==KING_SIDE_CASTLE) {
-			currentBoard.castleRight[color]=NO_CASTLE;
-		}
-		break;
-	case QUEEN_SIDE_CASTLE:
-		if (currentBoard.castleRight[color]==BOTH_SIDE_CASTLE) {
-			currentBoard.castleRight[color]=KING_SIDE_CASTLE;
-		} else if (currentBoard.castleRight[color]==QUEEN_SIDE_CASTLE) {
-			currentBoard.castleRight[color]=NO_CASTLE;
-		}
-		break;
-	case BOTH_SIDE_CASTLE:
-		currentBoard.castleRight[color]=NO_CASTLE;
-		break;
-	default:
-		break;
-	}
+	currentBoard.castleRight[color]=CastleRight((int)currentBoard.castleRight[color]&(~(int)castle));
+}
+
+// set castle rights
+inline void Board::setCastleRights(const PieceColor color, const CastleRight castle)
+{
+	currentBoard.castleRight[color]=castle;
 }
 
 // get
 inline const PieceColor Board::getSideToMove() const
 {
 	return currentBoard.sideToMove;
+}
+
+// set
+inline void Board::setSideToMove(const PieceColor color)
+{
+	currentBoard.sideToMove=color;
 }
 
 // get en passant
@@ -623,21 +629,26 @@ inline void Board::setEnPassant(const Square square)
 }
 
 // get the bit index from a bitboard
-inline const Square Board::bitboardToSquare(Bitboard x) const {
+inline const Square Board::bitboardToSquare(const Bitboard bitboard) const {
 
 	unsigned int square = 0;
 
 #ifdef USE_INTRINSIC_BITSCAN
 	unsigned char ret;
-	ret = _BitScanForward64(&square, x);
+	ret = _BitScanForward64(&square, bitboard);
 	if (!ret) {
 		return Square(NONE);
 	}
 #else
-	square = (unsigned int) index64[((x & -x) * debruijn64) >> 58];
+	square = (unsigned int) index64[((bitboard & -bitboard) * debruijn64) >> 58];
 #endif
 
 	return Square( square );
+}
+
+// flip side
+inline const PieceColor Board::flipSide(const PieceColor color) {
+	return PieceColor((int)color ^ 1);
 }
 
 // print a bitboard in a readble form
