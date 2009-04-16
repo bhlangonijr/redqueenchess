@@ -30,6 +30,8 @@
 #include <cmath>
 #include <boost/pool/object_pool.hpp>
 
+#include "Inline.h"
+
 namespace BoardTypes{
 
 //Bitboard type - unsigned long int (8 bytes)
@@ -543,5 +545,250 @@ private:
 
 	Node& currentBoard;
 };
+
+// get castle rights
+inline const CastleRight Board::getCastleRights(PieceColor color) const
+{
+	return currentBoard.castleRight[color];
+}
+
+// remove castle rights passed as params
+inline void Board::removeCastleRights(const PieceColor color, const CastleRight castle)
+{
+	switch (castle) {
+	case NO_CASTLE:
+		break;
+	case KING_SIDE_CASTLE:
+		if (currentBoard.castleRight[color]==BOTH_SIDE_CASTLE) {
+			currentBoard.castleRight[color]=QUEEN_SIDE_CASTLE;
+		} else if (currentBoard.castleRight[color]==KING_SIDE_CASTLE) {
+			currentBoard.castleRight[color]=NO_CASTLE;
+		}
+		break;
+	case QUEEN_SIDE_CASTLE:
+		if (currentBoard.castleRight[color]==BOTH_SIDE_CASTLE) {
+			currentBoard.castleRight[color]=KING_SIDE_CASTLE;
+		} else if (currentBoard.castleRight[color]==QUEEN_SIDE_CASTLE) {
+			currentBoard.castleRight[color]=NO_CASTLE;
+		}
+		break;
+	case BOTH_SIDE_CASTLE:
+		currentBoard.castleRight[color]=NO_CASTLE;
+		break;
+	default:
+		break;
+	}
+}
+
+// get
+inline const PieceColor Board::getSideToMove() const
+{
+	return currentBoard.sideToMove;
+}
+
+// get en passant
+inline const Square Board::getEnPassant() const
+{
+	return currentBoard.enPassant;
+}
+
+// set en passant
+inline void Board::setEnPassant(const Square square)
+{
+	currentBoard.enPassant=square;
+}
+
+// get the bit index from a bitboard
+inline const Square Board::bitboardToSquare(Bitboard x) const {
+
+	unsigned int square = 0;
+
+#ifdef USE_INTRINSIC_BITSCAN
+	unsigned char ret;
+	ret = _BitScanForward64(&square, x);
+	if (!ret) {
+		return Square(NONE);
+	}
+#else
+	square = (unsigned int) index64[((x & -x) * debruijn64) >> 58];
+#endif
+
+	return Square( square );
+}
+
+// print a bitboard in a readble form
+inline const void Board::printBitboard(Bitboard bb) const {
+
+	for(long x=0;x<64;x++) {
+		if ((0x1ULL << x)&bb) {
+			std::cout << "1";
+		} else {
+			std::cout << "0";
+		}
+		if ((x+1) % 8 == 0) std::cout << std::endl;
+	}
+
+	std::cout << std::endl;
+
+}
+// lookup and set the nearest bits given a starting square index in the bitboard - downside and upside
+inline void Board::setOccupiedNeighbor(const Bitboard mask, const Square start, Square& minor, Square& major)
+{
+
+	unsigned int minorInt=A1;
+	unsigned int majorInt=H8;
+
+	if (!mask) {
+		minor=A1;
+		major=H8;
+		return;
+	}
+
+	Bitboard lowerMask= mask & lowerMaskBitboard[start];
+	Bitboard upperMask= mask & upperMaskBitboard[start];
+
+#ifdef USE_INTRINSIC_BITSCAN
+	unsigned char ret;
+	ret = _BitScanReverse64(&minorInt, lowerMask);
+	if (!ret) {
+		minorInt=A1;
+	}
+	ret = _BitScanForward64(&majorInt, upperMask);
+	if (!ret) {
+		majorInt=H8;
+	}
+#else
+	majorInt = (unsigned int) index64[((upperMask & -upperMask) * debruijn64) >> 58];
+	// from Gerd Isenberg
+	union {
+		double d;
+		struct {
+			unsigned int mantissal : 32;
+			unsigned int mantissah : 20;
+			unsigned int exponent : 11;
+			unsigned int sign : 1;
+		};
+	} ud;
+	ud.d = (double)(lowerMask & ~(lowerMask >> 32));
+	minorInt = ud.exponent - 1023;
+
+	if (minorInt==-1023) {
+		minorInt=A1;
+	}
+#endif
+	minor = Square(minorInt);
+	major = Square(majorInt);
+}
+
+// overload method - gets current occupied squares in the board
+inline const Bitboard Board::getRookAttacks(const Square square) {
+	return getRookAttacks(square, currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK]);
+}
+
+// return a bitboard with attacked squares by the rook in the given square
+inline const Bitboard Board::getRookAttacks(const Square square, const Bitboard occupied) {
+
+	Square minor;
+	Square major;
+
+	this->setOccupiedNeighbor((fileAttacks[square] & occupied) ^ squareToBitboard[square], square, minor, major);
+	Bitboard file = bitsBetween(fileAttacks[square], minor, major) ^ squareToBitboard[square];
+	this->setOccupiedNeighbor((rankAttacks[square] & occupied) ^ squareToBitboard[square], square, minor, major);
+	Bitboard rank = bitsBetween(rankAttacks[square], minor, major) ^ squareToBitboard[square];
+
+	return file | rank;
+}
+
+// overload method - gets current occupied squares in the board
+inline const Bitboard Board::getBishopAttacks(const Square square) {
+	return getBishopAttacks(square, currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK]);
+}
+
+// return a bitboard with attacked squares by the bishop in the given square
+inline const Bitboard Board::getBishopAttacks(const Square square, const Bitboard occupied) {
+
+	Square minor;
+	Square major;
+
+	this->setOccupiedNeighbor((diagA1H8Attacks[square] & occupied) ^ squareToBitboard[square], square, minor, major);
+	Bitboard diagA1H8 = bitsBetween(diagA1H8Attacks[square], minor, major) ^ squareToBitboard[square];
+	this->setOccupiedNeighbor((diagH1A8Attacks[square] & occupied) ^ squareToBitboard[square], square, minor, major);
+	Bitboard diagH1A8 = bitsBetween(diagH1A8Attacks[square], minor, major) ^ squareToBitboard[square];
+
+	return diagA1H8 | diagH1A8;
+}
+
+// overload method - gets current occupied squares in the board
+inline const Bitboard Board::getQueenAttacks(const Square square) {
+	return getQueenAttacks(square, currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK]);
+}
+
+// return a bitboard with attacked squares by the queen in the given square
+inline const Bitboard Board::getQueenAttacks(const Square square, const Bitboard occupied) {
+	return getBishopAttacks(square, occupied) | getRookAttacks(square, occupied);
+}
+
+// overload method - gets current occupied squares in the board
+inline const Bitboard Board::getKnightAttacks(const Square square) {
+	return knightAttacks[square];
+}
+
+// return a bitboard with attacked squares by the pawn in the given square
+inline const Bitboard Board::getKnightAttacks(const Square square, const Bitboard occupied) {
+	return knightAttacks[square] & occupied;
+}
+
+// overload method - gets current occupied squares in the board
+inline const Bitboard Board::getPawnAttacks(const Square square) {
+	return getPawnAttacks(square, currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK]);
+}
+
+// return a bitboard with attacked squares by the pawn in the given square
+inline const Bitboard Board::getPawnAttacks(const Square square, const Bitboard occupied) {
+
+	Bitboard moves;
+	Bitboard captures;
+	Bitboard occ = occupied;
+
+	if (currentBoard.square[square]==EMPTY) {
+		return EMPTY_BB;
+	}
+	else if (pieceColor[currentBoard.square[square]]==WHITE) {
+		if (currentBoard.enPassant!=NONE) {
+			occ |= (squareToBitboard[currentBoard.enPassant]<<8)&adjacentSquares[square]; // en passant
+		}
+		if (squareRank[square]==RANK_2) {
+			if (squareToBitboard[square+8]&occ) {
+				occ |= squareToBitboard[square+16]; // double move
+			}
+		}
+		moves = (fileAttacks[square] & whitePawnAttacks[square]) & ~occ ;
+		captures = (diagA1H8Attacks[square] & diagH1A8Attacks[square] & whitePawnAttacks[square]) & occ ;
+	} else {
+		if (currentBoard.enPassant!=NONE) {
+			occ |= (squareToBitboard[currentBoard.enPassant]>>8)&adjacentSquares[square]; // en passant
+		}
+		if (squareRank[square]==RANK_7) {
+			if (squareToBitboard[square-8]&occ) {
+				occ |= squareToBitboard[square-16]; // double move
+			}
+		}
+		moves = (fileAttacks[square] & blackPawnAttacks[square]) & ~occ ;
+		captures = (diagA1H8Attacks[square] & diagH1A8Attacks[square] & blackPawnAttacks[square]) & occ ;
+	}
+
+	return moves | captures;
+}
+
+// overload method - gets current occupied squares in the board
+inline const Bitboard Board::getKingAttacks(const Square square) {
+	return adjacentSquares[square];
+}
+
+// return a bitboard with attacked squares by the King in the given square
+inline const Bitboard Board::getKingAttacks(const Square square, const Bitboard occupied) {
+	return adjacentSquares[square] & occupied;
+}
+
 
 #endif /* BOARD_H_ */
