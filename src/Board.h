@@ -37,7 +37,6 @@ namespace BoardTypes{
 //Bitboard type - unsigned long int (8 bytes)
 typedef uint64_t Bitboard;
 
-#define USE_INTRINSIC_BITSCAN																	    // will use hardware's bitscan
 #define ALL_PIECE_TYPE 			6   																// pawn, knight, bishop, rook, queen, king
 #define ALL_PIECE_TYPE_BY_COLOR 13  																// (black, white) X (pawn, knight, bishop, rook, queen, king) + empty
 #define ALL_PIECE_COLOR			3   																// black, white, none
@@ -152,19 +151,6 @@ static const Square encodeSquare[ALL_RANK][ALL_FILE]= {
 		{A8, B8, C8, D8, E8, F8, G8, H8}
 };
 
-static const uint64_t debruijn64 = 0x07EDD5E59A4E28C2ULL;
-
-static const uint32_t index64[64] = {
-		63,  0, 58,  1, 59, 47, 53,  2,
-		60, 39, 48, 27, 54, 33, 42,  3,
-		61, 51, 37, 40, 49, 18, 28, 20,
-		55, 30, 34, 11, 43, 14, 22,  4,
-		62, 57, 46, 52, 38, 26, 32, 41,
-		50, 36, 17, 19, 29, 10, 13, 21,
-		56, 45, 25, 31, 35, 16,  9, 12,
-		44, 24, 15,  8, 23,  7,  6,  5
-};
-
 // represents square location within the bitboard - it's simply a power of 2 to distinguish the squares
 static const Bitboard squareToBitboard[ALL_SQUARE]={
 		SqBB(A1), SqBB(B1), SqBB(C1), SqBB(D1), SqBB(E1), SqBB(F1), SqBB(G1), SqBB(H1),
@@ -181,13 +167,13 @@ static const Bitboard squareToBitboard[ALL_SQUARE]={
 static const Bitboard rankBB[ALL_RANK]={
 		0x00000000000000FFULL,0x000000000000FF00ULL,0x0000000000FF0000ULL,0x00000000FF000000ULL,
 		0x000000FF00000000ULL,0x0000FF0000000000ULL,0x00FF000000000000ULL,0xFF00000000000000ULL
-		};
+};
 
 // bitboard for all files
 static const Bitboard fileBB[ALL_FILE]={
 		0x0101010101010101ULL,0x0202020202020202ULL,0x0404040404040404ULL,0x0808080808080808ULL,
 		0x1010101010101010ULL,0x2020202020202020ULL,0x4040404040404040ULL,0x8080808080808080ULL
-		};
+};
 
 // bitboard for all diagonal A1..H8
 static const Bitboard diagonalA1H8BB[ALL_DIAGONAL]={
@@ -367,10 +353,10 @@ struct Move {
 	{}
 	Move(Square fromSquare, Square toSquare, PieceTypeByColor piece) :
 		from(fromSquare), to(toSquare), promotionPiece(piece)
-	{}
+		{}
 	Move(Move* nextMove, Square fromSquare, Square toSquare, PieceTypeByColor piece) :
 		next(nextMove), from(fromSquare), to(toSquare), promotionPiece(piece)
-	{}
+		{}
 
 	Square from;
 	Square to;
@@ -632,16 +618,12 @@ inline void Board::setEnPassant(const Square square)
 inline const Square Board::bitboardToSquare(const Bitboard bitboard) const {
 
 	unsigned int square = 0;
-
-#ifdef USE_INTRINSIC_BITSCAN
 	unsigned char ret;
-	ret = _BitScanForward64(&square, bitboard);
+
+	ret = _BitScanForward(&square, bitboard);
 	if (!ret) {
 		return Square(NONE);
 	}
-#else
-	square = (unsigned int) index64[((bitboard & -bitboard) * debruijn64) >> 58];
-#endif
 
 	return Square( square );
 }
@@ -672,6 +654,7 @@ inline void Board::setOccupiedNeighbor(const Bitboard mask, const Square start, 
 
 	unsigned int minorInt=A1;
 	unsigned int majorInt=H8;
+	unsigned char ret;
 
 	if (!mask) {
 		minor=A1;
@@ -682,35 +665,18 @@ inline void Board::setOccupiedNeighbor(const Bitboard mask, const Square start, 
 	Bitboard lowerMask= mask & lowerMaskBitboard[start];
 	Bitboard upperMask= mask & upperMaskBitboard[start];
 
-#ifdef USE_INTRINSIC_BITSCAN
-	unsigned char ret;
-	ret = _BitScanReverse64(&minorInt, lowerMask);
+	ret = _BitScanReverse(&minorInt, lowerMask);
 	if (!ret) {
 		minorInt=A1;
 	}
-	ret = _BitScanForward64(&majorInt, upperMask);
+	ret = _BitScanForward(&majorInt, upperMask);
 	if (!ret) {
 		majorInt=H8;
 	}
-#else
-	majorInt = (unsigned int) index64[((upperMask & -upperMask) * debruijn64) >> 58];
-	// from Gerd Isenberg
-	union {
-		double d;
-		struct {
-			unsigned int mantissal : 32;
-			unsigned int mantissah : 20;
-			unsigned int exponent : 11;
-			unsigned int sign : 1;
-		};
-	} ud;
-	ud.d = (double)(lowerMask & ~(lowerMask >> 32));
-	minorInt = ud.exponent - 1023;
 
 	if (minorInt==-1023) {
 		minorInt=A1;
 	}
-#endif
 	minor = Square(minorInt);
 	major = Square(majorInt);
 }

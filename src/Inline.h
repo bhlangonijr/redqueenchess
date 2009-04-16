@@ -29,8 +29,8 @@
 
 #include <inttypes.h>
 
-extern unsigned char _BitScanForward64(unsigned int* const Index, const uint64_t Mask);
+extern unsigned char _BitScanForward(unsigned int* const index, const uint64_t mask);
 
-extern unsigned char _BitScanReverse64(unsigned int* const Index, const uint64_t Mask);
+extern unsigned char _BitScanReverse(unsigned int* const index, const uint64_t mask);
 
 #endif /* INLINE_H_ */

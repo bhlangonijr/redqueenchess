@@ -24,29 +24,63 @@
  *      Author: bhlangonijr
  */
 #include <inttypes.h>
+#define USE_INTRINSIC_BITSCAN	// will use hardware's bitscan
 
-unsigned char _BitScanForward64(unsigned int* const Index, const uint64_t Mask)
+static const uint64_t debruijn64 = 0x07EDD5E59A4E28C2ULL;
+
+static const uint32_t index64[64] = {
+		63,  0, 58,  1, 59, 47, 53,  2,
+		60, 39, 48, 27, 54, 33, 42,  3,
+		61, 51, 37, 40, 49, 18, 28, 20,
+		55, 30, 34, 11, 43, 14, 22,  4,
+		62, 57, 46, 52, 38, 26, 32, 41,
+		50, 36, 17, 19, 29, 10, 13, 21,
+		56, 45, 25, 31, 35, 16,  9, 12,
+		44, 24, 15,  8, 23,  7,  6,  5
+};
+
+unsigned char _BitScanForward(unsigned int* const index, const uint64_t mask)
 {
-	uint64_t Ret;
+#ifdef USE_INTRINSIC_BITSCAN
+	uint64_t ret;
 	__asm__
 	(
-			"bsfq %[Mask], %[Ret]"
-			:[Ret] "=r" (Ret)
-			:[Mask] "mr" (Mask)
+			"bsfq %[mask], %[ret]"
+			:[ret] "=r" (ret)
+			:[mask] "mr" (mask)
 	);
-	*Index = (unsigned int)Ret;
-	return Mask?1:0;
+	*index = (unsigned int)ret;
+#else
+	*Index = (unsigned int) index64[((mask & -mask) * debruijn64) >> 58];
+#endif
+
+	return mask?1:0;
 }
 
-unsigned char _BitScanReverse64(unsigned int* const Index, const uint64_t Mask)
+unsigned char _BitScanReverse(unsigned int* const index, const uint64_t mask)
 {
-	uint64_t Ret;
+	uint64_t ret;
+#ifdef USE_INTRINSIC_BITSCAN
 	__asm__
 	(
-			"bsrq %[Mask], %[Ret]"
-			:[Ret] "=r" (Ret)
-			:[Mask] "mr" (Mask)
+			"bsrq %[mask], %[ret]"
+			:[ret] "=r" (ret)
+			:[mask] "mr" (mask)
 	);
-	*Index = (unsigned int)Ret;
-	return Mask?1:0;
+	*index = (unsigned int)ret;
+#else
+	union {
+		double d;
+		struct {
+			unsigned int mantissal : 32;
+			unsigned int mantissah : 20;
+			unsigned int exponent : 11;
+			unsigned int sign : 1;
+		};
+	} ud;
+	ud.d = (double)(lowerMask & ~(lowerMask >> 32));
+
+	*index = ud.exponent - 1023;
+#endif
+	return mask?1:0;
 }
