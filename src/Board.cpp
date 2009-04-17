@@ -374,21 +374,22 @@ void Board::loadFromString(const std::string startPosMoves) {
 
 }
 
+// get a bitboard with pieces attacking the give square
 const Bitboard Board::getAttacksTo(const Square square){
 
 
-	/*return getRookAttacks(const Square square);
+	Bitboard all = this->getAllPieces();
+	Bitboard attacks = EMPTY_BB;
 
-	getBishopAttacks(const Square square);
+	while (Square from = this->extractLSB(all)) {
 
-	getQueenAttacks(const Square square);
+		if (this->getAttacksFrom(from) & squareToBitboard[square]) {
+			attacks |= squareToBitboard[from];
+		}
 
-	getKnightAttacks(const Square square);
+	}
 
-	getPawnAttacks(const Square square);
-
-	getKingAttacks(const Square square);
-*/
+	return attacks;
 
 }
 

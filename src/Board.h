@@ -87,7 +87,7 @@ enum PieceColor {
 
 //piece types
 enum PieceType {
-	PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING
+	PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, PIECE_EMPTY
 };
 
 // piece type by color
@@ -114,6 +114,9 @@ enum DiagonalH1A8 { A1_A1, B1_A2, C1_A3,D1_A4, E1_A5, F1_A6, G1_A7, H1_A8, B8_H2
 
 //color of a given piece
 static const PieceColor pieceColor[ALL_PIECE_TYPE_BY_COLOR] = {WHITE,WHITE,WHITE,WHITE,WHITE,WHITE,BLACK,BLACK,BLACK,BLACK,BLACK,BLACK,COLOR_NONE};
+
+// type of a given piece
+static const PieceType pieceType[ALL_PIECE_TYPE_BY_COLOR] = {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, PIECE_EMPTY};
 
 // Rank of a given square
 static const Rank squareRank[ALL_SQUARE]={
@@ -507,6 +510,8 @@ public:
 	const Square bitboardToSquare(const Bitboard bitboard) const;
 	const PieceColor flipSide(const PieceColor color);
 	const PieceColor getPieceColor(const PieceTypeByColor piece) const;
+	const PieceType getPieceType(const PieceTypeByColor piece) const;
+
 
 	const Bitboard getPiecesByColor(const PieceColor color) const;
 	const Bitboard getAllPieces() const;
@@ -543,6 +548,10 @@ private:
 	const Bitboard getPawnAttacks(const Square square, const Bitboard occupied);
 	const Bitboard getKingAttacks(const Square square);
 	const Bitboard getKingAttacks(const Square square, const Bitboard occupied);
+	const Bitboard getAttacksFrom(const Square square);
+	const Bitboard getAttacksFrom(const Square square, const Bitboard occupied);
+
+	const Square extractLSB(Bitboard& bitboard);
 
 	Node& currentBoard;
 };
@@ -634,6 +643,7 @@ inline const Square Board::bitboardToSquare(const Bitboard bitboard) const {
 	}
 
 	return Square( square );
+
 }
 
 // flip side
@@ -641,8 +651,14 @@ inline const PieceColor Board::flipSide(const PieceColor color) {
 	return PieceColor((int)color ^ 1);
 }
 
+// get piece color
 inline const PieceColor Board::getPieceColor(const PieceTypeByColor piece) const {
 	return pieceColor[piece];
+}
+
+// get piece type
+inline const PieceType Board::getPieceType(const PieceTypeByColor piece) const {
+	return pieceType[piece];
 }
 
 // get all pieces of a given color
@@ -825,6 +841,52 @@ inline const Bitboard Board::getKingAttacks(const Square square) {
 // return a bitboard with attacked squares by the King in the given square
 inline const Bitboard Board::getKingAttacks(const Square square, const Bitboard occupied) {
 	return adjacentSquares[square] & occupied;
+}
+
+// overload method - gets current occupied squares in the board
+inline const Bitboard Board::getAttacksFrom(const Square square) {
+	return getAttacksFrom(square, getAllPieces());
+}
+
+// return a bitboard with attacked squares by the piece in the given square
+inline const Bitboard Board::getAttacksFrom(const Square square, const Bitboard occupied) {
+
+	PieceType type = getPieceType(getPieceBySquare(square));
+
+	if (type==PIECE_EMPTY) {
+		return EMPTY_BB;
+	} else if (type==PAWN) {
+		return getPawnAttacks(square);
+	} else if (type==KNIGHT) {
+		return getKnightAttacks(square);
+	} else if (type==BISHOP) {
+		return getBishopAttacks(square);
+	} else if (type==ROOK) {
+		return getRookAttacks(square);
+	} else if (type==QUEEN) {
+		return getQueenAttacks(square);
+	} else if (type==KING) {
+		return getKingAttacks(square);
+	}
+
+	return EMPTY_BB;
+}
+
+// extract least significant bit of a bitboard
+inline const Square Board::extractLSB(Bitboard& bitboard) {
+
+	unsigned int square = 0;
+	unsigned char ret;
+
+	ret = _BitScanForward(&square, bitboard);
+	bitboard &= bitboard - 1;
+
+	if (!ret) {
+		return Square(NONE);
+	}
+
+	return Square( square );
+
 }
 
 
