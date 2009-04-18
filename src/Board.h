@@ -525,17 +525,6 @@ public:
 	const Move* generateNonCaptures(MovePool& movePool);
 	const Move* generateCheckEvasions(MovePool& movePool);
 
-private:
-
-	Node& getBoard();
-	void clearBoard();
-	bool putPiece(const PieceTypeByColor piece, const Square square);
-	bool removePiece(const PieceTypeByColor piece, const Square square);
-
-	const void printBitboard(Bitboard bb) const;
-
-	void setOccupiedNeighbor(const Bitboard mask, const Square start, Square& minor, Square& major);
-
 	const Bitboard getRookAttacks(const Square square);
 	const Bitboard getRookAttacks(const Square square, const Bitboard occupied);
 	const Bitboard getBishopAttacks(const Square square);
@@ -550,6 +539,19 @@ private:
 	const Bitboard getKingAttacks(const Square square, const Bitboard occupied);
 	const Bitboard getAttacksFrom(const Square square);
 	const Bitboard getAttacksFrom(const Square square, const Bitboard occupied);
+
+	const Bitboard getAttackedSquares(const PieceColor color);
+
+private:
+
+	Node& getBoard();
+	void clearBoard();
+	bool putPiece(const PieceTypeByColor piece, const Square square);
+	bool removePiece(const PieceTypeByColor piece, const Square square);
+
+	const void printBitboard(Bitboard bb) const;
+
+	void setOccupiedNeighbor(const Bitboard mask, const Square start, Square& minor, Square& major);
 
 	const Square extractLSB(Bitboard& bitboard);
 
@@ -587,7 +589,6 @@ inline bool Board::removePiece(const PieceTypeByColor piece, const Square square
 
 	return true;
 }
-
 
 // get castle rights
 inline const CastleRight Board::getCastleRights(PieceColor color) const
@@ -853,20 +854,30 @@ inline const Bitboard Board::getAttacksFrom(const Square square, const Bitboard 
 
 	PieceType type = getPieceType(getPieceBySquare(square));
 
-	if (type==PIECE_EMPTY) {
+	switch (type) {
+	case PIECE_EMPTY:
 		return EMPTY_BB;
-	} else if (type==PAWN) {
+		break;
+	case PAWN:
 		return getPawnAttacks(square);
-	} else if (type==KNIGHT) {
+		break;
+	case KNIGHT:
 		return getKnightAttacks(square);
-	} else if (type==BISHOP) {
+		break;
+	case BISHOP:
 		return getBishopAttacks(square);
-	} else if (type==ROOK) {
+		break;
+	case ROOK:
 		return getRookAttacks(square);
-	} else if (type==QUEEN) {
+		break;
+	case QUEEN:
 		return getQueenAttacks(square);
-	} else if (type==KING) {
+		break;
+	case KING:
 		return getKingAttacks(square);
+		break;
+	default:
+		break;
 	}
 
 	return EMPTY_BB;
@@ -874,6 +885,10 @@ inline const Bitboard Board::getAttacksFrom(const Square square, const Bitboard 
 
 // extract least significant bit of a bitboard
 inline const Square Board::extractLSB(Bitboard& bitboard) {
+
+	if (!bitboard) {
+		return Square(NONE);
+	}
 
 	unsigned int square = 0;
 	unsigned char ret;
@@ -888,6 +903,45 @@ inline const Square Board::extractLSB(Bitboard& bitboard) {
 	return Square( square );
 
 }
+
+// get a bitboard with pieces attacking the give square
+inline const Bitboard Board::getAttacksTo(const Square square){
+
+
+	Bitboard all = this->getAllPieces();
+	Bitboard attacks = EMPTY_BB;
+
+	Square from = this->extractLSB(all);
+
+	while ( from!=NONE ) {
+		if (this->getAttacksFrom(from) & squareToBitboard[square]) {
+			attacks |= squareToBitboard[from];
+		}
+		from = this->extractLSB(all);
+	}
+
+	return attacks;
+}
+
+// get the set of attacked squares
+inline const Bitboard Board::getAttackedSquares(const PieceColor color) {
+
+	Bitboard all = this->getPiecesByColor(color);
+	Bitboard attacks = EMPTY_BB;
+
+	Square from = this->extractLSB(all);
+
+	while ( from!=NONE ) {
+		//std::cout << from << std::endl;
+		//this->printBitboard(this->getAttacksFrom(from));
+		attacks |= this->getAttacksFrom(from);
+		from = this->extractLSB(all);
+	}
+
+	return attacks;
+
+}
+
 
 
 #endif /* BOARD_H_ */

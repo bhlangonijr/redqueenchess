@@ -59,10 +59,10 @@ const void Board::printBoard()
 	std::cout << "]" << std::endl;
 	//testing code
 	//this->printBitboard((fileBB[squareFile[C7]] & (currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK])) ^ squareToBitboard[C7]);
-	this->printBitboard( (currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK]));
-	this->printBitboard( /*fileAttacks[B2] &*/ whitePawnAttacks[B2]);
+	this->printBitboard( (currentBoard.pieceColor[WHITE] /*| currentBoard.pieceColor[BLACK]*/));
+	this->printBitboard( /*fileAttacks[B2] &*/ getPawnAttacks(C2));
 
-	this->printBitboard(this->getPawnAttacks(B2));
+	this->printBitboard(this->getAttackedSquares(WHITE));
 
 	for(int x=0;x<ALL_SQUARE;x++) {
 
@@ -374,24 +374,6 @@ void Board::loadFromString(const std::string startPosMoves) {
 
 }
 
-// get a bitboard with pieces attacking the give square
-const Bitboard Board::getAttacksTo(const Square square){
-
-
-	Bitboard all = this->getAllPieces();
-	Bitboard attacks = EMPTY_BB;
-
-	while (Square from = this->extractLSB(all)) {
-
-		if (this->getAttacksFrom(from) & squareToBitboard[square]) {
-			attacks |= squareToBitboard[from];
-		}
-
-	}
-
-	return attacks;
-
-}
 
 const Move* Board::generateCaptures(MovePool& movePool) {
 
