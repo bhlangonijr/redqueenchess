@@ -60,9 +60,13 @@ const void Board::printBoard()
 	//testing code
 	//this->printBitboard((fileBB[squareFile[C7]] & (currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK])) ^ squareToBitboard[C7]);
 	this->printBitboard( (currentBoard.pieceColor[WHITE] /*| currentBoard.pieceColor[BLACK]*/));
-	this->printBitboard( /*fileAttacks[B2] &*/ getPawnAttacks(C2));
+	Bitboard empty = EMPTY_BB;
+	for(int x=A2;x<=H7;x++) {
+		//this->printBitboard( getPawnAttacks(Square(x), empty ));
+		printBitboard( whitePawnAttacks[A1] );
+	}
 
-	this->printBitboard(this->getAttackedSquares(WHITE));
+	//this->printBitboard(this->getAttackedSquares(WHITE));
 
 	for(int x=0;x<ALL_SQUARE;x++) {
 
