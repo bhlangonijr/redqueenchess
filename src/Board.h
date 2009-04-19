@@ -154,6 +154,18 @@ static const Square encodeSquare[ALL_RANK][ALL_FILE]= {
 		{A8, B8, C8, D8, E8, F8, G8, H8}
 };
 
+//Encode square to String
+static const std::string squareToString[ALL_SQUARE]= {
+		"A1", "B1", "C1", "D1", "E1", "F1", "G1", "H1",
+		"A2", "B2", "C2", "D2", "E2", "F2", "G2", "H2",
+		"A3", "B3", "C3", "D3", "E3", "F3", "G3", "H3",
+		"A4", "B4", "C4", "D4", "E4", "F4", "G4", "H4",
+		"A5", "B5", "C5", "D5", "E5", "F5", "G5", "H5",
+		"A6", "B6", "C6", "D6", "E6", "F6", "G6", "H6",
+		"A7", "B7", "C7", "D7", "E7", "F7", "G7", "H7",
+		"A8", "B8", "C8", "D8", "E8", "F8", "G8", "H8"
+};
+
 // represents square location within the bitboard - it's simply a power of 2 to distinguish the squares
 static const Bitboard squareToBitboard[ALL_SQUARE]={
 		SqBB(A1), SqBB(B1), SqBB(C1), SqBB(D1), SqBB(E1), SqBB(F1), SqBB(G1), SqBB(H1),
@@ -366,6 +378,7 @@ struct Move {
 	PieceTypeByColor promotionPiece;
 };
 
+// Backup move
 struct MoveBackup {
 	MoveBackup()
 	{}
@@ -470,6 +483,7 @@ struct Node {
 		}
 		pieceColor[WHITE]=0ULL;
 		pieceColor[BLACK]=0ULL;
+		pieceColor[COLOR_NONE]=FULL_BB;
 		castleRight[WHITE]=NO_CASTLE;
 		castleRight[BLACK]=NO_CASTLE;
 		enPassant=NONE;
@@ -477,9 +491,10 @@ struct Node {
 	}
 
 };
-
+// Move stack type
 typedef boost::object_pool<Move> MovePool;
 
+// array with piece codes
 static const char pieceChar[ALL_PIECE_TYPE_BY_COLOR+1] = "pnbrqkPNBRQK ";
 
 }
@@ -496,6 +511,7 @@ public:
 	virtual ~Board();
 
 	const void printBoard();
+	void genericTest();
 	void doMove(const Move move, MoveBackup& backup);
 	void undoMove(MoveBackup& backup);
 	void setInitialPosition();
@@ -515,15 +531,16 @@ public:
 
 	const Bitboard getPiecesByColor(const PieceColor color) const;
 	const Bitboard getAllPieces() const;
+	const Bitboard getEmptySquares() const;
 	const Bitboard getPiecesByType(const PieceTypeByColor piece) const;
 	inline const PieceTypeByColor getPieceBySquare(const Square square) const;
 	const int getPieceCountByType(const PieceTypeByColor piece) const;
 
 	const Bitboard getAttacksTo(const Square square);
 
-	const Move* generateCaptures(MovePool& movePool);
-	const Move* generateNonCaptures(MovePool& movePool);
-	const Move* generateCheckEvasions(MovePool& movePool);
+	Move* generateCaptures(MovePool& movePool, const PieceColor side);
+	Move* generateNonCaptures(MovePool& movePool, const PieceColor side);
+	Move* generateCheckEvasions(MovePool& movePool, const PieceColor side);
 
 	const Bitboard getRookAttacks(const Square square);
 	const Bitboard getRookAttacks(const Square square, const Bitboard occupied);
@@ -671,6 +688,12 @@ inline const Bitboard Board::getPiecesByColor(const PieceColor color) const {
 inline const Bitboard Board::getAllPieces() const {
 	return currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK];
 }
+
+// get empty squares
+inline const Bitboard Board::getEmptySquares() const {
+	return ~getAllPieces();
+}
+
 // get pieces by type
 inline const Bitboard Board::getPiecesByType(const PieceTypeByColor piece) const {
 	return currentBoard.piece.array[piece];
@@ -861,19 +884,19 @@ inline const Bitboard Board::getAttacksFrom(const Square square, const Bitboard 
 		return EMPTY_BB;
 		break;
 	case PAWN:
-		return getPawnAttacks(square);
+		return getPawnAttacks(square,occupied);
 		break;
 	case KNIGHT:
 		return getKnightAttacks(square);
 		break;
 	case BISHOP:
-		return getBishopAttacks(square);
+		return getBishopAttacks(square,occupied);
 		break;
 	case ROOK:
-		return getRookAttacks(square);
+		return getRookAttacks(square,occupied);
 		break;
 	case QUEEN:
-		return getQueenAttacks(square);
+		return getQueenAttacks(square,occupied);
 		break;
 	case KING:
 		return getKingAttacks(square);
@@ -934,8 +957,6 @@ inline const Bitboard Board::getAttackedSquares(const PieceColor color) {
 	Square from = this->extractLSB(all);
 
 	while ( from!=NONE ) {
-		//std::cout << from << std::endl;
-		//this->printBitboard(this->getAttacksFrom(from));
 		attacks |= this->getAttacksFrom(from);
 		from = this->extractLSB(all);
 	}

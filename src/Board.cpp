@@ -51,23 +51,9 @@ const void Board::printBoard()
 
 	std::vector< std::string> ranks(8);
 	int j=0;
-	std::cout << std::endl << "[";
-	for(int x=0;x<ALL_SQUARE;x++) {
-		Square square=bitboardToSquare(currentBoard.piece.array[currentBoard.square[x]]);
-		std::cout << square <<", ";
-	}
-	std::cout << "]" << std::endl;
-	//testing code
-	//this->printBitboard((fileBB[squareFile[C7]] & (currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK])) ^ squareToBitboard[C7]);
-	this->printBitboard( (currentBoard.pieceColor[WHITE] /*| currentBoard.pieceColor[BLACK]*/));
-	Bitboard empty = EMPTY_BB;
-	for(int x=A2;x<=H7;x++) {
-		//this->printBitboard( getPawnAttacks(Square(x), empty ));
-		printBitboard( whitePawnAttacks[A1] );
-	}
-
-	//this->printBitboard(this->getAttackedSquares(WHITE));
-
+	//tests
+	genericTest();
+	//tests
 	for(int x=0;x<ALL_SQUARE;x++) {
 
 		if (currentBoard.piece.array[currentBoard.square[x]]&squareToBitboard[x]) {
@@ -94,9 +80,50 @@ const void Board::printBoard()
 
 }
 
+// testing method
+void Board::genericTest() {
+	//testing code
+	std::cout << std::endl << "[";
+	for(int x=0;x<ALL_SQUARE;x++) {
+		Square square=bitboardToSquare(currentBoard.piece.array[currentBoard.square[x]]);
+		std::cout << square <<", ";
+	}
+	std::cout << "]" << std::endl;
+
+	//this->printBitboard((fileBB[squareFile[C7]] & (currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK])) ^ squareToBitboard[C7]);
+	this->printBitboard(this->getPiecesByColor(WHITE));
+	this->printBitboard(this->getPiecesByColor(flipSide(WHITE)));
+	Bitboard empty = EMPTY_BB;
+	//for(int x=A2;x<=H7;x++) {
+	//this->printBitboard( getPawnAttacks(Square(x), empty ));
+	//printBitboard( whitePawnAttacks[A1] );
+	//}
+
+	{
+		MovePool movePool;
+		Move* move=this->generateNonCaptures(movePool,WHITE);
+
+		int counter=1;
+
+		while (move) {
+			//std::cout << counter << " - " << move->from << " to " << move->to << std::endl;
+			std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
+			counter++;
+			move = move->next;
+
+		}
+		movePool.~object_pool();
+	}
+
+
+	this->printBitboard(this->getAttackedSquares(WHITE)&(this->getPiecesByColor(BLACK)|this->getEmptySquares()));
+
+	// end tests
+
+}
+
 // do a move and set backup info into struct MoveBackup
-void Board::doMove(const Move move, MoveBackup& backup)
-{
+void Board::doMove(const Move move, MoveBackup& backup){
 
 	PieceTypeByColor fromPiece=currentBoard.square[move.from];
 	PieceTypeByColor toPiece=currentBoard.square[move.to];
@@ -378,16 +405,51 @@ void Board::loadFromString(const std::string startPosMoves) {
 
 }
 
+// generate only capture moves
+Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
+	// TODO handle capture with promotions
+	Move* move=NULL;
+	PieceColor otherSide = flipSide(side);
+	Bitboard pieces = this->getPiecesByColor(side);
+	Bitboard otherPieces = this->getPiecesByColor(otherSide);
+	Bitboard attacks = EMPTY_BB;
+	Square from = this->extractLSB(pieces);
 
-const Move* Board::generateCaptures(MovePool& movePool) {
-
+	while ( from!=NONE ) {
+		attacks = this->getAttacksFrom(from)&otherPieces;
+		Square target = this->extractLSB(attacks);
+		while ( target!=NONE ) {
+			move = movePool.construct(Move(move,from,target,EMPTY));
+			target = this->extractLSB(attacks);
+		}
+		from = this->extractLSB(pieces);
+	}
+	return move;
 }
 
-const Move* generateNonCaptures(MovePool& movePool){
+//generate only non capture moves
+Move* Board::generateNonCaptures(MovePool& movePool, const PieceColor side){
+	// TODO handle promotions and castling
+	Move* move=NULL;
+	Bitboard pieces = this->getPiecesByColor(side);
+	Bitboard empty = this->getEmptySquares();
+	Bitboard attacks = EMPTY_BB;
+	Square from = this->extractLSB(pieces);
 
+	while ( from!=NONE ) {
+		attacks = this->getAttacksFrom(from)&empty;
+		Square target = this->extractLSB(attacks);
+		while ( target!=NONE ) {
+			move = movePool.construct(Move(move,from,target,EMPTY));
+			target = this->extractLSB(attacks);
+		}
+		from = this->extractLSB(pieces);
+	}
+	return move;
 }
 
-const Move* generateCheckEvasions(MovePool& movePool) {
+//generate check evasions: move to non attacked square / interpose king / capture cheking piece
+Move* Board::generateCheckEvasions(MovePool& movePool, const PieceColor side) {
 
 }
 

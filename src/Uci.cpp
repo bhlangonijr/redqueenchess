@@ -237,7 +237,7 @@ void Uci::executeTest() {
 
 	//board->setInitialPosition();
 
-	board->doMove(Move(D2,D4,EMPTY),backup);
+	//board->doMove(Move(D2,D4,EMPTY),backup);
 
 	Board* board2 = new Board(*board);
 
