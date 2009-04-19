@@ -125,8 +125,8 @@ void Board::genericTest() {
 // do a move and set backup info into struct MoveBackup
 void Board::doMove(const Move move, MoveBackup& backup){
 
-	PieceTypeByColor fromPiece=currentBoard.square[move.from];
-	PieceTypeByColor toPiece=currentBoard.square[move.to];
+	PieceTypeByColor fromPiece=this->getPieceBySquare(move.from);
+	PieceTypeByColor toPiece=this->getPieceBySquare(move.to);
 	bool enPassant=false;
 
 	backup.move=move;
@@ -208,16 +208,16 @@ void Board::doMove(const Move move, MoveBackup& backup){
 
 	if (fromPiece==WHITE_PAWN){
 		if (getEnPassant()!=NONE) {
-			if (squareFile[move.from]!=squareFile[move.to]&&toPiece==EMPTY) { // en passant
-				Square capturedSquare=encodeSquare[squareRank[move.to]-1][squareFile[move.to]];
+			if (getSquareFile(move.from)!=getSquareFile(move.to)&&toPiece==EMPTY) { // en passant
+				Square capturedSquare=makeSquare(Rank(getSquareRank(move.to)-1), getSquareFile(move.to));
 				removePiece(BLACK_PAWN,capturedSquare);
 				backup.hasCapture=true;
 				backup.capturedPiece=toPiece;
 				backup.capturedSquare=capturedSquare;
 			}
 		}
-		if (squareRank[move.to]==RANK_4) {
-			if (squareRank[move.from]==RANK_2)
+		if (getSquareRank(move.to)==RANK_4) {
+			if (getSquareRank(move.from)==RANK_2)
 			{
 				setEnPassant(move.to);
 				enPassant=true;
@@ -227,16 +227,16 @@ void Board::doMove(const Move move, MoveBackup& backup){
 
 	if (fromPiece==BLACK_PAWN){
 		if (getEnPassant()!=NONE) {
-			if (squareFile[move.from]!=squareFile[move.to]&&toPiece==EMPTY) { // en passant
-				Square capturedSquare=encodeSquare[squareRank[move.to]+1][squareFile[move.to]];
+			if (getSquareFile(move.from)!=getSquareFile(move.to)&&toPiece==EMPTY) { // en passant
+				Square capturedSquare=makeSquare(Rank(getSquareRank(move.to)+1), getSquareFile(move.to));
 				removePiece(WHITE_PAWN,capturedSquare);
 				backup.hasCapture=true;
 				backup.capturedPiece=toPiece;
 				backup.capturedSquare=capturedSquare;
 			}
 		}
-		if (squareRank[move.to]==RANK_5) {
-			if (squareRank[move.from]==RANK_7)
+		if (getSquareRank(move.to)==RANK_5) {
+			if (getSquareRank(move.from)==RANK_7)
 			{
 				setEnPassant(move.to);
 				enPassant=true;
@@ -407,10 +407,9 @@ void Board::loadFromString(const std::string startPosMoves) {
 
 // generate only capture moves
 Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
-	// TODO handle capture with promotions
 	Move* move=NULL;
 	PieceColor otherSide = flipSide(side);
-	Bitboard pieces = this->getPiecesByColor(side);
+	Bitboard pieces = this->getPiecesByColor(side)^this->getPiecesByType(makePiece(side,PAWN));
 	Bitboard otherPieces = this->getPiecesByColor(otherSide);
 	Bitboard attacks = EMPTY_BB;
 	Square from = this->extractLSB(pieces);
@@ -424,6 +423,27 @@ Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
 		}
 		from = this->extractLSB(pieces);
 	}
+
+	pieces = this->getPiecesByType(makePiece(side,PAWN));
+	from = this->extractLSB(pieces);
+	while ( from!=NONE ) {
+		attacks = this->getAttacksFrom(from)&otherPieces;
+		Square target = this->extractLSB(attacks);
+		bool promotion=((getSquareRank(from)==RANK_7&&side==WHITE) || (getSquareRank(from)==RANK_2&&side==BLACK));
+		while ( target!=NONE ) {
+			if (promotion) {
+				move = movePool.construct(Move(move,from,target,makePiece(side,QUEEN)));
+				move = movePool.construct(Move(move,from,target,makePiece(side,ROOK)));
+				move = movePool.construct(Move(move,from,target,makePiece(side,BISHOP)));
+				move = movePool.construct(Move(move,from,target,makePiece(side,KNIGHT)));
+			} else {
+				move = movePool.construct(Move(move,from,target,EMPTY));
+			}
+			target = this->extractLSB(attacks);
+		}
+		from = this->extractLSB(pieces);
+	}
+
 	return move;
 }
 
@@ -431,11 +451,12 @@ Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
 Move* Board::generateNonCaptures(MovePool& movePool, const PieceColor side){
 	// TODO handle promotions and castling
 	Move* move=NULL;
-	Bitboard pieces = this->getPiecesByColor(side);
+	PieceColor otherSide = flipSide(side);
+	Bitboard pieces = this->getPiecesByColor(side)^this->getPiecesByType(makePiece(side,PAWN));
 	Bitboard empty = this->getEmptySquares();
 	Bitboard attacks = EMPTY_BB;
-	Square from = this->extractLSB(pieces);
 
+	Square from = this->extractLSB(pieces);
 	while ( from!=NONE ) {
 		attacks = this->getAttacksFrom(from)&empty;
 		Square target = this->extractLSB(attacks);
@@ -445,6 +466,27 @@ Move* Board::generateNonCaptures(MovePool& movePool, const PieceColor side){
 		}
 		from = this->extractLSB(pieces);
 	}
+
+	pieces = this->getPiecesByType(makePiece(side,PAWN));
+	from = this->extractLSB(pieces);
+	while ( from!=NONE ) {
+		attacks = this->getAttacksFrom(from)&empty;
+		Square target = this->extractLSB(attacks);
+		bool promotion=((getSquareRank(from)==RANK_7&&side==WHITE) || (getSquareRank(from)==RANK_2&&side==BLACK));
+		while ( target!=NONE ) {
+			if (promotion) {
+				move = movePool.construct(Move(move,from,target,makePiece(side,QUEEN)));
+				move = movePool.construct(Move(move,from,target,makePiece(side,ROOK)));
+				move = movePool.construct(Move(move,from,target,makePiece(side,BISHOP)));
+				move = movePool.construct(Move(move,from,target,makePiece(side,KNIGHT)));
+			} else {
+				move = movePool.construct(Move(move,from,target,EMPTY));
+			}
+			target = this->extractLSB(attacks);
+		}
+		from = this->extractLSB(pieces);
+	}
+
 	return move;
 }
 

@@ -37,7 +37,7 @@ namespace BoardTypes{
 //Bitboard type - unsigned long int (8 bytes)
 typedef uint64_t Bitboard;
 
-#define ALL_PIECE_TYPE 			6   																// pawn, knight, bishop, rook, queen, king
+#define ALL_PIECE_TYPE 			7   																// pawn, knight, bishop, rook, queen, king
 #define ALL_PIECE_TYPE_BY_COLOR 13  																// (black, white) X (pawn, knight, bishop, rook, queen, king) + empty
 #define ALL_PIECE_COLOR			3   																// black, white, none
 #define ALL_SQUARE				64  																// all square A1 .. H8
@@ -101,22 +101,42 @@ enum CastleRight {
 };
 
 //ranks - row
-enum Rank { RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8 };
+enum Rank {
+	RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8
+};
 
 //files - column
-enum File { FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H };
+enum File {
+	FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H
+};
 
 // diagonals A1..H8
-enum DiagonalA1H8 { A8_A8, B8_A7, C8_A6, D8_A5, E8_A4, F8_A3, G8_A2, H8_A1, B1_H7, C1_H6, D1_H5, E1_H4, F1_H3, G1_H2, H1_H1 };
+enum DiagonalA1H8 {
+	A8_A8, B8_A7, C8_A6, D8_A5, E8_A4, F8_A3, G8_A2, H8_A1, B1_H7, C1_H6, D1_H5, E1_H4, F1_H3, G1_H2, H1_H1
+};
 
 // diagonals A1..H8
-enum DiagonalH1A8 { A1_A1, B1_A2, C1_A3,D1_A4, E1_A5, F1_A6, G1_A7, H1_A8, B8_H2, C8_H3, D8_H4, E8_H5, F8_H6, G8_H7, H8_H8 };
+enum DiagonalH1A8 {
+	A1_A1, B1_A2, C1_A3,D1_A4, E1_A5, F1_A6, G1_A7, H1_A8, B8_H2, C8_H3, D8_H4, E8_H5, F8_H6, G8_H7, H8_H8
+};
 
 //color of a given piece
-static const PieceColor pieceColor[ALL_PIECE_TYPE_BY_COLOR] = {WHITE,WHITE,WHITE,WHITE,WHITE,WHITE,BLACK,BLACK,BLACK,BLACK,BLACK,BLACK,COLOR_NONE};
+static const PieceColor pieceColor[ALL_PIECE_TYPE_BY_COLOR] = {
+	WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, BLACK, BLACK, BLACK, BLACK, BLACK, BLACK, COLOR_NONE
+};
 
 // type of a given piece
-static const PieceType pieceType[ALL_PIECE_TYPE_BY_COLOR] = {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, PIECE_EMPTY};
+static const PieceType pieceType[ALL_PIECE_TYPE_BY_COLOR] = {
+	PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, PIECE_EMPTY
+};
+
+// make piece color by color and piece type
+static const PieceTypeByColor pieceTypeByColor[ALL_PIECE_COLOR][ALL_PIECE_TYPE] = {
+	{WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING, EMPTY},
+	{BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING, EMPTY},
+	{EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY}
+};
+
 
 // Rank of a given square
 static const Rank squareRank[ALL_SQUARE]={
@@ -526,7 +546,13 @@ public:
 	const Square bitboardToSquare(const Bitboard bitboard) const;
 	const PieceColor flipSide(const PieceColor color);
 	const PieceColor getPieceColor(const PieceTypeByColor piece) const;
+	const PieceColor getPieceColorBySquare(const Square square) const;
 	const PieceType getPieceType(const PieceTypeByColor piece) const;
+	const PieceType getPieceTypeBySquare(const Square square) const;
+	const PieceTypeByColor makePiece(const PieceColor color, const PieceType type) const;
+	const Square makeSquare(const Rank rank, const File file) const;
+	const Rank getSquareRank(const Square square) const;
+	const File getSquareFile(const Square square) const;
 
 
 	const Bitboard getPiecesByColor(const PieceColor color) const;
@@ -674,9 +700,39 @@ inline const PieceColor Board::getPieceColor(const PieceTypeByColor piece) const
 	return pieceColor[piece];
 }
 
+// get piece color by square
+inline const PieceColor Board::getPieceColorBySquare(const Square square) const {
+	return pieceColor[currentBoard.square[square]];
+}
+
 // get piece type
 inline const PieceType Board::getPieceType(const PieceTypeByColor piece) const {
 	return pieceType[piece];
+}
+
+// get piece type by square
+inline const PieceType Board::getPieceTypeBySquare(const Square square) const {
+	return pieceType[currentBoard.square[square]];
+}
+
+// make piece by color and type
+inline const PieceTypeByColor Board::makePiece(const PieceColor color, const PieceType type) const {
+	return pieceTypeByColor[color][type];
+}
+
+// make square by rank & file
+inline const Square Board::makeSquare(const Rank rank, const File file) const {
+	return encodeSquare[rank][file];
+}
+
+// get rank from square
+inline const Rank Board::getSquareRank(const Square square) const {
+	return squareRank[square];
+}
+
+// get file from square
+inline const File Board::getSquareFile(const Square square) const {
+	return squareFile[square];
 }
 
 // get all pieces of a given color
@@ -834,7 +890,7 @@ inline const Bitboard Board::getPawnAttacks(const Square square, const Bitboard 
 		return EMPTY_BB;
 	}
 
-	if (getPieceColor(getPieceBySquare(square))==WHITE) {
+	if (getPieceColorBySquare(square)==WHITE) {
 		move=8;
 		doubleMove=16;
 		pawnAttacks=whitePawnAttacks[square];
@@ -877,7 +933,7 @@ inline const Bitboard Board::getAttacksFrom(const Square square) {
 // return a bitboard with attacked squares by the piece in the given square
 inline const Bitboard Board::getAttacksFrom(const Square square, const Bitboard occupied) {
 
-	PieceType type = getPieceType(getPieceBySquare(square));
+	PieceType type = getPieceTypeBySquare(square);
 
 	switch (type) {
 	case PIECE_EMPTY:
