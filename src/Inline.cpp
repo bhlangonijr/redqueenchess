@@ -51,7 +51,7 @@ unsigned char _BitScanForward(unsigned int* const index, const uint64_t mask)
 	);
 	*index = (unsigned int)ret;
 #else
-	*Index = (unsigned int) index64[((mask & -mask) * debruijn64) >> 58];
+	*index = (unsigned int) index64[((mask & -mask) * debruijn64) >> 58];
 #endif
 
 	return mask?1:0;
@@ -78,7 +78,7 @@ unsigned char _BitScanReverse(unsigned int* const index, const uint64_t mask)
 			unsigned int sign : 1;
 		};
 	} ud;
-	ud.d = (double)(lowerMask & ~(lowerMask >> 32));
+	ud.d = (double)(mask & ~(mask >> 32));
 
 	*index = ud.exponent - 1023;
 #endif
