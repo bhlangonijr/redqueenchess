@@ -28,6 +28,8 @@
 #define BOARD_H_
 #include <inttypes.h>
 #include <cmath>
+#include <time.h>
+#include <sys/times.h>
 #include <boost/pool/object_pool.hpp>
 
 #include "Inline.h"
@@ -597,6 +599,10 @@ private:
 	void setOccupiedNeighbor(const Bitboard mask, const Square start, Square& minor, Square& major);
 
 	const Square extractLSB(Bitboard& bitboard);
+
+	const uint32_t getTickCount() {
+	  return ((clock() * 1000) / CLOCKS_PER_SEC);
+	}
 
 	Node& currentBoard;
 };

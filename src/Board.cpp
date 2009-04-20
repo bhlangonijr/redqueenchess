@@ -98,23 +98,37 @@ void Board::genericTest() {
 	//this->printBitboard( getPawnAttacks(Square(x), empty ));
 	//printBitboard( whitePawnAttacks[A1] );
 	//}
-
+	uint32_t start = this->getTickCount();
+	PieceColor color = WHITE;
+	for (int x=0;x<1000000;x++)
 	{
-		MovePool movePool;
-		Move* move=this->generateNonCaptures(movePool,WHITE);
 
+		MovePool movePool;
+		Move* move=this->generateNonCaptures(movePool,color);
+
+		color = flipSide(color);
 		int counter=1;
 
 		while (move) {
 			//std::cout << counter << " - " << move->from << " to " << move->to << std::endl;
-			std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
+			//std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
 			counter++;
 			move = move->next;
 
 		}
+		Move* move2=this->generateCaptures(movePool,color);
+
+		while (move2) {
+			//std::cout << counter << " - " << move->from << " to " << move->to << std::endl;
+			//std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
+			counter++;
+			move2 = move2->next;
+
+		}
+
 		movePool.~object_pool();
 	}
-
+	std::cout << "Time: " << (this->getTickCount()-start) << std::endl;
 
 	this->printBitboard(this->getAttackedSquares(WHITE)&(this->getPiecesByColor(BLACK)|this->getEmptySquares()));
 
