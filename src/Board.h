@@ -545,6 +545,8 @@ public:
 	void setSideToMove(const PieceColor color);
 	const Square getEnPassant() const;
 	void setEnPassant(const Square square);
+	const Bitboard getAttackedSquares(const PieceColor color) const;
+	void setAttackedSquares(const PieceColor color, Bitboard attacked);
 	const Square bitboardToSquare(const Bitboard bitboard) const;
 	const PieceColor flipSide(const PieceColor color);
 	const PieceColor getPieceColor(const PieceTypeByColor piece) const;
@@ -555,7 +557,7 @@ public:
 	const Square makeSquare(const Rank rank, const File file) const;
 	const Rank getSquareRank(const Square square) const;
 	const File getSquareFile(const Square square) const;
-
+	const bool isAttacked(const PieceColor color, const PieceType type);
 
 	const Bitboard getPiecesByColor(const PieceColor color) const;
 	const Bitboard getAllPieces() const;
@@ -569,6 +571,7 @@ public:
 	Move* generateCaptures(MovePool& movePool, const PieceColor side);
 	Move* generateNonCaptures(MovePool& movePool, const PieceColor side);
 	Move* generateCheckEvasions(MovePool& movePool, const PieceColor side);
+	Move* generateAllMoves(MovePool& movePool, const PieceColor side);
 
 	const Bitboard getRookAttacks(const Square square);
 	const Bitboard getRookAttacks(const Square square, const Bitboard occupied);
@@ -585,7 +588,7 @@ public:
 	const Bitboard getAttacksFrom(const Square square);
 	const Bitboard getAttacksFrom(const Square square, const Bitboard occupied);
 
-	const Bitboard getAttackedSquares(const PieceColor color);
+	const Bitboard generateAttackedSquares(const PieceColor color);
 
 private:
 
@@ -604,6 +607,7 @@ private:
 	  return ((clock() * 1000) / CLOCKS_PER_SEC);
 	}
 
+	Bitboard attackedSquares[ALL_PIECE_COLOR];
 	Node& currentBoard;
 };
 // get the board structure
@@ -681,6 +685,16 @@ inline void Board::setEnPassant(const Square square)
 	currentBoard.enPassant=square;
 }
 
+// get attacked squares
+inline const Bitboard Board::getAttackedSquares(const PieceColor color) const {
+	return attackedSquares[color];
+}
+
+// set attacked squares
+inline void Board::setAttackedSquares(const PieceColor color, Bitboard attacked) {
+	attackedSquares[color] = attacked;
+}
+
 // get the bit index from a bitboard
 inline const Square Board::bitboardToSquare(const Bitboard bitboard) const {
 
@@ -739,6 +753,11 @@ inline const Rank Board::getSquareRank(const Square square) const {
 // get file from square
 inline const File Board::getSquareFile(const Square square) const {
 	return squareFile[square];
+}
+
+// verify if the given piece is attacked
+inline const bool Board::isAttacked(const PieceColor color, const PieceType type) {
+	return getPiecesByType(makePiece(color,type)) & getAttackedSquares(flipSide(color));
 }
 
 // get all pieces of a given color
@@ -1011,7 +1030,7 @@ inline const Bitboard Board::getAttacksTo(const Square square){
 }
 
 // get the set of attacked squares
-inline const Bitboard Board::getAttackedSquares(const PieceColor color) {
+inline const Bitboard Board::generateAttackedSquares(const PieceColor color) {
 
 	Bitboard all = this->getPiecesByColor(color);
 	Bitboard attacks = EMPTY_BB;

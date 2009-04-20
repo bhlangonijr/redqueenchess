@@ -34,6 +34,9 @@ using namespace BoardTypes;
 Board::Board() : currentBoard(*(new Node()))
 {
 	this->setInitialPosition();
+	setAttackedSquares(getSideToMove(), generateAttackedSquares(getSideToMove()));
+	setAttackedSquares(flipSide(getSideToMove()), generateAttackedSquares(flipSide(getSideToMove())));
+
 }
 
 Board::Board(const Board& board) : currentBoard( *(new Node(board.currentBoard)) )
@@ -51,9 +54,7 @@ const void Board::printBoard()
 
 	std::vector< std::string> ranks(8);
 	int j=0;
-	//tests
-	genericTest();
-	//tests
+
 	for(int x=0;x<ALL_SQUARE;x++) {
 
 		if (currentBoard.piece.array[currentBoard.square[x]]&squareToBitboard[x]) {
@@ -99,15 +100,15 @@ void Board::genericTest() {
 	//printBitboard( whitePawnAttacks[A1] );
 	//}
 	uint32_t start = this->getTickCount();
-	PieceColor color = WHITE;
-	for (int x=0;x<1000000;x++)
+	PieceColor color = getSideToMove();
+	int counter=0;
+	for (int x=0;x<10000000;x++)
 	{
 
 		MovePool movePool;
-		Move* move=this->generateNonCaptures(movePool,color);
+		Move* move=this->generateAllMoves(movePool,color);
 
 		color = flipSide(color);
-		int counter=1;
 
 		while (move) {
 			//std::cout << counter << " - " << move->from << " to " << move->to << std::endl;
@@ -116,19 +117,11 @@ void Board::genericTest() {
 			move = move->next;
 
 		}
-		Move* move2=this->generateCaptures(movePool,color);
-
-		while (move2) {
-			//std::cout << counter << " - " << move->from << " to " << move->to << std::endl;
-			//std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
-			counter++;
-			move2 = move2->next;
-
-		}
 
 		movePool.~object_pool();
 	}
 	std::cout << "Time: " << (this->getTickCount()-start) << std::endl;
+	std::cout << "Perft: " << counter << std::endl;
 
 	this->printBitboard(this->getAttackedSquares(WHITE)&(this->getPiecesByColor(BLACK)|this->getEmptySquares()));
 
@@ -265,6 +258,8 @@ void Board::doMove(const Move move, MoveBackup& backup){
 		}
 	}
 
+	setAttackedSquares(getSideToMove(), generateAttackedSquares(getSideToMove()));
+	setAttackedSquares(flipSide(getSideToMove()), generateAttackedSquares(flipSide(getSideToMove())));
 	setSideToMove(flipSide(getSideToMove()));
 
 }
@@ -506,6 +501,36 @@ Move* Board::generateNonCaptures(MovePool& movePool, const PieceColor side){
 
 //generate check evasions: move to non attacked square / interpose king / capture cheking piece
 Move* Board::generateCheckEvasions(MovePool& movePool, const PieceColor side) {
-
+	return NULL;
 }
+
+//generate all moves - captures + noncaptures
+Move* Board::generateAllMoves(MovePool& movePool, const PieceColor side) {
+
+	Move* moves;
+
+	if (isAttacked(side, KING)) {
+		moves = generateCheckEvasions(movePool, side);
+	} else {
+		moves = generateCaptures(movePool, side);
+		Move* nonCaptures = generateNonCaptures(movePool, side);
+		Move* tmp = moves;
+		if (moves) {
+			while (tmp->next) {
+				tmp = tmp->next;
+			}
+			tmp->next=nonCaptures;
+		} else {
+			moves = nonCaptures;
+		}
+	}
+
+	return moves;
+}
+
+
+
+
+
+
 

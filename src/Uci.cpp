@@ -254,6 +254,10 @@ void Uci::executeTest() {
 	board3->loadFromString("g1f3 d7d5 d2d4 g8f6 e2e3 c8g4 c2c4 d5c4 f1c4 e7e6 b1c3 a7a6 e1g1 c7c5");
 	board3->printBoard();
 
+	board->genericTest();
+	board2->genericTest();
+	board3->genericTest();
+
 	delete board;
 	delete board2;
 	delete board3;
