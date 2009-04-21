@@ -84,12 +84,6 @@ const void Board::printBoard()
 // testing method
 void Board::genericTest() {
 	//testing code
-	std::cout << std::endl << "[";
-	for(int x=0;x<ALL_SQUARE;x++) {
-		Square square=bitboardToSquare(currentBoard.piece.array[currentBoard.square[x]]);
-		std::cout << square <<", ";
-	}
-	std::cout << "]" << std::endl;
 
 	//this->printBitboard((fileBB[squareFile[C7]] & (currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK])) ^ squareToBitboard[C7]);
 	this->printBitboard(this->getPiecesByColor(WHITE));
@@ -102,7 +96,7 @@ void Board::genericTest() {
 	uint32_t start = this->getTickCount();
 	PieceColor color = getSideToMove();
 	int counter=0;
-	for (int x=0;x<10000000;x++)
+	//for (int x=0;x<1000000;x++)
 	{
 
 		MovePool movePool;
@@ -112,7 +106,7 @@ void Board::genericTest() {
 
 		while (move) {
 			//std::cout << counter << " - " << move->from << " to " << move->to << std::endl;
-			//std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
+			std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
 			counter++;
 			move = move->next;
 
@@ -163,7 +157,7 @@ void Board::doMove(const Move move, MoveBackup& backup){
 	backup.hasWhiteQueenCastle=false;
 
 	if (fromPiece==WHITE_KING) {
-		if (getCastleRights(WHITE)>NO_CASTLE) {
+		if (canCastle(WHITE)) {
 			if (move.to==G1) { // castle king side
 				removePiece(WHITE_ROOK,H1);
 				putPiece(WHITE_ROOK,F1);
@@ -177,7 +171,7 @@ void Board::doMove(const Move move, MoveBackup& backup){
 		}
 	}
 	if (fromPiece==WHITE_ROOK) {
-		if (getCastleRights(WHITE)>NO_CASTLE) {
+		if (canCastle(WHITE)) {
 			if (move.from==A1) {
 				removeCastleRights(WHITE,QUEEN_SIDE_CASTLE);
 			} else if (move.from==H1) {
@@ -190,7 +184,7 @@ void Board::doMove(const Move move, MoveBackup& backup){
 	backup.hasBlackQueenCastle=false;
 
 	if (fromPiece==BLACK_KING) {
-		if (getCastleRights(BLACK)>NO_CASTLE) {
+		if (canCastle(BLACK)) {
 			if (move.to==G8) { // castle king side
 				removePiece(BLACK_ROOK,H8);
 				putPiece(BLACK_ROOK,F8);
@@ -204,7 +198,7 @@ void Board::doMove(const Move move, MoveBackup& backup){
 		}
 	}
 	if (fromPiece==BLACK_ROOK) {
-		if (getCastleRights(BLACK)>NO_CASTLE) {
+		if (canCastle(BLACK)) {
 			if (move.from==A8) {
 				removeCastleRights(BLACK,QUEEN_SIDE_CASTLE);
 			} else if (move.from==H8) {
@@ -458,7 +452,6 @@ Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
 
 //generate only non capture moves
 Move* Board::generateNonCaptures(MovePool& movePool, const PieceColor side){
-	// TODO handle promotions and castling
 	Move* move=NULL;
 	PieceColor otherSide = flipSide(side);
 	Bitboard pieces = this->getPiecesByColor(side)^this->getPiecesByType(makePiece(side,PAWN));
@@ -496,11 +489,16 @@ Move* Board::generateNonCaptures(MovePool& movePool, const PieceColor side){
 		from = this->extractLSB(pieces);
 	}
 
+	if (canCastle(side)) {
+		//TODO implement castle moves
+	}
+
 	return move;
 }
 
 //generate check evasions: move to non attacked square / interpose king / capture cheking piece
 Move* Board::generateCheckEvasions(MovePool& movePool, const PieceColor side) {
+	//TODO work in progress
 	return NULL;
 }
 

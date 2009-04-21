@@ -541,6 +541,7 @@ public:
 	const CastleRight getCastleRights(PieceColor color) const;
 	void removeCastleRights(const PieceColor color, const CastleRight castle);
 	void setCastleRights(const PieceColor color, const CastleRight castle);
+	bool canCastle(const PieceColor color) const;
 	const PieceColor getSideToMove() const;
 	void setSideToMove(const PieceColor color);
 	const Square getEnPassant() const;
@@ -659,6 +660,18 @@ inline void Board::removeCastleRights(const PieceColor color, const CastleRight 
 inline void Board::setCastleRights(const PieceColor color, const CastleRight castle)
 {
 	currentBoard.castleRight[color]=castle;
+}
+
+// can castle?
+inline bool Board::canCastle(const PieceColor color) const {
+	// TODO split function to queenside and kingside, verify interpose squares in check
+	if (currentBoard.castleRight[color] == NO_CASTLE) {
+		return false;
+	}
+	if (isAttacked(color,KING)) {
+		return false;
+	}
+	return true;
 }
 
 // get
