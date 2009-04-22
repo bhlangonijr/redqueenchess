@@ -86,13 +86,14 @@ void Board::genericTest() {
 	//testing code
 
 	//this->printBitboard((fileBB[squareFile[C7]] & (currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK])) ^ squareToBitboard[C7]);
-	this->printBitboard(this->getPiecesByColor(WHITE));
-	this->printBitboard(this->getPiecesByColor(flipSide(WHITE)));
-	Bitboard empty = EMPTY_BB;
+	//this->printBitboard(this->getPiecesByColor(WHITE));
+	//this->printBitboard(this->getPiecesByColor(flipSide(WHITE)));
+	//Bitboard empty = EMPTY_BB;
 	//for(int x=A2;x<=H7;x++) {
 	//this->printBitboard( getPawnAttacks(Square(x), empty ));
 	//printBitboard( whitePawnAttacks[A1] );
 	//}
+	printBoard();
 	uint32_t start = this->getTickCount();
 	PieceColor color = getSideToMove();
 	int counter=0;
@@ -122,7 +123,7 @@ void Board::genericTest() {
 	std::cout << "Time: " << (this->getTickCount()-start) << std::endl;
 	std::cout << "Perft: " << counter << std::endl;
 
-	this->printBitboard(this->getAttackedSquares(WHITE)&(this->getPiecesByColor(BLACK)|this->getEmptySquares()));
+	//this->printBitboard(this->getAttackedSquares(WHITE)&(this->getPiecesByColor(BLACK)|this->getEmptySquares()));
 
 	// end tests
 
@@ -154,6 +155,8 @@ void Board::doMove(const Move move, MoveBackup& backup){
 		backup.capturedPiece=toPiece;
 		backup.capturedSquare=move.to;
 	} else {
+		backup.capturedPiece=EMPTY;
+		backup.capturedSquare=NONE;
 		backup.hasCapture=false;
 	}
 
@@ -490,17 +493,17 @@ Move* Board::generateNonCaptures(MovePool& movePool, const PieceColor side){
 
 	if (canCastle(side, KING_SIDE_CASTLE)) {
 		if (side==WHITE) {
-			move = movePool.construct(Move(move,E1,G1,makePiece(side,KING)));
+			move = movePool.construct(Move(move,E1,G1,EMPTY));
 		} else {
-			move = movePool.construct(Move(move,E8,G8,makePiece(side,KING)));
+			move = movePool.construct(Move(move,E8,G8,EMPTY));
 		}
 	}
 
 	if (canCastle(side, QUEEN_SIDE_CASTLE)) {
 		if (side==WHITE) {
-			move = movePool.construct(Move(move,E1,C1,makePiece(side,KING)));
+			move = movePool.construct(Move(move,E1,C1,EMPTY));
 		} else {
-			move = movePool.construct(Move(move,E8,C8,makePiece(side,KING)));
+			move = movePool.construct(Move(move,E8,C8,EMPTY));
 		}
 	}
 
