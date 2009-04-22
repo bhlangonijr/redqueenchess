@@ -104,9 +104,14 @@ void Board::genericTest() {
 
 		color = flipSide(color);
 
+
 		while (move) {
 			//std::cout << counter << " - " << move->from << " to " << move->to << std::endl;
 			std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
+			MoveBackup backup;
+			doMove(*move,backup);
+			printBoard();
+			undoMove(backup);
 			counter++;
 			move = move->next;
 
@@ -134,8 +139,15 @@ void Board::doMove(const Move move, MoveBackup& backup){
 	backup.enPassant=getEnPassant();
 	backup.whiteCastleRight=getCastleRights(WHITE);
 	backup.blackCastleRight=getCastleRights(BLACK);
+	backup.hasWhiteKingCastle=false;
+	backup.hasWhiteQueenCastle=false;
+	backup.hasBlackKingCastle=false;
+	backup.hasBlackQueenCastle=false;
+	backup.attackedSquares[WHITE]=getAttackedSquares(WHITE);
+	backup.attackedSquares[BLACK]=getAttackedSquares(BLACK);
 
 	removePiece(fromPiece,move.from);
+
 	if (toPiece!=EMPTY) {
 		removePiece(toPiece,move.to);
 		backup.hasCapture=true;
@@ -153,95 +165,71 @@ void Board::doMove(const Move move, MoveBackup& backup){
 		backup.hasPromotion=true;
 	}
 
-	backup.hasWhiteKingCastle=false;
-	backup.hasWhiteQueenCastle=false;
-
-	if (fromPiece==WHITE_KING) {
-		if (canCastle(WHITE)) {
-			if (move.to==G1) { // castle king side
-				removePiece(WHITE_ROOK,H1);
-				putPiece(WHITE_ROOK,F1);
-				backup.hasWhiteKingCastle=true;
-			} else if (move.to==C1) { // castle queen side
-				removePiece(WHITE_ROOK,A1);
-				putPiece(WHITE_ROOK,D1);
-				backup.hasWhiteQueenCastle=true;
+	if (getCastleRights(getSideToMove())!=NO_CASTLE) {
+		if (fromPiece==WHITE_KING) {
+			if (move.from==E1) {
+				if (move.to==G1) { // castle king side
+					removePiece(WHITE_ROOK,H1);
+					putPiece(WHITE_ROOK,F1);
+					backup.hasWhiteKingCastle=true;
+				} else if (move.to==C1) { // castle queen side
+					removePiece(WHITE_ROOK,A1);
+					putPiece(WHITE_ROOK,D1);
+					backup.hasWhiteQueenCastle=true;
+				}
+				removeCastleRights(WHITE,BOTH_SIDE_CASTLE);
 			}
-			removeCastleRights(WHITE,BOTH_SIDE_CASTLE);
-		}
-	}
-	if (fromPiece==WHITE_ROOK) {
-		if (canCastle(WHITE)) {
-			if (move.from==A1) {
-				removeCastleRights(WHITE,QUEEN_SIDE_CASTLE);
-			} else if (move.from==H1) {
-				removeCastleRights(WHITE,KING_SIDE_CASTLE);
-			}
-		}
-	}
-
-	backup.hasBlackKingCastle=false;
-	backup.hasBlackQueenCastle=false;
-
-	if (fromPiece==BLACK_KING) {
-		if (canCastle(BLACK)) {
-			if (move.to==G8) { // castle king side
-				removePiece(BLACK_ROOK,H8);
-				putPiece(BLACK_ROOK,F8);
-				backup.hasBlackKingCastle=true;
-			} else if (move.to==C8) { // castle queen side
-				removePiece(BLACK_ROOK,A8);
-				putPiece(BLACK_ROOK,D8);
-				backup.hasBlackQueenCastle=true;
-			}
-			removeCastleRights(BLACK,BOTH_SIDE_CASTLE);
-		}
-	}
-	if (fromPiece==BLACK_ROOK) {
-		if (canCastle(BLACK)) {
-			if (move.from==A8) {
-				removeCastleRights(BLACK,QUEEN_SIDE_CASTLE);
-			} else if (move.from==H8) {
-				removeCastleRights(BLACK,KING_SIDE_CASTLE);
+		} else if (fromPiece==BLACK_KING) {
+			if (move.from==E8) {
+				if (move.to==G8) { // castle king side
+					removePiece(BLACK_ROOK,H8);
+					putPiece(BLACK_ROOK,F8);
+					backup.hasBlackKingCastle=true;
+				} else if (move.to==C8) { // castle queen side
+					removePiece(BLACK_ROOK,A8);
+					putPiece(BLACK_ROOK,D8);
+					backup.hasBlackQueenCastle=true;
+				}
+				removeCastleRights(BLACK,BOTH_SIDE_CASTLE);
 			}
 		}
 	}
 
-	if (fromPiece==WHITE_PAWN){
+	if (fromPiece==makePiece(getSideToMove(),ROOK)) {
+		if (getCastleRights(getSideToMove())!=NO_CASTLE) {
+			if (getSideToMove()==WHITE) {
+				if (move.from==A1) {
+					removeCastleRights(WHITE,QUEEN_SIDE_CASTLE);
+				} else if (move.from==H1) {
+					removeCastleRights(WHITE,KING_SIDE_CASTLE);
+				}
+			} else {
+				if (move.from==A8) {
+					removeCastleRights(getSideToMove(),QUEEN_SIDE_CASTLE);
+				} else if (move.from==H8) {
+					removeCastleRights(getSideToMove(),KING_SIDE_CASTLE);
+				}
+			}
+		}
+	}
+
+	int signal = getSideToMove()==WHITE?-1:+1;
+	Rank doubleInitialRank = getSideToMove()==WHITE?RANK_2:RANK_7;
+	Rank doubleFinalRank = getSideToMove()==WHITE?RANK_4:RANK_5;
+
+	if (fromPiece==makePiece(getSideToMove(),PAWN)){
 		if (getEnPassant()!=NONE) {
 			if (getSquareFile(move.from)!=getSquareFile(move.to)&&toPiece==EMPTY) { // en passant
-				Square capturedSquare=makeSquare(Rank(getSquareRank(move.to)-1), getSquareFile(move.to));
-				removePiece(BLACK_PAWN,capturedSquare);
+				Square capturedSquare=makeSquare(Rank(getSquareRank(move.to)+signal), getSquareFile(move.to));
+				removePiece(makePiece(flipSide(getSideToMove()),PAWN),capturedSquare);
 				backup.hasCapture=true;
 				backup.capturedPiece=toPiece;
 				backup.capturedSquare=capturedSquare;
 			}
 		}
-		if (getSquareRank(move.to)==RANK_4) {
-			if (getSquareRank(move.from)==RANK_2)
-			{
-				setEnPassant(move.to);
-				enPassant=true;
-			}
-		}
-	}
-
-	if (fromPiece==BLACK_PAWN){
-		if (getEnPassant()!=NONE) {
-			if (getSquareFile(move.from)!=getSquareFile(move.to)&&toPiece==EMPTY) { // en passant
-				Square capturedSquare=makeSquare(Rank(getSquareRank(move.to)+1), getSquareFile(move.to));
-				removePiece(WHITE_PAWN,capturedSquare);
-				backup.hasCapture=true;
-				backup.capturedPiece=toPiece;
-				backup.capturedSquare=capturedSquare;
-			}
-		}
-		if (getSquareRank(move.to)==RANK_5) {
-			if (getSquareRank(move.from)==RANK_7)
-			{
-				setEnPassant(move.to);
-				enPassant=true;
-			}
+		if (getSquareRank(move.to)==doubleFinalRank&&getSquareRank(move.from)==doubleInitialRank) {
+			setEnPassant(move.to);
+			enPassant=true;
 		}
 	}
 
@@ -252,8 +240,15 @@ void Board::doMove(const Move move, MoveBackup& backup){
 		}
 	}
 
-	setAttackedSquares(getSideToMove(), generateAttackedSquares(getSideToMove()));
-	setAttackedSquares(flipSide(getSideToMove()), generateAttackedSquares(flipSide(getSideToMove())));
+
+	//TODO formulate better solution to Attacked Squares Table
+	// the code below invalidates generated attackedSquares table control flag:
+	// so in case some method needs attackedSquares, it will be regenerated.
+	// This is done that way to avoid unnecessary calls to generateAttackedSquares - it is a performance killer
+	// currently attackedSquares table is only used by canCastle() method
+	backup.hasAttackedSquares=hasAttackedSquaresTable();
+	setAttackedSquaresTable(false);
+
 	setSideToMove(flipSide(getSideToMove()));
 
 }
@@ -297,6 +292,10 @@ void Board::undoMove(MoveBackup& backup)
 	setEnPassant(backup.enPassant);
 	setCastleRights(WHITE, backup.whiteCastleRight);
 	setCastleRights(BLACK, backup.blackCastleRight);
+
+	setAttackedSquares(WHITE, backup.attackedSquares[WHITE]);
+	setAttackedSquares(BLACK, backup.attackedSquares[BLACK]);
+	setAttackedSquaresTable(backup.hasAttackedSquares);
 
 	setSideToMove(flipSide(getSideToMove()));
 
@@ -489,8 +488,20 @@ Move* Board::generateNonCaptures(MovePool& movePool, const PieceColor side){
 		from = this->extractLSB(pieces);
 	}
 
-	if (canCastle(side)) {
-		//TODO implement castle moves
+	if (canCastle(side, KING_SIDE_CASTLE)) {
+		if (side==WHITE) {
+			move = movePool.construct(Move(move,E1,G1,makePiece(side,KING)));
+		} else {
+			move = movePool.construct(Move(move,E8,G8,makePiece(side,KING)));
+		}
+	}
+
+	if (canCastle(side, QUEEN_SIDE_CASTLE)) {
+		if (side==WHITE) {
+			move = movePool.construct(Move(move,E1,C1,makePiece(side,KING)));
+		} else {
+			move = movePool.construct(Move(move,E8,C8,makePiece(side,KING)));
+		}
 	}
 
 	return move;

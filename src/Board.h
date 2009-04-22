@@ -46,6 +46,7 @@ typedef uint64_t Bitboard;
 #define ALL_RANK				8																	// all ranks
 #define ALL_FILE				8																	// all files
 #define ALL_DIAGONAL			15																	// all diagonals
+#define ALL_CASTLE_RIGHT		4																	// all castle rights
 
 #define SqBB(S)					0x1ULL << (int)S													// Encode a square enum to a bitboard
 #define Sq2Bb(X)				squareToBitboard[X] 												// square to bitboard macro
@@ -99,7 +100,7 @@ enum PieceTypeByColor {
 
 // castle types
 enum CastleRight {
-	NO_CASTLE=0, KING_SIDE_CASTLE, QUEEN_SIDE_CASTLE, BOTH_SIDE_CASTLE
+	NO_CASTLE, KING_SIDE_CASTLE, QUEEN_SIDE_CASTLE, BOTH_SIDE_CASTLE
 };
 
 //ranks - row
@@ -380,6 +381,12 @@ static const Bitboard lowerMaskBitboard[ALL_SQUARE]={
 		Sq2LM(A7), Sq2LM(B7), Sq2LM(C7), Sq2LM(D7), Sq2LM(E7), Sq2LM(F7), Sq2LM(G7), Sq2LM(H7),
 		Sq2LM(A8), Sq2LM(B8), Sq2LM(C8), Sq2LM(D8), Sq2LM(E8), Sq2LM(F8), Sq2LM(G8), Sq2LM(H8) };
 
+// castle squares
+static const Bitboard castleSquare[ALL_PIECE_COLOR][ALL_CASTLE_RIGHT]={
+		/*WHITE*/{EMPTY_BB, Sq2Bb(F1)|Sq2Bb(G1), Sq2Bb(D1)|Sq2Bb(C1), Sq2Bb(F1)|Sq2Bb(G1)|Sq2Bb(D1)|Sq2Bb(C1)},
+		/*BLACK*/{EMPTY_BB, Sq2Bb(F8)|Sq2Bb(G8), Sq2Bb(D8)|Sq2Bb(C8), Sq2Bb(F8)|Sq2Bb(G8)|Sq2Bb(D8)|Sq2Bb(C8)},
+		/*NONE */{EMPTY_BB, EMPTY_BB, EMPTY_BB, EMPTY_BB }
+};
 
 // Move representation
 struct Move {
@@ -419,7 +426,8 @@ struct MoveBackup {
 	CastleRight whiteCastleRight;
 	CastleRight blackCastleRight;
 	Square enPassant;
-
+	bool hasAttackedSquares;
+	Bitboard attackedSquares[ALL_PIECE_COLOR];
 	Move move;
 
 };
@@ -541,12 +549,13 @@ public:
 	const CastleRight getCastleRights(PieceColor color) const;
 	void removeCastleRights(const PieceColor color, const CastleRight castle);
 	void setCastleRights(const PieceColor color, const CastleRight castle);
-	bool canCastle(const PieceColor color) const;
+	bool canCastle(const PieceColor color);
+	bool canCastle(const PieceColor color, const CastleRight castleRight);
 	const PieceColor getSideToMove() const;
 	void setSideToMove(const PieceColor color);
 	const Square getEnPassant() const;
 	void setEnPassant(const Square square);
-	const Bitboard getAttackedSquares(const PieceColor color) const;
+	const Bitboard getAttackedSquares(const PieceColor color);
 	void setAttackedSquares(const PieceColor color, Bitboard attacked);
 	const Square bitboardToSquare(const Bitboard bitboard) const;
 	const PieceColor flipSide(const PieceColor color);
@@ -589,6 +598,8 @@ public:
 	const Bitboard getAttacksFrom(const Square square);
 	const Bitboard getAttacksFrom(const Square square, const Bitboard occupied);
 
+	const bool hasAttackedSquaresTable();
+	void setAttackedSquaresTable(const bool flag);
 	const Bitboard generateAttackedSquares(const PieceColor color);
 
 private:
@@ -608,6 +619,7 @@ private:
 	  return ((clock() * 1000) / CLOCKS_PER_SEC);
 	}
 
+	bool generatedAttackedSquares;
 	Bitboard attackedSquares[ALL_PIECE_COLOR];
 	Node& currentBoard;
 };
@@ -663,12 +675,22 @@ inline void Board::setCastleRights(const PieceColor color, const CastleRight cas
 }
 
 // can castle?
-inline bool Board::canCastle(const PieceColor color) const {
-	// TODO split function to queenside and kingside, verify interpose squares in check
-	if (currentBoard.castleRight[color] == NO_CASTLE) {
+inline bool Board::canCastle(const PieceColor color) {
+
+	return canCastle(color, BOTH_SIDE_CASTLE);
+}
+
+// can castle specific?
+inline bool Board::canCastle(const PieceColor color, const CastleRight castleRight) {
+
+	if (currentBoard.castleRight[color] == NO_CASTLE) { // lost the right to castle?
 		return false;
 	}
-	if (isAttacked(color,KING)) {
+	if (castleSquare[color][castleRight]&getPiecesByColor(color)) { // pieces interposing king & rooks?
+		return false;
+	}
+	Bitboard castle=getPiecesByType(makePiece(color,KING))|castleSquare[color][castleRight]&getPiecesByColor(color);
+	if (getAttackedSquares(flipSide(color))&castle) { // squares through castle & king destination attacked?
 		return false;
 	}
 	return true;
@@ -699,13 +721,18 @@ inline void Board::setEnPassant(const Square square)
 }
 
 // get attacked squares
-inline const Bitboard Board::getAttackedSquares(const PieceColor color) const {
+inline const Bitboard Board::getAttackedSquares(const PieceColor color) {
+	if (!hasAttackedSquaresTable()) {
+		setAttackedSquares(WHITE, generateAttackedSquares(WHITE));
+		setAttackedSquares(BLACK, generateAttackedSquares(BLACK));
+	}
 	return attackedSquares[color];
 }
 
 // set attacked squares
 inline void Board::setAttackedSquares(const PieceColor color, Bitboard attacked) {
 	attackedSquares[color] = attacked;
+	setAttackedSquaresTable(true);
 }
 
 // get the bit index from a bitboard
@@ -1058,7 +1085,14 @@ inline const Bitboard Board::generateAttackedSquares(const PieceColor color) {
 	return attacks;
 
 }
+// is attacked squares generated?
+inline const bool Board::hasAttackedSquaresTable() {
+	return generatedAttackedSquares;
+}
 
-
+// set attacked squares generated - true/false
+inline void Board::setAttackedSquaresTable(const bool flag) {
+	generatedAttackedSquares = flag;
+}
 
 #endif /* BOARD_H_ */
