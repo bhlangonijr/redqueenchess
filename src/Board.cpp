@@ -546,8 +546,6 @@ Move* Board::generateCheckEvasions(MovePool& movePool, const PieceColor side) {
 		}
 	}
 
-
-
 	return move;
 }
 
