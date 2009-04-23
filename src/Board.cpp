@@ -97,21 +97,19 @@ void Board::genericTest() {
 	uint32_t start = this->getTickCount();
 	PieceColor color = getSideToMove();
 	int counter=0;
-	for (int x=0;x<1000000;x++)
+	//for (int x=0;x<1000000;x++)
 	{
 
 		MovePool movePool;
 		Move* move=this->generateAllMoves(movePool,color);
-
 		color = flipSide(color);
 
 
 		while (move) {
-			//std::cout << counter << " - " << move->from << " to " << move->to << std::endl;
-			//std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
+			std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
 			MoveBackup backup;
 			doMove(*move,backup);
-			//printBoard();
+			printBoard();
 			undoMove(backup);
 			counter++;
 			move = move->next;
@@ -410,8 +408,8 @@ Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
 	Move* move=NULL;
 	PieceColor otherSide = flipSide(side);
 	Bitboard pieces = getPiecesByColor(side)^
-					  (getPiecesByType(makePiece(side,PAWN)) |
-					  findAttackBlocker(bitboardToSquare(getPiecesByType(makePiece(side,KING)))));
+	(getPiecesByType(makePiece(side,PAWN)) |
+			findAttackBlocker(bitboardToSquare(getPiecesByType(makePiece(side,KING)))));
 	Bitboard otherPieces = getPiecesByColor(otherSide);
 	Bitboard attacks = EMPTY_BB;
 	Square from = extractLSB(pieces);
@@ -454,8 +452,8 @@ Move* Board::generateNonCaptures(MovePool& movePool, const PieceColor side){
 	Move* move=NULL;
 	PieceColor otherSide = flipSide(side);
 	Bitboard pieces = getPiecesByColor(side)^
-					  (getPiecesByType(makePiece(side,PAWN)) |
-					  findAttackBlocker(bitboardToSquare(getPiecesByType(makePiece(side,KING)))));
+	(getPiecesByType(makePiece(side,PAWN)) |
+			findAttackBlocker(bitboardToSquare(getPiecesByType(makePiece(side,KING)))));
 	Bitboard empty = getEmptySquares();
 	Bitboard attacks = EMPTY_BB;
 
@@ -530,6 +528,25 @@ Move* Board::generateCheckEvasions(MovePool& movePool, const PieceColor side) {
 		}
 		from = extractLSB(pieces);
 	}
+	// try to capture the checker piece
+	Bitboard allAttackers = getPiecesByType(makePiece(otherSide,ROOK)) |
+	getPiecesByType(makePiece(otherSide,BISHOP)) |
+	getPiecesByType(makePiece(otherSide,QUEEN));
+
+	Bitboard kingAttackers = getAttacksTo(allAttackers,getAllPieces(),getPiecesByType(makePiece(side,KING))) & getPiecesByColor(otherSide);
+	if (kingAttackers) {
+		from = extractLSB(kingAttackers);
+		if (!kingAttackers) {
+			attacks = getAttacksTo(from)&getPiecesByColor(side);
+			Square captureAttacker = extractLSB(attacks);
+			while ( captureAttacker!=NONE ) {
+				move = movePool.construct(Move(move,captureAttacker,from,EMPTY));
+				captureAttacker = extractLSB(attacks);
+			}
+		}
+	}
+
+
 
 	return move;
 }

@@ -1108,23 +1108,6 @@ inline const Bitboard Board::generateAttackedSquares(const PieceColor color) {
 	return attacks;
 }
 
-// get the set of attacked squares by piece
-inline const Bitboard Board::generateAttackedSquares(const PieceTypeByColor piece) {
-
-	Bitboard all = getPiecesByType(piece);
-	Bitboard attacks = EMPTY_BB;
-
-	Square from = extractLSB(all);
-
-	while ( from!=NONE ) {
-		attacks |= getAttacksFrom(from);
-		from = extractLSB(all);
-	}
-
-	return attacks;
-
-}
-
 // get the set of attacked squares
 inline const Bitboard Board::generateAttackedSquares(const PieceColor color, const Bitboard occupied) {
 
@@ -1141,28 +1124,8 @@ inline const Bitboard Board::generateAttackedSquares(const PieceColor color, con
 	return attacks;
 
 }
-// get the set of attacked squares
-inline const Bitboard Board::generateInterposingAttackedSquares(const PieceColor color, const Bitboard occupied, const Bitboard attackedPieces, Bitboard& attackers) {
 
-	Bitboard all = getPiecesByColor(color);
-	Bitboard attacks = EMPTY_BB;
-	attackers = EMPTY_BB;
-	Square from = extractLSB(all);
-
-	while ( from!=NONE ) {
-		Bitboard tmp = getAttacksFrom(from, occupied);
-		if (tmp&attackedPieces) {
-			attacks |= tmp;
-			attackers |= squareToBitboard[from];
-		}
-		from = extractLSB(all);
-	}
-
-	return attacks;
-
-}
-
-// get the set of attacked squares
+// get attacking bitboard insersecting attackedPieces
 inline const Bitboard Board::generateInterposingAttackedSquares(const Bitboard attackingPieces, const Bitboard occupied, const Bitboard attackedPieces, Bitboard& attackers) {
 
 	Bitboard all = attackingPieces;
@@ -1203,10 +1166,13 @@ inline const Bitboard Board::findAttackBlocker(Square square) {
 	Bitboard allAttackers = getPiecesByType(makePiece(otherSide,ROOK)) |
 						    getPiecesByType(makePiece(otherSide,BISHOP)) |
 						    getPiecesByType(makePiece(otherSide,QUEEN));
+
+	allAttackers &= diagH1A8Attacks[square]|diagA1H8Attacks[square]|rankAttacks[square]|fileAttacks[square];
+	if (!allAttackers) {
+		return attackBlockers;
+	}
 	Bitboard attackers;
-
 	Bitboard attackedSquares = generateInterposingAttackedSquares(allAttackers,getPiecesByColor(otherSide)|squareToBitboard[square],squareToBitboard[square],attackers);
-
 	Bitboard likelyBlockers = getPiecesByColor(side) & attackedSquares;
 
 	Square from = this->extractLSB(likelyBlockers);
@@ -1219,7 +1185,6 @@ inline const Bitboard Board::findAttackBlocker(Square square) {
 	}
 
 	return attackBlockers;
-
 }
 
 #endif /* BOARD_H_ */
