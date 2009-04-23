@@ -125,19 +125,19 @@ enum DiagonalH1A8 {
 
 //color of a given piece
 static const PieceColor pieceColor[ALL_PIECE_TYPE_BY_COLOR] = {
-	WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, BLACK, BLACK, BLACK, BLACK, BLACK, BLACK, COLOR_NONE
+		WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, BLACK, BLACK, BLACK, BLACK, BLACK, BLACK, COLOR_NONE
 };
 
 // type of a given piece
 static const PieceType pieceType[ALL_PIECE_TYPE_BY_COLOR] = {
-	PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, PIECE_EMPTY
+		PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, PIECE_EMPTY
 };
 
 // make piece color by color and piece type
 static const PieceTypeByColor pieceTypeByColor[ALL_PIECE_COLOR][ALL_PIECE_TYPE] = {
-	{WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING, EMPTY},
-	{BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING, EMPTY},
-	{EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY}
+		{WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING, EMPTY},
+		{BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING, EMPTY},
+		{EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY}
 };
 
 
@@ -577,6 +577,7 @@ public:
 	const int getPieceCountByType(const PieceTypeByColor piece) const;
 
 	const Bitboard getAttacksTo(const Square square);
+	const Bitboard getAttacksTo(const Bitboard attackingPieces, const Bitboard occupied, const Bitboard attackedPieces);
 
 	Move* generateCaptures(MovePool& movePool, const PieceColor side);
 	Move* generateNonCaptures(MovePool& movePool, const PieceColor side);
@@ -601,8 +602,11 @@ public:
 	const bool hasAttackedSquaresTable();
 	void setAttackedSquaresTable(const bool flag);
 	const Bitboard generateAttackedSquares(const PieceColor color);
-	const Bitboard generateAttackedSquares(const PieceColor color, const Bitboard occupied);
 	const Bitboard generateAttackedSquares(const PieceTypeByColor piece);
+	const Bitboard generateAttackedSquares(const PieceColor color, const Bitboard occupied);
+	const Bitboard generateInterposingAttackedSquares(const PieceColor color, const Bitboard occupied, const Bitboard attackedPieces, Bitboard& attackers);
+	const Bitboard generateInterposingAttackedSquares(const Bitboard attackingPieces, const Bitboard occupied, const Bitboard attackedPieces, Bitboard& attackers);
+	const Bitboard findAttackBlocker(Square square);
 
 private:
 
@@ -618,7 +622,7 @@ private:
 	const Square extractLSB(Bitboard& bitboard);
 
 	const uint32_t getTickCount() {
-	  return ((clock() * 1000) / CLOCKS_PER_SEC);
+		return ((clock() * 1000) / CLOCKS_PER_SEC);
 	}
 
 	bool generatedAttackedSquares;
@@ -891,9 +895,9 @@ inline const Bitboard Board::getRookAttacks(const Square square, const Bitboard 
 	Square minor;
 	Square major;
 
-	this->setOccupiedNeighbor(((fileAttacks[square] ^ squareToBitboard[square]) & occupied) , square, minor, major);
+	setOccupiedNeighbor(((fileAttacks[square] ^ squareToBitboard[square]) & occupied) , square, minor, major);
 	Bitboard file = bitsBetween(fileAttacks[square], minor, major) ^ squareToBitboard[square];
-	this->setOccupiedNeighbor(((rankAttacks[square]^ squareToBitboard[square]) & occupied) , square, minor, major);
+	setOccupiedNeighbor(((rankAttacks[square]^ squareToBitboard[square]) & occupied) , square, minor, major);
 	Bitboard rank = bitsBetween(rankAttacks[square], minor, major) ^ squareToBitboard[square];
 
 	return file | rank;
@@ -910,9 +914,9 @@ inline const Bitboard Board::getBishopAttacks(const Square square, const Bitboar
 	Square minor;
 	Square major;
 
-	this->setOccupiedNeighbor(((diagA1H8Attacks[square]^ squareToBitboard[square]) & occupied), square, minor, major);
+	setOccupiedNeighbor(((diagA1H8Attacks[square]^ squareToBitboard[square]) & occupied), square, minor, major);
 	Bitboard diagA1H8 = bitsBetween(diagA1H8Attacks[square], minor, major) ^ squareToBitboard[square];
-	this->setOccupiedNeighbor(((diagH1A8Attacks[square]^ squareToBitboard[square]) & occupied), square, minor, major);
+	setOccupiedNeighbor(((diagH1A8Attacks[square]^ squareToBitboard[square]) & occupied), square, minor, major);
 	Bitboard diagH1A8 = bitsBetween(diagH1A8Attacks[square], minor, major) ^ squareToBitboard[square];
 
 	return diagA1H8 | diagH1A8;
@@ -1056,16 +1060,34 @@ inline const Square Board::extractLSB(Bitboard& bitboard) {
 inline const Bitboard Board::getAttacksTo(const Square square){
 
 
-	Bitboard all = this->getAllPieces();
+	Bitboard all = getAllPieces();
 	Bitboard attacks = EMPTY_BB;
 
-	Square from = this->extractLSB(all);
+	Square from = extractLSB(all);
 
 	while ( from!=NONE ) {
-		if (this->getAttacksFrom(from) & squareToBitboard[square]) {
+		if (getAttacksFrom(from) & squareToBitboard[square]) {
 			attacks |= squareToBitboard[from];
 		}
-		from = this->extractLSB(all);
+		from = extractLSB(all);
+	}
+
+	return attacks;
+}
+
+// get a bitboard with pieces attacking the give square
+inline const Bitboard Board::getAttacksTo(const Bitboard attackingPieces, const Bitboard occupied, const Bitboard attackedPieces) {
+
+	Bitboard all = attackingPieces;
+	Bitboard attacks = EMPTY_BB;
+
+	Square from = extractLSB(all);
+
+	while ( from!=NONE ) {
+		if (getAttacksFrom(from, occupied) & attackedPieces) {
+			attacks |= squareToBitboard[from];
+		}
+		from = extractLSB(all);
 	}
 
 	return attacks;
@@ -1074,51 +1096,93 @@ inline const Bitboard Board::getAttacksTo(const Square square){
 // get the set of attacked squares
 inline const Bitboard Board::generateAttackedSquares(const PieceColor color) {
 
-	Bitboard all = this->getPiecesByColor(color);
+	Bitboard all = getPiecesByColor(color);
 	Bitboard attacks = EMPTY_BB;
 
-	Square from = this->extractLSB(all);
+	Square from = extractLSB(all);
 
 	while ( from!=NONE ) {
-		attacks |= this->getAttacksFrom(from);
-		from = this->extractLSB(all);
+		attacks |= getAttacksFrom(from);
+		from = extractLSB(all);
 	}
 	return attacks;
-}
-
-// get the set of attacked squares
-inline const Bitboard Board::generateAttackedSquares(const PieceColor color, const Bitboard occupied) {
-
-	Bitboard all = this->getPiecesByColor(color);
-	Bitboard attacks = EMPTY_BB;
-
-	Square from = this->extractLSB(all);
-
-	while ( from!=NONE ) {
-		attacks |= this->getAttacksFrom(from, occupied);
-		from = this->extractLSB(all);
-	}
-
-	return attacks;
-
 }
 
 // get the set of attacked squares by piece
 inline const Bitboard Board::generateAttackedSquares(const PieceTypeByColor piece) {
 
-	Bitboard all = this->getPiecesByType(piece);
+	Bitboard all = getPiecesByType(piece);
 	Bitboard attacks = EMPTY_BB;
 
-	Square from = this->extractLSB(all);
+	Square from = extractLSB(all);
 
 	while ( from!=NONE ) {
-		attacks |= this->getAttacksFrom(from);
-		from = this->extractLSB(all);
+		attacks |= getAttacksFrom(from);
+		from = extractLSB(all);
 	}
 
 	return attacks;
 
 }
+
+// get the set of attacked squares
+inline const Bitboard Board::generateAttackedSquares(const PieceColor color, const Bitboard occupied) {
+
+	Bitboard all = getPiecesByColor(color);
+	Bitboard attacks = EMPTY_BB;
+
+	Square from = this->extractLSB(all);
+
+	while ( from!=NONE ) {
+		attacks |= getAttacksFrom(from, occupied);
+		from = extractLSB(all);
+	}
+
+	return attacks;
+
+}
+// get the set of attacked squares
+inline const Bitboard Board::generateInterposingAttackedSquares(const PieceColor color, const Bitboard occupied, const Bitboard attackedPieces, Bitboard& attackers) {
+
+	Bitboard all = getPiecesByColor(color);
+	Bitboard attacks = EMPTY_BB;
+	attackers = EMPTY_BB;
+	Square from = extractLSB(all);
+
+	while ( from!=NONE ) {
+		Bitboard tmp = getAttacksFrom(from, occupied);
+		if (tmp&attackedPieces) {
+			attacks |= tmp;
+			attackers |= squareToBitboard[from];
+		}
+		from = extractLSB(all);
+	}
+
+	return attacks;
+
+}
+
+// get the set of attacked squares
+inline const Bitboard Board::generateInterposingAttackedSquares(const Bitboard attackingPieces, const Bitboard occupied, const Bitboard attackedPieces, Bitboard& attackers) {
+
+	Bitboard all = attackingPieces;
+	Bitboard attacks = EMPTY_BB;
+	attackers = EMPTY_BB;
+	Square from = extractLSB(all);
+
+	while ( from!=NONE ) {
+		Bitboard tmp = getAttacksFrom(from, occupied);
+		if (tmp&attackedPieces) {
+			attacks |= tmp;
+			attackers |= squareToBitboard[from];
+		}
+		from = extractLSB(all);
+	}
+
+	return attacks;
+
+}
+
 // is attacked squares generated?
 inline const bool Board::hasAttackedSquaresTable() {
 	return generatedAttackedSquares;
@@ -1127,6 +1191,35 @@ inline const bool Board::hasAttackedSquaresTable() {
 // set attacked squares generated - true/false
 inline void Board::setAttackedSquaresTable(const bool flag) {
 	generatedAttackedSquares = flag;
+}
+
+// generate the bitboard with pieces blocking sliders attacks to a specific square
+inline const Bitboard Board::findAttackBlocker(Square square) {
+
+	Bitboard attackBlockers = EMPTY_BB;
+	PieceTypeByColor piece = getPieceBySquare(square);
+	PieceColor side= getPieceColor(piece);
+	PieceColor otherSide = flipSide(side);
+	Bitboard allAttackers = getPiecesByType(makePiece(otherSide,ROOK)) |
+						    getPiecesByType(makePiece(otherSide,BISHOP)) |
+						    getPiecesByType(makePiece(otherSide,QUEEN));
+	Bitboard attackers;
+
+	Bitboard attackedSquares = generateInterposingAttackedSquares(allAttackers,getPiecesByColor(otherSide)|squareToBitboard[square],squareToBitboard[square],attackers);
+
+	Bitboard likelyBlockers = getPiecesByColor(side) & attackedSquares;
+
+	Square from = this->extractLSB(likelyBlockers);
+
+	while ( from!=NONE ) {
+		if (getAttacksTo(attackers,getAllPieces()^squareToBitboard[from],piece)) {
+			attackBlockers |= squareToBitboard[from];
+		}
+		from = extractLSB(likelyBlockers);
+	}
+
+	return attackBlockers;
+
 }
 
 #endif /* BOARD_H_ */

@@ -97,7 +97,7 @@ void Board::genericTest() {
 	uint32_t start = this->getTickCount();
 	PieceColor color = getSideToMove();
 	int counter=0;
-	//for (int x=0;x<1000000;x++)
+	for (int x=0;x<1000000;x++)
 	{
 
 		MovePool movePool;
@@ -108,10 +108,10 @@ void Board::genericTest() {
 
 		while (move) {
 			//std::cout << counter << " - " << move->from << " to " << move->to << std::endl;
-			std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
+			//std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
 			MoveBackup backup;
 			doMove(*move,backup);
-			printBoard();
+			//printBoard();
 			undoMove(backup);
 			counter++;
 			move = move->next;
@@ -407,29 +407,30 @@ void Board::loadFromString(const std::string startPosMoves) {
 
 // generate only capture moves
 Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
-	//TODO legal-moves: check pieces pinned against king
 	Move* move=NULL;
 	PieceColor otherSide = flipSide(side);
-	Bitboard pieces = this->getPiecesByColor(side)^this->getPiecesByType(makePiece(side,PAWN));
-	Bitboard otherPieces = this->getPiecesByColor(otherSide);
+	Bitboard pieces = getPiecesByColor(side)^
+					  (getPiecesByType(makePiece(side,PAWN)) |
+					  findAttackBlocker(bitboardToSquare(getPiecesByType(makePiece(side,KING)))));
+	Bitboard otherPieces = getPiecesByColor(otherSide);
 	Bitboard attacks = EMPTY_BB;
-	Square from = this->extractLSB(pieces);
+	Square from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		attacks = this->getAttacksFrom(from)&otherPieces;
-		Square target = this->extractLSB(attacks);
+		attacks = getAttacksFrom(from)&otherPieces;
+		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
 			move = movePool.construct(Move(move,from,target,EMPTY));
-			target = this->extractLSB(attacks);
+			target = extractLSB(attacks);
 		}
-		from = this->extractLSB(pieces);
+		from = extractLSB(pieces);
 	}
 
-	pieces = this->getPiecesByType(makePiece(side,PAWN));
-	from = this->extractLSB(pieces);
+	pieces = getPiecesByType(makePiece(side,PAWN));
+	from = extractLSB(pieces);
 	while ( from!=NONE ) {
-		attacks = this->getAttacksFrom(from)&otherPieces;
-		Square target = this->extractLSB(attacks);
+		attacks = getAttacksFrom(from)&otherPieces;
+		Square target = extractLSB(attacks);
 		bool promotion=((getSquareRank(from)==RANK_7&&side==WHITE) || (getSquareRank(from)==RANK_2&&side==BLACK));
 		while ( target!=NONE ) {
 			if (promotion) {
@@ -440,9 +441,9 @@ Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
 			} else {
 				move = movePool.construct(Move(move,from,target,EMPTY));
 			}
-			target = this->extractLSB(attacks);
+			target = extractLSB(attacks);
 		}
-		from = this->extractLSB(pieces);
+		from = extractLSB(pieces);
 	}
 
 	return move;
@@ -450,29 +451,30 @@ Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
 
 //generate only non capture moves
 Move* Board::generateNonCaptures(MovePool& movePool, const PieceColor side){
-	//TODO legal-moves: check pieces pinned against king
 	Move* move=NULL;
 	PieceColor otherSide = flipSide(side);
-	Bitboard pieces = this->getPiecesByColor(side)^this->getPiecesByType(makePiece(side,PAWN));
-	Bitboard empty = this->getEmptySquares();
+	Bitboard pieces = getPiecesByColor(side)^
+					  (getPiecesByType(makePiece(side,PAWN)) |
+					  findAttackBlocker(bitboardToSquare(getPiecesByType(makePiece(side,KING)))));
+	Bitboard empty = getEmptySquares();
 	Bitboard attacks = EMPTY_BB;
 
-	Square from = this->extractLSB(pieces);
+	Square from = extractLSB(pieces);
 	while ( from!=NONE ) {
-		attacks = this->getAttacksFrom(from)&empty;
-		Square target = this->extractLSB(attacks);
+		attacks = getAttacksFrom(from)&empty;
+		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
 			move = movePool.construct(Move(move,from,target,EMPTY));
-			target = this->extractLSB(attacks);
+			target = extractLSB(attacks);
 		}
-		from = this->extractLSB(pieces);
+		from = extractLSB(pieces);
 	}
 
-	pieces = this->getPiecesByType(makePiece(side,PAWN));
-	from = this->extractLSB(pieces);
+	pieces = getPiecesByType(makePiece(side,PAWN));
+	from = extractLSB(pieces);
 	while ( from!=NONE ) {
-		attacks = this->getAttacksFrom(from)&empty;
-		Square target = this->extractLSB(attacks);
+		attacks = getAttacksFrom(from)&empty;
+		Square target = extractLSB(attacks);
 		bool promotion=((getSquareRank(from)==RANK_7&&side==WHITE) || (getSquareRank(from)==RANK_2&&side==BLACK));
 		while ( target!=NONE ) {
 			if (promotion) {
@@ -483,9 +485,9 @@ Move* Board::generateNonCaptures(MovePool& movePool, const PieceColor side){
 			} else {
 				move = movePool.construct(Move(move,from,target,EMPTY));
 			}
-			target = this->extractLSB(attacks);
+			target = extractLSB(attacks);
 		}
-		from = this->extractLSB(pieces);
+		from = extractLSB(pieces);
 	}
 
 	if (canCastle(side, KING_SIDE_CASTLE)) {
@@ -515,12 +517,12 @@ Move* Board::generateCheckEvasions(MovePool& movePool, const PieceColor side) {
 	Bitboard pieces = getPiecesByType(makePiece(side,KING));
 	Bitboard otherPieces = getPiecesByColor(otherSide);
 	Bitboard attacks = EMPTY_BB;
-	Bitboard attacked = generateAttackedSquares(flipSide(side),getAllPieces()^pieces)&getEmptySquares();
+	Bitboard notAttacked = ~generateAttackedSquares(flipSide(side),getAllPieces()^pieces)&getEmptySquares();
 	Square from = extractLSB(pieces);
 
 	//moves to non attacked square
 	while ( from!=NONE ) {
-		attacks = getAttacksFrom(from)&~attacked;
+		attacks = getAttacksFrom(from)&notAttacked;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
 			move = movePool.construct(Move(move,from,target,EMPTY));
