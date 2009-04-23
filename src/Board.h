@@ -601,6 +601,8 @@ public:
 	const bool hasAttackedSquaresTable();
 	void setAttackedSquaresTable(const bool flag);
 	const Bitboard generateAttackedSquares(const PieceColor color);
+	const Bitboard generateAttackedSquares(const PieceColor color, const Bitboard occupied);
+	const Bitboard generateAttackedSquares(const PieceTypeByColor piece);
 
 private:
 
@@ -1073,6 +1075,38 @@ inline const Bitboard Board::getAttacksTo(const Square square){
 inline const Bitboard Board::generateAttackedSquares(const PieceColor color) {
 
 	Bitboard all = this->getPiecesByColor(color);
+	Bitboard attacks = EMPTY_BB;
+
+	Square from = this->extractLSB(all);
+
+	while ( from!=NONE ) {
+		attacks |= this->getAttacksFrom(from);
+		from = this->extractLSB(all);
+	}
+	return attacks;
+}
+
+// get the set of attacked squares
+inline const Bitboard Board::generateAttackedSquares(const PieceColor color, const Bitboard occupied) {
+
+	Bitboard all = this->getPiecesByColor(color);
+	Bitboard attacks = EMPTY_BB;
+
+	Square from = this->extractLSB(all);
+
+	while ( from!=NONE ) {
+		attacks |= this->getAttacksFrom(from, occupied);
+		from = this->extractLSB(all);
+	}
+
+	return attacks;
+
+}
+
+// get the set of attacked squares by piece
+inline const Bitboard Board::generateAttackedSquares(const PieceTypeByColor piece) {
+
+	Bitboard all = this->getPiecesByType(piece);
 	Bitboard attacks = EMPTY_BB;
 
 	Square from = this->extractLSB(all);

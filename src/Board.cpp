@@ -394,12 +394,7 @@ void Board::loadFromString(const std::string startPosMoves) {
 				}
 			}
 
-			//std::cout << "PromotionPiece: " << move[4] << " - " << promotionPiece << std::endl;
-
 		}
-
-		//std::cout << "moveFrom: " << moveFrom << " - " << St2Sq(moveFrom[0],moveFrom[1]) << std::endl;
-		//std::cout << "moveTo:   " << moveTo << " - " << St2Sq(moveTo[0],moveTo[1]) << std::endl << std::endl;
 
 		this->doMove(Move(Square(St2Sq(moveFrom[0],moveFrom[1])), Square(St2Sq(moveTo[0],moveTo[1])), promotionPiece),backup);
 
@@ -412,6 +407,7 @@ void Board::loadFromString(const std::string startPosMoves) {
 
 // generate only capture moves
 Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
+	//TODO legal-moves: check pieces pinned against king
 	Move* move=NULL;
 	PieceColor otherSide = flipSide(side);
 	Bitboard pieces = this->getPiecesByColor(side)^this->getPiecesByType(makePiece(side,PAWN));
@@ -454,6 +450,7 @@ Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
 
 //generate only non capture moves
 Move* Board::generateNonCaptures(MovePool& movePool, const PieceColor side){
+	//TODO legal-moves: check pieces pinned against king
 	Move* move=NULL;
 	PieceColor otherSide = flipSide(side);
 	Bitboard pieces = this->getPiecesByColor(side)^this->getPiecesByType(makePiece(side,PAWN));
@@ -512,8 +509,27 @@ Move* Board::generateNonCaptures(MovePool& movePool, const PieceColor side){
 
 //generate check evasions: move to non attacked square / interpose king / capture cheking piece
 Move* Board::generateCheckEvasions(MovePool& movePool, const PieceColor side) {
-	//TODO work in progress
-	return NULL;
+	//TODO interpose king / capture cheking piece
+	Move* move=NULL;
+	PieceColor otherSide = flipSide(side);
+	Bitboard pieces = getPiecesByType(makePiece(side,KING));
+	Bitboard otherPieces = getPiecesByColor(otherSide);
+	Bitboard attacks = EMPTY_BB;
+	Bitboard attacked = generateAttackedSquares(flipSide(side),getAllPieces()^pieces)&getEmptySquares();
+	Square from = extractLSB(pieces);
+
+	//moves to non attacked square
+	while ( from!=NONE ) {
+		attacks = getAttacksFrom(from)&~attacked;
+		Square target = extractLSB(attacks);
+		while ( target!=NONE ) {
+			move = movePool.construct(Move(move,from,target,EMPTY));
+			target = extractLSB(attacks);
+		}
+		from = extractLSB(pieces);
+	}
+
+	return move;
 }
 
 //generate all moves - captures + noncaptures
