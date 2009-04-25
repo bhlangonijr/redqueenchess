@@ -97,7 +97,7 @@ void Board::genericTest() {
 	uint32_t start = this->getTickCount();
 	PieceColor color = getSideToMove();
 	int counter=0;
-	for (int x=0;x<1000000;x++)
+	//for (int x=0;x<1000000;x++)
 	{
 
 		MovePool movePool;
@@ -106,7 +106,7 @@ void Board::genericTest() {
 
 
 		while (move) {
-			//std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
+			std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
 			MoveBackup backup;
 			doMove(*move,backup);
 			//printBoard();
@@ -246,7 +246,6 @@ void Board::doMove(const Move move, MoveBackup& backup){
 	// the code below invalidates generated attackedSquares table control flag:
 	// so in case some method needs attackedSquares, it will be regenerated.
 	// This is done that way to avoid unnecessary calls to generateAttackedSquares - it is a performance killer
-	// currently attackedSquares table is only used by canCastle() method
 	backup.hasAttackedSquares=hasAttackedSquaresTable();
 	setAttackedSquaresTable(false);
 
