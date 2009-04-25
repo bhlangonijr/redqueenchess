@@ -252,13 +252,14 @@ void Uci::executeTest() {
 
 	//board3->loadFromString("g1f3 d7d5 d2d4 g8f6 e2e3 c8g4 c2c4 d5c4 f1c4 e7e6 b1c3 a7a6"); // test castle
 	//board3->loadFromString("d2d4 d7d5 g1f3 e7e6 e2e3 b8c6 f1b5"); // test move legality pieces pinned on king
-	board3->loadFromString("d2d4 d7d5 g1f3 e7e6 e2e3 a7a6 f1b5"); // test capturing pieces checking king
+	//board3->loadFromString("d2d4 d7d5 g1f3 e7e6 e2e3 a7a6 f1b5"); // test capturing pieces checking king
 	//board3->loadFromString("d2d4 d7d5 g1f3 e7e6 e2e3 g8f6 f1b5"); // test cover checks on king
+	board3->loadFromString("d2d4 d7d5 g1f3 e7e6 e2e3 g8f6 f1b5");
 
 	//board3->printBoard();
 
-	//board->genericTest();
-	//board2->genericTest();
+	board->genericTest();
+	board2->genericTest();
 	board3->genericTest();
 
 	delete board;

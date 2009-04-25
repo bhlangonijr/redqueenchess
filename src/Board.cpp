@@ -97,7 +97,7 @@ void Board::genericTest() {
 	uint32_t start = this->getTickCount();
 	PieceColor color = getSideToMove();
 	int counter=0;
-	//for (int x=0;x<1000000;x++)
+	for (int x=0;x<1000000;x++)
 	{
 
 		MovePool movePool;
@@ -106,10 +106,10 @@ void Board::genericTest() {
 
 
 		while (move) {
-			std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
+			//std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
 			MoveBackup backup;
 			doMove(*move,backup);
-			printBoard();
+			//printBoard();
 			undoMove(backup);
 			counter++;
 			move = move->next;
@@ -367,35 +367,18 @@ void Board::loadFromString(const std::string startPosMoves) {
 
 		if (move.length()>4) {
 			if (move[4]=='q'){
-				if (getSideToMove()==WHITE){
-					promotionPiece=WHITE_QUEEN;
-				} else {
-					promotionPiece=BLACK_QUEEN;
-				}
+				promotionPiece=makePiece(getSideToMove(),QUEEN);
 			} else if (move[4]=='r'){
-				if (getSideToMove()==WHITE){
-					promotionPiece=WHITE_ROOK;
-				} else {
-					promotionPiece=BLACK_ROOK;
-				}
+				promotionPiece=makePiece(getSideToMove(),ROOK);
 			} else if (move[4]=='n'){
-				if (getSideToMove()==WHITE){
-					promotionPiece=WHITE_KNIGHT;
-				} else {
-					promotionPiece=BLACK_KNIGHT;
-				}
+				promotionPiece=makePiece(getSideToMove(),KNIGHT);
 			} else if (move[4]=='b'){
-				if (getSideToMove()==WHITE){
-					promotionPiece=WHITE_BISHOP;
-				} else {
-					promotionPiece=BLACK_BISHOP;
-				}
+				promotionPiece=makePiece(getSideToMove(),BISHOP);
 			}
-
 		}
 
 		this->doMove(Move(Square(St2Sq(moveFrom[0],moveFrom[1])), Square(St2Sq(moveTo[0],moveTo[1])), promotionPiece),backup);
-
+		promotionPiece=EMPTY;
 		last=position+1;
 		position = moves.find(" ", position+1);
 
@@ -405,11 +388,12 @@ void Board::loadFromString(const std::string startPosMoves) {
 
 // generate only capture moves
 Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
+
 	Move* move=NULL;
 	PieceColor otherSide = flipSide(side);
 	Bitboard pieces = getPiecesByColor(side)^
-	(getPiecesByType(makePiece(side,PAWN)) |
-			findAttackBlocker(bitboardToSquare(getPiecesByType(makePiece(side,KING)))));
+					 (getPiecesByType(makePiece(side,PAWN)) | getPiecesByType(makePiece(side,KING)) |
+					 findAttackBlocker(bitboardToSquare(getPiecesByType(makePiece(side,KING)))));
 	Bitboard otherPieces = getPiecesByColor(otherSide);
 	Bitboard attacks = EMPTY_BB;
 	Square from = extractLSB(pieces);
@@ -424,6 +408,17 @@ Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
 		from = extractLSB(pieces);
 	}
 
+	pieces = getPiecesByType(makePiece(side,KING));
+	from = extractLSB(pieces);
+	while ( from!=NONE ) {
+		attacks = getAttacksFrom(from)&otherPieces&(~getAttackedSquares(otherSide));
+		Square target = extractLSB(attacks);
+		while ( target!=NONE ) {
+			move = movePool.construct(Move(move,from,target,EMPTY));
+			target = extractLSB(attacks);
+		}
+		from = extractLSB(pieces);
+	}
 	pieces = getPiecesByType(makePiece(side,PAWN));
 	from = extractLSB(pieces);
 	while ( from!=NONE ) {
@@ -449,17 +444,30 @@ Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
 
 //generate only non capture moves
 Move* Board::generateNonCaptures(MovePool& movePool, const PieceColor side){
+
 	Move* move=NULL;
 	PieceColor otherSide = flipSide(side);
 	Bitboard pieces = getPiecesByColor(side)^
-	(getPiecesByType(makePiece(side,PAWN)) |
-			findAttackBlocker(bitboardToSquare(getPiecesByType(makePiece(side,KING)))));
+					 (getPiecesByType(makePiece(side,PAWN)) | getPiecesByType(makePiece(side,KING)) |
+					 findAttackBlocker(bitboardToSquare(getPiecesByType(makePiece(side,KING)))));
 	Bitboard empty = getEmptySquares();
 	Bitboard attacks = EMPTY_BB;
 
 	Square from = extractLSB(pieces);
 	while ( from!=NONE ) {
 		attacks = getAttacksFrom(from)&empty;
+		Square target = extractLSB(attacks);
+		while ( target!=NONE ) {
+			move = movePool.construct(Move(move,from,target,EMPTY));
+			target = extractLSB(attacks);
+		}
+		from = extractLSB(pieces);
+	}
+
+	pieces = getPiecesByType(makePiece(side,KING));
+	from = extractLSB(pieces);
+	while ( from!=NONE ) {
+		attacks = getAttacksFrom(from)&empty&(~getAttackedSquares(otherSide));
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
 			move = movePool.construct(Move(move,from,target,EMPTY));
