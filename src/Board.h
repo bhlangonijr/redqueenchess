@@ -27,7 +27,6 @@
 #ifndef BOARD_H_
 #define BOARD_H_
 #include <inttypes.h>
-#include <cmath>
 #include <time.h>
 #include <sys/times.h>
 #include <boost/pool/object_pool.hpp>
@@ -55,8 +54,8 @@ typedef uint64_t Bitboard;
 #define Sq2FA(X)				fileBB[squareFile[X]]												// Encode Square to File Attack
 #define Sq2RA(X)				rankBB[squareRank[X]]												// Encode Square to Rank Attack
 
-#define Sq2A1(X)				diagonalA1H8BB[SquareToDiagonalA1H8[X]]								// Encode Square to Diagonal A1H1 Attack
-#define Sq2H1(X)				diagonalH1A8BB[SquareToDiagonalH1A8[X]]								// Encode Square to Diagonal H1A1 Attack
+#define Sq2A1(X)				diagonalA1H8BB[squareToDiagonalA1H8[X]]								// Encode Square to Diagonal A1H1 Attack
+#define Sq2H1(X)				diagonalH1A8BB[squareToDiagonalH1A8[X]]								// Encode Square to Diagonal H1A1 Attack
 
 #define Sq2UM(X)				~(squareToBitboard[X]-1) 											// Encode Square to BB uppermask
 #define Sq2LM(X)				squareToBitboard[X]-1												// Encode Square to BB lowermask
@@ -71,6 +70,9 @@ typedef uint64_t Bitboard;
 #define INITIAL_BLACK_PAWN_BITBOARD  0xFF000000000000ULL
 
 #define bitsBetween(BB,S1,S2)		(squareToBitboard[S2]|(squareToBitboard[S2]-squareToBitboard[S1])) & BB
+
+#define MAX(x,y)					(x>y?x:y)
+#define MIN(x,y)					(x<y?x:y)
 
 // squares
 enum Square {
@@ -234,7 +236,7 @@ static const Bitboard diagonalA1H8BB[ALL_DIAGONAL]={
 		Sq2Bb(H1) };
 
 // square to enum diagonal A1..H8
-static const DiagonalA1H8 SquareToDiagonalA1H8[ALL_SQUARE]={
+static const DiagonalA1H8 squareToDiagonalA1H8[ALL_SQUARE]={
 		H8_A1, B1_H7, C1_H6, D1_H5, E1_H4, F1_H3, G1_H2, H1_H1,
 		G8_A2, H8_A1, B1_H7, C1_H6, D1_H5, E1_H4, F1_H3, G1_H2,
 		F8_A3, G8_A2, H8_A1, B1_H7, C1_H6, D1_H5, E1_H4, F1_H3,
@@ -263,7 +265,7 @@ static const Bitboard diagonalH1A8BB[ALL_DIAGONAL]={
 		Sq2Bb(H8) };
 
 // square to enum diagonal A1..H8
-static const DiagonalH1A8 SquareToDiagonalH1A8[ALL_SQUARE]={
+static const DiagonalH1A8 squareToDiagonalH1A8[ALL_SQUARE]={
 		A1_A1, B1_A2, C1_A3, D1_A4, E1_A5, F1_A6, G1_A7, H1_A8,
 		B1_A2, C1_A3, D1_A4, E1_A5, F1_A6, G1_A7, H1_A8, B8_H2,
 		C1_A3, D1_A4, E1_A5, F1_A6, G1_A7, H1_A8, B8_H2, C8_H3,
@@ -588,6 +590,7 @@ public:
 	const Bitboard getPiecesByType(const PieceTypeByColor piece) const;
 	inline const PieceTypeByColor getPieceBySquare(const Square square) const;
 	const int getPieceCountByType(const PieceTypeByColor piece) const;
+	const Bitboard getIntersectSquares(Square squarea, Square squareb) const;
 
 	const Bitboard getAttacksTo(const Square square);
 	const Bitboard getAttacksTo(const Bitboard attackingPieces, const Bitboard occupied, const Bitboard attackedPieces);
@@ -850,6 +853,23 @@ inline const int Board::getPieceCountByType(const PieceTypeByColor piece) const 
 	return currentBoard.pieceCount.array[piece];
 }
 
+// get squares between squarea and squareb
+inline const Bitboard Board::getIntersectSquares(Square squarea, Square squareb) const {
+
+	Bitboard squares=EMPTY_BB;
+
+	if (getSquareRank(squarea)==getSquareRank(squareb)) {
+		squares = rankAttacks[squarea];
+	} else if (getSquareFile(squarea)==getSquareFile(squareb)){
+		squares = fileAttacks[squarea];
+	} else if (squareToDiagonalA1H8[squarea]==squareToDiagonalA1H8[squareb]) {
+		squares = diagA1H8Attacks[squarea];
+	} else if (squareToDiagonalH1A8[squarea]==squareToDiagonalH1A8[squareb]) {
+		squares = diagH1A8Attacks[squarea];
+	}
+
+	return bitsBetween(squares, MIN(squarea, squareb), MAX(squarea, squareb));
+}
 // print a bitboard in a readble form
 inline const void Board::printBitboard(Bitboard bb) const {
 

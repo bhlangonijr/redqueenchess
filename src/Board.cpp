@@ -452,8 +452,8 @@ Move* Board::generateNonCaptures(MovePool& movePool, const PieceColor side){
 	Move* move=NULL;
 	PieceColor otherSide = flipSide(side);
 	Bitboard pieces = getPiecesByColor(side)^
-					  (getPiecesByType(makePiece(side,PAWN)) |
-					  findAttackBlocker(bitboardToSquare(getPiecesByType(makePiece(side,KING)))));
+	(getPiecesByType(makePiece(side,PAWN)) |
+			findAttackBlocker(bitboardToSquare(getPiecesByType(makePiece(side,KING)))));
 	Bitboard empty = getEmptySquares();
 	Bitboard attacks = EMPTY_BB;
 
@@ -516,6 +516,7 @@ Move* Board::generateCheckEvasions(MovePool& movePool, const PieceColor side) {
 	Bitboard otherPieces = getPiecesByColor(otherSide);
 	Bitboard attacks = EMPTY_BB;
 	Bitboard notAttacked = ~generateAttackedSquares(flipSide(side),getAllPieces()^pieces)&getEmptySquares();
+	Square kingSquare = bitboardToSquare(pieces);
 	Square from = extractLSB(pieces);
 
 	//moves to non attacked square
@@ -528,29 +529,43 @@ Move* Board::generateCheckEvasions(MovePool& movePool, const PieceColor side) {
 		}
 		from = extractLSB(pieces);
 	}
-	// try to capture the checker piece
+	// try to capture the checker piece or interpose a piece between king and attacking piece
 	Bitboard allAttackers = getPiecesByType(makePiece(otherSide,ROOK)) |
-							getPiecesByType(makePiece(otherSide,BISHOP)) |
-							getPiecesByType(makePiece(otherSide,QUEEN));
+	getPiecesByType(makePiece(otherSide,BISHOP)) |
+	getPiecesByType(makePiece(otherSide,QUEEN));
 
 	Bitboard kingAttackers = getAttacksTo(allAttackers,getAllPieces(),getPiecesByType(makePiece(side,KING))) & getPiecesByColor(otherSide);
-	Bitboard attackedSquares = kingAttackers;
 	if (kingAttackers) {
 		from = extractLSB(kingAttackers);
 		if (!kingAttackers) {
 			attacks = getAttacksTo(from)&getPiecesByColor(side);
-			Square captureAttacker = extractLSB(attacks);
-			while ( captureAttacker!=NONE ) {
-				move = movePool.construct(Move(move,captureAttacker,from,EMPTY));
-				captureAttacker = extractLSB(attacks);
+			if (attacks) { // may capture the attacker
+				Square captureAttacker = extractLSB(attacks);
+				while ( captureAttacker!=NONE ) {
+					move = movePool.construct(Move(move,captureAttacker,from,EMPTY));
+					captureAttacker = extractLSB(attacks);
+				}
 			}
+			//will try to interpose the attack with a piece
+			Bitboard attackers = EMPTY_BB;
+			Bitboard attackedSquares = generateInterposingAttackedSquares(squareToBitboard[from],getAllPieces(),getPiecesByType(makePiece(side,KING)),attackers);
+			attackedSquares &= getIntersectSquares(from, kingSquare)^squareToBitboard[kingSquare];
+			Square interposeSquare = extractLSB(attackedSquares);
+			Bitboard allPiecesMinusKing = (getPiecesByColor(side)^getPiecesByType(makePiece(side,KING)));
+			while ( interposeSquare!=NONE ) {
+				Bitboard interposePiece = getAttacksTo(interposeSquare)&allPiecesMinusKing;
+				if (interposePiece) {
+					Square interposePieceSquare = extractLSB(interposePiece);
+					while ( interposePieceSquare!=NONE ) {
+						move = movePool.construct(Move(move,interposePieceSquare,interposeSquare,EMPTY));
+						interposePieceSquare = extractLSB(interposePiece);
+					}
+				}
+				interposeSquare = extractLSB(attackedSquares);
+			}
+
 		}
 	}
-	// try to interpose a piece between king and attacking piece
-	Bitboard attackers=EMPTY_BB;
-	attackedSquares=generateInterposingAttackedSquares(attackedSquares,getAllPieces(),getPiecesByType(makePiece(side,KING)),attackers);
-	attackedSquares&=getAllSliderAttacks(bitboardToSquare(getPiecesByType(makePiece(side,KING))))&getEmptySquares();
-	printBitboard(attackedSquares);
 
 	return move;
 }
