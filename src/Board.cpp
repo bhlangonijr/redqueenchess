@@ -28,14 +28,18 @@
 
 #include "Board.h"
 #include "StringUtil.h"
+#include "mersenne.h"
 
 using namespace BoardTypes;
+
+NodeZobrist zobrist;
 
 Board::Board() : currentBoard(*(new Node()))
 {
 	this->setInitialPosition();
 	setAttackedSquares(getSideToMove(), generateAttackedSquares(getSideToMove()));
 	setAttackedSquares(flipSide(getSideToMove()), generateAttackedSquares(flipSide(getSideToMove())));
+	setKey(generateKey());
 
 }
 
@@ -46,6 +50,29 @@ Board::Board(const Board& board) : currentBoard( *(new Node(board.currentBoard))
 Board::~Board()
 {
 	delete &currentBoard;
+}
+
+// initialize zobrist keys
+void Board::initializeZobrist() {
+
+	for(int piece=0; piece<ALL_PIECE_TYPE_BY_COLOR; piece++) {
+		for(int square=0; square<ALL_SQUARE; square++) {
+			zobrist.pieceSquare[piece][square]=genrand_int64();
+		}
+	}
+
+	for(int color=0; color<ALL_PIECE_COLOR; color++) {
+		zobrist.sideToMove[color]=genrand_int64();
+	}
+
+	for(int file=0; file<ALL_FILE; file++) {
+		zobrist.enPassant[file]=genrand_int64();
+	}
+
+	for(int castle=0; castle<ALL_CASTLE_RIGHT; castle++) {
+		zobrist.castleRight[castle]=genrand_int64();
+	}
+
 }
 
 // print board for debug
@@ -85,11 +112,12 @@ const void Board::printBoard()
 void Board::genericTest() {
 	//testing code
 
+	printBitboard(getKey());
 	printBoard();
 	uint32_t start = this->getTickCount();
 	PieceColor color = getSideToMove();
 	int counter=1;
-	for (int x=0;x<1000000;x++)
+	//for (int x=0;x<1000000;x++)
 	{
 
 		MovePool movePool;
@@ -98,7 +126,7 @@ void Board::genericTest() {
 
 
 		while (move) {
-			//std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
+			std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
 			MoveBackup backup;
 			doMove(*move,backup);
 			//printBoard();
@@ -292,7 +320,6 @@ void Board::undoMove(MoveBackup& backup)
 // set initial classic position to the board
 void Board::setInitialPosition()
 {
-
 	clearBoard();
 
 	putPiece(WHITE_ROOK, A1);
@@ -339,6 +366,8 @@ void Board::loadFromString(const std::string startPosMoves) {
 	std::string moveFrom = "";
 	std::string moveTo = "";
 	PieceTypeByColor promotionPiece=EMPTY;
+
+	setInitialPosition();
 
 	StringUtil::normalizeString(moves);
 	int last = 0;
@@ -589,7 +618,35 @@ Move* Board::generateAllMoves(MovePool& movePool, const PieceColor side) {
 	return moves;
 }
 
+// get board zobrist key
+const Key Board::getKey() const {
+	return currentBoard.key;
+}
 
+// set board zobrist key
+void Board::setKey(Key key) {
+	currentBoard.key = key;
+}
+
+// generate board zobrist key
+const Key Board::generateKey() {
+	Key key=0x0ULL;
+
+	for(int square=0; square<ALL_SQUARE; square++) {
+		if (currentBoard.square[square]!=EMPTY) {
+			key ^= zobrist.pieceSquare[currentBoard.square[square]][square];
+		}
+	}
+	key ^= zobrist.sideToMove[getSideToMove()];
+	if (currentBoard.enPassant != NONE) {
+		key ^= zobrist.enPassant[getSquareFile(currentBoard.enPassant)];
+	}
+	if (getCastleRights(getSideToMove())!=NO_CASTLE) {
+		zobrist.castleRight[getCastleRights(getSideToMove())];
+	}
+
+	return key;
+}
 
 
 

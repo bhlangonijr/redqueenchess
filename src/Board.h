@@ -37,6 +37,8 @@ namespace BoardTypes{
 
 //Bitboard type - unsigned long int (8 bytes)
 typedef uint64_t Bitboard;
+//used for hashing
+typedef uint64_t Key;
 
 #define ALL_PIECE_TYPE 			7   																// pawn, knight, bishop, rook, queen, king
 #define ALL_PIECE_TYPE_BY_COLOR 13  																// (black, white) X (pawn, knight, bishop, rook, queen, king) + empty
@@ -60,7 +62,7 @@ typedef uint64_t Bitboard;
 #define Sq2UM(X)				~(squareToBitboard[X]-1) 											// Encode Square to BB uppermask
 #define Sq2LM(X)				squareToBitboard[X]-1												// Encode Square to BB lowermask
 #define Sq2SL(X)				diagH1A8Attacks[X]|diagA1H8Attacks[X] | \
-	rankAttacks[X]|fileAttacks[X]										// Encode Square to All Slider Attacks
+								rankAttacks[X]|fileAttacks[X]										// Encode Square to All Slider Attacks
 
 #define FULL_BB						 0xFFFFFFFFFFFFFFFFULL
 #define EMPTY_BB					 0x0ULL
@@ -467,7 +469,7 @@ struct Node {
 
 	}
 
-	Bitboard key;
+	Key key;
 
 	union Piece
 	{
@@ -536,6 +538,16 @@ struct Node {
 	}
 
 };
+// Zobrist keys for hashing
+struct NodeZobrist {
+
+		Key pieceSquare[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
+		Key castleRight[ALL_CASTLE_RIGHT];
+		Key enPassant[ALL_FILE];
+		Key sideToMove[ALL_PIECE_COLOR];
+
+};
+
 // Move stack type
 typedef boost::object_pool<Move> MovePool;
 
@@ -631,6 +643,11 @@ public:
 	const Bitboard generateInterposingAttackedSquares(const Bitboard attackingPieces, const Bitboard occupied, const Bitboard attackedPieces, Bitboard& attackers);
 	const Bitboard findAttackBlocker(Square square);
 
+	static void initializeZobrist();
+	const Key getKey() const;
+	void setKey(Key key);
+	const Key generateKey();
+
 private:
 
 	Node& getBoard();
@@ -651,6 +668,7 @@ private:
 	bool generatedAttackedSquares;
 	Bitboard attackedSquares[ALL_PIECE_COLOR];
 	Node& currentBoard;
+	static NodeZobrist nodeZobrist;
 };
 // get the board structure
 inline Node& Board::getBoard()

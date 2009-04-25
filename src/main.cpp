@@ -30,6 +30,8 @@
 
 #include "Uci.h"
 #include "Constant.h"
+#include "Board.h"
+#include "mersenne.h"
 
 int main() {
 
@@ -37,6 +39,9 @@ int main() {
 	setbuf(stdout, NULL);
 	std::cout.rdbuf()->pubsetbuf(NULL, 0);
 	std::cin.rdbuf()->pubsetbuf(NULL, 0);
+	// initialize random numbers
+	init_mersenne();
+	Board::initializeZobrist();
 
 	Uci *uci = Uci::getInstance();
 
