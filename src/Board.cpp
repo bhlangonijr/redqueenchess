@@ -85,19 +85,11 @@ const void Board::printBoard()
 void Board::genericTest() {
 	//testing code
 
-	//this->printBitboard((fileBB[squareFile[C7]] & (currentBoard.pieceColor[WHITE] | currentBoard.pieceColor[BLACK])) ^ squareToBitboard[C7]);
-	//this->printBitboard(this->getPiecesByColor(WHITE));
-	//this->printBitboard(this->getPiecesByColor(flipSide(WHITE)));
-	//Bitboard empty = EMPTY_BB;
-	//for(int x=A2;x<=H7;x++) {
-	//this->printBitboard( getPawnAttacks(Square(x), empty ));
-	//printBitboard( whitePawnAttacks[A1] );
-	//}
 	printBoard();
 	uint32_t start = this->getTickCount();
 	PieceColor color = getSideToMove();
-	int counter=0;
-	//for (int x=0;x<1000000;x++)
+	int counter=1;
+	for (int x=0;x<1000000;x++)
 	{
 
 		MovePool movePool;
@@ -106,7 +98,7 @@ void Board::genericTest() {
 
 
 		while (move) {
-			std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
+			//std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
 			MoveBackup backup;
 			doMove(*move,backup);
 			//printBoard();
@@ -119,11 +111,7 @@ void Board::genericTest() {
 		movePool.~object_pool();
 	}
 	std::cout << "Time: " << (this->getTickCount()-start) << std::endl;
-	std::cout << "Perft: " << counter << std::endl;
-
-	//this->printBitboard(this->getAttackedSquares(WHITE)&(this->getPiecesByColor(BLACK)|this->getEmptySquares()));
-
-	// end tests
+	std::cout << "Perft: " << (counter-1) << std::endl;
 
 }
 
@@ -421,10 +409,10 @@ Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
 	pieces = getPiecesByType(makePiece(side,PAWN));
 	from = extractLSB(pieces);
 	while ( from!=NONE ) {
-		attacks = getAttacksFrom(from)&otherPieces;
+		attacks = getPawnCaptures(from)&otherPieces;
 		Square target = extractLSB(attacks);
-		bool promotion=((getSquareRank(from)==RANK_7&&side==WHITE) || (getSquareRank(from)==RANK_2&&side==BLACK));
 		while ( target!=NONE ) {
+			bool promotion=((getSquareRank(from)==RANK_7&&side==WHITE) || (getSquareRank(from)==RANK_2&&side==BLACK));
 			if (promotion) {
 				move = movePool.construct(Move(move,from,target,makePiece(side,QUEEN)));
 				move = movePool.construct(Move(move,from,target,makePiece(side,ROOK)));
@@ -478,7 +466,7 @@ Move* Board::generateNonCaptures(MovePool& movePool, const PieceColor side){
 	pieces = getPiecesByType(makePiece(side,PAWN));
 	from = extractLSB(pieces);
 	while ( from!=NONE ) {
-		attacks = getAttacksFrom(from)&empty;
+		attacks = getPawnMoves(from)&empty;
 		Square target = extractLSB(attacks);
 		bool promotion=((getSquareRank(from)==RANK_7&&side==WHITE) || (getSquareRank(from)==RANK_2&&side==BLACK));
 		while ( target!=NONE ) {
