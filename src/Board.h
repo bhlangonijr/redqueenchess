@@ -437,6 +437,7 @@ struct MoveBackup {
 	bool hasCapture;
 	bool hasPromotion;
 
+	Key key;
 	PieceTypeByColor capturedPiece;
 	Square capturedSquare;
 
@@ -542,7 +543,7 @@ struct Node {
 struct NodeZobrist {
 
 		Key pieceSquare[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
-		Key castleRight[ALL_CASTLE_RIGHT];
+		Key castleRight[ALL_PIECE_COLOR][ALL_CASTLE_RIGHT];
 		Key enPassant[ALL_FILE];
 		Key sideToMove[ALL_PIECE_COLOR];
 
