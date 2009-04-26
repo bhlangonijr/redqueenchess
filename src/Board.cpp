@@ -36,15 +36,14 @@ NodeZobrist zobrist;
 
 Board::Board() : currentBoard(*(new Node()))
 {
-	this->setInitialPosition();
-	setAttackedSquares(getSideToMove(), generateAttackedSquares(getSideToMove()));
-	setAttackedSquares(flipSide(getSideToMove()), generateAttackedSquares(flipSide(getSideToMove())));
+	setInitialPosition();
 	setKey(generateKey());
 
 }
 
 Board::Board(const Board& board) : currentBoard( *(new Node(board.currentBoard)) )
 {
+	setKey(generateKey());
 }
 
 Board::~Board()
@@ -112,7 +111,7 @@ const void Board::printBoard()
 void Board::genericTest() {
 	//testing code
 
-	printBitboard(getKey());
+	std::cout << "Key:  " << getKey() << std::endl;
 	printBoard();
 	uint32_t start = this->getTickCount();
 	PieceColor color = getSideToMove();
@@ -400,6 +399,8 @@ void Board::loadFromString(const std::string startPosMoves) {
 
 	}
 
+	setKey(generateKey());
+
 }
 
 // generate only capture moves
@@ -624,8 +625,8 @@ const Key Board::getKey() const {
 }
 
 // set board zobrist key
-void Board::setKey(Key key) {
-	currentBoard.key = key;
+void Board::setKey(Key _key) {
+	currentBoard.key = _key;
 }
 
 // generate board zobrist key
@@ -635,6 +636,7 @@ const Key Board::generateKey() {
 	for(int square=0; square<ALL_SQUARE; square++) {
 		if (currentBoard.square[square]!=EMPTY) {
 			key ^= zobrist.pieceSquare[currentBoard.square[square]][square];
+
 		}
 	}
 	key ^= zobrist.sideToMove[getSideToMove()];
@@ -642,7 +644,7 @@ const Key Board::generateKey() {
 		key ^= zobrist.enPassant[getSquareFile(currentBoard.enPassant)];
 	}
 	if (getCastleRights(getSideToMove())!=NO_CASTLE) {
-		zobrist.castleRight[getCastleRights(getSideToMove())];
+		key ^= zobrist.castleRight[getCastleRights(getSideToMove())];
 	}
 
 	return key;
