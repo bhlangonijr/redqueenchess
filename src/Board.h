@@ -405,6 +405,14 @@ static const Bitboard castleSquare[ALL_PIECE_COLOR][ALL_CASTLE_RIGHT]={
 		/*NONE */{EMPTY_BB, EMPTY_BB, EMPTY_BB, EMPTY_BB }
 };
 
+// castle zobrist keys index table
+static const int zobristCastleIndex[ALL_CASTLE_RIGHT][ALL_CASTLE_RIGHT]={
+		{0,1,2,3},
+		{4,5,6,7},
+		{8,9,10,11},
+		{12,13,14,15}
+};
+
 // Move representation
 struct Move {
 
@@ -456,7 +464,7 @@ struct Node {
 	Node () : key(0ULL), piece(), pieceCount()
 	{}
 
-	Node (const Node& node) : key(0ULL), piece( node.piece ), pieceCount( node.pieceCount )
+	Node (const Node& node) : key(node.key), piece( node.piece ), pieceCount( node.pieceCount )
 	{
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=node.square[x];
@@ -543,9 +551,9 @@ struct Node {
 struct NodeZobrist {
 
 		Key pieceSquare[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
-		Key castleRight[ALL_PIECE_COLOR][ALL_CASTLE_RIGHT];
+		Key castleRight[ALL_CASTLE_RIGHT*ALL_CASTLE_RIGHT];
 		Key enPassant[ALL_FILE];
-		Key sideToMove[ALL_PIECE_COLOR];
+		Key sideToMove;
 
 };
 
@@ -645,6 +653,7 @@ public:
 	const Bitboard findAttackBlocker(Square square);
 
 	static void initializeZobrist();
+	const int getZobristCastleIndex();
 	const Key getKey() const;
 	void setKey(Key key);
 	const Key generateKey();
@@ -695,7 +704,6 @@ inline bool Board::putPiece(const PieceTypeByColor piece, const Square square)
 // remove a piece from the board and erase piece info
 inline bool Board::removePiece(const PieceTypeByColor piece, const Square square)
 {
-
 	currentBoard.piece.array[piece] ^= squareToBitboard[square];
 	currentBoard.pieceColor[pieceColor[piece]] ^= squareToBitboard[square];
 	currentBoard.square[square] = EMPTY;
@@ -714,6 +722,7 @@ inline const CastleRight Board::getCastleRights(PieceColor color) const
 inline void Board::removeCastleRights(const PieceColor color, const CastleRight castle)
 {
 	currentBoard.castleRight[color]=CastleRight((int)currentBoard.castleRight[color]&(~(int)castle));
+
 }
 
 // set castle rights

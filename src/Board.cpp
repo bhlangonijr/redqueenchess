@@ -37,13 +37,11 @@ NodeZobrist zobrist;
 Board::Board() : currentBoard(*(new Node()))
 {
 	setInitialPosition();
-	setKey(generateKey());
-
 }
 
 Board::Board(const Board& board) : currentBoard( *(new Node(board.currentBoard)) )
 {
-	setKey(generateKey());
+
 }
 
 Board::~Board()
@@ -53,27 +51,18 @@ Board::~Board()
 
 // initialize zobrist keys
 void Board::initializeZobrist() {
-
 	for(int piece=0; piece<ALL_PIECE_TYPE_BY_COLOR; piece++) {
 		for(int square=0; square<ALL_SQUARE; square++) {
 			zobrist.pieceSquare[piece][square]=genrand_int64();
 		}
 	}
-
-	for(int color=0; color<ALL_PIECE_COLOR; color++) {
-		zobrist.sideToMove[color]=genrand_int64();
-	}
-
+	zobrist.sideToMove=genrand_int64();
 	for(int file=0; file<ALL_FILE; file++) {
 		zobrist.enPassant[file]=genrand_int64();
 	}
-
-	for(int castle=0; castle<ALL_CASTLE_RIGHT; castle++) {
-		for(int color=0; color<ALL_PIECE_COLOR; color++) {
-			zobrist.castleRight[color][castle]=genrand_int64();
-		}
+	for(int castle=0; castle<ALL_CASTLE_RIGHT*ALL_CASTLE_RIGHT; castle++) {
+		zobrist.castleRight[castle]=genrand_int64();
 	}
-
 }
 
 // print board for debug
@@ -113,13 +102,11 @@ const void Board::printBoard()
 void Board::genericTest() {
 	//testing code
 
-	std::cout << "Key inc:  " << getKey() << std::endl;
-	std::cout << "Key gen:  " << generateKey() << std::endl;
 	printBoard();
 	uint32_t start = this->getTickCount();
 	PieceColor color = getSideToMove();
 	int counter=1;
-	//for (int x=0;x<1000000;x++)
+	for (int x=0;x<1000000;x++)
 	{
 
 		MovePool movePool;
@@ -128,7 +115,7 @@ void Board::genericTest() {
 
 
 		while (move) {
-			std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
+			//std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
 			MoveBackup backup;
 			doMove(*move,backup);
 			//printBoard();
@@ -140,6 +127,8 @@ void Board::genericTest() {
 
 		movePool.~object_pool();
 	}
+	std::cout << "Key inc:  " << getKey() << std::endl;
+	std::cout << "Key gen:  " << generateKey() << std::endl;
 	std::cout << "Time: " << (this->getTickCount()-start) << std::endl;
 	std::cout << "Perft: " << (counter-1) << std::endl;
 
@@ -150,6 +139,7 @@ void Board::doMove(const Move move, MoveBackup& backup){
 
 	PieceTypeByColor fromPiece=this->getPieceBySquare(move.from);
 	PieceTypeByColor toPiece=this->getPieceBySquare(move.to);
+	PieceColor otherSide = flipSide(getSideToMove());
 	bool enPassant=false;
 
 	backup.key=getKey();
@@ -189,6 +179,8 @@ void Board::doMove(const Move move, MoveBackup& backup){
 		backup.hasPromotion=true;
 	}
 
+	setKey(getKey() ^ zobrist.castleRight[getZobristCastleIndex()]);
+
 	if (getCastleRights(getSideToMove())!=NO_CASTLE) {
 		if (fromPiece==WHITE_KING) {
 			if (move.from==E1) {
@@ -204,9 +196,6 @@ void Board::doMove(const Move move, MoveBackup& backup){
 					setKey(getKey()^zobrist.pieceSquare[WHITE_ROOK][A1]);
 					setKey(getKey()^zobrist.pieceSquare[WHITE_ROOK][D1]);
 					backup.hasWhiteQueenCastle=true;
-				}
-				if (getCastleRights(WHITE)!=NO_CASTLE) {
-					setKey(getKey()^zobrist.castleRight[WHITE][getCastleRights(WHITE)]);
 				}
 				removeCastleRights(WHITE,BOTH_SIDE_CASTLE);
 			}
@@ -225,9 +214,6 @@ void Board::doMove(const Move move, MoveBackup& backup){
 					setKey(getKey()^zobrist.pieceSquare[BLACK_ROOK][D8]);
 					backup.hasBlackQueenCastle=true;
 				}
-				if (getCastleRights(BLACK)!=NO_CASTLE) {
-					setKey(getKey()^zobrist.castleRight[BLACK][getCastleRights(BLACK)]);
-				}
 				removeCastleRights(BLACK,BOTH_SIDE_CASTLE);
 			}
 		}
@@ -237,43 +223,24 @@ void Board::doMove(const Move move, MoveBackup& backup){
 		if (getCastleRights(getSideToMove())!=NO_CASTLE) {
 			if (getSideToMove()==WHITE) {
 				if (move.from==A1) {
-					if (getCastleRights(WHITE)!=NO_CASTLE) {
-						setKey(getKey()^zobrist.castleRight[WHITE][getCastleRights(WHITE)]);
-					}
 					removeCastleRights(WHITE,QUEEN_SIDE_CASTLE);
-					if (getCastleRights(WHITE)!=NO_CASTLE) {
-						setKey(getKey()^zobrist.castleRight[WHITE][getCastleRights(WHITE)]);
-					}
 				} else if (move.from==H1) {
-					if (getCastleRights(WHITE)!=NO_CASTLE) {
-						setKey(getKey()^zobrist.castleRight[WHITE][getCastleRights(WHITE)]);
-					}
 					removeCastleRights(WHITE,KING_SIDE_CASTLE);
-					if (getCastleRights(WHITE)!=NO_CASTLE) {
-						setKey(getKey()^zobrist.castleRight[WHITE][getCastleRights(WHITE)]);
-					}
 				}
 			} else {
 				if (move.from==A8) {
-					if (getCastleRights(BLACK)!=NO_CASTLE) {
-						setKey(getKey()^zobrist.castleRight[BLACK][getCastleRights(BLACK)]);
-					}
-					removeCastleRights(getSideToMove(),QUEEN_SIDE_CASTLE);
-					if (getCastleRights(BLACK)!=NO_CASTLE) {
-						setKey(getKey()^zobrist.castleRight[BLACK][getCastleRights(BLACK)]);
-					}
+					removeCastleRights(BLACK,QUEEN_SIDE_CASTLE);
 				} else if (move.from==H8) {
-					if (getCastleRights(BLACK)!=NO_CASTLE) {
-						setKey(getKey()^zobrist.castleRight[BLACK][getCastleRights(BLACK)]);
-					}
-					removeCastleRights(getSideToMove(),KING_SIDE_CASTLE);
-					if (getCastleRights(BLACK)!=NO_CASTLE) {
-						setKey(getKey()^zobrist.castleRight[BLACK][getCastleRights(BLACK)]);
-					}
+					removeCastleRights(BLACK,KING_SIDE_CASTLE);
 
 				}
 			}
 		}
+	}
+	setKey(getKey() ^ zobrist.castleRight[getZobristCastleIndex()]);
+
+	if (getEnPassant()!=NONE) {
+		setKey(getKey()^zobrist.enPassant[getSquareFile(getEnPassant())]);
 	}
 
 	int signal = getSideToMove()==WHITE?-1:+1;
@@ -284,8 +251,8 @@ void Board::doMove(const Move move, MoveBackup& backup){
 		if (getEnPassant()!=NONE) {
 			if (getSquareFile(move.from)!=getSquareFile(move.to)&&toPiece==EMPTY) { // en passant
 				Square capturedSquare=makeSquare(Rank(getSquareRank(move.to)+signal), getSquareFile(move.to));
-				removePiece(makePiece(flipSide(getSideToMove()),PAWN),capturedSquare);
-				setKey(getKey()^zobrist.pieceSquare[makePiece(flipSide(getSideToMove()),PAWN)][capturedSquare]);
+				removePiece(makePiece(otherSide,PAWN),capturedSquare);
+				setKey(getKey()^zobrist.pieceSquare[makePiece(otherSide,PAWN)][capturedSquare]);
 				backup.hasCapture=true;
 				backup.capturedPiece=toPiece;
 				backup.capturedSquare=capturedSquare;
@@ -294,21 +261,18 @@ void Board::doMove(const Move move, MoveBackup& backup){
 		if (getSquareRank(move.to)==doubleFinalRank&&getSquareRank(move.from)==doubleInitialRank) {
 			setEnPassant(move.to);
 			enPassant=true;
-			if (getEnPassant()!=NONE) {
-				setKey(getKey()^zobrist.enPassant[getSquareFile(move.to)]);
-			}
-
 		}
 	}
 
 	if (!enPassant) {
 		if (getEnPassant()!=NONE)
 		{
-			setKey(getKey()^zobrist.enPassant[getSquareFile(getEnPassant())]);
 			setEnPassant(NONE);
 		}
 	}
-
+	if (getEnPassant()!=NONE) {
+		setKey(getKey()^zobrist.enPassant[getSquareFile(getEnPassant())]);
+	}
 
 	//TODO formulate better solution to Attacked Squares Table
 	// the code below invalidates generated attackedSquares table control flag:
@@ -317,8 +281,8 @@ void Board::doMove(const Move move, MoveBackup& backup){
 	backup.hasAttackedSquares=hasAttackedSquaresTable();
 	setAttackedSquaresTable(false);
 
-	setSideToMove(flipSide(getSideToMove()));
-	setKey(getKey()^zobrist.sideToMove[getSideToMove()]);
+	setKey(getKey()^zobrist.sideToMove);
+	setSideToMove(otherSide);
 
 }
 
@@ -408,10 +372,11 @@ void Board::setInitialPosition()
 	//initial castle rights
 	setCastleRights(WHITE, BOTH_SIDE_CASTLE);
 	setCastleRights(BLACK, BOTH_SIDE_CASTLE);
-	setKey(getKey()^zobrist.castleRight[WHITE][BOTH_SIDE_CASTLE]);
 
 	//en passant
 	setEnPassant(NONE);
+
+	setKey(generateKey());
 
 }
 // load an specific chess position ex.: d2d4 g8f6 c2c4 e7e6 g1f3 b7b6 b1c3 c8b7 ...
@@ -452,9 +417,7 @@ void Board::loadFromString(const std::string startPosMoves) {
 		promotionPiece=EMPTY;
 		last=position+1;
 		position = moves.find(" ", position+1);
-
 	}
-
 }
 
 // generate only capture moves
@@ -673,6 +636,13 @@ Move* Board::generateAllMoves(MovePool& movePool, const PieceColor side) {
 	return moves;
 }
 
+// get index for zobrist index
+const int Board::getZobristCastleIndex() {
+	//return getCastleRights(WHITE) * 4 + getCastleRights(BLACK);
+	return zobristCastleIndex[getCastleRights(WHITE)][getCastleRights(BLACK)];
+}
+
+
 // get board zobrist key
 const Key Board::getKey() const {
 	return currentBoard.key;
@@ -685,21 +655,21 @@ void Board::setKey(Key _key) {
 
 // generate board zobrist key
 const Key Board::generateKey() {
-	Key key=0x0ULL;
+	Key key=Key(0x0ULL);
 
-	for(int square=0; square<ALL_SQUARE; square++) {
+	for(int square=A1; square<=H8; square++) {
 		if (currentBoard.square[square]!=EMPTY) {
 			key ^= zobrist.pieceSquare[currentBoard.square[square]][square];
-
 		}
 	}
-	if (getCastleRights(getSideToMove())!=NO_CASTLE) {
-		key ^= zobrist.castleRight[getSideToMove()][getCastleRights(getSideToMove())];
-	}
+	key ^= zobrist.castleRight[getZobristCastleIndex()];
+
 	if (currentBoard.enPassant != NONE) {
 		key ^= zobrist.enPassant[getSquareFile(currentBoard.enPassant)];
 	}
-	key ^= zobrist.sideToMove[getSideToMove()];
+	if (getSideToMove()==BLACK) {
+		key ^= zobrist.sideToMove;
+	}
 
 	return key;
 }
