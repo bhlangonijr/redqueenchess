@@ -48,6 +48,7 @@ typedef uint64_t Key;
 #define ALL_FILE				8																	// all files
 #define ALL_DIAGONAL			15																	// all diagonals
 #define ALL_CASTLE_RIGHT		4																	// all castle rights
+#define MAX_GAME_LENGTH			512																	// Max game lenght
 
 #define SqBB(S)					0x1ULL << (int)S													// Encode a square enum to a bitboard
 #define Sq2Bb(X)				squareToBitboard[X] 												// square to bitboard macro
@@ -461,13 +462,16 @@ struct MoveBackup {
 // the board node representation
 struct Node {
 
-	Node () : key(0ULL), piece(), pieceCount()
+	Node () : key(0ULL), piece(), pieceCount(), moveCounter(0x0ULL)
 	{}
 
-	Node (const Node& node) : key(node.key), piece( node.piece ), pieceCount( node.pieceCount )
+	Node (const Node& node) : key(node.key), piece( node.piece ), pieceCount( node.pieceCount ), moveCounter(node.moveCounter)
 	{
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=node.square[x];
+		}
+		for(register int x=0;x<MAX_GAME_LENGTH;x++){
+			keyHistory[x]=node.keyHistory[x];
 		}
 		pieceColor[WHITE]=node.pieceColor[WHITE];
 		pieceColor[BLACK]=node.pieceColor[BLACK];
@@ -475,7 +479,6 @@ struct Node {
 		castleRight[BLACK]=node.castleRight[BLACK];
 		enPassant=node.enPassant;
 		sideToMove=node.sideToMove;
-
 	}
 
 	Key key;
@@ -525,10 +528,14 @@ struct Node {
 	PieceTypeByColor square[ALL_SQUARE];
 	Bitboard pieceColor[ALL_PIECE_COLOR];
 
+	Key keyHistory[MAX_GAME_LENGTH];
+	int moveCounter;
+
 	// clear structure node
 	void clear()
 	{
 		key=0ULL;
+		moveCounter=0;
 		for(register int x=0;x<ALL_PIECE_TYPE_BY_COLOR;x++){
 			piece.array[x]=0ULL;
 			pieceCount.array[x]=0;
@@ -536,6 +543,9 @@ struct Node {
 
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=EMPTY;
+		}
+		for(register int x=0;x<MAX_GAME_LENGTH;x++){
+			keyHistory[x]=0x0ULL;
 		}
 		pieceColor[WHITE]=0ULL;
 		pieceColor[BLACK]=0ULL;
@@ -657,6 +667,11 @@ public:
 	const Key getKey() const;
 	void setKey(Key key);
 	const Key generateKey();
+
+	void increaseMoveCounter();
+	void decreaseMoveCounter();
+	const int getMoveCounter() const;
+	void updateKeyHistory();
 
 private:
 
@@ -1313,5 +1328,27 @@ inline const Bitboard Board::findAttackBlocker(Square square) {
 
 	return attackBlockers;
 }
+
+// increase the game move counter
+inline void Board::increaseMoveCounter() {
+	currentBoard.moveCounter++;
+}
+
+// decrease the game move counter
+inline void Board::decreaseMoveCounter() {
+	currentBoard.moveCounter--;
+}
+
+// get
+inline const int Board::getMoveCounter() const {
+	return currentBoard.moveCounter;
+}
+
+// update key history
+inline void Board::updateKeyHistory() {
+	currentBoard.keyHistory[getMoveCounter()]=getKey();
+}
+
+
 
 #endif /* BOARD_H_ */

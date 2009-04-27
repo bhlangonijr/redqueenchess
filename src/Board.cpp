@@ -131,6 +131,8 @@ void Board::genericTest() {
 	std::cout << "Key gen:  " << generateKey() << std::endl;
 	std::cout << "Time: " << (this->getTickCount()-start) << std::endl;
 	std::cout << "Perft: " << (counter-1) << std::endl;
+	std::cout << "MoveCounter: " << getMoveCounter() << std::endl;
+
 
 }
 
@@ -281,6 +283,9 @@ void Board::doMove(const Move move, MoveBackup& backup){
 	backup.hasAttackedSquares=hasAttackedSquaresTable();
 	setAttackedSquaresTable(false);
 
+	increaseMoveCounter();
+	updateKeyHistory();
+
 	setKey(getKey()^zobrist.sideToMove);
 	setSideToMove(otherSide);
 
@@ -330,6 +335,8 @@ void Board::undoMove(MoveBackup& backup)
 	setAttackedSquares(BLACK, backup.attackedSquares[BLACK]);
 	setAttackedSquaresTable(backup.hasAttackedSquares);
 
+	decreaseMoveCounter();
+
 	setSideToMove(flipSide(getSideToMove()));
 	setKey(backup.key);
 
@@ -377,6 +384,7 @@ void Board::setInitialPosition()
 	setEnPassant(NONE);
 
 	setKey(generateKey());
+	updateKeyHistory();
 
 }
 // load an specific chess position ex.: d2d4 g8f6 c2c4 e7e6 g1f3 b7b6 b1c3 c8b7 ...
@@ -638,7 +646,6 @@ Move* Board::generateAllMoves(MovePool& movePool, const PieceColor side) {
 
 // get index for zobrist index
 const int Board::getZobristCastleIndex() {
-	//return getCastleRights(WHITE) * 4 + getCastleRights(BLACK);
 	return zobristCastleIndex[getCastleRights(WHITE)][getCastleRights(BLACK)];
 }
 
