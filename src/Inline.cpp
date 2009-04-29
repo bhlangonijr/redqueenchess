@@ -24,7 +24,6 @@
  *      Author: bhlangonijr
  */
 #include <inttypes.h>
-#define USE_INTRINSIC_BITSCAN	// will use hardware's bitscan
 
 static const uint64_t debruijn64 = 0x07EDD5E59A4E28C2ULL;
 
@@ -41,7 +40,7 @@ static const uint32_t index64[64] = {
 
 unsigned char _BitScanForward(unsigned int* const index, const uint64_t mask)
 {
-#ifdef USE_INTRINSIC_BITSCAN
+#if defined(__LP64__)
 	uint64_t ret;
 	__asm__
 	(
@@ -60,7 +59,7 @@ unsigned char _BitScanForward(unsigned int* const index, const uint64_t mask)
 unsigned char _BitScanReverse(unsigned int* const index, const uint64_t mask)
 {
 	uint64_t ret;
-#ifdef USE_INTRINSIC_BITSCAN
+#ifdef defined(__LP64__)
 	__asm__
 	(
 			"bsrq %[mask], %[ret]"

@@ -28,7 +28,6 @@
 #define BOARD_H_
 #include <inttypes.h>
 #include <time.h>
-#include <sys/times.h>
 #include <boost/pool/object_pool.hpp>
 
 #include "Inline.h"
