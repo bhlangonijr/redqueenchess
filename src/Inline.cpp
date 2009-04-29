@@ -59,7 +59,7 @@ unsigned char _BitScanForward(unsigned int* const index, const uint64_t mask)
 unsigned char _BitScanReverse(unsigned int* const index, const uint64_t mask)
 {
 	uint64_t ret;
-#ifdef defined(__LP64__)
+#if defined(__LP64__)
 	__asm__
 	(
 			"bsrq %[mask], %[ret]"
