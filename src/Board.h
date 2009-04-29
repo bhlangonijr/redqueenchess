@@ -461,10 +461,11 @@ struct MoveBackup {
 // the board node representation
 struct Node {
 
-	Node () : key(0ULL), piece(), pieceCount(), moveCounter(0x0ULL)
+	Node () : key(0ULL), piece(), pieceCount(), moveCounter(0)
 	{}
 
-	Node (const Node& node) : key(node.key), piece( node.piece ), pieceCount( node.pieceCount ), moveCounter(node.moveCounter)
+	Node (const Node& node) : key(node.key), piece( node.piece ), pieceCount( node.pieceCount ), moveCounter(node.moveCounter),
+							  enPassant( node.enPassant ), sideToMove( node.sideToMove )
 	{
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=node.square[x];
@@ -476,8 +477,6 @@ struct Node {
 		pieceColor[BLACK]=node.pieceColor[BLACK];
 		castleRight[WHITE]=node.castleRight[WHITE];
 		castleRight[BLACK]=node.castleRight[BLACK];
-		enPassant=node.enPassant;
-		sideToMove=node.sideToMove;
 	}
 
 	Key key;
@@ -691,7 +690,7 @@ private:
 
 	bool generatedAttackedSquares;
 	Bitboard attackedSquares[ALL_PIECE_COLOR];
-	Node& currentBoard;
+	Node currentBoard;
 	static NodeZobrist nodeZobrist;
 };
 // get the board structure

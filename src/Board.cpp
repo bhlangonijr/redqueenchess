@@ -34,19 +34,18 @@ using namespace BoardTypes;
 
 NodeZobrist zobrist;
 
-Board::Board() : currentBoard(*(new Node()))
+Board::Board() : currentBoard()
 {
 	setInitialPosition();
 }
 
-Board::Board(const Board& board) : currentBoard( *(new Node(board.currentBoard)) )
+Board::Board(const Board& board) : currentBoard( Node(board.currentBoard) )
 {
 
 }
 
 Board::~Board()
 {
-	delete &currentBoard;
 }
 
 // initialize zobrist keys
@@ -111,8 +110,6 @@ void Board::genericTest() {
 
 		MovePool movePool;
 		Move* move=this->generateAllMoves(movePool,color);
-		color = flipSide(color);
-
 
 		while (move) {
 			//std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
@@ -127,6 +124,7 @@ void Board::genericTest() {
 
 		movePool.~object_pool();
 	}
+	std::cout << "sideToMove: "<< color << std::endl;
 	std::cout << "Key inc:  " << getKey() << std::endl;
 	std::cout << "Key gen:  " << generateKey() << std::endl;
 	std::cout << "Time: " << (this->getTickCount()-start) << std::endl;
