@@ -413,6 +413,9 @@ static const int zobristCastleIndex[ALL_CASTLE_RIGHT][ALL_CASTLE_RIGHT]={
 		{12,13,14,15}
 };
 
+// array with piece codes
+static const char pieceChar[ALL_PIECE_TYPE_BY_COLOR+1] = "pnbrqkPNBRQK ";
+
 // Move representation
 struct Move {
 
@@ -430,6 +433,14 @@ struct Move {
 	Square from;
 	Square to;
 	PieceTypeByColor promotionPiece;
+
+	const std::string toString() const {
+		std::string result = squareToString[from]+squareToString[to];
+		if (promotionPiece!=EMPTY) {
+			result += pieceChar[pieceType[promotionPiece]];
+		}
+		return result;
+	}
 };
 
 // Backup move
@@ -567,9 +578,6 @@ struct NodeZobrist {
 
 // Move stack type
 typedef boost::object_pool<Move> MovePool;
-
-// array with piece codes
-static const char pieceChar[ALL_PIECE_TYPE_BY_COLOR+1] = "pnbrqkPNBRQK ";
 
 }
 

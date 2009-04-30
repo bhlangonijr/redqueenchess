@@ -112,7 +112,7 @@ void Board::genericTest() {
 		Move* move=this->generateAllMoves(movePool,color);
 
 		while (move) {
-			//std::cout << counter << " - " << squareToString[move->from] << " to " << squareToString[move->to] << std::endl;
+			//std::cout << counter << " - " << move->toString() << std::endl;
 			MoveBackup backup;
 			doMove(*move,backup);
 			//printBoard();
