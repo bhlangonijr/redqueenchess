@@ -16,7 +16,7 @@
 
     You should have received a copy of the GNU General Public License
     along with Redqueen.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 /*
  * StringUtil.cpp
  *
@@ -33,12 +33,17 @@
 namespace StringUtil {
 
 // int to str
-std::string toStr(const int value) {
+const std::string toStr(const int value) {
 
 	std::stringstream out;
 	out << value;
 
 	return out.str();
+};
+
+// str to int
+const int toInt(const std::string value) {
+	return atoi(value.c_str());
 };
 
 // normalize - remove extra space
@@ -90,6 +95,10 @@ std::string getMiddleString(const std::string source, const std::string before) 
 
 	return result;
 };
+
+const bool containsString(const std::string source, const std::string _substring) {
+	return source.find(_substring)!=std::string::npos;
+}
 
 }
 

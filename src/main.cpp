@@ -31,6 +31,7 @@
 #include "Uci.h"
 #include "Constant.h"
 #include "Board.h"
+#include "SearchAgent.h"
 #include "mersenne.h"
 
 int main() {
@@ -39,9 +40,10 @@ int main() {
 	setbuf(stdout, NULL);
 	std::cout.rdbuf()->pubsetbuf(NULL, 0);
 	std::cin.rdbuf()->pubsetbuf(NULL, 0);
-	// initialize random numbers
+	// initialization methods
 	init_mersenne();
 	Board::initializeZobrist();
+	//SearchAgent::getInstance();
 
 	Uci *uci = Uci::getInstance();
 

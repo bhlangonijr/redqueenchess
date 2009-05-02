@@ -60,7 +60,7 @@ public:
 	void setRawInput(const std::string input);
 	std::string getRawInput() const;
 
-	std::vector< UciOption *> getUciOption() const;
+	const UciOption getUciOption(std::string name);
 	void setUciOption(std::vector< UciOption *>);
 	size_t indexOfUciOption(std::string optionName);
 	void clearUciOption();

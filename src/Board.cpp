@@ -23,8 +23,6 @@
  *  Created on: Feb 21, 2009
  *      Author: bhlangonijr
  */
-#include <iostream>
-#include <vector>
 
 #include "Board.h"
 #include "StringUtil.h"

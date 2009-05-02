@@ -32,7 +32,10 @@
 #include "Uci.h"
 #include "StringUtil.h"
 #include "Constant.h"
+#include "SearchAgent.h"
 #include "Board.h"
+
+using namespace StringUtil;
 
 Uci* Uci::uci = 0;
 
@@ -61,7 +64,7 @@ Command Uci::getUserInput()
 		result=QUIT;
 	}
 
-	StringUtil::normalizeString(input);
+	normalizeString(input);
 
 	this->setRawInput(input);
 	first = input.substr(0,input.find(" "));
@@ -161,9 +164,9 @@ void Uci::setUciOption(std::vector< UciOption *> options) {
 	Uci::uciOption=options;
 }
 
-// gets uci options
-std::vector< UciOption *> Uci::getUciOption() const {
-	return uciOption;
+// gets uci option
+const UciOption Uci::getUciOption(std::string name) {
+	return *uciOption[this->indexOfUciOption(name)];
 }
 
 // returns the index number of a given uci option by its name - if not found returns -1
@@ -191,8 +194,8 @@ void Uci::executeSetOption() {
 	std::string optionValue;
 
 	try {
-		optionName=StringUtil::getMiddleString(this->rawInput,"setoption name "," value");
-		optionValue=StringUtil::getMiddleString(this->rawInput,"value ");
+		optionName=getMiddleString(this->rawInput,"setoption name "," value");
+		optionValue=getMiddleString(this->rawInput,"value ");
 
 		for(size_t i=0;i<this->uciOption.size();i++){
 			if (uciOption[i]->getName()==optionName) {
@@ -204,26 +207,86 @@ void Uci::executeSetOption() {
 		std::cout << "Exception(Uci.cpp): " << e.what() << std::endl;
 	}
 
+	// Handle button command Clear Hash
+	if (optionName=="Clear Hash") {
+		SearchAgent::getInstance()->clearHash();
+	}
+	// Handle Thread Number
+	if (optionName=="Threads") {
+		SearchAgent::getInstance()->setThreadNumber(toInt(this->getUciOption("Threads").getValue()));
+	}
 }
 
 // execute go uci command
 void Uci::executeGo() {
+	SearchAgent *searchAgent = SearchAgent::getInstance();
 
+	if (containsString(this->rawInput, "wtime")) {
+
+		searchAgent->setSearchMode(SEARCH_TIME);
+		searchAgent->setWhiteTime(toInt(getMiddleString(this->rawInput,"wtime "," ")));
+		searchAgent->setWhiteIncrement(toInt(getMiddleString(this->rawInput,"winc "," ")));
+		searchAgent->setBlackTime(toInt(getMiddleString(this->rawInput,"btime "," ")));
+		searchAgent->setBlackIncrement(toInt(getMiddleString(this->rawInput,"binc ")));
+
+	} else if (containsString(this->rawInput, "go depth")) {
+
+		searchAgent->setSearchMode(SEARCH_DEPTH);
+		searchAgent->setDepth(toInt(getMiddleString(this->rawInput,"go depth ")));
+
+	} else if (containsString(this->rawInput, "go movestogo")) {
+
+		searchAgent->setSearchMode(SEARCH_MOVESTOGO);
+		searchAgent->setMovesToGo(toInt(getMiddleString(this->rawInput,"go movestogo ")));
+
+	} else if (containsString(this->rawInput, "go movetime")) {
+
+		searchAgent->setSearchMode(SEARCH_MOVETIME);
+		searchAgent->setMoveTime(toInt(getMiddleString(this->rawInput,"go movetime ")));
+
+	} else if (containsString(this->rawInput, "go infinite")) {
+
+		searchAgent->setSearchMode(SEARCH_INFINITE);
+		searchAgent->setInfinite(true);
+
+	} else if (containsString(this->rawInput, "go searchmoves")) {
+
+		searchAgent->setSearchMode(SEARCH_MOVES);
+		// TODO implement SEARCH MOVES mode
+
+	} else {
+		// in case of invalid parameters
+		searchAgent->setSearchMode(SEARCH_DEPTH);
+		searchAgent->setDepth(1);
+	}
+
+	searchAgent->startSearch();
 }
 
 // execute position uci command
 void Uci::executePosition() {
+	SearchAgent *searchAgent = SearchAgent::getInstance();
+
+	if (containsString(this->rawInput,"position startpos moves ")) {
+		std::string startPosMoves = getMiddleString(this->rawInput,"position startpos moves ");
+		searchAgent->setPositionFromSAN(startPosMoves);
+	} else if (containsString(this->rawInput,"position fen moves ")) {
+		std::string startPosMoves = getMiddleString(this->rawInput,"position fen moves ");
+		searchAgent->setPositionFromFEN(startPosMoves);
+	}
 
 }
 
 // execute position uci command
 void Uci::executeUciNewGame() {
-
+	SearchAgent *searchAgent = SearchAgent::getInstance();
+	searchAgent->newGame();
 }
 
 // execute Stop
 void Uci::executeStop() {
-
+	SearchAgent *searchAgent = SearchAgent::getInstance();
+	searchAgent->stopSearch();
 }
 
 // execute Test
