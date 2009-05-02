@@ -24,6 +24,7 @@
  *      Author: bhlangonijr
  */
 #include <inttypes.h>
+#include <sched.h>
 
 static const uint64_t debruijn64 = 0x07EDD5E59A4E28C2ULL;
 
@@ -37,7 +38,7 @@ static const uint32_t index64[64] = {
 		56, 45, 25, 31, 35, 16,  9, 12,
 		44, 24, 15,  8, 23,  7,  6,  5
 };
-
+// return the index of LSB
 unsigned char _BitScanForward(unsigned int* const index, const uint64_t mask)
 {
 #if defined(__LP64__)
@@ -55,7 +56,7 @@ unsigned char _BitScanForward(unsigned int* const index, const uint64_t mask)
 
 	return mask?1:0;
 }
-
+// return the index of MSB
 unsigned char _BitScanReverse(unsigned int* const index, const uint64_t mask)
 {
 	uint64_t ret;
@@ -83,3 +84,20 @@ unsigned char _BitScanReverse(unsigned int* const index, const uint64_t mask)
 #endif
 	return mask?1:0;
 }
+// get the number of processors
+int getThreadCount()
+{
+   cpu_set_t cs;
+   CPU_ZERO(&cs);
+   sched_getaffinity(0, sizeof(cs), &cs);
+
+   int count = 0;
+   for (int i = 0; i < 16; i++)
+   {
+      if (CPU_ISSET(i, &cs))
+         count++;
+   }
+   return count;
+}
+
+

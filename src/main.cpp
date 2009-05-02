@@ -33,6 +33,8 @@
 #include "Board.h"
 #include "SearchAgent.h"
 #include "mersenne.h"
+#include "Inline.h"
+#include "StringUtil.h"
 
 int main() {
 
@@ -40,17 +42,20 @@ int main() {
 	setbuf(stdout, NULL);
 	std::cout.rdbuf()->pubsetbuf(NULL, 0);
 	std::cin.rdbuf()->pubsetbuf(NULL, 0);
+
+	int threadNumber = getThreadCount();
+
 	// initialization methods
 	init_mersenne();
 	Board::initializeZobrist();
-	//SearchAgent::getInstance();
+	SearchAgent::getInstance();
 
 	Uci *uci = Uci::getInstance();
 
 	// creating uci options
 	std::vector< UciOption *> options;
 	options.push_back(new UciOption("Hash",SPIN,"64","64",1,4096,""));
-	options.push_back(new UciOption("Threads",SPIN,"1","1",1,8,""));
+	options.push_back(new UciOption("Threads",SPIN,StringUtil::toStr(threadNumber),StringUtil::toStr(threadNumber),1,8,""));
 	options.push_back(new UciOption("Ponder",CHECK,"false","false"));
 	options.push_back(new UciOption("Clear Hash",BUTTON,"",""));
 	// set options into uci handler
@@ -59,7 +64,7 @@ int main() {
 	std::cout << Constant::ENGINE_COPYRIGHT << std::endl;
 
 	//uci loop
-	while (1) {
+	while (true) {
 		if (uci->getUserInput()==QUIT){
 			break;
 		}

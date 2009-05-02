@@ -39,7 +39,8 @@ SearchAgent* SearchAgent::getInstance ()
 }
 
 SearchAgent::SearchAgent() :
-	searchMode(SEARCH_TIME), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0), blackIncrement(0), depth(0), movesToGo(0), moveTime(0), infinite(false)
+	searchMode(SEARCH_TIME), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
+	blackIncrement(0), depth(0), movesToGo(0), moveTime(0), infinite(false), searchInProgress(false)
 {
 
 }
@@ -59,6 +60,7 @@ void SearchAgent::newGame() {
 	this->setMovesToGo(0);
 	this->setMoveTime(0);
 	this->setInfinite(false);
+	this->setSearchInProgress(false);
 
 
 }
@@ -91,11 +93,13 @@ void SearchAgent::setPositionFromFEN(std::string fenMoves) {
 // start search
 void SearchAgent::startSearch() {
 
+	setSearchInProgress(true);
+
 }
 
 // stop search
 void SearchAgent::stopSearch() {
-
+	setSearchInProgress(false);
 }
 
 

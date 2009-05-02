@@ -49,6 +49,13 @@ public:
 	const Board getBoard() const;
 	void setBoard(Board _board);
 
+	const bool getSearchInProgress() const {
+		return searchInProgress;
+	}
+	void setSearchInProgress(int _searchInProgress) {
+		searchInProgress = _searchInProgress;
+	}
+
 	const SearchMode getSearchMode() const {
 		return searchMode;
 	}
@@ -136,6 +143,9 @@ private:
 	static SearchAgent* searchAgent;
 	Board board;
 	SearchMode searchMode;
+
+	bool searchInProgress;
+
 	int threadNumber;
 	int whiteTime;
 	int whiteIncrement;
@@ -145,6 +155,8 @@ private:
 	int movesToGo;
 	int moveTime;
 	bool infinite;
+
+
 
 };
 
