@@ -39,7 +39,7 @@ SearchAgent* SearchAgent::getInstance ()
 }
 
 SearchAgent::SearchAgent() :
-	searchMode(SEARCH_TIME), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
+	searchMode(SEARCH_TIME), hashSize(64), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
 	blackIncrement(0), depth(0), movesToGo(0), moveTime(0), infinite(false), searchInProgress(false)
 {
 

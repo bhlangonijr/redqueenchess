@@ -27,13 +27,31 @@
 #ifndef SEARCHAGENT_H_
 #define SEARCHAGENT_H_
 
+#include <ext/hash_map>
+
 #include "Board.h"
+
+using namespace __gnu_cxx;
 
 namespace SearchAgentTypes {
 
 	enum SearchMode {
 		SEARCH_TIME, SEARCH_DEPTH, SEARCH_MOVESTOGO, SEARCH_MOVETIME, SEARCH_MOVES, SEARCH_INFINITE
 	};
+	// TODO work in progress - transp table
+	struct HashFunction {
+
+		 size_t operator()( const Key& key ) const
+		   {
+		      return hash<int>()(key);
+		   }
+		   bool operator()( const Key& key1, const Key& key2 ) const
+		   {
+		      return key1==key2;
+		   }
+	};
+
+	typedef hash_map<Key, uint, HashFunction > TranspTable;
 
 }
 
@@ -68,6 +86,13 @@ public:
 
 	void startSearch();
 	void stopSearch();
+
+	const size_t getHashSize() const {
+		return hashSize;
+	}
+	void setHashSize(size_t _hashSize) {
+		hashSize = _hashSize;
+	}
 
 	const int getThreadNumber() const {
 		return threadNumber;
@@ -146,6 +171,7 @@ private:
 
 	bool searchInProgress;
 
+	size_t hashSize;
 	int threadNumber;
 	int whiteTime;
 	int whiteIncrement;
@@ -155,6 +181,8 @@ private:
 	int movesToGo;
 	int moveTime;
 	bool infinite;
+
+
 
 
 
