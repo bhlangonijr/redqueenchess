@@ -56,7 +56,7 @@ int main() {
 	std::vector< UciOption *> options;
 	options.push_back(new UciOption("Hash",SPIN,"64","64",1,4096,""));
 	options.push_back(new UciOption("Threads",SPIN,StringUtil::toStr(threadNumber),StringUtil::toStr(threadNumber),1,8,""));
-	options.push_back(new UciOption("Ponder",CHECK,"false","false"));
+	//options.push_back(new UciOption("Ponder",CHECK,"false","false"));
 	options.push_back(new UciOption("Clear Hash",BUTTON,"",""));
 	// set options into uci handler
 	uci->setUciOption(options);

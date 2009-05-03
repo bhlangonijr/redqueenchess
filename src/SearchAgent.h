@@ -16,7 +16,7 @@
 
     You should have received a copy of the GNU General Public License
     along with Redqueen.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 /*
  * SearchAgent.h
  *
@@ -35,23 +35,31 @@ using namespace __gnu_cxx;
 
 namespace SearchAgentTypes {
 
-	enum SearchMode {
-		SEARCH_TIME, SEARCH_DEPTH, SEARCH_MOVESTOGO, SEARCH_MOVETIME, SEARCH_MOVES, SEARCH_INFINITE
-	};
-	// TODO work in progress - transp table
-	struct HashFunction {
+enum SearchMode {
+	SEARCH_TIME, SEARCH_DEPTH, SEARCH_MOVESTOGO, SEARCH_MOVETIME, SEARCH_MOVES, SEARCH_INFINITE
+};
 
-		 size_t operator()( const Key& key ) const
-		   {
-		      return hash<int>()(key);
-		   }
-		   bool operator()( const Key& key1, const Key& key2 ) const
-		   {
-		      return key1==key2;
-		   }
-	};
+struct HashFunction {
+	size_t operator()( const Key& key ) const
+	{
+		return hash<uint64_t>()(key);
+	}
+	bool operator()( const Key& key1, const Key& key2 ) const
+	{
+		return key1==key2;
+	}
+};
 
-	typedef hash_map<Key, uint, HashFunction > TranspTable;
+struct HashData {
+	HashData() : value(0), depth(0), generation(0)  {};
+	HashData(int _value, uint32_t _depth, uint32_t _generation) : value(_value), depth(_depth), generation(_generation)  {};
+	int value;
+	uint32_t depth;
+	uint32_t generation;
+};
+// TODO Use unordered_map instead of hash_map (now deprecated)
+// Transposition Table type
+typedef hash_map<Key, HashData, HashFunction > TranspositionTable;
 
 }
 
@@ -157,6 +165,37 @@ public:
 		infinite = _infinite;
 	}
 
+	bool hashPut(const Board board, int value, uint32_t depth, uint32_t generation) {
+
+		if (transTable.size() >= hashSize) {
+			return false; // hash full
+		}
+
+		HashData hashData(value, depth, generation);
+		transTable[board.getKey()] = hashData;
+		return true;
+	}
+
+	bool hashGet(const Key _key, HashData& hashData) {
+
+		if (transTable.count(_key)>0) {
+			hashData = transTable[_key];
+			return true;
+		}
+		return false;
+	}
+
+	void resizeHash() {
+
+		transTable.resize(hashSize);
+
+	}
+
+	bool isHashFull() {
+
+		return transTable.size() >= hashSize;
+	}
+
 protected:
 
 	SearchAgent();
@@ -182,7 +221,7 @@ private:
 	int moveTime;
 	bool infinite;
 
-
+	TranspositionTable transTable;
 
 
 

@@ -82,10 +82,12 @@ Command Uci::getUserInput()
 	}else if (first=="go"){
 		result=GO;
 	}else if (first=="test"){
-			result=TEST;
-		}
+		result=TEST;
+	}
 	else if (first=="quit"){
 		result=QUIT;
+	} else if (first=="stop"){
+		result=STOP;
 	}
 
 	command = result;
@@ -215,6 +217,13 @@ void Uci::executeSetOption() {
 	if (optionName=="Threads") {
 		SearchAgent::getInstance()->setThreadNumber(toInt(this->getUciOption("Threads").getValue()));
 	}
+
+	// Handle Hash Size
+	if (optionName=="Hash") {
+		SearchAgent::getInstance()->setHashSize(toInt(this->getUciOption("Hash").getValue())*1024*1024/sizeof(HashData));
+		SearchAgent::getInstance()->resizeHash();
+	}
+
 }
 
 // execute go uci command

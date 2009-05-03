@@ -39,10 +39,11 @@ SearchAgent* SearchAgent::getInstance ()
 }
 
 SearchAgent::SearchAgent() :
-	searchMode(SEARCH_TIME), hashSize(64), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
+	searchMode(SEARCH_TIME), hashSize(64*1024*1024/sizeof(HashData)), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
 	blackIncrement(0), depth(0), movesToGo(0), moveTime(0), infinite(false), searchInProgress(false)
 {
 
+	transTable = TranspositionTable(hashSize);
 }
 
 // start a new game
@@ -67,6 +68,8 @@ void SearchAgent::newGame() {
 
 // clear hash table
 void SearchAgent::clearHash() {
+
+	transTable.clear();
 
 }
 
@@ -94,12 +97,27 @@ void SearchAgent::setPositionFromFEN(std::string fenMoves) {
 void SearchAgent::startSearch() {
 
 	setSearchInProgress(true);
+	// TODO work in progress - tests
+	hashPut(this->board, 10, this->getDepth(), 0);
+
+	std::cout << "Size: " << transTable.size() << std::endl;
+
 
 }
 
 // stop search
 void SearchAgent::stopSearch() {
 	setSearchInProgress(false);
+	// TODO work in progress - tests
+	HashData data;
+
+	if (hashGet(board.getKey(),data)) {
+		std::cout << "Founded: " << data.depth << std::endl;
+		board.printBoard();
+	} else {
+		std::cout << "NOT Founded: " << std::endl;
+	}
+
 }
 
 
