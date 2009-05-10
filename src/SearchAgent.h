@@ -42,7 +42,11 @@ enum SearchMode {
 struct HashFunction {
 	size_t operator()( const Key& key ) const
 	{
-		return hash<uint64_t>()(key);
+#if  defined(__MINGW32__) || defined(__MINGW64__)
+	return hash<uint32_t>()(key);
+#else
+	return hash<uint64_t>()(key);
+#endif
 	}
 	bool operator()( const Key& key1, const Key& key2 ) const
 	{
