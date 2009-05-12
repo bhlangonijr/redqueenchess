@@ -38,6 +38,7 @@
 <tool id="cdt.managedbuild.tool.gnu.cpp.linker.exe.release.1675330525" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.release">
 <option id="gnu.cpp.link.option.libs.1131174342" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
 <listOptionValue builtIn="false" value="gomp"/>
+<listOptionValue builtIn="false" value="pthread"/>
 </option>
 <inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.786851281" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 <additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
