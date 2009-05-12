@@ -27,6 +27,7 @@
  * 	e-mail: bhlangonijr@yahoo.com.br
  */
 #include <iostream>
+#include <omp.h>
 
 #include "Uci.h"
 #include "Constant.h"
@@ -43,8 +44,6 @@ int main() {
 	std::cout.rdbuf()->pubsetbuf(NULL, 0);
 	std::cin.rdbuf()->pubsetbuf(NULL, 0);
 
-	int threadNumber = getThreadCount();
-
 	// initialization methods
 	init_mersenne();
 	Board::initializeZobrist();
@@ -52,10 +51,12 @@ int main() {
 
 	Uci *uci = Uci::getInstance();
 
+	std::string paramNumProcs = StringUtil::toStr(omp_get_num_procs ( ));
+
 	// creating uci options
 	std::vector< UciOption *> options;
 	options.push_back(new UciOption("Hash",SPIN,"64","64",1,4096,""));
-	options.push_back(new UciOption("Threads",SPIN,StringUtil::toStr(threadNumber),StringUtil::toStr(threadNumber),1,8,""));
+	options.push_back(new UciOption("Threads",SPIN,paramNumProcs,paramNumProcs,1,8,""));
 	//options.push_back(new UciOption("Ponder",CHECK,"false","false"));
 	options.push_back(new UciOption("Clear Hash",BUTTON,"",""));
 	// set options into uci handler

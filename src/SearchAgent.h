@@ -29,6 +29,7 @@
 
 #include <ext/hash_map>
 
+#include "Uci.h"
 #include "Board.h"
 
 using namespace __gnu_cxx;

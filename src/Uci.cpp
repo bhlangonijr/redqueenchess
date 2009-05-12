@@ -335,7 +335,12 @@ void Uci::executeTest() {
 //	delete board3;
 
 }
-
+// uci info
 void Uci::info(const std::string text) const {
 	std::cout << "info " << text << std::endl;
+}
+
+// output text
+void Uci::text(const std::string text) const {
+	std::cout << text << std::endl;
 }

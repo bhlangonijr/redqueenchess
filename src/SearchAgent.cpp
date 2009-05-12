@@ -96,11 +96,18 @@ void SearchAgent::setPositionFromFEN(std::string fenMoves) {
 // start search
 void SearchAgent::startSearch() {
 
+	if (getSearchInProgress()) {
+		Uci::getInstance()->text("Search in progress...");
+		return;
+	}
+
 	setSearchInProgress(true);
+
 	// TODO work in progress - tests
 	hashPut(this->board, 10, this->getDepth(), 0);
 
 	std::cout << "Size: " << transTable.size() << std::endl;
+
 
 
 }

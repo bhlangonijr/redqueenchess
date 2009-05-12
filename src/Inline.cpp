@@ -26,13 +26,6 @@
 #include <inttypes.h>
 #include <iostream>
 
-#if  defined(__MINGW32__) || defined(__MINGW64__)
-	#include <windows.h>
-#else
-	#include <sched.h>
-#endif
-
-
 static const uint64_t debruijn64 = 0x07EDD5E59A4E28C2ULL;
 
 static const uint32_t index64[64] = {
@@ -91,34 +84,3 @@ unsigned char _BitScanReverse(unsigned int* const index, const uint64_t mask)
 #endif
 	return mask?1:0;
 }
-// get the number of processors
-int getThreadCount()
-{
-  int count = 0;
-
-#if  defined(__MINGW32__) || defined(__MINGW64__)
-
-	SYSTEM_INFO systemInfo;
-	GetSystemInfo( &systemInfo );
-	count = systemInfo.dwNumberOfProcessors;
-
-
-#else
-   cpu_set_t cs;
-   CPU_ZERO(&cs);
-   sched_getaffinity(0, sizeof(cs), &cs);
-
-
-   for (int i = 0; i < 16; i++)
-   {
-      if (CPU_ISSET(i, &cs))
-         count++;
-   }
-
-#endif
-
-   return count;
-
-}
-
-

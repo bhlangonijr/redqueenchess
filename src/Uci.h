@@ -66,6 +66,7 @@ public:
 	void clearUciOption();
 
 	void info(const std::string text) const;
+	void text(const std::string text) const;
 
 protected:
 	Uci();
