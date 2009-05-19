@@ -28,7 +28,7 @@
 
 using namespace SimplePVSearchTypes;
 
-SimplePVSearch::SimplePVSearch() :  _depth(1),  _board(board) {
+SimplePVSearch::SimplePVSearch(Board& board) :  _depth(1),  _board(board) {
 
 }
 
@@ -63,12 +63,13 @@ int SimplePVSearch::idSearch(Board& board) {
 // principal variation search
 int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 
-	if( depth == 0 ) return qSearch(board, alpha, beta, depth);
+	if( depth == 0 ) return qSearch(board, alpha, beta, maxQuiescenceSearchDepth);
 
 	bool bSearch = true;
 
 	MovePool movePool;
 	Move* move = board.generateAllMoves(movePool, board.getSideToMove());
+	int score = 0;
 
 	while ( move )  {
 
@@ -102,9 +103,9 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 //quiescence search
 int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth) {
 
-	if (depth == 0) Evaluate();
+	if (depth == 0) evaluate(board);
 
-	int standPat = Evaluate();
+	int standPat = evaluate(board);
 
 	if( standPat >= beta ) {
 		return beta;
@@ -122,7 +123,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth) {
 		MoveBackup backup;
 		board.doMove(*move,backup);
 
-		score = -qSearch(board, -beta, -alpha, depth - 1 );
+		int score = -qSearch(board, -beta, -alpha, depth - 1 );
 
 		board.undoMove(backup);
 
@@ -140,6 +141,30 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth) {
 
 }
 
+// simplest eval function
+int SimplePVSearch::evaluate(Board& board) {
+
+	int result = 0;
+	PieceColor side = board.getSideToMove();
+	PieceColor otherSide = board.flipSide(side);
+
+	int whiteMaterial = 0;
+	int blackMaterial = 0;
+
+	int pieceType;
+
+	for(pieceType = WHITE_PAWN; pieceType <= WHITE_KING; pieceType++) {
+		whiteMaterial += board.getPieceCountByType(PieceTypeByColor(pieceType)) * materialValues[pieceType];
+	}
+
+	for(pieceType = BLACK_PAWN; pieceType <= BLACK_KING; pieceType++) {
+		blackMaterial += board.getPieceCountByType(PieceTypeByColor(pieceType)) * materialValues[pieceType];
+	}
+
+	result = side==WHITE?whiteMaterial-blackMaterial : blackMaterial-whiteMaterial;
+
+	return result;
+}
 
 
 

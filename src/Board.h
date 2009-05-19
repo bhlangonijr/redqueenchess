@@ -630,7 +630,7 @@ public:
 	const Bitboard getEmptySquares() const;
 	const Bitboard getPiecesByType(const PieceTypeByColor piece) const;
 	inline const PieceTypeByColor getPieceBySquare(const Square square) const;
-	const int getPieceCountByType(const PieceTypeByColor piece) const;
+	int const getPieceCountByType(const PieceTypeByColor piece) const;
 	const Bitboard getIntersectSquares(Square squarea, Square squareb) const;
 
 	const Bitboard getAttacksTo(const Square square);
@@ -722,7 +722,7 @@ inline bool Board::putPiece(const PieceTypeByColor piece, const Square square)
 	currentBoard.piece.array[piece] |= squareToBitboard[square];
 	currentBoard.pieceColor[pieceColor[piece]] |= squareToBitboard[square];
 	currentBoard.square[square] = piece;
-	currentBoard.pieceCount.array[piece]++;
+	//currentBoard.pieceCount.array[piece]++;
 
 	return true;
 }
@@ -732,7 +732,7 @@ inline bool Board::removePiece(const PieceTypeByColor piece, const Square square
 	currentBoard.piece.array[piece] ^= squareToBitboard[square];
 	currentBoard.pieceColor[pieceColor[piece]] ^= squareToBitboard[square];
 	currentBoard.square[square] = EMPTY;
-	currentBoard.pieceCount.array[piece]--;
+	//currentBoard.pieceCount.array[piece]--;
 
 	return true;
 }
@@ -909,7 +909,8 @@ inline const PieceTypeByColor Board::getPieceBySquare(const Square square) const
 
 // get piece count by type
 inline const int Board::getPieceCountByType(const PieceTypeByColor piece) const {
-	return currentBoard.pieceCount.array[piece];
+
+	return _BitCount(currentBoard.piece.array[piece]);
 }
 
 // get squares between squarea and squareb

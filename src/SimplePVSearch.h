@@ -31,7 +31,9 @@
 
 namespace SimplePVSearchTypes {
 
-	int maxScore = 400000;
+	static const int maxScore = 400000;
+	static const int maxQuiescenceSearchDepth = 10;
+	static const int materialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 325, 325, 500, 975, 10000, 100, 325, 325, 500, 975, 10000, 0};
 
 }
 
@@ -53,6 +55,7 @@ private:
 	int idSearch(Board& board);
 	int pvSearch(Board& board, int alpha, int beta, int depth);
 	int qSearch(Board& board, int alpha, int beta, int depth);
+	int evaluate(Board& board);
 
 };
 

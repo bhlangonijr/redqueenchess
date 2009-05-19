@@ -31,5 +31,6 @@
 
 extern unsigned char _BitScanForward(unsigned int* const index, const uint64_t mask);
 extern unsigned char _BitScanReverse(unsigned int* const index, const uint64_t mask);
+extern uint32_t _BitCount(const uint64_t data);
 
 #endif /* INLINE_H_ */
