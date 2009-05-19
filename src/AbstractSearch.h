@@ -27,12 +27,15 @@
 #ifndef ABSTRACTSEARCH_H_
 #define ABSTRACTSEARCH_H_
 
+namespace AbstractSearchTypes {
+
+}
 
 class AbstractSearch {
 public:
 	virtual ~AbstractSearch();
 	virtual void search() = 0;
-	virtual void getScore() = 0;
+	virtual int getScore() = 0;
 
 protected:
 	AbstractSearch();
@@ -45,7 +48,7 @@ class Search : public  AbstractSearch {
 	Search(SearchClass* searchClass, Action action) : _searchClass(searchClass), _action(action)
 	{}
 	virtual void search();
-	virtual void getScore();
+	virtual int getScore();
 private:
 	Action _action;
 	SearchClass _searchClass;
@@ -55,8 +58,6 @@ template <class SearchClass>
 void Search<SearchClass>::search () {
 	(_searchClass->*_action)();
 }
-
-
 
 
 #endif /* ABSTRACTSEARCH_H_ */

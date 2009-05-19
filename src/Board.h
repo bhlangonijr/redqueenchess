@@ -427,15 +427,16 @@ struct Move {
 	Move()
 	{}
 	Move(Square fromSquare, Square toSquare, PieceTypeByColor piece) :
-		from(fromSquare), to(toSquare), promotionPiece(piece)
+		from(fromSquare), to(toSquare), promotionPiece(piece), score(0)
 		{}
 	Move(Move* nextMove, Square fromSquare, Square toSquare, PieceTypeByColor piece) :
-		next(nextMove), from(fromSquare), to(toSquare), promotionPiece(piece)
+		next(nextMove), from(fromSquare), to(toSquare), promotionPiece(piece), score(0)
 		{}
 
 	Square from;
 	Square to;
 	PieceTypeByColor promotionPiece;
+	int score;
 
 	const std::string toString() const {
 		std::string result = squareToString[from]+squareToString[to];
