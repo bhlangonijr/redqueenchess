@@ -422,6 +422,7 @@ void Board::loadFromString(const std::string startPosMoves) {
 		last=position+1;
 		position = moves.find(" ", position+1);
 	}
+	setAttackedSquaresTable(false);
 }
 
 // generate only capture moves

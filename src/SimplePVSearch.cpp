@@ -75,10 +75,11 @@ int SimplePVSearch::idSearch(Board& board) {
 			MoveBackup backup;
 			board.doMove(*move,backup);
 
+			//std::cout << "depth: " << depth << "score: " << score << " - move: " << move->toString() << " - nodes: " << _nodes << " - time: " << (getTickCount() - time) << std::endl;
+			//board.printBoard(); // test
+
 			score = -pvSearch(board, -maxScore, maxScore, depth-1);
 			move->score=score;
-
-			//std::cout << "depth: " << depth << "score: " << score << " - move: " << move->toString() << " - nodes: " << _nodes << " - time: " << (getTickCount() - time) << std::endl;
 
 			board.undoMove(backup);
 			move = move->next;
@@ -90,9 +91,9 @@ int SimplePVSearch::idSearch(Board& board) {
 			std::cout << "info depth "<< depth << std::endl;
 			std::cout << "info score cp " << score << " depth " << depth << " nodes " << _nodes << " time " << time << " pv " << std::endl/*TODO pv*/;
 			if (totalTime>1000) {
-				std::cout << "nps " << (_nodes/(totalTime/1000)) << std::endl;
+				std::cout << "info nps " << (_nodes/(totalTime/1000)) << std::endl;
 			} else {
-				std::cout << "nps " << _nodes << std::endl;
+				std::cout << "info nps " << _nodes << std::endl;
 			}
 
 		}

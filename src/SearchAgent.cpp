@@ -105,9 +105,7 @@ void SearchAgent::startSearch() {
 
 	clearHash();
 
-	Board tmp(board);
-
-	SimplePVSearch search(tmp, getDepth());
+	SimplePVSearch search(board, getDepth());
 
 	search.search();
 

@@ -322,7 +322,7 @@ void Uci::executeTest() {
 	//board3->loadFromString("d2d4 d7d5 g1f3 e7e6 e2e3 b8c6 f1b5"); // test move legality pieces pinned on king
 	//board3->loadFromString("d2d4 d7d5 g1f3 e7e6 e2e3 a7a6 f1b5"); // test capturing pieces checking king
 	//board3->loadFromString("d2d4 d7d5 g1f3 e7e6 e2e3 g8f6 f1b5"); // test cover checks on king
-	board3.loadFromString("e2e4 h7h6 b1c3 g7g6 d2d4 f7f6 d1g4 e7e6 g4g6");
+	board3.loadFromString("e2e4 h7h6 d2d4 g7g6 b1c3 f7f6 d1g4 e7e6 g4g6");
 
 	//board3->printBoard();
 
