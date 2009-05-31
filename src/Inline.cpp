@@ -88,13 +88,13 @@ unsigned char _BitScanReverse(unsigned int* const index, const uint64_t mask)
 uint32_t _BitCount(const uint64_t data)
 {
    #if defined(__LP64__)
-      return __builtin_popcount ( data );
+      return __builtin_popcountll( data );
    #else
-      uint64 x = data;
-      const uint64 k1 = 0x5555555555555555UL;
-      const uint64 k2 = 0x3333333333333333UL;
-      const uint64 k4 = 0x0f0f0f0f0f0f0f0fUL;
-      const uint64 kf = 0x0101010101010101UL;
+      uint64_t x = data;
+      const uint64_t k1 = 0x5555555555555555ULL;
+      const uint64_t k2 = 0x3333333333333333ULL;
+      const uint64_t k4 = 0x0f0f0f0f0f0f0f0fULL;
+      const uint64_t kf = 0x0101010101010101ULL;
       x =  x       - ((x >> 1)  & k1);
       x = (x & k2) + ((x >> 2)  & k2);
       x = (x       +  (x >> 4)) & k4 ;

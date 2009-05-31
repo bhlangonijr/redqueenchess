@@ -311,8 +311,8 @@ void Uci::executeTest() {
 
 	//"d2d4 g8f6 c2c4 e7e6 g1f3 b7b6 b1c3 c8b7 a2a3 d7d5 c4d5 f6d5 e2e3 f8e7 f1b5 c7c6 b5d3 d5c3 b2c3 e8g8"
 	//"e2e4 c7c5 g1f3 a7a6 c2c3 d7d5 e4d5 d8d5 d2d4 g8f6 f1e2 g7g6 e1g1 f8g7 c3c4 d5d6 d4c5 d6c5 b1c3 e8g8 c1e3 c5a5 h2h3 b8c6"
-	board.loadFromString("g1f3 d7d5 d2d4 g8f6 e2e3 c8g4 c2c4 d5c4 f1c4 e7e6 b1c3 a7a6 e1g1 c7c5 d4c5 d8d1 f1d1 g4f3 g2f3 f8c5 f3f4 c5b4 a2a3 b4a5 b2b4 a5b6 d1d6 b6a7 a3a4 e8e7 d6d3 f6h5 c1a3 h8c8 b4b5 a7c5 a3c5 c8c5 d3d4 a6b5 c3b5 b8c6 d4e4 h5f6 b5c7 f6e4 c7a8 c5c4 a4a5 c4c2 a5a6 c2f2 a6b7 f2b2 a1c1 c6a5 c1c7 e7f6 b7b8q b2b1 b8b1");
-
+	//board.loadFromString("g1f3 d7d5 d2d4 g8f6 e2e3 c8g4 c2c4 d5c4 f1c4 e7e6 b1c3 a7a6 e1g1 c7c5 d4c5 d8d1 f1d1 g4f3 g2f3 f8c5 f3f4 c5b4 a2a3 b4a5 b2b4 a5b6 d1d6 b6a7 a3a4 e8e7 d6d3 f6h5 c1a3 h8c8 b4b5 a7c5 a3c5 c8c5 d3d4 a6b5 c3b5 b8c6 d4e4 h5f6 b5c7 f6e4 c7a8 c5c4 a4a5 c4c2 a5a6 c2f2 a6b7 f2b2 a1c1 c6a5 c1c7 e7f6 b7b8q b2b1 b8b1");
+	board.loadFromString("c2c4 h7h6 g1f3 g7g6 e2e4 f7f6 f3h4 e7e6 h4g6 d7d6 g6h8 c7c6 d2d4 b7b6 b1c3 a7a6 d1h5");
 	//board->printBoard();
 	//board2->printBoard();
 
@@ -322,7 +322,7 @@ void Uci::executeTest() {
 	//board3->loadFromString("d2d4 d7d5 g1f3 e7e6 e2e3 b8c6 f1b5"); // test move legality pieces pinned on king
 	//board3->loadFromString("d2d4 d7d5 g1f3 e7e6 e2e3 a7a6 f1b5"); // test capturing pieces checking king
 	//board3->loadFromString("d2d4 d7d5 g1f3 e7e6 e2e3 g8f6 f1b5"); // test cover checks on king
-	board3.loadFromString("d2d4 d7d5 g1f3 e7e6 e2e3 g8f6 f1b5");
+	board3.loadFromString("e2e4 h7h6 b1c3 g7g6 d2d4 f7f6 d1g4 e7e6 g4g6");
 
 	//board3->printBoard();
 

@@ -27,11 +27,15 @@
 #ifndef SIMPLEPVSEARCH_H_
 #define SIMPLEPVSEARCH_H_
 
+#include <time.h>
+#include <iostream>
+
+#include "Uci.h"
 #include "SearchAgent.h"
 
 namespace SimplePVSearchTypes {
 
-	static const int maxScore = 400000;
+	static const int maxScore = 200000;
 	static const int maxQuiescenceSearchDepth = 10;
 	static const int materialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 325, 325, 500, 975, 10000, 100, 325, 325, 500, 975, 10000, 0};
 
@@ -42,15 +46,32 @@ using namespace SimplePVSearchTypes;
 class SimplePVSearch {
 
 public:
+
 	SimplePVSearch(Board& board);
-	SimplePVSearch(Board& board, int depth ) : _depth(depth), _board(board) {}
+	SimplePVSearch(Board& board, int depth ) : _depth(depth), _board(board), _updateUci(true) {}
 	virtual ~SimplePVSearch();
-	void search();
-	int getScore();
+	virtual void search();
+	virtual int getScore();
+
+	const uint32_t getTickCount() {
+		return ((clock() * 1000) / CLOCKS_PER_SEC);
+	}
+
+	const bool isUpdateUci() const {
+		return _updateUci;
+	}
+
+	const void setUpdateUci(const bool value) {
+		_updateUci = value;
+	}
+
 private:
 	Board& _board;
 	int _depth;
 	int _score;
+	uint64_t _nodes;
+	uint32_t _time;
+	bool _updateUci;
 
 	int idSearch(Board& board);
 	int pvSearch(Board& board, int alpha, int beta, int depth);

@@ -910,6 +910,8 @@ inline const PieceTypeByColor Board::getPieceBySquare(const Square square) const
 // get piece count by type
 inline const int Board::getPieceCountByType(const PieceTypeByColor piece) const {
 
+	if (piece==EMPTY) return 0;
+
 	return _BitCount(currentBoard.piece.array[piece]);
 }
 
@@ -1311,6 +1313,10 @@ inline void Board::setAttackedSquaresTable(const bool flag) {
 
 // generate the bitboard with pieces blocking sliders attacks to a specific square
 inline const Bitboard Board::findAttackBlocker(Square square) {
+
+	if (square==NONE) {
+		return EMPTY_BB;
+	}
 
 	Bitboard attackBlockers = EMPTY_BB;
 	PieceTypeByColor piece = getPieceBySquare(square);

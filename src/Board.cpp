@@ -100,17 +100,17 @@ void Board::genericTest() {
 	//testing code
 
 	printBoard();
-	uint32_t start = this->getTickCount();
+	uint32_t start = getTickCount();
 	PieceColor color = getSideToMove();
 	int counter=1;
-	for (int x=0;x<1000000;x++)
+	//for (int x=0;x<1000000;x++)
 	{
 
 		MovePool movePool;
 		Move* move=this->generateAllMoves(movePool,color);
 
 		while (move) {
-			//std::cout << counter << " - " << move->toString() << std::endl;
+			std::cout << counter << " - " << move->toString() << std::endl;
 			MoveBackup backup;
 			doMove(*move,backup);
 			//printBoard();
@@ -619,7 +619,7 @@ Move* Board::generateCheckEvasions(MovePool& movePool, const PieceColor side) {
 //generate all moves - captures + noncaptures
 Move* Board::generateAllMoves(MovePool& movePool, const PieceColor side) {
 
-	Move* moves;
+	Move* moves=NULL;
 
 	if (isAttacked(side, KING)) {
 		moves = generateCheckEvasions(movePool, side);
@@ -627,7 +627,7 @@ Move* Board::generateAllMoves(MovePool& movePool, const PieceColor side) {
 		moves = generateCaptures(movePool, side);
 		Move* nonCaptures = generateNonCaptures(movePool, side);
 		Move* tmp = moves;
-		if (moves) {
+		if (tmp) {
 			while (tmp->next) {
 				tmp = tmp->next;
 			}

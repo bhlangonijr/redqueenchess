@@ -24,22 +24,28 @@
  *      Author: bhlangonijr
  */
 
+
 #include "SimplePVSearch.h"
 
 using namespace SimplePVSearchTypes;
 
-SimplePVSearch::SimplePVSearch(Board& board) :  _depth(1),  _board(board) {
+SimplePVSearch::SimplePVSearch(Board& board) :  _depth(1),  _board(board), _updateUci(true){
 
 }
 
-SimplePVSearch::~SimplePVSearch() {
+SimplePVSearch::~SimplePVSearch(){
+
 
 }
+
 
 // root search
 void SimplePVSearch::search() {
 
+	uint32_t tmp = getTickCount();
 	_score = idSearch( _board );
+	SearchAgent::getInstance()->setSearchInProgress(false);
+	_time = getTickCount() - tmp;
 
 }
 
@@ -52,50 +58,119 @@ int SimplePVSearch::getScore() {
 int SimplePVSearch::idSearch(Board& board) {
 
 	int score = 0;
+	MovePool movePool;
+	Move* firstMove = board.generateAllMoves(movePool, board.getSideToMove());
+	Move* move = firstMove;
+
+	_nodes = 0;
 
 	for (int depth = 1; depth <= _depth; depth++) {
-		score = pvSearch(_board, -maxScore, maxScore, depth);
+
+		uint32_t time = getTickCount();
+		uint32_t totalTime = 0;
+		score = 0;
+		move = firstMove;
+		while (move) {
+			_nodes++;
+			MoveBackup backup;
+			board.doMove(*move,backup);
+
+			score = -pvSearch(board, -maxScore, maxScore, depth-1);
+			move->score=score;
+
+			//std::cout << "depth: " << depth << "score: " << score << " - move: " << move->toString() << " - nodes: " << _nodes << " - time: " << (getTickCount() - time) << std::endl;
+
+			board.undoMove(backup);
+			move = move->next;
+		}
+		time = getTickCount()-time;
+		totalTime += time;
+
+		if (isUpdateUci()) {
+			std::cout << "info depth "<< depth << std::endl;
+			std::cout << "info score cp " << score << " depth " << depth << " nodes " << _nodes << " time " << time << " pv " << std::endl/*TODO pv*/;
+			if (totalTime>1000) {
+				std::cout << "nps " << (_nodes/(totalTime/1000)) << std::endl;
+			} else {
+				std::cout << "nps " << _nodes << std::endl;
+			}
+
+		}
+
+		// TODO sort moves
+
 	}
 
+	movePool.~object_pool();
+	if (firstMove) {
+		score = firstMove->score;
+		if (isUpdateUci()) {
+			std::cout << "bestmove " << firstMove->toString() << std::endl;
+		}
+	}
 
+	return score;
 }
 
 // principal variation search
 int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 
-	if( depth == 0 ) return qSearch(board, alpha, beta, maxQuiescenceSearchDepth);
-
 	bool bSearch = true;
-
-	MovePool movePool;
-	Move* move = board.generateAllMoves(movePool, board.getSideToMove());
 	int score = 0;
 
-	while ( move )  {
+	if( depth == 0 ) {
+		score = qSearch(board, alpha, beta, maxQuiescenceSearchDepth);
+		SearchAgent::getInstance()->hashPut(board,score,depth,board.getMoveCounter());
+		return score;
+	}
 
-		MoveBackup backup;
-		board.doMove(*move,backup);
 
-		if ( bSearch ) {
-			score = -pvSearch(board, -beta, -alpha, depth - 1);
-		} else {
-			score = -pvSearch(board, -alpha-1, -alpha, depth - 1);
-			if ( score > alpha ) {
+	HashData hashData;
+	if (SearchAgent::getInstance()->hashGet(board.getKey(), hashData)) {
+		if (hashData.depth>=depth) {
+			return hashData.value;
+		}
+	}
+
+	{
+		_nodes++;
+		MovePool movePool;
+		Move* move = board.generateAllMoves(movePool, board.getSideToMove());
+
+			while ( move )  {
+
+			MoveBackup backup;
+			board.doMove(*move,backup);
+
+			if ( bSearch ) {
 				score = -pvSearch(board, -beta, -alpha, depth - 1);
+			} else {
+				score = -pvSearch(board, -alpha-1, -alpha, depth - 1);
+				if ( score > alpha ) {
+					score = -pvSearch(board, -beta, -alpha, depth - 1);
+				}
+			}
+
+			board.undoMove(backup);
+			move = move->next;
+
+			if( score >= beta ) {
+				SearchAgent::getInstance()->hashPut(board,score,depth,board.getMoveCounter());
+				movePool.~object_pool();
+				return beta;
+			}
+
+			if( score > alpha ) {
+				alpha = score;
+				bSearch = false;
 			}
 		}
 
-		board.undoMove(backup);
-
-		if( score >= beta ) {
-			return beta;
-		}
-
-		if( score > alpha ) {
-			alpha = score;
-			bSearch = false;
-		}
+		movePool.~object_pool();
 	}
+
+	SearchAgent::getInstance()->hashPut(board,score,depth,board.getMoveCounter());
+
 	return alpha;
 
 }
@@ -103,7 +178,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 //quiescence search
 int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth) {
 
-	if (depth == 0) evaluate(board);
+	if (depth == 0) return evaluate(board);
 
 	int standPat = evaluate(board);
 
@@ -114,31 +189,35 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth) {
 	if( alpha < standPat ) {
 		alpha = standPat;
 	}
+	{
+		_nodes++;
+		MovePool movePool;
+		Move* move = board.generateCaptures(movePool, board.getSideToMove());
 
-	MovePool movePool;
-	Move* move = board.generateCaptures(movePool, board.getSideToMove());
+		while ( move )  {
 
-	while ( move )  {
+			MoveBackup backup;
+			board.doMove(*move,backup);
 
-		MoveBackup backup;
-		board.doMove(*move,backup);
+			int score = -qSearch(board, -beta, -alpha, depth - 1 );
 
-		int score = -qSearch(board, -beta, -alpha, depth - 1 );
+			board.undoMove(backup);
+			move = move->next;
 
-		board.undoMove(backup);
+			if( score >= beta ) {
+				movePool.~object_pool();
+				return beta;
+			}
 
-		if( score >= beta ) {
-			return beta;
+			if( score > alpha ) {
+				alpha = score;
+			}
+
 		}
-
-		if( score > alpha ) {
-			alpha = score;
-		}
-
+		movePool.~object_pool();
 	}
 
 	return alpha;
-
 }
 
 // simplest eval function
@@ -146,18 +225,15 @@ int SimplePVSearch::evaluate(Board& board) {
 
 	int result = 0;
 	PieceColor side = board.getSideToMove();
-	PieceColor otherSide = board.flipSide(side);
 
 	int whiteMaterial = 0;
 	int blackMaterial = 0;
 
-	int pieceType;
-
-	for(pieceType = WHITE_PAWN; pieceType <= WHITE_KING; pieceType++) {
+	for(int pieceType = WHITE_PAWN; pieceType <= WHITE_KING; pieceType++) {
 		whiteMaterial += board.getPieceCountByType(PieceTypeByColor(pieceType)) * materialValues[pieceType];
 	}
 
-	for(pieceType = BLACK_PAWN; pieceType <= BLACK_KING; pieceType++) {
+	for(int pieceType = BLACK_PAWN; pieceType <= BLACK_KING; pieceType++) {
 		blackMaterial += board.getPieceCountByType(PieceTypeByColor(pieceType)) * materialValues[pieceType];
 	}
 

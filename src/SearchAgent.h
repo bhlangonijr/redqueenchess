@@ -31,6 +31,7 @@
 
 #include "Uci.h"
 #include "Board.h"
+#include "SimplePVSearch.h"
 
 using namespace __gnu_cxx;
 
