@@ -102,7 +102,7 @@ int SimplePVSearch::idSearch(Board& board) {
 
 	}
 
-	movePool.~object_pool();
+
 	if (firstMove) {
 		score = firstMove->score;
 		if (isUpdateUci()) {
@@ -110,6 +110,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		}
 	}
 
+	movePool.~object_pool();
 	return score;
 }
 
