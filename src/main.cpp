@@ -28,6 +28,7 @@
  */
 #include <iostream>
 #include <omp.h>
+#include <stdio.h>
 
 #include "Uci.h"
 #include "Constant.h"
