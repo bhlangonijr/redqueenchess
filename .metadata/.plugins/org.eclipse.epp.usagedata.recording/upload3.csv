@@ -1,0 +1,26 @@
+what,kind,bundleId,bundleVersion,description,time
+started,bundle,org.eclipse.ui.net,1.2.0.I20090430-0408,"org.eclipse.ui.net",1252678043025
+started,bundle,org.eclipse.ui.views,3.4.0.I20090525-2000,"org.eclipse.ui.views",1252678043066
+started,bundle,org.eclipse.ui.workbench,3.5.0.I20090603-2000,"org.eclipse.ui.workbench",1252678043084
+started,bundle,org.eclipse.ui.workbench.texteditor,3.5.0.v20090603,"org.eclipse.ui.workbench.texteditor",1252678043093
+started,bundle,org.eclipse.update.configurator,3.3.0.v20090312,"org.eclipse.update.configurator",1252678043099
+started,bundle,org.eclipse.update.core,3.2.300.v20090525,"org.eclipse.update.core",1252678043117
+started,bundle,org.eclipse.update.scheduler,3.2.200.v20081127,"org.eclipse.update.scheduler",1252678043119
+started,bundle,org.eclipse.jdt.core,3.5.0.v_963,"org.eclipse.jdt.core",1252678043134
+started,bundle,org.eclipse.jdt.core.manipulation,1.3.0.v20090603,"org.eclipse.jdt.core.manipulation",1252678043148
+started,bundle,org.eclipse.jdt.ui,3.5.0.v20090604,"org.eclipse.jdt.ui",1252678043183
+started,bundle,org.tigris.subversion.clientadapter,1.5.3,"org.tigris.subversion.clientadapter",1252678043183
+started,bundle,org.tigris.subversion.subclipse.core,1.4.8,"org.tigris.subversion.subclipse.core",1252678043183
+started,bundle,org.tigris.subversion.subclipse.ui,1.4.8,"org.tigris.subversion.subclipse.ui",1252678043196
+os,sysinfo,,,"linux",1252678043199
+arch,sysinfo,,,"x86_64",1252678043199
+ws,sysinfo,,,"gtk",1252678043199
+locale,sysinfo,,,"en_US",1252678043199
+processors,sysinfo,,,"2",1252678043199
+java.runtime.name,sysinfo,,,"Java(TM) SE Runtime Environment",1252678043199
+java.runtime.version,sysinfo,,,"1.6.0_14-b08",1252678043199
+java.specification.name,sysinfo,,,"Java Platform API Specification",1252678043200
+java.specification.vendor,sysinfo,,,"Sun Microsystems Inc.",1252678043200
+java.specification.version,sysinfo,,,"1.6",1252678043200
+java.vendor,sysinfo,,,"Sun Microsystems Inc.",1252678043200
+java.version,sysinfo,,,"1.6.0_14",1252678043200

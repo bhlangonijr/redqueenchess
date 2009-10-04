@@ -58,9 +58,11 @@ int SimplePVSearch::getScore() {
 int SimplePVSearch::idSearch(Board& board) {
 
 	int score = 0;
+	int bestScore = 0;
 	MovePool movePool;
 	Move* firstMove = board.generateAllMoves(movePool, board.getSideToMove());
 	Move* move = firstMove;
+	Move* bestMove = firstMove;
 
 	_nodes = 0;
 
@@ -69,6 +71,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		uint32_t time = getTickCount();
 		uint32_t totalTime = 0;
 		score = 0;
+		bestScore = -maxScore;
 		move = firstMove;
 		while (move) {
 			_nodes++;
@@ -80,6 +83,11 @@ int SimplePVSearch::idSearch(Board& board) {
 
 			score = -pvSearch(board, -maxScore, maxScore, depth-1);
 			move->score=score;
+
+			if (score > bestScore) {
+				bestScore = score;
+				bestMove = move;
+			}
 
 			board.undoMove(backup);
 			move = move->next;
@@ -103,10 +111,10 @@ int SimplePVSearch::idSearch(Board& board) {
 	}
 
 
-	if (firstMove) {
-		score = firstMove->score;
+	if (bestMove) {
+		score = bestMove->score;
 		if (isUpdateUci()) {
-			std::cout << "bestmove " << firstMove->toString() << std::endl;
+			std::cout << "bestmove " << bestMove->toString() << std::endl;
 		}
 	}
 
@@ -122,10 +130,12 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 
 	if( depth == 0 ) {
 		score = qSearch(board, alpha, beta, maxQuiescenceSearchDepth);
+		//score = evaluate(board);
 		SearchAgent::getInstance()->hashPut(board,score,depth,board.getMoveCounter());
 		return score;
 	}
 
+	_nodes++;
 
 	HashData hashData;
 	if (SearchAgent::getInstance()->hashGet(board.getKey(), hashData)) {
@@ -135,7 +145,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 	}
 
 	{
-		_nodes++;
+
 		MovePool movePool;
 		Move* move = board.generateAllMoves(movePool, board.getSideToMove());
 
@@ -180,7 +190,9 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 //quiescence search
 int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth) {
 
-	if (depth == 0) return evaluate(board);
+	_nodes++;
+
+	//if (depth == 0) return evaluate(board);
 
 	int standPat = evaluate(board);
 
@@ -192,7 +204,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth) {
 		alpha = standPat;
 	}
 	{
-		_nodes++;
+
 		MovePool movePool;
 		Move* move = board.generateCaptures(movePool, board.getSideToMove());
 

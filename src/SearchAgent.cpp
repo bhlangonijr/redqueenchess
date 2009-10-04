@@ -71,6 +71,8 @@ void SearchAgent::clearHash() {
 
 	transTable.clear();
 
+	transTable = TranspositionTable(hashSize);
+
 }
 
 // get board
@@ -105,9 +107,18 @@ void SearchAgent::startSearch() {
 
 	clearHash();
 
-	SimplePVSearch search(board, getDepth());
+
+
+	Board actual(board);
+
+	SimplePVSearch search(actual, getDepth());
 
 	search.search();
+
+	std::cout << "old key " << board.generateKey() <<std::endl;
+	std::cout << "new key " << actual.generateKey() <<std::endl;
+
+	actual.printBoard();
 
 	//std::cout << "score " << search.getScore()<<std::endl;
 

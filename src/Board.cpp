@@ -103,14 +103,14 @@ void Board::genericTest() {
 	uint32_t start = getTickCount();
 	PieceColor color = getSideToMove();
 	int counter=1;
-	//for (int x=0;x<1000000;x++)
+	for (int x=0;x<1000000;x++)
 	{
 
 		MovePool movePool;
 		Move* move=this->generateAllMoves(movePool,color);
 
 		while (move) {
-			std::cout << counter << " - " << move->toString() << std::endl;
+			//std::cout << counter << " - " << move->toString() << std::endl;
 			MoveBackup backup;
 			doMove(*move,backup);
 			//printBoard();
@@ -241,11 +241,12 @@ void Board::doMove(const Move move, MoveBackup& backup){
 		setKey(getKey()^zobrist.enPassant[getSquareFile(getEnPassant())]);
 	}
 
-	int signal = getSideToMove()==WHITE?-1:+1;
-	Rank doubleInitialRank = getSideToMove()==WHITE?RANK_2:RANK_7;
-	Rank doubleFinalRank = getSideToMove()==WHITE?RANK_4:RANK_5;
-
 	if (fromPiece==makePiece(getSideToMove(),PAWN)){
+
+		int signal = getSideToMove()==WHITE?-1:+1;
+		Rank doubleInitialRank = getSideToMove()==WHITE?RANK_2:RANK_7;
+		Rank doubleFinalRank = getSideToMove()==WHITE?RANK_4:RANK_5;
+
 		if (getEnPassant()!=NONE) {
 			if (getSquareFile(move.from)!=getSquareFile(move.to)&&toPiece==EMPTY) { // en passant
 				Square capturedSquare=makeSquare(Rank(getSquareRank(move.to)+signal), getSquareFile(move.to));
@@ -256,6 +257,7 @@ void Board::doMove(const Move move, MoveBackup& backup){
 				backup.capturedSquare=capturedSquare;
 			}
 		}
+
 		if (getSquareRank(move.to)==doubleFinalRank&&getSquareRank(move.from)==doubleInitialRank) {
 			setEnPassant(move.to);
 			enPassant=true;
@@ -292,48 +294,48 @@ void Board::undoMove(MoveBackup& backup)
 {
 
 	PieceTypeByColor piece=currentBoard.square[backup.move.to];
+	PieceColor sideToMove=flipSide(getSideToMove());
 
 	removePiece(piece,backup.move.to);
 
 	if (!backup.hasPromotion) {
 		putPiece(piece,backup.move.from);
 	} else {
-		if (pieceColor[piece]==WHITE) {
-			putPiece(WHITE_PAWN,backup.move.from);
-		} else {
-			putPiece(BLACK_PAWN,backup.move.from);
-		}
+		putPiece(makePiece(sideToMove, PAWN),backup.move.from);
 	}
 
 	if (backup.hasCapture) {
 		putPiece(backup.capturedPiece,backup.capturedSquare);
 	}
 
-	if (backup.hasWhiteKingCastle) {
-		removePiece(WHITE_ROOK,F1);
-		putPiece(WHITE_ROOK,H1);
-	} else if (backup.hasWhiteQueenCastle) {
-		removePiece(WHITE_ROOK,D1);
-		putPiece(WHITE_ROOK,A1);
-	} else if (backup.hasBlackKingCastle) {
-		removePiece(BLACK_ROOK,F8);
-		putPiece(BLACK_ROOK,H8);
-	} else if (backup.hasBlackQueenCastle) {
-		removePiece(BLACK_ROOK,D8);
-		putPiece(BLACK_ROOK,A8);
+	if (sideToMove==WHITE) {
+		if (backup.hasWhiteKingCastle) {
+			removePiece(WHITE_ROOK,F1);
+			putPiece(WHITE_ROOK,H1);
+		} else if (backup.hasWhiteQueenCastle) {
+			removePiece(WHITE_ROOK,D1);
+			putPiece(WHITE_ROOK,A1);
+		}
+		setCastleRights(WHITE, backup.whiteCastleRight);
+		setAttackedSquares(WHITE, backup.attackedSquares[WHITE]);
+
+	} else {
+		if (backup.hasBlackKingCastle) {
+			removePiece(BLACK_ROOK,F8);
+			putPiece(BLACK_ROOK,H8);
+		} else if (backup.hasBlackQueenCastle) {
+			removePiece(BLACK_ROOK,D8);
+			putPiece(BLACK_ROOK,A8);
+		}
+		setCastleRights(BLACK, backup.blackCastleRight);
+		setAttackedSquares(BLACK, backup.attackedSquares[BLACK]);
 	}
 
+
 	setEnPassant(backup.enPassant);
-	setCastleRights(WHITE, backup.whiteCastleRight);
-	setCastleRights(BLACK, backup.blackCastleRight);
-
-	setAttackedSquares(WHITE, backup.attackedSquares[WHITE]);
-	setAttackedSquares(BLACK, backup.attackedSquares[BLACK]);
 	setAttackedSquaresTable(backup.hasAttackedSquares);
-
 	decreaseMoveCounter();
-
-	setSideToMove(flipSide(getSideToMove()));
+	setSideToMove(sideToMove);
 	setKey(backup.key);
 
 }
@@ -431,8 +433,8 @@ Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
 	Move* move=NULL;
 	PieceColor otherSide = flipSide(side);
 	Bitboard pieces = getPiecesByColor(side)^
-					 (getPiecesByType(makePiece(side,PAWN)) | getPiecesByType(makePiece(side,KING)) |
-					 findAttackBlocker(bitboardToSquare(getPiecesByType(makePiece(side,KING)))));
+			(getPiecesByType(makePiece(side,PAWN)) | getPiecesByType(makePiece(side,KING)) |
+					findAttackBlocker(bitboardToSquare(getPiecesByType(makePiece(side,KING)))));
 	Bitboard otherPieces = getPiecesByColor(otherSide);
 	Bitboard attacks = EMPTY_BB;
 	Square from = extractLSB(pieces);
@@ -487,8 +489,8 @@ Move* Board::generateNonCaptures(MovePool& movePool, const PieceColor side){
 	Move* move=NULL;
 	PieceColor otherSide = flipSide(side);
 	Bitboard pieces = getPiecesByColor(side)^
-					 (getPiecesByType(makePiece(side,PAWN)) | getPiecesByType(makePiece(side,KING)) |
-					 findAttackBlocker(bitboardToSquare(getPiecesByType(makePiece(side,KING)))));
+			(getPiecesByType(makePiece(side,PAWN)) | getPiecesByType(makePiece(side,KING)) |
+					findAttackBlocker(bitboardToSquare(getPiecesByType(makePiece(side,KING)))));
 	Bitboard empty = getEmptySquares();
 	Bitboard attacks = EMPTY_BB;
 
@@ -578,8 +580,8 @@ Move* Board::generateCheckEvasions(MovePool& movePool, const PieceColor side) {
 	}
 	// try to capture the checker piece or interpose a piece between king and attacking piece
 	Bitboard allAttackers = getPiecesByType(makePiece(otherSide,ROOK)) |
-	getPiecesByType(makePiece(otherSide,BISHOP)) |
-	getPiecesByType(makePiece(otherSide,QUEEN));
+			getPiecesByType(makePiece(otherSide,BISHOP)) |
+			getPiecesByType(makePiece(otherSide,QUEEN));
 
 	Bitboard kingAttackers = getAttacksTo(allAttackers,getAllPieces(),getPiecesByType(makePiece(side,KING))) & getPiecesByColor(otherSide);
 	if (kingAttackers) {
