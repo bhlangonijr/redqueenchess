@@ -308,30 +308,24 @@ void Board::undoMove(MoveBackup& backup)
 		putPiece(backup.capturedPiece,backup.capturedSquare);
 	}
 
-	if (sideToMove==WHITE) {
-		if (backup.hasWhiteKingCastle) {
-			removePiece(WHITE_ROOK,F1);
-			putPiece(WHITE_ROOK,H1);
-		} else if (backup.hasWhiteQueenCastle) {
-			removePiece(WHITE_ROOK,D1);
-			putPiece(WHITE_ROOK,A1);
-		}
-		setCastleRights(WHITE, backup.whiteCastleRight);
-		setAttackedSquares(WHITE, backup.attackedSquares[WHITE]);
-
-	} else {
-		if (backup.hasBlackKingCastle) {
-			removePiece(BLACK_ROOK,F8);
-			putPiece(BLACK_ROOK,H8);
-		} else if (backup.hasBlackQueenCastle) {
-			removePiece(BLACK_ROOK,D8);
-			putPiece(BLACK_ROOK,A8);
-		}
-		setCastleRights(BLACK, backup.blackCastleRight);
-		setAttackedSquares(BLACK, backup.attackedSquares[BLACK]);
+	if (backup.hasWhiteKingCastle) {
+		removePiece(WHITE_ROOK,F1);
+		putPiece(WHITE_ROOK,H1);
+	} else if (backup.hasWhiteQueenCastle) {
+		removePiece(WHITE_ROOK,D1);
+		putPiece(WHITE_ROOK,A1);
+	} else if (backup.hasBlackKingCastle) {
+		removePiece(BLACK_ROOK,F8);
+		putPiece(BLACK_ROOK,H8);
+	} else if (backup.hasBlackQueenCastle) {
+		removePiece(BLACK_ROOK,D8);
+		putPiece(BLACK_ROOK,A8);
 	}
 
-
+	setCastleRights(WHITE, backup.whiteCastleRight);
+	setAttackedSquares(WHITE, backup.attackedSquares[WHITE]);
+	setCastleRights(BLACK, backup.blackCastleRight);
+	setAttackedSquares(BLACK, backup.attackedSquares[BLACK]);
 	setEnPassant(backup.enPassant);
 	setAttackedSquaresTable(backup.hasAttackedSquares);
 	decreaseMoveCounter();
