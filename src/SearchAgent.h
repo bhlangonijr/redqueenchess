@@ -27,13 +27,11 @@
 #ifndef SEARCHAGENT_H_
 #define SEARCHAGENT_H_
 
-#include <ext/hash_map>
+#include <boost/unordered_map.hpp>
 
 #include "Uci.h"
 #include "Board.h"
 #include "SimplePVSearch.h"
-
-using namespace __gnu_cxx;
 
 namespace SearchAgentTypes {
 
@@ -45,9 +43,9 @@ struct HashFunction {
 	size_t operator()( const Key& key ) const
 	{
 #if  defined(__MINGW32__) || defined(__MINGW64__)
-	return hash<uint32_t>()(key);
+	return boost::hash<uint32_t>()(key);
 #else
-	return hash<uint64_t>()(key);
+	return boost::hash<uint64_t>()(key);
 #endif
 	}
 	bool operator()( const Key& key1, const Key& key2 ) const
@@ -63,9 +61,9 @@ struct HashData {
 	uint32_t depth;
 	uint32_t generation;
 };
-// TODO Use unordered_map instead of hash_map (now deprecated)
+
 // Transposition Table type
-typedef hash_map<Key, HashData, HashFunction > TranspositionTable;
+typedef boost::unordered_map<Key, HashData, HashFunction > TranspositionTable;
 
 }
 
@@ -192,8 +190,8 @@ public:
 	}
 
 	void resizeHash() {
-
-		transTable.resize(hashSize);
+		const int minSize=100;
+		transTable.rehash(minSize/*hashSize*/);
 
 	}
 

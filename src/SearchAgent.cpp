@@ -43,7 +43,7 @@ SearchAgent::SearchAgent() :
 	blackIncrement(0), depth(5), movesToGo(0), moveTime(0), infinite(false), searchInProgress(false)
 {
 
-	transTable = TranspositionTable(hashSize);
+	//transTable = TranspositionTable(hashSize);
 }
 
 // start a new game
@@ -71,7 +71,7 @@ void SearchAgent::clearHash() {
 
 	transTable.clear();
 
-	transTable = TranspositionTable(hashSize);
+	this->resizeHash();
 
 }
 
@@ -107,8 +107,6 @@ void SearchAgent::startSearch() {
 
 	clearHash();
 
-
-
 	Board actual(board);
 
 	SimplePVSearch search(actual, getDepth());
@@ -119,6 +117,8 @@ void SearchAgent::startSearch() {
 	std::cout << "new key " << actual.generateKey() <<std::endl;
 
 	actual.printBoard();
+
+	clearHash();
 
 	//std::cout << "score " << search.getScore()<<std::endl;
 
