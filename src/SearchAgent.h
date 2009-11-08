@@ -28,42 +28,18 @@
 #define SEARCHAGENT_H_
 
 #include <boost/unordered_map.hpp>
-
+#include <iostream>
+#include <assert.h>
 #include "Uci.h"
 #include "Board.h"
 #include "SimplePVSearch.h"
+#include "TranspositionTable.h"
 
 namespace SearchAgentTypes {
 
 enum SearchMode {
 	SEARCH_TIME, SEARCH_DEPTH, SEARCH_MOVESTOGO, SEARCH_MOVETIME, SEARCH_MOVES, SEARCH_INFINITE
 };
-
-struct HashFunction {
-	size_t operator()( const Key& key ) const
-	{
-#if  defined(__MINGW32__) || defined(__MINGW64__)
-	return boost::hash<uint32_t>()(key);
-#else
-	return boost::hash<uint64_t>()(key);
-#endif
-	}
-	bool operator()( const Key& key1, const Key& key2 ) const
-	{
-		return key1==key2;
-	}
-};
-
-struct HashData {
-	HashData() : value(0), depth(0), generation(0)  {};
-	HashData(int _value, uint32_t _depth, uint32_t _generation) : value(_value), depth(_depth), generation(_generation)  {};
-	int value;
-	uint32_t depth;
-	uint32_t generation;
-};
-
-// Transposition Table type
-typedef boost::unordered_map<Key, HashData, HashFunction > TranspositionTable;
 
 }
 
@@ -74,7 +50,6 @@ public:
 
 	static SearchAgent* getInstance();
 	void newGame();
-	void clearHash();
 
 	const Board getBoard() const;
 	void setBoard(Board _board);
@@ -168,36 +143,58 @@ public:
 	void setInfinite(int _infinite) {
 		infinite = _infinite;
 	}
-
-	bool hashPut(const Board board, int value, uint32_t depth, uint32_t generation) {
-
-		if (transTable.size() >= hashSize) {
-			return false; // hash full
+	void clearHash() {
+		if (transTable.size()>getActiveHash()) {
+			transTable[getActiveHash()].clearHash();
 		}
-
-		HashData hashData(value, depth, generation);
-		transTable[board.getKey()] = hashData;
-		return true;
 	}
-
-	bool hashGet(const Key _key, HashData& hashData) {
-
-		if (transTable.count(_key)>0) {
-			hashData = transTable[_key];
-			return true;
+	bool hashPut(const Board board, const int value, const uint32_t depth, const uint32_t generation) {
+		if (transTable.size()>getActiveHash()) {
+			return transTable[getActiveHash()].hashPut(board, value, depth, generation);
 		}
 		return false;
 	}
 
-	void resizeHash() {
-		const int minSize=100;
-		transTable.rehash(minSize/*hashSize*/);
+	bool hashGet(const Key _key, HashData& hashData) {
+		if (transTable.size()>getActiveHash()) {
+			return transTable[getActiveHash()].hashGet(_key, hashData);
+		}
+		return false;
 
 	}
 
-	bool isHashFull() {
+	void resizeHash() {
+		if (transTable.size()>getActiveHash()) {
+			transTable[getActiveHash()].resizeHash();
+		}
+	}
 
-		return transTable.size() >= hashSize;
+	bool isHashFull() {
+		if (transTable.size()>getActiveHash()) {
+			return transTable[getActiveHash()].isHashFull();
+		}
+		return false;
+	}
+
+	void addTranspositionTable(TranspositionTable& table) {
+		transTable.push_back(table);
+	}
+
+	inline int getActiveHash() {
+		return activeHash;
+	}
+
+	inline void setActiveHash(const int active) {
+		activeHash = active;
+	}
+
+	void relaseHash() {
+
+		for(int x=0;x<transTable.size();x++) {
+			transTable[x].clearHash();
+			//delete transTable[x];
+		}
+		transTable.clear();
 	}
 
 protected:
@@ -225,9 +222,8 @@ private:
 	int moveTime;
 	bool infinite;
 
-	TranspositionTable transTable;
-
-
+	int activeHash;
+	std::vector< TranspositionTable> transTable;
 
 };
 

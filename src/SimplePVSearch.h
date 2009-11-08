@@ -48,7 +48,7 @@ class SimplePVSearch {
 public:
 
 	SimplePVSearch(Board& board);
-	SimplePVSearch(Board& board, int depth ) : _depth(depth), _board(board), _updateUci(true) {}
+	SimplePVSearch(Board& board, int depth ) : _depth(depth), _board(board), _updateUci(true), errorCount(0) {}
 	virtual ~SimplePVSearch();
 	virtual void search();
 	virtual int getScore();
@@ -72,6 +72,7 @@ private:
 	uint64_t _nodes;
 	uint32_t _time;
 	bool _updateUci;
+	int errorCount;
 
 	int idSearch(Board& board);
 	int pvSearch(Board& board, int alpha, int beta, int depth);

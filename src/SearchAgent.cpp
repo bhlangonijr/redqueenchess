@@ -40,10 +40,9 @@ SearchAgent* SearchAgent::getInstance ()
 
 SearchAgent::SearchAgent() :
 	searchMode(SEARCH_TIME), hashSize(64*1024*1024/sizeof(HashData)), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
-	blackIncrement(0), depth(5), movesToGo(0), moveTime(0), infinite(false), searchInProgress(false)
+	blackIncrement(0), depth(5), movesToGo(0), moveTime(0), infinite(false), searchInProgress(false), activeHash(0)
 {
 
-	//transTable = TranspositionTable(hashSize);
 }
 
 // start a new game
@@ -63,15 +62,6 @@ void SearchAgent::newGame() {
 	this->setInfinite(false);
 	this->setSearchInProgress(false);
 
-
-}
-
-// clear hash table
-void SearchAgent::clearHash() {
-
-	transTable.clear();
-
-	this->resizeHash();
 
 }
 
@@ -105,23 +95,27 @@ void SearchAgent::startSearch() {
 
 	setSearchInProgress(true);
 
-	clearHash();
+	TranspositionTable table = TranspositionTable(getHashSize());
+
+	addTranspositionTable(table);
 
 	Board actual(board);
 
-	SimplePVSearch search(actual, getDepth());
+	SimplePVSearch simplePV(actual, getDepth());
 
-	search.search();
+	simplePV.search();
 
-	std::cout << "old key " << board.generateKey() <<std::endl;
-	std::cout << "new key " << actual.generateKey() <<std::endl;
+	Key oldKey = board.generateKey();
+	Key newKey = actual.generateKey();
+
+	std::cout << "old key " << oldKey <<std::endl;
+	std::cout << "new key " << newKey <<std::endl;
+
+	assert(oldKey==newKey);
 
 	actual.printBoard();
 
-	clearHash();
-
-	//std::cout << "score " << search.getScore()<<std::endl;
-
+	relaseHash();
 
 }
 

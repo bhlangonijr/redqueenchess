@@ -215,10 +215,7 @@ void Board::doMove(const Move move, MoveBackup& backup){
 				removeCastleRights(BLACK,BOTH_SIDE_CASTLE);
 			}
 		}
-	}
-
-	if (fromPiece==makePiece(getSideToMove(),ROOK)) {
-		if (getCastleRights(getSideToMove())!=NO_CASTLE) {
+		if (fromPiece==makePiece(getSideToMove(),ROOK)) {
 			if (getSideToMove()==WHITE) {
 				if (move.from==A1) {
 					removeCastleRights(WHITE,QUEEN_SIDE_CASTLE);
@@ -234,7 +231,24 @@ void Board::doMove(const Move move, MoveBackup& backup){
 				}
 			}
 		}
+		if (toPiece==makePiece(otherSide,ROOK)) {
+			if (getSideToMove()==WHITE) {
+				if (move.to==A8) {
+					removeCastleRights(BLACK,QUEEN_SIDE_CASTLE);
+				} else if (move.to==H8) {
+					removeCastleRights(BLACK,KING_SIDE_CASTLE);
+				}
+			} else {
+				if (move.to==A1) {
+					removeCastleRights(WHITE,QUEEN_SIDE_CASTLE);
+				} else if (move.to==H1) {
+					removeCastleRights(WHITE,KING_SIDE_CASTLE);
+
+				}
+			}
+		}
 	}
+
 	setKey(getKey() ^ zobrist.castleRight[getZobristCastleIndex()]);
 
 	if (getEnPassant()!=NONE) {

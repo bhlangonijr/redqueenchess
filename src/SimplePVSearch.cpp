@@ -26,6 +26,10 @@
 
 
 #include "SimplePVSearch.h"
+// If set to true, will check move integrity - used for trace purposes
+#define CHECK_MOVE_GEN_ERRORS false
+// Exit the program if the count of errors in CHECK_MOVE_GEN_ERRORS exced the threshold - used for trace purposes
+#define EXIT_PROGRAM_THRESHOLD 100
 
 using namespace SimplePVSearchTypes;
 
@@ -42,10 +46,12 @@ SimplePVSearch::~SimplePVSearch(){
 // root search
 void SimplePVSearch::search() {
 
+	errorCount=0;
 	uint32_t tmp = getTickCount();
 	_score = idSearch( _board );
 	SearchAgent::getInstance()->setSearchInProgress(false);
 	_time = getTickCount() - tmp;
+
 
 }
 
@@ -110,7 +116,6 @@ int SimplePVSearch::idSearch(Board& board) {
 
 	}
 
-
 	if (bestMove) {
 		score = bestMove->score;
 		if (isUpdateUci()) {
@@ -118,7 +123,6 @@ int SimplePVSearch::idSearch(Board& board) {
 		}
 	}
 
-	movePool.~object_pool();
 	return score;
 }
 
@@ -128,9 +132,12 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 	bool bSearch = true;
 	int score = 0;
 
+#if CHECK_MOVE_GEN_ERRORS
+	Board old(board);
+#endif
+
 	if( depth == 0 ) {
 		score = qSearch(board, alpha, beta, maxQuiescenceSearchDepth);
-		//score = evaluate(board);
 		SearchAgent::getInstance()->hashPut(board,score,depth,board.getMoveCounter());
 		return score;
 	}
@@ -148,12 +155,17 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 
 		MovePool movePool;
 		Move* move = board.generateAllMoves(movePool, board.getSideToMove());
+#if CHECK_MOVE_GEN_ERRORS
+		Key key1 = old.generateKey();
+#endif
+		while ( move )  {
 
-			while ( move )  {
 
 			MoveBackup backup;
 			board.doMove(*move,backup);
-
+#if CHECK_MOVE_GEN_ERRORS
+			Board newBoard(board);
+#endif
 			if ( bSearch ) {
 				score = -pvSearch(board, -beta, -alpha, depth - 1);
 			} else {
@@ -166,9 +178,27 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 			board.undoMove(backup);
 			move = move->next;
 
+#if CHECK_MOVE_GEN_ERRORS
+			Key key2 = board.generateKey();
+			if (key1!=key2) {
+				errorCount++;
+				std::cout << "CRITICAL - Error in undoMove: restored board differs from original " << std::endl;
+				std::cout << "Original board: " << std::endl;
+				old.printBoard();
+				std::cout << "Board with move: " << std::endl;
+				newBoard.printBoard();
+				std::cout << "Board with undone move: " << std::endl;
+				board.printBoard();
+				std::cout << move->toString() << std::endl;
+				std::cout << "End - Error in undoMove " << std::endl;
+				if (errorCount>EXIT_PROGRAM_THRESHOLD) {
+					std::cout << "Error count exced threshold: " << errorCount << std::endl;
+					exit(1);
+				}
+			}
+#endif
 			if( score >= beta ) {
 				SearchAgent::getInstance()->hashPut(board,score,depth,board.getMoveCounter());
-				movePool.~object_pool();
 				return beta;
 			}
 
@@ -178,7 +208,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 			}
 		}
 
-		movePool.~object_pool();
 	}
 
 	SearchAgent::getInstance()->hashPut(board,score,depth,board.getMoveCounter());
@@ -191,8 +220,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth) {
 
 	_nodes++;
-
-	//if (depth == 0) return evaluate(board);
 
 	int standPat = evaluate(board);
 
@@ -228,7 +255,6 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth) {
 			}
 
 		}
-		movePool.~object_pool();
 	}
 
 	return alpha;

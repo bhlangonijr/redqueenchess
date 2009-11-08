@@ -767,8 +767,12 @@ inline bool Board::canCastle(const PieceColor color, const CastleRight castleRig
 
 	if (currentBoard.castleRight[color] == NO_CASTLE) { // lost the right to castle?
 		return false;
+	} else if (currentBoard.castleRight[color]!=BOTH_SIDE_CASTLE) {
+		if (currentBoard.castleRight[color]!=castleRight) {
+			return false;
+		}
 	}
-	if (castleSquare[color][castleRight]&getPiecesByColor(color)) { // pieces interposing king & rooks?
+	if (castleSquare[color][castleRight]&getAllPieces()) { // pieces interposing king & rooks?
 		return false;
 	}
 	Bitboard castle=getPiecesByType(makePiece(color,KING))|castleSquare[color][castleRight]&getPiecesByColor(color);
