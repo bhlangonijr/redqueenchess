@@ -65,6 +65,9 @@ public:
 		_updateUci = value;
 	}
 
+	void sort(std::vector<Move*>& moves);
+	void sortMoves(MovePool& movePool, Move* firstMove);
+
 private:
 	Board& _board;
 	int _depth;

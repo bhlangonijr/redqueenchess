@@ -112,7 +112,7 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		}
 
-		// TODO sort moves
+		sortMoves(movePool, firstMove);
 
 	}
 
@@ -246,7 +246,6 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth) {
 			move = move->next;
 
 			if( score >= beta ) {
-				movePool.~object_pool();
 				return beta;
 			}
 
@@ -282,8 +281,46 @@ int SimplePVSearch::evaluate(Board& board) {
 	return result;
 }
 
+//sort
+void SimplePVSearch::sort(std::vector<Move*>& moves) {
+
+	int i, j, key, size = moves.size();
+	for(j = 0; j < size; j++)
+	{
+		key = moves[j]->score;
+		for(i = j - 1; (i >= 0) && (moves[i]->score < key); i--)
+		{
+			moves[i+1] = moves[i];
+		}
+		moves[i+1] = moves[j];
+	}
+
+}
+
+// sort moves by score
+void SimplePVSearch::sortMoves(MovePool& movePool, Move* firstMove) {
+
+	std::vector<Move*> moves;
+	Move* move=firstMove;
+
+	while (move->next) {
+		moves.push_back(move);
+		move=move->next;
+	}
+
+	if (moves.size()<1) {
+		return;
+	}
+
+	sort(moves);
+
+	for(int x=0;x<moves.size()-1;x++) {
+		moves[x]->next = moves[x+1];
+	}
+	moves[moves.size()-1]->next=NULL;
 
 
+}
 
 
 
