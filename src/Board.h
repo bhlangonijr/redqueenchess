@@ -424,7 +424,7 @@ struct Move {
 
 	Move* next;
 
-	Move()
+	Move() : from(NONE), to(NONE), score(0)
 	{}
 	Move(Square fromSquare, Square toSquare, PieceTypeByColor piece) :
 		from(fromSquare), to(toSquare), promotionPiece(piece), score(0)
@@ -439,6 +439,9 @@ struct Move {
 	int score;
 
 	const std::string toString() const {
+		if (from==NONE || to==NONE ) {
+			return "";
+		}
 		std::string result = squareToString[from]+squareToString[to];
 		if (promotionPiece!=EMPTY) {
 			result += pieceChar[pieceType[promotionPiece]];

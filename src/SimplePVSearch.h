@@ -16,7 +16,7 @@
 
     You should have received a copy of the GNU General Public License
     along with Redqueen.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 /*
  * SimplePVSearch.h
  *
@@ -35,9 +35,9 @@
 
 namespace SimplePVSearchTypes {
 
-	static const int maxScore = 200000;
-	static const int maxQuiescenceSearchDepth = 10;
-	static const int materialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 325, 325, 500, 975, 10000, 100, 325, 325, 500, 975, 10000, 0};
+static const int maxScore = 200000;
+static const int maxQuiescenceSearchDepth = 10;
+static const int materialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 325, 325, 500, 975, 10000, 100, 325, 325, 500, 975, 10000, 0};
 
 }
 
@@ -66,7 +66,47 @@ public:
 	}
 
 	void sort(std::vector<Move*>& moves);
-	void sortMoves(MovePool& movePool, Move* firstMove);
+	Move* sortMoves(MovePool& movePool, Move* firstMove);
+
+	void addPv(const Move move) {
+		pv.push_back(move);
+	}
+
+	Move getPvAt(const int index) {
+
+		Move move;
+
+		if (index >= pv.size()) {
+			return move;
+		}
+		return pv[index];
+	}
+
+	std::vector<Move>& getPv() {
+		return pv;
+	}
+
+	void clearPv() {
+		pv.clear();
+	}
+
+	void updatePv(const int index, const Move value) {
+		Move move;
+		if (index >= pv.size()) {
+			return ;
+		}
+		pv[index]=value;
+
+	}
+
+	std::string getPvString(const int depth) {
+
+		std::string result="";
+		for(int x=0;x<pv.size()&&x<depth;x++) {
+			result+=pv[x].toString()+" ";
+		}
+		return result;
+	}
 
 private:
 	Board& _board;
@@ -76,6 +116,7 @@ private:
 	uint32_t _time;
 	bool _updateUci;
 	int errorCount;
+	std::vector<Move> pv;
 
 	int idSearch(Board& board);
 	int pvSearch(Board& board, int alpha, int beta, int depth);

@@ -45,7 +45,8 @@ SimplePVSearch::~SimplePVSearch(){
 
 // root search
 void SimplePVSearch::search() {
-
+	this->clearPv();
+	this->getPv().assign(_depth,Move());
 	errorCount=0;
 	uint32_t tmp = getTickCount();
 	_score = idSearch( _board );
@@ -93,6 +94,7 @@ int SimplePVSearch::idSearch(Board& board) {
 			if (score > bestScore) {
 				bestScore = score;
 				bestMove = move;
+				updatePv(0,*bestMove);
 			}
 
 			board.undoMove(backup);
@@ -103,7 +105,7 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		if (isUpdateUci()) {
 			std::cout << "info depth "<< depth << std::endl;
-			std::cout << "info score cp " << score << " depth " << depth << " nodes " << _nodes << " time " << time << " pv " << std::endl/*TODO pv*/;
+			std::cout << "info score cp " << score << " depth " << depth << " nodes " << _nodes << " time " << time << " pv " << getPvString(depth) << std::endl;
 			if (totalTime>1000) {
 				std::cout << "info nps " << (_nodes/(totalTime/1000)) << std::endl;
 			} else {
@@ -112,7 +114,7 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		}
 
-		sortMoves(movePool, firstMove);
+		firstMove = sortMoves(movePool, firstMove);
 
 	}
 
@@ -138,7 +140,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 
 	if( depth == 0 ) {
 		score = qSearch(board, alpha, beta, maxQuiescenceSearchDepth);
-		SearchAgent::getInstance()->hashPut(board,score,depth,board.getMoveCounter());
+		SearchAgent::getInstance()->hashPut(board,score,depth,0);
 		return score;
 	}
 
@@ -174,7 +176,9 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 					score = -pvSearch(board, -beta, -alpha, depth - 1);
 				}
 			}
-
+			if( score > alpha ) {
+				updatePv(_depth-depth,*move);
+			}
 			board.undoMove(backup);
 			move = move->next;
 
@@ -198,7 +202,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 			}
 #endif
 			if( score >= beta ) {
-				SearchAgent::getInstance()->hashPut(board,score,depth,board.getMoveCounter());
+				SearchAgent::getInstance()->hashPut(board,score,depth,0);
 				return beta;
 			}
 
@@ -210,7 +214,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 
 	}
 
-	SearchAgent::getInstance()->hashPut(board,score,depth,board.getMoveCounter());
+	SearchAgent::getInstance()->hashPut(board,score,depth,0);
 
 	return alpha;
 
@@ -283,42 +287,46 @@ int SimplePVSearch::evaluate(Board& board) {
 
 //sort
 void SimplePVSearch::sort(std::vector<Move*>& moves) {
-
-	int i, j, key, size = moves.size();
-	for(j = 0; j < size; j++)
-	{
-		key = moves[j]->score;
-		for(i = j - 1; (i >= 0) && (moves[i]->score < key); i--)
+	Move* tmp;
+	bool flag=true;
+	for(int i = 0; i < moves.size()&&flag; i++){
+		flag=false;
+		for(int j = 0; j < moves.size()-1; j++)
 		{
-			moves[i+1] = moves[i];
+			if (moves[j+1]->score>moves[j]->score) {
+				tmp=moves[j];
+				moves[j]=moves[j+1];
+				moves[j+1]=tmp;
+				flag=true;
+			}
+
 		}
-		moves[i+1] = moves[j];
 	}
 
 }
 
 // sort moves by score
-void SimplePVSearch::sortMoves(MovePool& movePool, Move* firstMove) {
+Move* SimplePVSearch::sortMoves(MovePool& movePool, Move* firstMove) {
 
 	std::vector<Move*> moves;
 	Move* move=firstMove;
 
-	while (move->next) {
+	while (move) {
 		moves.push_back(move);
 		move=move->next;
 	}
 
 	if (moves.size()<1) {
-		return;
+		return NULL;
 	}
 
 	sort(moves);
-
-	for(int x=0;x<moves.size()-1;x++) {
-		moves[x]->next = moves[x+1];
+	for(int x=1;x<moves.size();x++) {
+		moves[x-1]->next = moves[x];
 	}
 	moves[moves.size()-1]->next=NULL;
 
+	return moves[0];
 
 }
 
