@@ -30,6 +30,7 @@
 #define CHECK_MOVE_GEN_ERRORS false
 // Exit the program if the count of errors in CHECK_MOVE_GEN_ERRORS exced the threshold - used for trace purposes
 #define EXIT_PROGRAM_THRESHOLD 100
+#define PV_SEARCH false
 
 using namespace SimplePVSearchTypes;
 
@@ -42,7 +43,6 @@ SimplePVSearch::~SimplePVSearch(){
 
 }
 
-
 // root search
 void SimplePVSearch::search() {
 	this->clearPv();
@@ -52,8 +52,6 @@ void SimplePVSearch::search() {
 	_score = idSearch( _board );
 	SearchAgent::getInstance()->setSearchInProgress(false);
 	_time = getTickCount() - tmp;
-
-
 }
 
 // get current score
@@ -80,25 +78,25 @@ int SimplePVSearch::idSearch(Board& board) {
 		score = 0;
 		bestScore = -maxScore;
 		move = firstMove;
-		while (move) {
+		FOREACHMOVE(move) {
 			_nodes++;
+			move->prior=NULL;
 			MoveBackup backup;
 			board.doMove(*move,backup);
 
 			//std::cout << "depth: " << depth << "score: " << score << " - move: " << move->toString() << " - nodes: " << _nodes << " - time: " << (getTickCount() - time) << std::endl;
 			//board.printBoard(); // test
 
-			score = -pvSearch(board, -maxScore, maxScore, depth-1);
+			score = -pvSearch(board, -maxScore, maxScore, depth-1, depth-1, move);
 			move->score=score;
 
 			if (score > bestScore) {
 				bestScore = score;
 				bestMove = move;
-				updatePv(0,*bestMove);
+				updatePv(move, 0);
 			}
 
 			board.undoMove(backup);
-			move = move->next;
 		}
 		time = getTickCount()-time;
 		totalTime += time;
@@ -129,9 +127,11 @@ int SimplePVSearch::idSearch(Board& board) {
 }
 
 // principal variation search
-int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
+int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth, int maxDepth, Move* prior) {
 
+#if PV_SEARCH
 	bool bSearch = true;
+#endif
 	int score = 0;
 
 #if CHECK_MOVE_GEN_ERRORS
@@ -139,7 +139,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 #endif
 
 	if( depth == 0 ) {
-		score = qSearch(board, alpha, beta, maxQuiescenceSearchDepth);
+		score = qSearch(board, alpha, beta, maxQuiescenceSearchDepth, maxQuiescenceSearchDepth, prior);
 		SearchAgent::getInstance()->hashPut(board,score,depth,0);
 		return score;
 	}
@@ -157,30 +157,72 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 
 		MovePool movePool;
 		Move* move = board.generateAllMoves(movePool, board.getSideToMove());
+/*
+		bool ktbt = false;
+		if (board.isAttacked(board.getSideToMove(), KING)) {
+			std::cout << "My King to be taken " << std::endl;
+			if (!move) {
+				std::cout << "... and there's nothing to do " << std::endl;
+				board.printBoard();
+				return -maxScore;
+			}
+			ktbt = true;
+		}
+		if (board.isAttacked(board.flipSide(board.getSideToMove()), KING)) {
+			std::cout << "Their King to be taken " << std::endl;
+		}
+*/
+
 #if CHECK_MOVE_GEN_ERRORS
 		Key key1 = old.generateKey();
 #endif
-		while ( move )  {
+		FOREACHMOVE(move) {
 
-
+			move->prior=prior;
 			MoveBackup backup;
 			board.doMove(*move,backup);
+
+/*
+			if (backup.capturedPiece==WHITE_KING || backup.capturedPiece==BLACK_KING ) {
+				std::cout << "Captured king " << std::endl;
+				board.printBoard();
+			} else if (ktbt) {
+				std::cout << "King is safe now! " << std::endl;
+				board.printBoard();
+			}
+
+*/
+
+
 #if CHECK_MOVE_GEN_ERRORS
 			Board newBoard(board);
 #endif
+
+#if PV_SEARCH
 			if ( bSearch ) {
-				score = -pvSearch(board, -beta, -alpha, depth - 1);
+#endif
+				score = -pvSearch(board, -beta, -alpha, depth - 1, maxDepth, move);
+#if PV_SEARCH
 			} else {
-				score = -pvSearch(board, -alpha-1, -alpha, depth - 1);
+				score = -pvSearch(board, -alpha-1, -alpha, depth - 1, maxDepth, move);
 				if ( score > alpha ) {
-					score = -pvSearch(board, -beta, -alpha, depth - 1);
+					score = -pvSearch(board, -beta, -alpha, depth - 1, maxDepth, move);
 				}
 			}
+#endif
 			if( score > alpha ) {
-				updatePv(_depth-depth,*move);
+				updatePv(move, maxDepth);
 			}
+
 			board.undoMove(backup);
-			move = move->next;
+/*
+			if (backup.capturedPiece==WHITE_KING || backup.capturedPiece==BLACK_KING ) {
+				std::cout << "before capture king " << " Depth: " << depth << std::endl;
+				board.printBoard();
+
+			}
+
+			assert(!(backup.capturedPiece==WHITE_KING || backup.capturedPiece==BLACK_KING));*/
 
 #if CHECK_MOVE_GEN_ERRORS
 			Key key2 = board.generateKey();
@@ -208,7 +250,9 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 
 			if( score > alpha ) {
 				alpha = score;
+#if PV_SEARCH
 				bSearch = false;
+#endif
 			}
 		}
 
@@ -221,7 +265,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth) {
 }
 
 //quiescence search
-int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth) {
+int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int maxDepth, Move* prior) {
 
 	_nodes++;
 
@@ -239,15 +283,14 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth) {
 		MovePool movePool;
 		Move* move = board.generateCaptures(movePool, board.getSideToMove());
 
-		while ( move )  {
-
+		FOREACHMOVE(move)  {
+			move->prior=prior;
 			MoveBackup backup;
 			board.doMove(*move,backup);
 
-			int score = -qSearch(board, -beta, -alpha, depth - 1 );
+			int score = -qSearch(board, -beta, -alpha, depth - 1, maxDepth, move);
 
 			board.undoMove(backup);
-			move = move->next;
 
 			if( score >= beta ) {
 				return beta;
@@ -281,7 +324,6 @@ int SimplePVSearch::evaluate(Board& board) {
 	}
 
 	result = side==WHITE?whiteMaterial-blackMaterial : blackMaterial-whiteMaterial;
-
 	return result;
 }
 
@@ -311,9 +353,8 @@ Move* SimplePVSearch::sortMoves(MovePool& movePool, Move* firstMove) {
 	std::vector<Move*> moves;
 	Move* move=firstMove;
 
-	while (move) {
+	FOREACHMOVE (move) {
 		moves.push_back(move);
-		move=move->next;
 	}
 
 	if (moves.size()<1) {
@@ -328,6 +369,16 @@ Move* SimplePVSearch::sortMoves(MovePool& movePool, Move* firstMove) {
 
 	return moves[0];
 
+}
+
+void SimplePVSearch::updatePv(Move* move, int depth) {
+
+	Move* tmp=move;
+	int n=depth;
+	FOREACHMOVEP(tmp) {
+		updatePv(depth-n,*tmp);
+		n--;
+	}
 }
 
 

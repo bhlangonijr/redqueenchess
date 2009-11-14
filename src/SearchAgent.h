@@ -148,7 +148,7 @@ public:
 			transTable[getActiveHash()].clearHash();
 		}
 	}
-	bool hashPut(const Board board, const int value, const uint32_t depth, const uint32_t generation) {
+	bool hashPut(const Board& board, const int value, const uint32_t depth, const uint32_t generation) {
 		if (transTable.size()>getActiveHash()) {
 			return transTable[getActiveHash()].hashPut(board, value, depth, generation);
 		}

@@ -32,18 +32,15 @@ using namespace BoardTypes;
 
 NodeZobrist zobrist;
 
-Board::Board() : currentBoard()
-{
+Board::Board() : currentBoard() {
 	setInitialPosition();
 }
 
-Board::Board(const Board& board) : currentBoard( Node(board.currentBoard) )
-{
+Board::Board(const Board& board) : currentBoard( Node(board.currentBoard) ) {
 
 }
 
-Board::~Board()
-{
+Board::~Board(){
 }
 
 // initialize zobrist keys
@@ -63,8 +60,7 @@ void Board::initializeZobrist() {
 }
 
 // print board for debug
-const void Board::printBoard()
-{
+const void Board::printBoard() {
 
 	std::vector< std::string> ranks(8);
 	int j=0;
@@ -141,7 +137,9 @@ void Board::doMove(const Move move, MoveBackup& backup){
 	bool enPassant=false;
 
 	backup.key=getKey();
-	backup.move=move;
+	backup.from=move.from;
+	backup.to=move.to;
+	backup.movingPiece=fromPiece;
 	backup.enPassant=getEnPassant();
 	backup.whiteCastleRight=getCastleRights(WHITE);
 	backup.blackCastleRight=getCastleRights(BLACK);
@@ -304,24 +302,16 @@ void Board::doMove(const Move move, MoveBackup& backup){
 }
 
 // undo a move based on struct MoveBackup
-void Board::undoMove(MoveBackup& backup)
-{
+void Board::undoMove(MoveBackup& backup){
 
-	PieceTypeByColor piece=currentBoard.square[backup.move.to];
+	PieceTypeByColor piece=backup.movingPiece;
 	PieceColor sideToMove=flipSide(getSideToMove());
-
-	removePiece(piece,backup.move.to);
-
-	if (!backup.hasPromotion) {
-		putPiece(piece,backup.move.from);
-	} else {
-		putPiece(makePiece(sideToMove, PAWN),backup.move.from);
-	}
+	removePiece(currentBoard.square[backup.to],backup.to);
+	putPiece(piece,backup.from);
 
 	if (backup.hasCapture) {
 		putPiece(backup.capturedPiece,backup.capturedSquare);
 	}
-
 	if (backup.hasWhiteKingCastle) {
 		removePiece(WHITE_ROOK,F1);
 		putPiece(WHITE_ROOK,H1);
@@ -349,8 +339,8 @@ void Board::undoMove(MoveBackup& backup)
 }
 
 // set initial classic position to the board
-void Board::setInitialPosition()
-{
+void Board::setInitialPosition() {
+
 	clearBoard();
 
 	putPiece(WHITE_ROOK, A1);
@@ -474,7 +464,8 @@ Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
 		attacks = getPawnCaptures(from)&otherPieces;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
-			bool promotion=((getSquareRank(from)==RANK_7&&side==WHITE) || (getSquareRank(from)==RANK_2&&side==BLACK));
+			bool promotion=((getSquareRank(from)==RANK_7&&side==WHITE) ||
+					(getSquareRank(from)==RANK_2&&side==BLACK));
 			if (promotion) {
 				move = movePool.construct(Move(move,from,target,makePiece(side,QUEEN)));
 				move = movePool.construct(Move(move,from,target,makePiece(side,ROOK)));
@@ -572,10 +563,11 @@ Move* Board::generateCheckEvasions(MovePool& movePool, const PieceColor side) {
 	Bitboard pieces = getPiecesByType(makePiece(side,KING));
 	Bitboard otherPieces = getPiecesByColor(otherSide);
 	Bitboard attacks = EMPTY_BB;
-	Bitboard notAttacked = ~generateAttackedSquares(flipSide(side),getAllPieces()^pieces)&getEmptySquares();
+	Bitboard notAttacked = ~generateAttackedSquares(otherSide,
+			getAllPieces()^pieces)&getEmptySquares();
+
 	Square kingSquare = bitboardToSquare(pieces);
 	Square from = extractLSB(pieces);
-
 	//moves to non attacked square
 	while ( from!=NONE ) {
 		attacks = getAttacksFrom(from)&notAttacked;
@@ -591,7 +583,10 @@ Move* Board::generateCheckEvasions(MovePool& movePool, const PieceColor side) {
 			getPiecesByType(makePiece(otherSide,BISHOP)) |
 			getPiecesByType(makePiece(otherSide,QUEEN));
 
-	Bitboard kingAttackers = getAttacksTo(allAttackers,getAllPieces(),getPiecesByType(makePiece(side,KING))) & getPiecesByColor(otherSide);
+	Bitboard kingAttackers = getAttacksTo(allAttackers,getAllPieces(),
+			getPiecesByType(makePiece(side,KING))) &
+			getPiecesByColor(otherSide);
+
 	if (kingAttackers) {
 		from = extractLSB(kingAttackers);
 		if (!kingAttackers) {
@@ -605,12 +600,14 @@ Move* Board::generateCheckEvasions(MovePool& movePool, const PieceColor side) {
 			}
 			//will try to interpose the attack with a piece
 			Bitboard attackers = EMPTY_BB;
-			Bitboard attackedSquares = generateInterposingAttackedSquares(squareToBitboard[from],getAllPieces(),getPiecesByType(makePiece(side,KING)),attackers);
+			Bitboard attackedSquares = generateInterposingAttackedSquares(squareToBitboard[from],
+					getAllPieces(),getPiecesByType(makePiece(side,KING)),attackers);
 			attackedSquares &= getIntersectSquares(from, kingSquare)^squareToBitboard[kingSquare];
 			Square interposeSquare = extractLSB(attackedSquares);
 			Bitboard allPiecesMinusKing = (getPiecesByColor(side)^getPiecesByType(makePiece(side,KING)));
+
 			while ( interposeSquare!=NONE ) {
-				Bitboard interposePiece = getAttacksTo(interposeSquare)&allPiecesMinusKing;
+				Bitboard interposePiece = getMovesTo(interposeSquare)&allPiecesMinusKing;
 				if (interposePiece) {
 					Square interposePieceSquare = extractLSB(interposePiece);
 					while ( interposePieceSquare!=NONE ) {
@@ -634,15 +631,19 @@ Move* Board::generateAllMoves(MovePool& movePool, const PieceColor side) {
 
 	if (isAttacked(side, KING)) {
 		moves = generateCheckEvasions(movePool, side);
+		// tmp
+	/*	std::cout << "Generated check Evasions!" << std::endl;
+		this->printBoard();
+		Move* tmp = moves;
+		FOREACHMOVE(tmp) {
+			std::cout<<"Move: " << tmp->toString() << std::endl;
+		}*/
+		//tmp
 	} else {
 		moves = generateCaptures(movePool, side);
 		Move* nonCaptures = generateNonCaptures(movePool, side);
-		Move* tmp = moves;
-		if (tmp) {
-			while (tmp->next) {
-				tmp = tmp->next;
-			}
-			tmp->next=nonCaptures;
+		if (moves) {
+			CATMOVE(moves,nonCaptures);
 		} else {
 			moves = nonCaptures;
 		}

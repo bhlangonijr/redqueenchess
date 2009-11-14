@@ -119,9 +119,10 @@ private:
 	std::vector<Move> pv;
 
 	int idSearch(Board& board);
-	int pvSearch(Board& board, int alpha, int beta, int depth);
-	int qSearch(Board& board, int alpha, int beta, int depth);
+	int pvSearch(Board& board, int alpha, int beta, int depth, int maxDepth, Move* prior);
+	int qSearch(Board& board, int alpha, int beta, int depth, int maxDepth, Move* prior);
 	int evaluate(Board& board);
+	void updatePv(Move* move, int depth);
 
 };
 

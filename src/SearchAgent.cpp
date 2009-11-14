@@ -77,6 +77,7 @@ void SearchAgent::setBoard(Board _board) {
 
 // set position from SAN moves
 void SearchAgent::setPositionFromSAN(std::string startPosMoves) {
+	board = Board();
 	board.loadFromString(startPosMoves);
 }
 
@@ -108,12 +109,14 @@ void SearchAgent::startSearch() {
 	Key oldKey = board.generateKey();
 	Key newKey = actual.generateKey();
 
-	std::cout << "old key " << oldKey <<std::endl;
-	std::cout << "new key " << newKey <<std::endl;
+	if (oldKey!=newKey) {
+		std::cout << "old key " << oldKey <<std::endl;
+		std::cout << "new key " << newKey <<std::endl;
+		board.printBoard();
+		actual.printBoard();
+	}
 
 	assert(oldKey==newKey);
-
-	actual.printBoard();
 
 	relaseHash();
 

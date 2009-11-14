@@ -31,6 +31,7 @@
 #include <vector>
 #include <inttypes.h>
 #include <time.h>
+#include <assert.h>
 #include <boost/pool/object_pool.hpp>
 
 #include "Inline.h"
@@ -65,7 +66,7 @@ typedef uint64_t Key;
 #define Sq2UM(X)				~(squareToBitboard[X]-1) 											// Encode Square to BB uppermask
 #define Sq2LM(X)				squareToBitboard[X]-1												// Encode Square to BB lowermask
 #define Sq2SL(X)				diagH1A8Attacks[X]|diagA1H8Attacks[X] | \
-								rankAttacks[X]|fileAttacks[X]										// Encode Square to All Slider Attacks
+		rankAttacks[X]|fileAttacks[X]										// Encode Square to All Slider Attacks
 
 #define FULL_BB						 0xFFFFFFFFFFFFFFFFULL
 #define EMPTY_BB					 0x0ULL
@@ -78,6 +79,15 @@ typedef uint64_t Key;
 
 #define MAX(x,y)					(x>y?x:y)
 #define MIN(x,y)					(x<y?x:y)
+
+#define CATMOVE(arr1, arr2)		{ Move* t = arr1;\
+									while (t->next) { \
+										t = t->next; \
+									} \
+									t->next=arr2; \
+								}
+#define FOREACHMOVE(move) for(;move;move=move->next)
+#define FOREACHMOVEP(move) for(;move;move=move->prior)
 
 // squares
 enum Square {
@@ -423,14 +433,15 @@ static const char pieceChar[ALL_PIECE_TYPE_BY_COLOR+1] = "pnbrqkPNBRQK ";
 struct Move {
 
 	Move* next;
+	Move* prior;
 
 	Move() : from(NONE), to(NONE), score(0)
 	{}
 	Move(Square fromSquare, Square toSquare, PieceTypeByColor piece) :
-		from(fromSquare), to(toSquare), promotionPiece(piece), score(0)
+		from(fromSquare), to(toSquare), promotionPiece(piece), score(0), prior(NULL)
 		{}
 	Move(Move* nextMove, Square fromSquare, Square toSquare, PieceTypeByColor piece) :
-		next(nextMove), from(fromSquare), to(toSquare), promotionPiece(piece), score(0)
+		next(nextMove), from(fromSquare), to(toSquare), promotionPiece(piece), score(0), prior(NULL)
 		{}
 
 	Square from;
@@ -472,7 +483,9 @@ struct MoveBackup {
 	Square enPassant;
 	bool hasAttackedSquares;
 	Bitboard attackedSquares[ALL_PIECE_COLOR];
-	Move move;
+	PieceTypeByColor movingPiece;
+	Square from;
+	Square to;
 
 };
 
@@ -483,7 +496,7 @@ struct Node {
 	{}
 
 	Node (const Node& node) : key(node.key), piece( node.piece ), pieceCount( node.pieceCount ), moveCounter(node.moveCounter),
-							  enPassant( node.enPassant ), sideToMove( node.sideToMove )
+	enPassant( node.enPassant ), sideToMove( node.sideToMove )
 	{
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=node.square[x];
@@ -576,10 +589,10 @@ struct Node {
 // Zobrist keys for hashing
 struct NodeZobrist {
 
-		Key pieceSquare[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
-		Key castleRight[ALL_CASTLE_RIGHT*ALL_CASTLE_RIGHT];
-		Key enPassant[ALL_FILE];
-		Key sideToMove;
+	Key pieceSquare[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
+	Key castleRight[ALL_CASTLE_RIGHT*ALL_CASTLE_RIGHT];
+	Key enPassant[ALL_FILE];
+	Key sideToMove;
 
 };
 
@@ -638,6 +651,7 @@ public:
 
 	const Bitboard getAttacksTo(const Square square);
 	const Bitboard getAttacksTo(const Bitboard attackingPieces, const Bitboard occupied, const Bitboard attackedPieces);
+	const Bitboard getMovesTo(const Square square);
 
 	Move* generateCaptures(MovePool& movePool, const PieceColor side);
 	Move* generateNonCaptures(MovePool& movePool, const PieceColor side);
@@ -664,6 +678,8 @@ public:
 	const Bitboard getKingAttacks(const Square square, const Bitboard occupied);
 	const Bitboard getAttacksFrom(const Square square);
 	const Bitboard getAttacksFrom(const Square square, const Bitboard occupied);
+	const Bitboard getMovesFrom(const Square square);
+	const Bitboard getMovesFrom(const Square square, const Bitboard occupied);
 	const Bitboard getAllSliderAttacks(const Square square) const;
 
 	const bool hasAttackedSquaresTable();
@@ -725,7 +741,6 @@ inline bool Board::putPiece(const PieceTypeByColor piece, const Square square)
 	currentBoard.piece.array[piece] |= squareToBitboard[square];
 	currentBoard.pieceColor[pieceColor[piece]] |= squareToBitboard[square];
 	currentBoard.square[square] = piece;
-	//currentBoard.pieceCount.array[piece]++;
 
 	return true;
 }
@@ -735,7 +750,6 @@ inline bool Board::removePiece(const PieceTypeByColor piece, const Square square
 	currentBoard.piece.array[piece] ^= squareToBitboard[square];
 	currentBoard.pieceColor[pieceColor[piece]] ^= squareToBitboard[square];
 	currentBoard.square[square] = EMPTY;
-	//currentBoard.pieceCount.array[piece]--;
 
 	return true;
 }
@@ -811,6 +825,7 @@ inline void Board::setEnPassant(const Square square)
 
 // get attacked squares
 inline const Bitboard Board::getAttackedSquares(const PieceColor color) {
+
 	if (!hasAttackedSquaresTable()) {
 		setAttackedSquares(WHITE, generateAttackedSquares(WHITE));
 		setAttackedSquares(BLACK, generateAttackedSquares(BLACK));
@@ -1052,7 +1067,7 @@ inline const Bitboard Board::getPawnAttacks(const Square square) {
 	if (getPieceBySquare(square)==EMPTY) {
 		return EMPTY_BB;
 	}
-	pawnAttacks=getPieceColorBySquare(square)==WHITE?whitePawnAttacks[square]:pawnAttacks=blackPawnAttacks[square];
+	pawnAttacks=getPieceColorBySquare(square)==WHITE?whitePawnAttacks[square]:blackPawnAttacks[square];
 	captures = (diagA1H8Attacks[square]|diagH1A8Attacks[square]) & pawnAttacks ;
 	return captures;
 }
@@ -1065,7 +1080,7 @@ inline const Bitboard Board::getPawnAttacks(const Square square, const Bitboard 
 	if (getPieceBySquare(square)==EMPTY) {
 		return EMPTY_BB;
 	}
-	pawnAttacks=getPieceColorBySquare(square)==WHITE?whitePawnAttacks[square]:pawnAttacks=blackPawnAttacks[square];
+	pawnAttacks=getPieceColorBySquare(square)==WHITE?whitePawnAttacks[square]:blackPawnAttacks[square];
 	captures = (diagA1H8Attacks[square]|diagH1A8Attacks[square]) & pawnAttacks & occupied;
 	return captures;
 }
@@ -1192,6 +1207,45 @@ inline const Bitboard Board::getAttacksFrom(const Square square, const Bitboard 
 	return EMPTY_BB;
 }
 
+// overload method - gets moves from a piece of a given square
+inline const Bitboard Board::getMovesFrom(const Square square) {
+	return getMovesFrom(square, getAllPieces());
+}
+
+// return a bitboard with moves by the piece in the given square
+inline const Bitboard Board::getMovesFrom(const Square square, const Bitboard occupied) {
+
+	PieceType type = getPieceTypeBySquare(square);
+
+	switch (type) {
+	case PIECE_EMPTY:
+		return EMPTY_BB;
+		break;
+	case PAWN:
+		return getPawnMoves(square);
+		break;
+	case KNIGHT:
+		return getKnightAttacks(square);
+		break;
+	case BISHOP:
+		return getBishopAttacks(square,occupied);
+		break;
+	case ROOK:
+		return getRookAttacks(square,occupied);
+		break;
+	case QUEEN:
+		return getQueenAttacks(square,occupied);
+		break;
+	case KING:
+		return getKingAttacks(square);
+		break;
+	default:
+		break;
+	}
+
+	return EMPTY_BB;
+}
+
 // get all sliders attacks
 inline const Bitboard Board::getAllSliderAttacks(const Square square) const {
 	return allSliderAttacks[square];
@@ -1254,6 +1308,25 @@ inline const Bitboard Board::getAttacksTo(const Bitboard attackingPieces, const 
 
 	return attacks;
 }
+
+// get a bitboard with pieces moving to the given square
+inline const Bitboard Board::getMovesTo(const Square square){
+
+	Bitboard all = getAllPieces();
+	Bitboard moves = EMPTY_BB;
+
+	Square from = extractLSB(all);
+
+	while ( from!=NONE ) {
+		if (getMovesFrom(from) & squareToBitboard[square]) {
+			moves |= squareToBitboard[from];
+		}
+		from = extractLSB(all);
+	}
+
+	return moves;
+}
+
 
 // get the set of attacked squares
 inline const Bitboard Board::generateAttackedSquares(const PieceColor color) {
@@ -1330,8 +1403,8 @@ inline const Bitboard Board::findAttackBlocker(Square square) {
 	PieceColor side= getPieceColor(piece);
 	PieceColor otherSide = flipSide(side);
 	Bitboard allAttackers = getPiecesByType(makePiece(otherSide,ROOK)) |
-	getPiecesByType(makePiece(otherSide,BISHOP)) |
-	getPiecesByType(makePiece(otherSide,QUEEN));
+			getPiecesByType(makePiece(otherSide,BISHOP)) |
+			getPiecesByType(makePiece(otherSide,QUEEN));
 
 	allAttackers &= getAllSliderAttacks(square);
 	if (!allAttackers) {

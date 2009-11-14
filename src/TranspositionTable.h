@@ -78,7 +78,7 @@ public:
 		this->resizeHash();
 	}
 
-	bool hashPut(const Board board, const int value, const uint32_t depth, const uint32_t generation) {
+	bool hashPut(const Board& board, const int value, const uint32_t depth, const uint32_t generation) {
 
 		if (transTable.size() >= hashSize) {
 			return false; // hash full
