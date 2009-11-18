@@ -87,7 +87,6 @@ typedef uint64_t Key;
 									t->next=arr2; \
 								}
 #define FOREACHMOVE(move) for(;move;move=move->next)
-#define FOREACHMOVEP(move) for(;move;move=move->prior)
 
 // squares
 enum Square {
@@ -433,21 +432,31 @@ static const char pieceChar[ALL_PIECE_TYPE_BY_COLOR+1] = "pnbrqkPNBRQK ";
 struct Move {
 
 	Move* next;
-	Move* prior;
 
 	Move() : from(NONE), to(NONE), score(0)
 	{}
 	Move(Square fromSquare, Square toSquare, PieceTypeByColor piece) :
-		from(fromSquare), to(toSquare), promotionPiece(piece), score(0), prior(NULL)
+		from(fromSquare), to(toSquare), promotionPiece(piece), score(0)
 		{}
 	Move(Move* nextMove, Square fromSquare, Square toSquare, PieceTypeByColor piece) :
-		next(nextMove), from(fromSquare), to(toSquare), promotionPiece(piece), score(0), prior(NULL)
+		next(nextMove), from(fromSquare), to(toSquare), promotionPiece(piece), score(0)
+		{}
+
+	Move(Move* move) :
+		next(NULL), from(move->from), to(move->to), promotionPiece(move->promotionPiece), score(move->score)
 		{}
 
 	Square from;
 	Square to;
 	PieceTypeByColor promotionPiece;
 	int score;
+
+	void copy(const Move* move) {
+		from=move->from;
+		to=move->to;
+		promotionPiece=move->promotionPiece;
+		score=move->score;
+	}
 
 	const std::string toString() const {
 		if (from==NONE || to==NONE ) {

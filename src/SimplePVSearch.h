@@ -100,9 +100,12 @@ public:
 	}
 
 	std::string getPvString(const int depth) {
+		if (depth < 1) {
+			return "";
+		}
 
 		std::string result="";
-		for(int x=0;x<pv.size()&&x<depth;x++) {
+		for(int x=0;x<pv.size();x++) {
 			result+=pv[x].toString()+" ";
 		}
 		return result;
@@ -119,10 +122,10 @@ private:
 	std::vector<Move> pv;
 
 	int idSearch(Board& board);
-	int pvSearch(Board& board, int alpha, int beta, int depth, int maxDepth, Move* prior);
-	int qSearch(Board& board, int alpha, int beta, int depth, int maxDepth, Move* prior);
+	int pvSearch(Board& board, int alpha, int beta, int depth, int maxDepth, Move* pvNode, MovePool& pvPool);
+	int qSearch(Board& board, int alpha, int beta, int depth, int maxDepth);
 	int evaluate(Board& board);
-	void updatePv(Move* move, int depth);
+	void updatePv(Move* move, int depth, int maxDepth);
 
 };
 
