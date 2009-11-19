@@ -6,3 +6,4 @@ Ben-Hur Langoni Junior
 2) Drop boost object_pool -> it's very slow
 3) Finish SimplePVSearch
 4) Implement Monte Carlo & Boltzmann in search
+5) Implement time management in search

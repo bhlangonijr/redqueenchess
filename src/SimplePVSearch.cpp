@@ -30,6 +30,7 @@
 #define CHECK_MOVE_GEN_ERRORS false
 // Exit the program if the count of errors in CHECK_MOVE_GEN_ERRORS exced the threshold - used for trace purposes
 #define EXIT_PROGRAM_THRESHOLD 100
+// If true uses Principal Variation Search
 #define PV_SEARCH false
 
 using namespace SimplePVSearchTypes;
@@ -89,10 +90,6 @@ int SimplePVSearch::idSearch(Board& board) {
 			_nodes++;
 			MoveBackup backup;
 			board.doMove(*move,backup);
-
-			//std::cout << "depth: " << depth << "score: " << score << " - move: " << move->toString() << " - nodes: " << _nodes << " - time: " << (getTickCount() - time) << std::endl;
-			//board.printBoard(); // test
-
 			score = -pvSearch(board, -maxScore, maxScore, depth-1, depth-1, bestMove, pvPool);
 			move->score=score;
 
@@ -383,16 +380,12 @@ Move* SimplePVSearch::sortMoves(MovePool& movePool, Move* firstMove) {
 
 void SimplePVSearch::updatePv(Move* move, int depth, int maxDepth) {
 
-	//errorCount++;
 	Move* tmp=move;
 	int n=0;
 	FOREACHMOVE(tmp) {
-		//std::cout << "move " << tmp->toString() << " n " << n << " score " << tmp->score << std::endl;
 		updatePv(n,*tmp);
 		n++;
 	}
-	//std::cout << getPvString(maxDepth) << std::endl;
-	//std::cout << " ---------------- Errocount: " << errorCount << " depth " << depth << " maxDepth " << maxDepth << std::endl;
 
 }
 
