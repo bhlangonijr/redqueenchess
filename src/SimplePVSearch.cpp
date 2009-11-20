@@ -28,7 +28,7 @@
 #include "SimplePVSearch.h"
 // If set to true, will check move integrity - used for trace purposes
 #define CHECK_MOVE_GEN_ERRORS false
-// Exit the program if the count of errors in CHECK_MOVE_GEN_ERRORS exced the threshold - used for trace purposes
+// Exit the program if the count of errors in CHECK_MOVE_GEN_ERRORS exceed the threshold - used for trace purposes
 #define EXIT_PROGRAM_THRESHOLD 100
 // If true uses Principal Variation Search
 #define PV_SEARCH false
@@ -73,24 +73,25 @@ int SimplePVSearch::idSearch(Board& board) {
 		bestMove=pvPool.construct(Move(firstMove));
 	}
 
-	bestMove->next=NULL;
-
 	_nodes = 0;
 
-	for (int depth = 1; depth <= _depth; depth++) {
+	for (int depth = 2; depth <= _depth; depth++) {
 
 		uint32_t time = getTickCount();
 		uint32_t totalTime = 0;
 		score = 0;
 		bestScore = -maxScore;
 		move = firstMove;
-		bestMove->next=NULL;
+		if (bestMove) {
+			bestMove->copy(move);
+			bestMove->next=NULL;
+		}
 
 		FOREACHMOVE(move) {
 			_nodes++;
 			MoveBackup backup;
-			board.doMove(*move,backup);
-			score = -pvSearch(board, -maxScore, maxScore, depth-1, depth-1, bestMove, pvPool);
+			board.doMove(move,backup);
+			score = -pvSearch(board, bestScore, -bestScore, depth-1, depth-1, bestMove, pvPool);
 			move->score=score;
 
 			if (score > bestScore) {
@@ -136,7 +137,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth, int m
 	bool bSearch = true;
 #endif
 	int score = 0;
-
 #if CHECK_MOVE_GEN_ERRORS
 	Board old(board);
 #endif
@@ -168,7 +168,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth, int m
 		if (pvNode) {
 			pvNode->next=bestMove;
 		}
-
 		//bool ktbt = false;
 		if (board.isAttacked(board.getSideToMove(), KING)) {
 			//std::cout << "My King to be taken " << std::endl;
@@ -190,7 +189,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth, int m
 		FOREACHMOVE(move) {
 
 			MoveBackup backup;
-			board.doMove(*move,backup);
+			board.doMove(move,backup);
 
 			/*
 			if (backup.capturedPiece==WHITE_KING || backup.capturedPiece==BLACK_KING ) {
@@ -258,6 +257,8 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth, int m
 				if (bestMove) {
 					bestMove->copy(move);
 				}
+				//std::cout << "Move: " << bestMove->toString() << " at " << depth << std::endl;
+
 				alpha = score;
 #if PV_SEARCH
 				bSearch = false;
@@ -266,7 +267,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth, int m
 		}
 	}
 
-	SearchAgent::getInstance()->hashPut(board,score,depth,0);
+	SearchAgent::getInstance()->hashPut(board,alpha,depth,0);
 
 	return alpha;
 
@@ -293,7 +294,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int ma
 
 		FOREACHMOVE(move)  {
 			MoveBackup backup;
-			board.doMove(*move,backup);
+			board.doMove(move,backup);
 
 			int score = -qSearch(board, -beta, -alpha, depth - 1, maxDepth);
 

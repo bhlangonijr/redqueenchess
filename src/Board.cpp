@@ -129,7 +129,7 @@ void Board::genericTest() {
 }
 
 // do a move and set backup info into struct MoveBackup
-void Board::doMove(const Move move, MoveBackup& backup){
+void Board::doMove(const Move& move, MoveBackup& backup){
 
 	PieceTypeByColor fromPiece=this->getPieceBySquare(move.from);
 	PieceTypeByColor toPiece=this->getPieceBySquare(move.to);

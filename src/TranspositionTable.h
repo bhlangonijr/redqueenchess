@@ -75,7 +75,6 @@ public:
 	}
 	void clearHash() {
 		transTable.clear();
-		this->resizeHash();
 	}
 
 	bool hashPut(const Board& board, const int value, const uint32_t depth, const uint32_t generation) {

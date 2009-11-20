@@ -623,7 +623,7 @@ public:
 
 	const void printBoard();
 	void genericTest();
-	void doMove(const Move move, MoveBackup& backup);
+	void doMove(const Move& move, MoveBackup& backup);
 	void undoMove(MoveBackup& backup);
 	void setInitialPosition();
 	void loadFromString(const std::string startPosMoves);
