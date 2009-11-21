@@ -27,27 +27,14 @@
 
 #ifndef TRANSPOSITIONTABLE_H_
 #define TRANSPOSITIONTABLE_H_
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/allocators/allocator.hpp>
 
+#include <functional>
+#include <boost/functional/hash.hpp>
 #include <boost/unordered_map.hpp>
-#include <iostream>
-#include <inttypes.h>
 
 #include "Board.h"
-
-struct HashFunction {
-	size_t operator()( const Key& key ) const
-	{
-#if  defined(__MINGW32__) || defined(__MINGW64__)
-	return boost::hash<uint32_t>()(key);
-#else
-	return boost::hash<uint64_t>()(key);
-#endif
-	}
-	bool operator()( const Key& key1, const Key& key2 ) const
-	{
-		return key1==key2;
-	}
-};
 
 struct HashData {
 	HashData() : value(0), depth(0), generation(0)  {};
@@ -57,8 +44,10 @@ struct HashData {
 	uint32_t generation;
 };
 
+typedef std::pair<Key, HashData> ValueType;
+
 // Transposition Table type
-typedef boost::unordered_map<Key, HashData, HashFunction > HashTable;
+typedef boost::unordered_map<Key, HashData, boost::hash<Key> , std::equal_to<Key> > HashTable;
 
 class TranspositionTable {
 public:
@@ -74,23 +63,23 @@ public:
 		hashSize = _hashSize;
 	}
 	void clearHash() {
-		transTable.clear();
+		transTable->clear();
 	}
 
 	bool hashPut(const Board& board, const int value, const uint32_t depth, const uint32_t generation) {
 
-		if (transTable.size() >= hashSize) {
+		if (transTable->size() >= hashSize) {
 			return false; // hash full
 		}
-
-		transTable[board.getKey()] = HashData(value, depth, generation);
+		transTable->insert(ValueType(board.getKey(),HashData(value, depth, generation)));
+		//transTable[board.getKey()] = HashData(value, depth, generation);
 		return true;
 	}
 
 	bool hashGet(const Key _key, HashData& hashData) {
 
-		if (transTable.count(_key)>0) {
-			hashData = transTable[_key];
+		if (transTable->count(_key)>0) {
+			hashData = transTable->at(_key);
 			return true;
 		}
 		return false;
@@ -98,18 +87,18 @@ public:
 
 	void resizeHash() {
 
-		transTable.rehash(hashSize);
+		transTable->rehash(hashSize);
 
 	}
 
 	bool isHashFull() {
 
-		return transTable.size() >= hashSize;
+		return transTable->size() >= hashSize;
 	}
 
 private:
 	size_t hashSize;
-	HashTable transTable;
+	HashTable* transTable;
 };
 
 #endif /* TRANSPOSITIONTABLE_H_ */

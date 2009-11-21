@@ -27,12 +27,12 @@
 
 #include "TranspositionTable.h"
 
-TranspositionTable::TranspositionTable() {
+TranspositionTable::TranspositionTable() : transTable(new HashTable()){
 
 
 }
 
-TranspositionTable::TranspositionTable(size_t initialSize) : hashSize(initialSize){
+TranspositionTable::TranspositionTable(size_t initialSize) : hashSize(initialSize), transTable(new HashTable(initialSize)) {
 
 
 }
