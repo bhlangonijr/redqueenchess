@@ -39,5 +39,5 @@ TranspositionTable::TranspositionTable(size_t initialSize) : hashSize(initialSiz
 
 
 TranspositionTable::~TranspositionTable() {
-
+	delete transTable;
 }
