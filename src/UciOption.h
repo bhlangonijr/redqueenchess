@@ -27,10 +27,12 @@
 #ifndef UCIOPTION_H_
 #define UCIOPTION_H_
 
-enum OptionType { STRING, SPIN, COMBO, CHECK, BUTTON };
+
 
 class UciOption {
 public:
+	enum OptionType { STRING, SPIN, COMBO, CHECK, BUTTON };
+
 	UciOption();
 	UciOption(std::string, OptionType, std::string, std::string);
 	UciOption(std::string, OptionType, std::string, std::string, int, int, std::string);

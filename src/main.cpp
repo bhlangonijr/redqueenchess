@@ -56,10 +56,10 @@ int main() {
 
 	// creating uci options
 	std::vector< UciOption *> options;
-	options.push_back(new UciOption("Hash",SPIN,"64","64",1,4096,""));
-	options.push_back(new UciOption("Threads",SPIN,paramNumProcs,paramNumProcs,1,8,""));
-	//options.push_back(new UciOption("Ponder",CHECK,"false","false"));
-	options.push_back(new UciOption("Clear Hash",BUTTON,"",""));
+	options.push_back(new UciOption("Hash",UciOption::SPIN,"64","64",1,4096,""));
+	options.push_back(new UciOption("Threads",UciOption::SPIN,paramNumProcs,paramNumProcs,1,8,""));
+	//options.push_back(new UciOption("Ponder",UciOption::CHECK,"false","false"));
+	options.push_back(new UciOption("Clear Hash",UciOption::BUTTON,"",""));
 	// set options into uci handler
 	uci->setUciOption(options);
 
@@ -67,13 +67,15 @@ int main() {
 
 	//uci loop
 	while (true) {
-		if (uci->getUserInput()==QUIT){
+		if (uci->getUserInput()==Uci::QUIT){
 			break;
 		}
 		uci->execute();
 	}
 
 	uci->clearUciOption();
+	SearchAgent::getInstance()->releaseSharedMemory();
+
 
 	return 0;
 }

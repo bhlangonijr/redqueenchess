@@ -54,9 +54,9 @@ Uci::Uci()
 }
 
 // wait to get user input
-Command Uci::getUserInput()
+Uci::Command Uci::getUserInput()
 {
-	Command result=UNKNOW;
+	Uci::Command result=UNKNOW;
 	std::string input;
 	std::string first;
 
@@ -144,7 +144,7 @@ void Uci::setCommand(Command cmd)
 }
 
 // gets command
-Command Uci::getCommand() const
+Uci::Command Uci::getCommand() const
 {
 	return Uci::command;
 }
@@ -220,7 +220,7 @@ void Uci::executeSetOption() {
 
 	// Handle Hash Size
 	if (optionName=="Hash") {
-		SearchAgent::getInstance()->setHashSize(toInt(this->getUciOption("Hash").getValue())*1024*1024/sizeof(HashData));
+		SearchAgent::getInstance()->setHashSize(toInt(this->getUciOption("Hash").getValue())*1024*1024/sizeof(TranspositionTable::HashData));
 		SearchAgent::getInstance()->resizeHash();
 	}
 
@@ -232,7 +232,7 @@ void Uci::executeGo() {
 
 	if (containsString(this->rawInput, "wtime")) {
 
-		searchAgent->setSearchMode(SEARCH_TIME);
+		searchAgent->setSearchMode(SearchAgent::SEARCH_TIME);
 		searchAgent->setWhiteTime(toInt(getMiddleString(this->rawInput,"wtime "," ")));
 		searchAgent->setWhiteIncrement(toInt(getMiddleString(this->rawInput,"winc "," ")));
 		searchAgent->setBlackTime(toInt(getMiddleString(this->rawInput,"btime "," ")));
@@ -240,32 +240,32 @@ void Uci::executeGo() {
 
 	} else if (containsString(this->rawInput, "go depth")) {
 
-		searchAgent->setSearchMode(SEARCH_DEPTH);
+		searchAgent->setSearchMode(SearchAgent::SEARCH_DEPTH);
 		searchAgent->setDepth(toInt(getMiddleString(this->rawInput,"go depth ")));
 
 	} else if (containsString(this->rawInput, "go movestogo")) {
 
-		searchAgent->setSearchMode(SEARCH_MOVESTOGO);
+		searchAgent->setSearchMode(SearchAgent::SEARCH_MOVESTOGO);
 		searchAgent->setMovesToGo(toInt(getMiddleString(this->rawInput,"go movestogo ")));
 
 	} else if (containsString(this->rawInput, "go movetime")) {
 
-		searchAgent->setSearchMode(SEARCH_MOVETIME);
+		searchAgent->setSearchMode(SearchAgent::SEARCH_MOVETIME);
 		searchAgent->setMoveTime(toInt(getMiddleString(this->rawInput,"go movetime ")));
 
 	} else if (containsString(this->rawInput, "go infinite")) {
 
-		searchAgent->setSearchMode(SEARCH_INFINITE);
+		searchAgent->setSearchMode(SearchAgent::SEARCH_INFINITE);
 		searchAgent->setInfinite(true);
 
 	} else if (containsString(this->rawInput, "go searchmoves")) {
 
-		searchAgent->setSearchMode(SEARCH_MOVES);
+		searchAgent->setSearchMode(SearchAgent::SEARCH_MOVES);
 		// TODO implement SEARCH MOVES mode
 
 	} else {
 		// in case of invalid parameters
-		searchAgent->setSearchMode(SEARCH_DEPTH);
+		searchAgent->setSearchMode(SearchAgent::SEARCH_DEPTH);
 		searchAgent->setDepth(1);
 	}
 

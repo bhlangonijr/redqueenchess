@@ -75,7 +75,7 @@ int SimplePVSearch::idSearch(Board& board) {
 
 	_nodes = 0;
 
-	for (int depth = 2; depth <= _depth; depth++) {
+	for (int depth = 1; depth <= _depth; depth++) {
 
 		uint32_t time = getTickCount();
 		uint32_t totalTime = 0;
@@ -149,7 +149,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth, int m
 
 	_nodes++;
 
-	HashData hashData;
+	TranspositionTable::HashData hashData;
 	if (SearchAgent::getInstance()->hashGet(board.getKey(), hashData)) {
 		if (hashData.depth>=depth) {
 			return hashData.value;

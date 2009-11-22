@@ -31,25 +31,24 @@
 #include <vector>
 #include "UciOption.h"
 
-
-// UCI commands enumeration
-enum Command {
-	QUIT,
-	UCI,
-	UCINEWGAME,
-	ISREADY,
-	POSITION,
-	SETOPTION,
-	GO,
-	STOP,
-	TEST,
-	UNKNOW
-};
-
 // Singleton to Handle Universal Chess Interface
 class Uci {
 
 public:
+
+	// UCI commands enumeration
+	enum Command {
+		QUIT,
+		UCI,
+		UCINEWGAME,
+		ISREADY,
+		POSITION,
+		SETOPTION,
+		GO,
+		STOP,
+		TEST,
+		UNKNOW
+	};
 	static Uci* getInstance();
 	Command getUserInput();
 	bool execute();

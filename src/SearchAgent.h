@@ -35,18 +35,13 @@
 #include "SimplePVSearch.h"
 #include "TranspositionTable.h"
 
-namespace SearchAgentTypes {
-
-enum SearchMode {
-	SEARCH_TIME, SEARCH_DEPTH, SEARCH_MOVESTOGO, SEARCH_MOVETIME, SEARCH_MOVES, SEARCH_INFINITE
-};
-
-}
-
-using namespace SearchAgentTypes;
+static const std::string sharedMemoryName = "Redqueen_HashTableSharedMemory";
 
 class SearchAgent {
 public:
+	enum SearchMode {
+		SEARCH_TIME, SEARCH_DEPTH, SEARCH_MOVESTOGO, SEARCH_MOVETIME, SEARCH_MOVES, SEARCH_INFINITE
+	};
 
 	static SearchAgent* getInstance();
 	void newGame();
@@ -155,7 +150,7 @@ public:
 		return false;
 	}
 
-	bool hashGet(const Key _key, HashData& hashData) {
+	bool hashGet(const Key _key, TranspositionTable::HashData& hashData) {
 		if (transTable.size()>getActiveHash()) {
 			return transTable[getActiveHash()].hashGet(_key, hashData);
 		}
@@ -164,6 +159,8 @@ public:
 	}
 
 	void resizeHash() {
+		releaseSharedMemory();
+		createShareMemory(getHashSize() * sizeof(TranspositionTable::HashData));
 		if (transTable.size()>getActiveHash()) {
 			transTable[getActiveHash()].resizeHash();
 		}
@@ -192,10 +189,36 @@ public:
 
 		for(int x=0;x<transTable.size();x++) {
 			transTable[x].clearHash();
-			//delete transTable[x];
+
 		}
 		transTable.clear();
 	}
+
+	void createShareMemory(size_t size_) {
+
+		try {
+			sharedMemory = new managed_shared_memory(create_only,sharedMemoryName.c_str(),size_);
+		} catch(interprocess_exception& e) {
+			std::cerr << "Shared memory with identifier '" << sharedMemoryName << "' already exists. Destroying and creating the shared memory" << std::endl;
+			shared_memory_object::remove(sharedMemoryName.c_str());
+			sharedMemory = new managed_shared_memory(create_only,sharedMemoryName.c_str(),size_);
+		}
+
+	}
+
+	managed_shared_memory* getSharedMemory() {
+		return sharedMemory;
+	}
+
+	void releaseSharedMemory() {
+		try {
+		shared_memory_object::remove(sharedMemoryName.c_str());
+		} catch(interprocess_exception& e) {
+			std::cerr << "Error while releasing shared memory with identifier '" << sharedMemoryName << "' " << e.get_error_code() << std::endl;
+		}
+
+	}
+
 
 protected:
 
@@ -224,6 +247,7 @@ private:
 
 	int activeHash;
 	std::vector< TranspositionTable> transTable;
+	managed_shared_memory* sharedMemory;
 
 };
 

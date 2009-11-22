@@ -39,9 +39,13 @@ SearchAgent* SearchAgent::getInstance ()
 }
 
 SearchAgent::SearchAgent() :
-	searchMode(SEARCH_TIME), hashSize(64*1024*1024/sizeof(HashData)), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
-	blackIncrement(0), depth(5), movesToGo(0), moveTime(0), infinite(false), searchInProgress(false), activeHash(0)
+	searchMode(SEARCH_TIME), hashSize(64*1024*1024/sizeof(TranspositionTable::HashData)), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
+	blackIncrement(0), depth(5), movesToGo(0), moveTime(0), infinite(false), searchInProgress(false), activeHash(0)/*, sharedMemory(managed_shared_memory(create_only ,sharedMemoryId, hashSize))*/
 {
+	this->createShareMemory(64*1024*1024);
+
+	TranspositionTable table = TranspositionTable(getHashSize(), this->getSharedMemory());
+	addTranspositionTable(table);
 
 }
 
@@ -95,10 +99,6 @@ void SearchAgent::startSearch() {
 	}
 
 	setSearchInProgress(true);
-
-	TranspositionTable table = TranspositionTable(getHashSize());
-
-	addTranspositionTable(table);
 
 	Board actual(board);
 

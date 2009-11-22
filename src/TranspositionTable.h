@@ -36,24 +36,27 @@
 
 #include "Board.h"
 
-struct HashData {
-	HashData() : value(0), depth(0), generation(0)  {};
-	HashData(int _value, uint32_t _depth, uint32_t _generation) : value(_value), depth(_depth), generation(_generation)  {};
-	int value;
-	uint32_t depth;
-	uint32_t generation;
-};
-
-typedef std::pair<Key, HashData> ValueType;
-
-// Transposition Table type
-typedef boost::unordered_map<Key, HashData, boost::hash<Key> , std::equal_to<Key> > HashTable;
+using namespace boost::interprocess;
 
 class TranspositionTable {
 public:
 
-	TranspositionTable();
-	TranspositionTable(size_t initialSize);
+	struct HashData {
+		HashData() : value(0), depth(0), generation(0)  {};
+		HashData(int _value, uint32_t _depth, uint32_t _generation) : value(_value), depth(_depth), generation(_generation)  {};
+		int value;
+		uint32_t depth;
+		uint32_t generation;
+	};
+
+	typedef std::pair<const Key, HashData> ValueType;
+
+	typedef allocator<ValueType, managed_shared_memory::segment_manager> ShmemAllocator;
+	// Transposition Table type
+	typedef boost::unordered_map<Key, HashData, boost::hash<Key> , std::equal_to<Key>, ShmemAllocator > HashTable;
+
+	TranspositionTable(managed_shared_memory* segment);
+	TranspositionTable(size_t initialSize, managed_shared_memory* segment);
 	virtual ~TranspositionTable();
 
 	const size_t getHashSize() const {
@@ -72,7 +75,6 @@ public:
 			return false; // hash full
 		}
 		transTable->insert(ValueType(board.getKey(),HashData(value, depth, generation)));
-		//transTable[board.getKey()] = HashData(value, depth, generation);
 		return true;
 	}
 
@@ -99,6 +101,7 @@ public:
 private:
 	size_t hashSize;
 	HashTable* transTable;
+
 };
 
 #endif /* TRANSPOSITIONTABLE_H_ */

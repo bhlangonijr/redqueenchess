@@ -64,7 +64,7 @@ std::string UciOption::getName() const {
 	return name;
 }
 
-OptionType UciOption::getType() const {
+UciOption::OptionType UciOption::getType() const {
 	return type;
 }
 
