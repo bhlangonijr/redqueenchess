@@ -40,7 +40,7 @@ SearchAgent* SearchAgent::getInstance ()
 
 SearchAgent::SearchAgent() :
 	searchMode(SEARCH_TIME), hashSize(defaultSharedMemorySize/sizeof(TranspositionTable::HashData)), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
-	blackIncrement(0), depth(5), movesToGo(0), moveTime(0), infinite(false), searchInProgress(false), activeHash(0)
+	blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), infinite(false), searchInProgress(false), activeHash(0)
 {
 	// creates initial hashtable
 	createHash();
@@ -57,7 +57,7 @@ void SearchAgent::newGame() {
 	this->setBlackTime(0);
 	this->setBlackIncrement(0);
 
-	this->setDepth(0);
+	this->setDepth(defaultDepth);
 	this->setMovesToGo(0);
 	this->setMoveTime(0);
 	this->setInfinite(false);

@@ -38,6 +38,7 @@
 static const std::string sharedMemoryName 	= "Redqueen_HashTableSharedMemory";
 static const size_t defaultSharedMemorySize = 64*1024*1024; // bytes
 static const std::string mainHashName 		= "DefaultHashTable";
+static const int defaultDepth				= 5;
 
 
 class SearchAgent {
