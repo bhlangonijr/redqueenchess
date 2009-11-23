@@ -39,14 +39,11 @@ SearchAgent* SearchAgent::getInstance ()
 }
 
 SearchAgent::SearchAgent() :
-	searchMode(SEARCH_TIME), hashSize(64*1024*1024/sizeof(TranspositionTable::HashData)), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
-	blackIncrement(0), depth(5), movesToGo(0), moveTime(0), infinite(false), searchInProgress(false), activeHash(0)/*, sharedMemory(managed_shared_memory(create_only ,sharedMemoryId, hashSize))*/
+	searchMode(SEARCH_TIME), hashSize(defaultSharedMemorySize/sizeof(TranspositionTable::HashData)), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
+	blackIncrement(0), depth(5), movesToGo(0), moveTime(0), infinite(false), searchInProgress(false), activeHash(0)
 {
-	this->createShareMemory(64*1024*1024);
-
-	TranspositionTable table = TranspositionTable(getHashSize(), this->getSharedMemory());
-	addTranspositionTable(table);
-
+	// creates initial hashtable
+	createHash();
 }
 
 // start a new game

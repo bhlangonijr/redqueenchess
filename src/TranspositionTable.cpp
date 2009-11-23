@@ -27,16 +27,16 @@
 
 #include "TranspositionTable.h"
 
-TranspositionTable::TranspositionTable(managed_shared_memory* segment) : transTable(NULL) {
+TranspositionTable::TranspositionTable(std::string id, managed_shared_memory* segment) : transTable(NULL) {
 
-	transTable = segment->construct<HashTable>("HashTable")
+	transTable = segment->construct<HashTable>(id.c_str())
                  ( 3, boost::hash<Key>() , std::equal_to<Key>()
                  , segment->get_allocator<ValueType>());
 }
 
-TranspositionTable::TranspositionTable(size_t initialSize, managed_shared_memory* segment) : hashSize(initialSize), transTable(NULL)  {
+TranspositionTable::TranspositionTable(std::string id, size_t initialSize, managed_shared_memory* segment) : hashSize(initialSize), transTable(NULL)  {
 
-	transTable= segment->construct<HashTable>("HashTable")
+	transTable= segment->construct<HashTable>(id.c_str())
                          ( 3, boost::hash<Key>() , std::equal_to<Key>()
                          , segment->get_allocator<ValueType>());
 

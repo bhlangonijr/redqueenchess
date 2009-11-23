@@ -38,6 +38,8 @@
 
 using namespace boost::interprocess;
 
+#define DEFAULT_INITIAL_SIZE 100
+
 class TranspositionTable {
 public:
 
@@ -55,8 +57,8 @@ public:
 	// Transposition Table type
 	typedef boost::unordered_map<Key, HashData, boost::hash<Key> , std::equal_to<Key>, ShmemAllocator > HashTable;
 
-	TranspositionTable(managed_shared_memory* segment);
-	TranspositionTable(size_t initialSize, managed_shared_memory* segment);
+	TranspositionTable(std::string id, managed_shared_memory* segment);
+	TranspositionTable(std::string id, size_t initialSize, managed_shared_memory* segment);
 	virtual ~TranspositionTable();
 
 	const size_t getHashSize() const {

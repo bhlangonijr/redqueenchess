@@ -74,7 +74,7 @@ int main() {
 	}
 
 	uci->clearUciOption();
-	SearchAgent::getInstance()->releaseSharedMemory();
+	SearchAgent::getInstance()->destroyHash();
 
 
 	return 0;

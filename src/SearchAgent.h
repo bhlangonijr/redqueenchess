@@ -35,7 +35,10 @@
 #include "SimplePVSearch.h"
 #include "TranspositionTable.h"
 
-static const std::string sharedMemoryName = "Redqueen_HashTableSharedMemory";
+static const std::string sharedMemoryName 	= "Redqueen_HashTableSharedMemory";
+static const size_t defaultSharedMemorySize = 64*1024*1024; // bytes
+static const std::string mainHashName 		= "DefaultHashTable";
+
 
 class SearchAgent {
 public:
@@ -159,8 +162,8 @@ public:
 	}
 
 	void resizeHash() {
-		releaseSharedMemory();
-		createShareMemory(getHashSize() * sizeof(TranspositionTable::HashData));
+		destroyHash();
+		createHash();
 		if (transTable.size()>getActiveHash()) {
 			transTable[getActiveHash()].resizeHash();
 		}
@@ -217,6 +220,17 @@ public:
 			std::cerr << "Error while releasing shared memory with identifier '" << sharedMemoryName << "' " << e.get_error_code() << std::endl;
 		}
 
+	}
+
+	void createHash() {
+		createShareMemory(getHashSize()*sizeof(TranspositionTable::HashData));
+		TranspositionTable table = TranspositionTable(mainHashName, getHashSize(), getSharedMemory());
+		addTranspositionTable(table);
+	}
+
+	void destroyHash() {
+		releaseSharedMemory();
+		getSharedMemory()->destroy<TranspositionTable::HashTable>(mainHashName.c_str());
 	}
 
 
