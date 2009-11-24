@@ -26,7 +26,6 @@
 #include <iostream>
 #include <string>
 #include <vector>
-//#include <boost/regex.hpp>
 #include <exception>
 
 #include "Uci.h"
@@ -220,7 +219,7 @@ void Uci::executeSetOption() {
 
 	// Handle Hash Size
 	if (optionName=="Hash") {
-		SearchAgent::getInstance()->setHashSize(toInt(this->getUciOption("Hash").getValue())*1024*1024/sizeof(TranspositionTable::HashData));
+		SearchAgent::getInstance()->setHashSize(toInt(this->getUciOption("Hash").getValue())*1024*1024/sizeof(SearchAgent::HashData));
 		SearchAgent::getInstance()->destroyHash();
 		SearchAgent::getInstance()->createHash();
 	}

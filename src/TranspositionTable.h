@@ -16,7 +16,7 @@
 
     You should have received a copy of the GNU General Public License
     along with Redqueen.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
 /*
  * TranspositionTable.h
@@ -40,26 +40,48 @@ using namespace boost::interprocess;
 
 #define DEFAULT_INITIAL_SIZE 3
 
+template<class _Key, class _Value>
 class TranspositionTable {
 public:
 
-	struct HashData {
-		HashData() : value(0), depth(0), generation(0)  {};
-		HashData(int _value, uint32_t _depth, uint32_t _generation) : value(_value), depth(_depth), generation(_generation)  {};
-		int value;
-		uint32_t depth;
-		uint32_t generation;
-	};
+	typedef _Key HashKeyType;
+	typedef _Value HashValueType;
 
-	typedef std::pair<const Key, HashData> ValueType;
+	typedef std::pair<const HashKeyType, HashValueType> ValueType;
 
 	typedef allocator<ValueType, managed_shared_memory::segment_manager> ShmemAllocator;
 	// Transposition Table type
-	typedef boost::unordered_map<Key, HashData, boost::hash<Key> , std::equal_to<Key>, ShmemAllocator > HashTable;
+	typedef boost::unordered_map<HashKeyType, HashValueType, boost::hash<HashKeyType> , std::equal_to<HashKeyType>, ShmemAllocator > CustomHashTable;
 
-	TranspositionTable(std::string id, managed_shared_memory* segment);
-	TranspositionTable(std::string id, size_t initialSize, managed_shared_memory* segment);
-	virtual ~TranspositionTable();
+	TranspositionTable(std::string id_, managed_shared_memory* segment_) :
+		transTable(NULL),
+		segment(segment_),
+		id(id_) {
+
+		transTable = segment_->construct<CustomHashTable>(id_.c_str())
+									( DEFAULT_INITIAL_SIZE, boost::hash<HashKeyType>() , std::equal_to<HashKeyType>()
+											, segment_->get_allocator<ValueType>());
+	}
+	TranspositionTable(std::string id_, size_t initialSize, managed_shared_memory* segment_) :
+		hashSize(initialSize),
+		transTable(NULL),
+		segment(segment_),
+		id(id_) {
+		transTable = segment_->construct<CustomHashTable>(id_.c_str())
+							( DEFAULT_INITIAL_SIZE, boost::hash<HashKeyType>() , std::equal_to<HashKeyType>()
+									, segment_->get_allocator<ValueType>());
+	}
+
+	virtual ~TranspositionTable() {
+		if (getSegment()) {
+			try {
+				segment->destroy<CustomHashTable>(getId().c_str());
+			} catch (...) {
+				std::cerr << "Error while trying to release HashTable" << std::endl;
+			}
+
+		}
+	}
 
 	const size_t getHashSize() const {
 		return hashSize;
@@ -71,18 +93,18 @@ public:
 		transTable->clear();
 	}
 
-	bool hashPut(const Board& board, const int value, const uint32_t depth, const uint32_t generation) {
+	bool hashPut(const HashKeyType key, const HashValueType value) {
 
 		if (transTable->size() >= hashSize) {
 			return false; // hash full
 		}
-		transTable->insert(ValueType(board.getKey(),HashData(value, depth, generation)));
+		transTable->insert(ValueType(key,value));
 		return true;
 	}
 
-	bool hashGet(const Key _key, HashData& hashData) {
-		if (transTable->count(_key)>0) {
-			hashData = transTable->at(_key);
+	bool hashGet(const HashKeyType key, HashValueType& value) {
+		if (transTable->count(key)>0) {
+			value = transTable->at(key);
 			return true;
 		}
 		return false;
@@ -106,7 +128,7 @@ public:
 
 private:
 	size_t hashSize;
-	HashTable* transTable;
+	CustomHashTable* transTable;
 	managed_shared_memory* segment;
 	std::string id;
 

@@ -47,6 +47,14 @@ public:
 		SEARCH_TIME, SEARCH_DEPTH, SEARCH_MOVESTOGO, SEARCH_MOVETIME, SEARCH_MOVES, SEARCH_INFINITE
 	};
 
+	struct HashData {
+		HashData() : value(0), depth(0), generation(0)  {};
+		HashData(int _value, uint32_t _depth, uint32_t _generation) : value(_value), depth(_depth), generation(_generation)  {};
+		int value;
+		uint32_t depth;
+		uint32_t generation;
+	};
+
 	static SearchAgent* getInstance();
 	void newGame();
 
@@ -149,12 +157,12 @@ public:
 	}
 	bool hashPut(const Board& board, const int value, const uint32_t depth, const uint32_t generation) {
 		if (transTable.size()>getActiveHash()) {
-			return transTable[getActiveHash()]->hashPut(board, value, depth, generation);
+			return transTable[getActiveHash()]->hashPut(board.getKey(), HashData(value,depth,generation));
 		}
 		return false;
 	}
 
-	bool hashGet(const Key _key, TranspositionTable::HashData& hashData) {
+	bool hashGet(const Key _key, HashData& hashData) {
 		if (transTable.size()>getActiveHash()) {
 			return transTable[getActiveHash()]->hashGet(_key, hashData);
 		}
@@ -169,7 +177,7 @@ public:
 		return false;
 	}
 
-	void addTranspositionTable(TranspositionTable* table) {
+	void addTranspositionTable(TranspositionTable<Key,HashData>* table) {
 		transTable.push_back(table);
 	}
 
@@ -199,8 +207,8 @@ public:
 	}
 
 	void createHash() {
-		createShareMemory(getHashSize()*sizeof(TranspositionTable::HashData));
-		TranspositionTable* table = new TranspositionTable(mainHashName, getHashSize(), getSharedMemory());
+		createShareMemory(getHashSize()*sizeof(HashData));
+		TranspositionTable<Key,HashData>* table = new TranspositionTable<Key,HashData>(mainHashName, getHashSize(), getSharedMemory());
 		addTranspositionTable(table);
 	}
 
@@ -239,7 +247,7 @@ private:
 	bool infinite;
 
 	int activeHash;
-	std::vector<TranspositionTable*> transTable;
+	std::vector<TranspositionTable<Key,HashData>*> transTable;
 	managed_shared_memory* sharedMemory;
 
 };

@@ -149,7 +149,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth, int m
 
 	_nodes++;
 
-	TranspositionTable::HashData hashData;
+	SearchAgent::HashData hashData;
 	if (SearchAgent::getInstance()->hashGet(board.getKey(), hashData)) {
 		if (hashData.depth>=depth) {
 			return hashData.value;
