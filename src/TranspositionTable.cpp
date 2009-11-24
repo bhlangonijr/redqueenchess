@@ -16,7 +16,7 @@
 
     You should have received a copy of the GNU General Public License
     along with Redqueen.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
 /*
  * TranspositionTable.cpp
@@ -25,24 +25,37 @@
  *      Author: bhlangonijr
  */
 
+
 #include "TranspositionTable.h"
 
-TranspositionTable::TranspositionTable(std::string id, managed_shared_memory* segment) : transTable(NULL) {
+TranspositionTable::TranspositionTable(std::string id_, managed_shared_memory* segment_) :
+	transTable(NULL),
+	segment(segment_),
+	id(id_) {
 
-	transTable = segment->construct<HashTable>(id.c_str())
-                 ( 3, boost::hash<Key>() , std::equal_to<Key>()
-                 , segment->get_allocator<ValueType>());
+	transTable = segment_->construct<HashTable>(id_.c_str())
+						( DEFAULT_INITIAL_SIZE, boost::hash<Key>() , std::equal_to<Key>()
+						, segment_->get_allocator<ValueType>());
 }
 
-TranspositionTable::TranspositionTable(std::string id, size_t initialSize, managed_shared_memory* segment) : hashSize(initialSize), transTable(NULL)  {
-
-	transTable= segment->construct<HashTable>(id.c_str())
-                         ( 3, boost::hash<Key>() , std::equal_to<Key>()
-                         , segment->get_allocator<ValueType>());
-
+TranspositionTable::TranspositionTable(std::string id_, size_t initialSize, managed_shared_memory* segment_) :
+	hashSize(initialSize),
+	transTable(NULL),
+	segment(segment_),
+	id(id_) {
+	transTable = segment_->construct<HashTable>(id_.c_str())
+				( DEFAULT_INITIAL_SIZE, boost::hash<Key>() , std::equal_to<Key>()
+				, segment_->get_allocator<ValueType>());
 }
 
 
 TranspositionTable::~TranspositionTable() {
+	if (getSegment()) {
+		try {
+			this->getSegment()->destroy<TranspositionTable::HashTable>(getId().c_str());
+		} catch (...) {
+			std::cerr << "Error while trying to release HashTable" << std::endl;
+		}
 
+	}
 }

@@ -38,7 +38,7 @@
 
 using namespace boost::interprocess;
 
-#define DEFAULT_INITIAL_SIZE 100
+#define DEFAULT_INITIAL_SIZE 3
 
 class TranspositionTable {
 public:
@@ -81,7 +81,6 @@ public:
 	}
 
 	bool hashGet(const Key _key, HashData& hashData) {
-
 		if (transTable->count(_key)>0) {
 			hashData = transTable->at(_key);
 			return true;
@@ -90,19 +89,26 @@ public:
 	}
 
 	void resizeHash() {
-
 		transTable->rehash(hashSize);
-
 	}
 
 	bool isHashFull() {
-
 		return transTable->size() >= hashSize;
+	}
+
+	managed_shared_memory* getSegment() {
+		return segment;
+	}
+
+	const std::string getId() const {
+		return id;
 	}
 
 private:
 	size_t hashSize;
 	HashTable* transTable;
+	managed_shared_memory* segment;
+	std::string id;
 
 };
 

@@ -144,40 +144,32 @@ public:
 	}
 	void clearHash() {
 		if (transTable.size()>getActiveHash()) {
-			transTable[getActiveHash()].clearHash();
+			transTable[getActiveHash()]->clearHash();
 		}
 	}
 	bool hashPut(const Board& board, const int value, const uint32_t depth, const uint32_t generation) {
 		if (transTable.size()>getActiveHash()) {
-			return transTable[getActiveHash()].hashPut(board, value, depth, generation);
+			return transTable[getActiveHash()]->hashPut(board, value, depth, generation);
 		}
 		return false;
 	}
 
 	bool hashGet(const Key _key, TranspositionTable::HashData& hashData) {
 		if (transTable.size()>getActiveHash()) {
-			return transTable[getActiveHash()].hashGet(_key, hashData);
+			return transTable[getActiveHash()]->hashGet(_key, hashData);
 		}
 		return false;
 
-	}
-
-	void resizeHash() {
-		destroyHash();
-		createHash();
-		if (transTable.size()>getActiveHash()) {
-			transTable[getActiveHash()].resizeHash();
-		}
 	}
 
 	bool isHashFull() {
 		if (transTable.size()>getActiveHash()) {
-			return transTable[getActiveHash()].isHashFull();
+			return transTable[getActiveHash()]->isHashFull();
 		}
 		return false;
 	}
 
-	void addTranspositionTable(TranspositionTable& table) {
+	void addTranspositionTable(TranspositionTable* table) {
 		transTable.push_back(table);
 	}
 
@@ -189,25 +181,9 @@ public:
 		activeHash = active;
 	}
 
-	void relaseHash() {
-
-		for(int x=0;x<transTable.size();x++) {
-			transTable[x].clearHash();
-
-		}
-		transTable.clear();
-	}
-
 	void createShareMemory(size_t size_) {
-
-		try {
-			sharedMemory = new managed_shared_memory(create_only,sharedMemoryName.c_str(),size_);
-		} catch(interprocess_exception& e) {
-			std::cerr << "Shared memory with identifier '" << sharedMemoryName << "' already exists. Destroying and creating the shared memory" << std::endl;
-			shared_memory_object::remove(sharedMemoryName.c_str());
-			sharedMemory = new managed_shared_memory(create_only,sharedMemoryName.c_str(),size_);
-		}
-
+		releaseSharedMemory();
+		sharedMemory = new managed_shared_memory(create_only,sharedMemoryName.c_str(),size_);
 	}
 
 	managed_shared_memory* getSharedMemory() {
@@ -215,23 +191,25 @@ public:
 	}
 
 	void releaseSharedMemory() {
-		try {
 		shared_memory_object::remove(sharedMemoryName.c_str());
-		} catch(interprocess_exception& e) {
-			std::cerr << "Error while releasing shared memory with identifier '" << sharedMemoryName << "' " << e.get_error_code() << std::endl;
+		if (getSharedMemory()) {
+			delete sharedMemory;
+			sharedMemory=0;
 		}
-
 	}
 
 	void createHash() {
 		createShareMemory(getHashSize()*sizeof(TranspositionTable::HashData));
-		TranspositionTable table = TranspositionTable(mainHashName, getHashSize(), getSharedMemory());
+		TranspositionTable* table = new TranspositionTable(mainHashName, getHashSize(), getSharedMemory());
 		addTranspositionTable(table);
 	}
 
 	void destroyHash() {
+		if (transTable.size()>getActiveHash()) {
+			delete transTable[getActiveHash()];
+		}
+		transTable.clear();
 		releaseSharedMemory();
-		getSharedMemory()->destroy<TranspositionTable::HashTable>(mainHashName.c_str());
 	}
 
 
@@ -261,7 +239,7 @@ private:
 	bool infinite;
 
 	int activeHash;
-	std::vector< TranspositionTable> transTable;
+	std::vector<TranspositionTable*> transTable;
 	managed_shared_memory* sharedMemory;
 
 };

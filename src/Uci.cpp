@@ -221,7 +221,8 @@ void Uci::executeSetOption() {
 	// Handle Hash Size
 	if (optionName=="Hash") {
 		SearchAgent::getInstance()->setHashSize(toInt(this->getUciOption("Hash").getValue())*1024*1024/sizeof(TranspositionTable::HashData));
-		SearchAgent::getInstance()->resizeHash();
+		SearchAgent::getInstance()->destroyHash();
+		SearchAgent::getInstance()->createHash();
 	}
 
 }
