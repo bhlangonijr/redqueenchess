@@ -73,7 +73,7 @@ public:
 	}
 
 	virtual ~TranspositionTable() {
-		if (getSegment()) {
+		if (segment) {
 			try {
 				segment->destroy<CustomHashTable>(getId().c_str());
 			} catch (...) {
@@ -83,48 +83,15 @@ public:
 		}
 	}
 
-	const size_t getHashSize() const {
-		return hashSize;
-	}
-	void setHashSize(const size_t _hashSize) {
-		hashSize = _hashSize;
-	}
-	void clearHash() {
-		transTable->clear();
-	}
-
-	bool hashPut(const HashKeyType key, const HashValueType value) {
-
-		if (transTable->size() >= hashSize) {
-			return false; // hash full
-		}
-		transTable->insert(ValueType(key,value));
-		return true;
-	}
-
-	bool hashGet(const HashKeyType key, HashValueType& value) {
-		if (transTable->count(key)>0) {
-			value = transTable->at(key);
-			return true;
-		}
-		return false;
-	}
-
-	void resizeHash() {
-		transTable->rehash(hashSize);
-	}
-
-	bool isHashFull() {
-		return transTable->size() >= hashSize;
-	}
-
-	managed_shared_memory* getSegment() {
-		return segment;
-	}
-
-	const std::string getId() const {
-		return id;
-	}
+	const size_t getHashSize() const;
+	void setHashSize(const size_t _hashSize);
+	void clearHash();
+	bool hashPut(const HashKeyType key, const HashValueType value);
+	bool hashGet(const HashKeyType key, HashValueType& value);
+	void resizeHash();
+	bool isHashFull();
+	managed_shared_memory* getSegment();
+	const std::string getId() const;
 
 private:
 	size_t hashSize;
@@ -133,5 +100,59 @@ private:
 	std::string id;
 
 };
+
+template<class HashKeyType, class HashValueType>
+inline const size_t TranspositionTable<HashKeyType, HashValueType>::getHashSize() const {
+	return hashSize;
+}
+
+template<class HashKeyType, class HashValueType>
+inline void TranspositionTable<HashKeyType, HashValueType>::setHashSize(const size_t _hashSize) {
+	hashSize = _hashSize;
+}
+
+template<class HashKeyType, class HashValueType>
+inline void TranspositionTable<HashKeyType, HashValueType>::clearHash() {
+	transTable->clear();
+}
+
+template<class HashKeyType, class HashValueType>
+inline bool TranspositionTable<HashKeyType, HashValueType>::hashPut(const HashKeyType key, const HashValueType value) {
+
+	if (transTable->size() >= hashSize) {
+		return false; // hash full
+	}
+	transTable->insert(ValueType(key,value));
+	return true;
+}
+
+template<class HashKeyType, class HashValueType>
+inline bool TranspositionTable<HashKeyType, HashValueType>::hashGet(const HashKeyType key, HashValueType& value) {
+	if (transTable->count(key)>0) {
+		value = transTable->at(key);
+		return true;
+	}
+	return false;
+}
+
+template<class HashKeyType, class HashValueType>
+inline void TranspositionTable<HashKeyType, HashValueType>::resizeHash() {
+	transTable->rehash(hashSize);
+}
+
+template<class HashKeyType, class HashValueType>
+inline bool TranspositionTable<HashKeyType, HashValueType>::isHashFull() {
+	return transTable->size() >= hashSize;
+}
+
+template<class HashKeyType, class HashValueType>
+inline managed_shared_memory* TranspositionTable<HashKeyType, HashValueType>::getSegment() {
+	return segment;
+}
+
+template<class HashKeyType, class HashValueType>
+inline const std::string TranspositionTable<HashKeyType, HashValueType>::getId() const {
+	return id;
+}
 
 #endif /* TRANSPOSITIONTABLE_H_ */

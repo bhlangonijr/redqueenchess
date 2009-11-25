@@ -81,11 +81,11 @@ typedef uint64_t Key;
 #define MIN(x,y)					(x<y?x:y)
 
 #define CATMOVE(arr1, arr2)		{ Move* t = arr1;\
-									while (t->next) { \
-										t = t->next; \
-									} \
-									t->next=arr2; \
-								}
+		while (t->next) { \
+			t = t->next; \
+		} \
+		t->next=arr2; \
+}
 #define FOREACHMOVE(move) for(;move;move=move->next)
 
 // squares
@@ -637,6 +637,7 @@ public:
 	const Square getEnPassant() const;
 	void setEnPassant(const Square square);
 	const Bitboard getAttackedSquares(const PieceColor color);
+	void setAttackedSquares();
 	void setAttackedSquares(const PieceColor color, Bitboard attacked);
 	const Square bitboardToSquare(const Bitboard bitboard) const;
 	const PieceColor flipSide(const PieceColor color);
@@ -834,18 +835,23 @@ inline void Board::setEnPassant(const Square square)
 
 // get attacked squares
 inline const Bitboard Board::getAttackedSquares(const PieceColor color) {
-
 	if (!hasAttackedSquaresTable()) {
-		setAttackedSquares(WHITE, generateAttackedSquares(WHITE));
-		setAttackedSquares(BLACK, generateAttackedSquares(BLACK));
+		setAttackedSquares();
 	}
 	return attackedSquares[color];
 }
 
 // set attacked squares
+inline void Board::setAttackedSquares() {
+
+	attackedSquares[WHITE] = generateAttackedSquares(WHITE);
+	attackedSquares[BLACK] = generateAttackedSquares(BLACK);
+	setAttackedSquaresTable(true);
+
+}
+// set attacked squares
 inline void Board::setAttackedSquares(const PieceColor color, Bitboard attacked) {
 	attackedSquares[color] = attacked;
-	setAttackedSquaresTable(true);
 }
 
 // get the bit index from a bitboard
@@ -1421,8 +1427,8 @@ inline const Bitboard Board::findAttackBlocker(Square square) {
 	}
 
 	Bitboard attackers;
-	Bitboard attackedSquares = generateInterposingAttackedSquares(allAttackers,getPiecesByColor(otherSide)|squareToBitboard[square],squareToBitboard[square],attackers);
-	Bitboard likelyBlockers = (getPiecesByColor(side) & attackedSquares)^squareToBitboard[square];
+	Bitboard attacked = generateInterposingAttackedSquares(allAttackers,getPiecesByColor(otherSide)|squareToBitboard[square],squareToBitboard[square],attackers);
+	Bitboard likelyBlockers = (getPiecesByColor(side) & attacked)^squareToBitboard[square];
 	Square from = this->extractLSB(likelyBlockers);
 
 	while ( from!=NONE ) {

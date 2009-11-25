@@ -39,6 +39,8 @@ static const std::string sharedMemoryName 	= "Redqueen_HashTableSharedMemory";
 static const size_t defaultSharedMemorySize = 64*1024*1024; // bytes
 static const std::string mainHashName 		= "DefaultHashTable";
 static const int defaultDepth				= 5;
+static const int bucketSize					= 80;
+
 
 
 class SearchAgent {
@@ -156,6 +158,7 @@ public:
 		}
 	}
 	bool hashPut(const Board& board, const int value, const uint32_t depth, const uint32_t generation) {
+		if (isHashFull()) return false;
 		if (transTable.size()>getActiveHash()) {
 			return transTable[getActiveHash()]->hashPut(board.getKey(), HashData(value,depth,generation));
 		}
@@ -171,10 +174,12 @@ public:
 	}
 
 	bool isHashFull() {
+		if (getSharedMemory()->get_free_memory()<bucketSize) return true;
+
 		if (transTable.size()>getActiveHash()) {
 			return transTable[getActiveHash()]->isHashFull();
 		}
-		return false;
+		return true;
 	}
 
 	void addTranspositionTable(TranspositionTable<Key,HashData>* table) {

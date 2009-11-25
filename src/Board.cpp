@@ -99,10 +99,10 @@ void Board::genericTest() {
 	uint32_t start = getTickCount();
 	PieceColor color = getSideToMove();
 	int counter=1;
-	for (int x=0;x<1000000;x++)
+	for (int x=0;x<10;x++)
 	{
 
-		MovePool movePool;
+		MovePool movePool(100);
 		Move* move=this->generateAllMoves(movePool,color);
 
 		while (move) {
@@ -286,18 +286,21 @@ void Board::doMove(const Move& move, MoveBackup& backup){
 		setKey(getKey()^zobrist.enPassant[getSquareFile(getEnPassant())]);
 	}
 
-	//TODO formulate better solution to Attacked Squares Table
-	// the code below invalidates generated attackedSquares table control flag:
-	// so in case some method needs attackedSquares, it will be regenerated.
-	// This is done that way to avoid unnecessary calls to generateAttackedSquares - it is a performance killer
-	backup.hasAttackedSquares=hasAttackedSquaresTable();
-	setAttackedSquaresTable(false);
-
 	increaseMoveCounter();
 	updateKeyHistory();
 
 	setKey(getKey()^zobrist.sideToMove);
 	setSideToMove(otherSide);
+
+	//TODO formulate better solution to Attacked Squares Table
+	// the code below invalidates generated attackedSquares table control flag:
+	// so in case some method needs attackedSquares, it will be regenerated.
+	// This is done that way to avoid unnecessary calls to generateAttackedSquares - it is a performance killer
+	//backup.hasAttackedSquares=hasAttackedSquaresTable();
+	setAttackedSquaresTable(false);
+
+	//setAttackedSquares(BLACK, generateAttackedSquares(BLACK));
+	//setAttackedSquares(WHITE, generateAttackedSquares(WHITE));
 
 }
 
@@ -331,7 +334,7 @@ void Board::undoMove(MoveBackup& backup){
 	setCastleRights(BLACK, backup.blackCastleRight);
 	setAttackedSquares(BLACK, backup.attackedSquares[BLACK]);
 	setEnPassant(backup.enPassant);
-	setAttackedSquaresTable(backup.hasAttackedSquares);
+	//setAttackedSquaresTable(backup.hasAttackedSquares);
 	decreaseMoveCounter();
 	setSideToMove(sideToMove);
 	setKey(backup.key);
@@ -382,6 +385,8 @@ void Board::setInitialPosition() {
 	setKey(generateKey());
 	updateKeyHistory();
 
+	setAttackedSquaresTable(false);
+
 }
 // load an specific chess position ex.: d2d4 g8f6 c2c4 e7e6 g1f3 b7b6 b1c3 c8b7 ...
 void Board::loadFromString(const std::string startPosMoves) {
@@ -427,7 +432,7 @@ void Board::loadFromString(const std::string startPosMoves) {
 
 // generate only capture moves
 Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
-
+	setAttackedSquaresTable(false);
 	Move* move=NULL;
 	PieceColor otherSide = flipSide(side);
 	Bitboard pieces = getPiecesByColor(side)^
@@ -627,8 +632,16 @@ Move* Board::generateCheckEvasions(MovePool& movePool, const PieceColor side) {
 //generate all moves - captures + noncaptures
 Move* Board::generateAllMoves(MovePool& movePool, const PieceColor side) {
 
+	setAttackedSquaresTable(false);
 	Move* moves=NULL;
+	/*std::cout << "BITBOARDS!" << std::endl;
 
+	this->printBitboard(getPiecesByType(makePiece(side,KING)));
+
+	this->printBitboard(getAttackedSquares(flipSide(side)));
+
+	std::cout << "BITBOARDS!" << std::endl;
+*/
 	if (isAttacked(side, KING)) {
 		moves = generateCheckEvasions(movePool, side);
 		// tmp

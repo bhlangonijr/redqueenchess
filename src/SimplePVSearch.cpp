@@ -68,7 +68,7 @@ int SimplePVSearch::idSearch(Board& board) {
 	MovePool pvPool;
 	Move* firstMove = board.generateAllMoves(movePool, board.getSideToMove());
 	Move* move = firstMove;
-	Move* bestMove;
+	Move* bestMove=NULL;
 	if (firstMove) {
 		bestMove=pvPool.construct(Move(firstMove));
 	}
@@ -88,9 +88,11 @@ int SimplePVSearch::idSearch(Board& board) {
 		}
 
 		FOREACHMOVE(move) {
+
 			_nodes++;
 			MoveBackup backup;
 			board.doMove(move,backup);
+
 			score = -pvSearch(board, bestScore, -bestScore, depth-1, depth-1, bestMove, pvPool);
 			move->score=score;
 
@@ -108,6 +110,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		totalTime += time;
 
 		if (isUpdateUci()) {
+
 			std::cout << "info depth "<< depth << std::endl;
 			std::cout << "info score cp " << bestScore << " depth " << depth << " nodes " << _nodes << " time " << time << " pv " << getPvString(depth) << std::endl;
 			if (totalTime>1000) {
@@ -125,6 +128,8 @@ int SimplePVSearch::idSearch(Board& board) {
 		if (isUpdateUci()) {
 			std::cout << "bestmove " << bestMove->toString() << std::endl;
 		}
+	} else {
+		std::cout << "bestmove (none)" << std::endl;
 	}
 
 	return score;
@@ -160,7 +165,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth, int m
 
 		MovePool movePool;
 		Move* move = board.generateAllMoves(movePool, board.getSideToMove());
-		Move* bestMove;
+		Move* bestMove=NULL;
 		if (move) {
 			bestMove=pvPool.construct(Move(move));
 			bestMove->next=NULL;
@@ -337,7 +342,7 @@ int SimplePVSearch::evaluate(Board& board) {
 
 //sort
 void SimplePVSearch::sort(std::vector<Move*>& moves) {
-	Move* tmp;
+	Move* tmp=NULL;
 	bool flag=true;
 	for(int i = 0; i < moves.size()&&flag; i++){
 		flag=false;
