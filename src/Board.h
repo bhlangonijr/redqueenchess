@@ -490,8 +490,6 @@ struct MoveBackup {
 	CastleRight whiteCastleRight;
 	CastleRight blackCastleRight;
 	Square enPassant;
-	bool hasAttackedSquares;
-	Bitboard attackedSquares[ALL_PIECE_COLOR];
 	PieceTypeByColor movingPiece;
 	Square from;
 	Square to;
@@ -692,8 +690,6 @@ public:
 	const Bitboard getMovesFrom(const Square square, const Bitboard occupied);
 	const Bitboard getAllSliderAttacks(const Square square) const;
 
-	const bool hasAttackedSquaresTable();
-	void setAttackedSquaresTable(const bool flag);
 	const Bitboard generateAttackedSquares(const PieceColor color);
 	const Bitboard generateAttackedSquares(const PieceTypeByColor piece);
 	const Bitboard generateAttackedSquares(const PieceColor color, const Bitboard occupied);
@@ -729,8 +725,6 @@ private:
 		return ((clock() * 1000) / CLOCKS_PER_SEC);
 	}
 
-	bool generatedAttackedSquares;
-	Bitboard attackedSquares[ALL_PIECE_COLOR];
 	Node currentBoard;
 	static NodeZobrist nodeZobrist;
 };
@@ -747,7 +741,6 @@ inline void Board::clearBoard()
 // put a piece in the board and store piece info
 inline bool Board::putPiece(const PieceTypeByColor piece, const Square square)
 {
-
 	currentBoard.piece.array[piece] |= squareToBitboard[square];
 	currentBoard.pieceColor[pieceColor[piece]] |= squareToBitboard[square];
 	currentBoard.square[square] = piece;
@@ -835,23 +828,7 @@ inline void Board::setEnPassant(const Square square)
 
 // get attacked squares
 inline const Bitboard Board::getAttackedSquares(const PieceColor color) {
-	if (!hasAttackedSquaresTable()) {
-		setAttackedSquares();
-	}
-	return attackedSquares[color];
-}
-
-// set attacked squares
-inline void Board::setAttackedSquares() {
-
-	attackedSquares[WHITE] = generateAttackedSquares(WHITE);
-	attackedSquares[BLACK] = generateAttackedSquares(BLACK);
-	setAttackedSquaresTable(true);
-
-}
-// set attacked squares
-inline void Board::setAttackedSquares(const PieceColor color, Bitboard attacked) {
-	attackedSquares[color] = attacked;
+	return generateAttackedSquares(color);
 }
 
 // get the bit index from a bitboard
@@ -1394,16 +1371,6 @@ inline const Bitboard Board::generateInterposingAttackedSquares(const Bitboard a
 
 	return attacks;
 
-}
-
-// is attacked squares generated?
-inline const bool Board::hasAttackedSquaresTable() {
-	return generatedAttackedSquares;
-}
-
-// set attacked squares generated - true/false
-inline void Board::setAttackedSquaresTable(const bool flag) {
-	generatedAttackedSquares = flag;
 }
 
 // generate the bitboard with pieces blocking sliders attacks to a specific square

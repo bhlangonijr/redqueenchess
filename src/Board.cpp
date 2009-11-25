@@ -147,8 +147,6 @@ void Board::doMove(const Move& move, MoveBackup& backup){
 	backup.hasWhiteQueenCastle=false;
 	backup.hasBlackKingCastle=false;
 	backup.hasBlackQueenCastle=false;
-	backup.attackedSquares[WHITE]=getAttackedSquares(WHITE);
-	backup.attackedSquares[BLACK]=getAttackedSquares(BLACK);
 
 	removePiece(fromPiece,move.from);
 	setKey(getKey()^zobrist.pieceSquare[fromPiece][move.from]);
@@ -292,16 +290,6 @@ void Board::doMove(const Move& move, MoveBackup& backup){
 	setKey(getKey()^zobrist.sideToMove);
 	setSideToMove(otherSide);
 
-	//TODO formulate better solution to Attacked Squares Table
-	// the code below invalidates generated attackedSquares table control flag:
-	// so in case some method needs attackedSquares, it will be regenerated.
-	// This is done that way to avoid unnecessary calls to generateAttackedSquares - it is a performance killer
-	//backup.hasAttackedSquares=hasAttackedSquaresTable();
-	setAttackedSquaresTable(false);
-
-	//setAttackedSquares(BLACK, generateAttackedSquares(BLACK));
-	//setAttackedSquares(WHITE, generateAttackedSquares(WHITE));
-
 }
 
 // undo a move based on struct MoveBackup
@@ -330,11 +318,8 @@ void Board::undoMove(MoveBackup& backup){
 	}
 
 	setCastleRights(WHITE, backup.whiteCastleRight);
-	setAttackedSquares(WHITE, backup.attackedSquares[WHITE]);
 	setCastleRights(BLACK, backup.blackCastleRight);
-	setAttackedSquares(BLACK, backup.attackedSquares[BLACK]);
 	setEnPassant(backup.enPassant);
-	//setAttackedSquaresTable(backup.hasAttackedSquares);
 	decreaseMoveCounter();
 	setSideToMove(sideToMove);
 	setKey(backup.key);
@@ -385,7 +370,6 @@ void Board::setInitialPosition() {
 	setKey(generateKey());
 	updateKeyHistory();
 
-	setAttackedSquaresTable(false);
 
 }
 // load an specific chess position ex.: d2d4 g8f6 c2c4 e7e6 g1f3 b7b6 b1c3 c8b7 ...
@@ -427,12 +411,12 @@ void Board::loadFromString(const std::string startPosMoves) {
 		last=position+1;
 		position = moves.find(" ", position+1);
 	}
-	setAttackedSquaresTable(false);
+
 }
 
 // generate only capture moves
 Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
-	setAttackedSquaresTable(false);
+
 	Move* move=NULL;
 	PieceColor otherSide = flipSide(side);
 	Bitboard pieces = getPiecesByColor(side)^
@@ -632,7 +616,6 @@ Move* Board::generateCheckEvasions(MovePool& movePool, const PieceColor side) {
 //generate all moves - captures + noncaptures
 Move* Board::generateAllMoves(MovePool& movePool, const PieceColor side) {
 
-	setAttackedSquaresTable(false);
 	Move* moves=NULL;
 	/*std::cout << "BITBOARDS!" << std::endl;
 
