@@ -815,9 +815,8 @@ inline const Bitboard Board::getAttackedSquares(const PieceColor color) {
 inline const Square Board::bitboardToSquare(const Bitboard bitboard) const {
 
 	unsigned int square = 0;
-	unsigned char ret;
+	unsigned char ret = _BitScanForward(&square, bitboard);
 
-	ret = _BitScanForward(&square, bitboard);
 	if (!ret) {
 		return Square(NONE);
 	}
@@ -1231,9 +1230,8 @@ inline const Square Board::extractLSB(Bitboard& bitboard) {
 	}
 
 	unsigned int square = 0;
-	unsigned char ret;
+	unsigned char ret = _BitScanForward(&square, bitboard);
 
-	ret = _BitScanForward(&square, bitboard);
 	bitboard &= bitboard - 1;
 
 	if (!ret) {
