@@ -617,24 +617,9 @@ Move* Board::generateCheckEvasions(MovePool& movePool, const PieceColor side) {
 Move* Board::generateAllMoves(MovePool& movePool, const PieceColor side) {
 
 	Move* moves=NULL;
-	/*std::cout << "BITBOARDS!" << std::endl;
 
-	this->printBitboard(getPiecesByType(makePiece(side,KING)));
-
-	this->printBitboard(getAttackedSquares(flipSide(side)));
-
-	std::cout << "BITBOARDS!" << std::endl;
-*/
 	if (isAttacked(side, KING)) {
 		moves = generateCheckEvasions(movePool, side);
-		// tmp
-	/*	std::cout << "Generated check Evasions!" << std::endl;
-		this->printBoard();
-		Move* tmp = moves;
-		FOREACHMOVE(tmp) {
-			std::cout<<"Move: " << tmp->toString() << std::endl;
-		}*/
-		//tmp
 	} else {
 		moves = generateCaptures(movePool, side);
 		Move* nonCaptures = generateNonCaptures(movePool, side);

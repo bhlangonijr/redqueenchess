@@ -499,10 +499,10 @@ struct MoveBackup {
 // the board node representation
 struct Node {
 
-	Node () : key(0ULL), piece(), pieceCount(), moveCounter(0)
+	Node () : key(0ULL), piece(), moveCounter(0)
 	{}
 
-	Node (const Node& node) : key(node.key), piece( node.piece ), pieceCount( node.pieceCount ), moveCounter(node.moveCounter),
+	Node (const Node& node) : key(node.key), piece( node.piece ), moveCounter(node.moveCounter),
 	enPassant( node.enPassant ), sideToMove( node.sideToMove )
 	{
 		for(register int x=0;x<ALL_SQUARE;x++){
@@ -539,25 +539,6 @@ struct Node {
 
 	}piece;
 
-	union PieceCount
-	{
-		int array[ALL_PIECE_TYPE_BY_COLOR];
-		struct Pieces {
-			int whitePawn;
-			int whiteKnight;
-			int whiteBishop;
-			int whiteRook;
-			int whiteQueen;
-			int whiteKing;
-			int blackPawn;
-			int blackKnight;
-			int blackBishop;
-			int blackRook;
-			int blackQueen;
-			int blackKing;
-		}data;
-	}pieceCount;
-
 	CastleRight castleRight[ALL_PIECE_COLOR];
 	Square enPassant;
 	PieceColor sideToMove;
@@ -574,7 +555,6 @@ struct Node {
 		moveCounter=0;
 		for(register int x=0;x<ALL_PIECE_TYPE_BY_COLOR;x++){
 			piece.array[x]=0ULL;
-			pieceCount.array[x]=0;
 		}
 
 		for(register int x=0;x<ALL_SQUARE;x++){

@@ -31,7 +31,7 @@
 // Exit the program if the count of errors in CHECK_MOVE_GEN_ERRORS exceed the threshold - used for trace purposes
 #define EXIT_PROGRAM_THRESHOLD 100
 // If true uses Principal Variation Search
-#define PV_SEARCH false
+#define PV_SEARCH true
 
 using namespace SimplePVSearchTypes;
 
@@ -174,15 +174,15 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth, int m
 			pvNode->next=bestMove;
 		}
 		//bool ktbt = false;
-		if (board.isAttacked(board.getSideToMove(), KING)) {
+		/*if (board.isAttacked(board.getSideToMove(), KING)) {
 			//std::cout << "My King to be taken " << std::endl;
 			if (!move) {
 				//std::cout << "... and there's nothing to do " << std::endl;
 				//board.printBoard();
 				return -maxScore;
 			}
-			//	ktbt = true;
-		}
+			//ktbt = true;
+		}*/
 		/*if (board.isAttacked(board.flipSide(board.getSideToMove()), KING)) {
 			std::cout << "Their King to be taken " << std::endl;
 		}*/
@@ -195,7 +195,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth, int m
 
 			MoveBackup backup;
 			board.doMove(move,backup);
-
+			//assert(!board.isAttacked(board.getSideToMove(), KING));
 			/*
 			if (backup.capturedPiece==WHITE_KING || backup.capturedPiece==BLACK_KING ) {
 				std::cout << "Captured king " << std::endl;
@@ -231,8 +231,8 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth, int m
 				board.printBoard();
 
 			}
-
-			assert(!(backup.capturedPiece==WHITE_KING || backup.capturedPiece==BLACK_KING));*/
+			*/
+			//assert(!(backup.capturedPiece==WHITE_KING || backup.capturedPiece==BLACK_KING));
 
 #if CHECK_MOVE_GEN_ERRORS
 			Key key2 = board.generateKey();
