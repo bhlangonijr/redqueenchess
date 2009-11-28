@@ -47,6 +47,10 @@ class SimplePVSearch {
 
 public:
 
+	 void operator()() {
+		 this->search();
+	 }
+
 	SimplePVSearch(Board& board);
 	SimplePVSearch(Board& board, int depth ) : _depth(depth), _board(board), _updateUci(true), errorCount(0) {}
 	virtual ~SimplePVSearch();

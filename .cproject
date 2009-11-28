@@ -41,6 +41,7 @@
 <option id="gnu.cpp.link.option.libs.1131174342" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
 <listOptionValue builtIn="false" value="gomp"/>
 <listOptionValue builtIn="false" value="pthread"/>
+<listOptionValue builtIn="false" value="boost_thread-mt"/>
 </option>
 <option id="gnu.cpp.link.option.debugging.gprof.1600990342" name="Generate gprof information (-pg)" superClass="gnu.cpp.link.option.debugging.gprof" value="false" valueType="boolean"/>
 <option id="gnu.cpp.link.option.debugging.prof.1578189719" name="Generate prof information (-p)" superClass="gnu.cpp.link.option.debugging.prof" value="false" valueType="boolean"/>

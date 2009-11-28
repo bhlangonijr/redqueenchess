@@ -16,7 +16,7 @@
 
     You should have received a copy of the GNU General Public License
     along with Redqueen.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 /*
  * SearchAgent.cpp
  *
@@ -41,10 +41,10 @@ SearchAgent* SearchAgent::getInstance ()
 SearchAgent::SearchAgent() :
 	searchMode(SEARCH_TIME), hashSize(defaultSharedMemorySize/sizeof(SearchAgent::HashData)), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
 	blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), infinite(false), searchInProgress(false), activeHash(0), sharedMemory(0)
-{
+	{
 	// creates initial hashtables
 	createHash();
-}
+	}
 
 // start a new game
 void SearchAgent::newGame() {
@@ -94,28 +94,14 @@ void SearchAgent::startSearch() {
 		Uci::getInstance()->text("Search in progress...");
 		return;
 	}
-
+	clearHash();
 	setSearchInProgress(true);
 
-	Board actual(board);
+	SimplePVSearch simplePV(board, getDepth());
 
-	SimplePVSearch simplePV(actual, getDepth());
+	boost::thread executor(simplePV);
 
-	simplePV.search();
-
-	Key oldKey = board.generateKey();
-	Key newKey = actual.generateKey();
-
-	if (oldKey!=newKey) {
-		std::cout << "old key " << oldKey <<std::endl;
-		std::cout << "new key " << newKey <<std::endl;
-		board.printBoard();
-		actual.printBoard();
-	}
-
-	assert(oldKey==newKey);
-
-	clearHash();
+	//executor.join();
 
 }
 

@@ -45,13 +45,28 @@ SimplePVSearch::~SimplePVSearch(){
 
 // root search
 void SimplePVSearch::search() {
+
+	Board board(_board);
 	this->clearPv();
 	this->getPv().assign(_depth,Move());
 	errorCount=0;
 	uint32_t tmp = getTickCount();
-	_score = idSearch( _board );
+	_score = idSearch(board);
 	SearchAgent::getInstance()->setSearchInProgress(false);
 	_time = getTickCount() - tmp;
+
+	Key oldKey = _board.generateKey();
+	Key newKey = board.generateKey();
+
+	if (oldKey!=newKey) {
+		std::cout << "old key " << oldKey <<std::endl;
+		std::cout << "new key " << newKey <<std::endl;
+		_board.printBoard();
+		board.printBoard();
+	}
+
+	assert(oldKey==newKey);
+
 }
 
 // get current score
@@ -76,7 +91,9 @@ int SimplePVSearch::idSearch(Board& board) {
 	_nodes = 0;
 
 	for (int depth = 1; depth <= _depth; depth++) {
-
+		if (!SearchAgent::getInstance()->getSearchInProgress()) {
+			break;
+		}
 		uint32_t time = getTickCount();
 		uint32_t totalTime = 0;
 		score = 0;
@@ -146,7 +163,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth, int m
 	Board old(board);
 #endif
 
-	if( depth == 0 ) {
+	if( depth == 0 || !SearchAgent::getInstance()->getSearchInProgress() ) {
 		score = qSearch(board, alpha, beta, maxQuiescenceSearchDepth, maxQuiescenceSearchDepth);
 		SearchAgent::getInstance()->hashPut(board,score,depth,0);
 		return score;
@@ -284,6 +301,10 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int ma
 	_nodes++;
 
 	int standPat = evaluate(board);
+
+	if (!SearchAgent::getInstance()->getSearchInProgress()) {
+		return standPat;
+	}
 
 	if( standPat >= beta ) {
 		return beta;

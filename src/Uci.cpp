@@ -55,42 +55,25 @@ Uci::Uci()
 // wait to get user input
 Uci::Command Uci::getUserInput()
 {
-	Uci::Command result=UNKNOW;
-	std::string input;
-	std::string first;
+	command=UNKNOW;
+	std::string input="";
 
 	if (!std::getline(std::cin, input)) {
-		result=QUIT;
+		command=QUIT;
 	}
 
 	normalizeString(input);
 
 	this->setRawInput(input);
-	first = input.substr(0,input.find(" "));
+	input = input.substr(0,input.find(" "));
 
-	if (first=="uci") {
-		result=UCI;
-	} else if (first=="ucinewgame"){
-		result=UCINEWGAME;
-	}else if (first=="isready"){
-		result=ISREADY;
-	}else if (first=="position"){
-		result=POSITION;
-	}else if (first=="setoption"){
-		result=SETOPTION;
-	}else if (first=="go"){
-		result=GO;
-	}else if (first=="test"){
-		result=TEST;
-	}
-	else if (first=="quit"){
-		result=QUIT;
-	} else if (first=="stop"){
-		result=STOP;
+	for(int x=0;x<=NU_COMMANDS;x++) {
+		if (input==strCommand[x]) {
+			command=Command(x);
+		}
 	}
 
-	command = result;
-	return result;
+	return command;
 }
 
 // execute a command
@@ -121,16 +104,19 @@ bool Uci::execute()
 	case GO :
 		executeGo();
 		break;
-	case STOP :
+	case QUIT:
+	case STOP:
 		executeStop();
 		break;
 	case TEST :
 		executeTest();
 		break;
+	case NONE:
+		//do nothing
+		break;
 	default:
 		std::cout << "Unknown command(" << this->rawInput << "). " << std::endl;
 		break;
-
 	}
 
 	return true;

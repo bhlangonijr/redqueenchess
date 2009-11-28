@@ -589,7 +589,7 @@ Move* Board::generateCheckEvasions(MovePool& movePool, const PieceColor side) {
 			}
 			//will try to interpose the attack with a piece
 			Bitboard attackers = EMPTY_BB;
-			Bitboard attackedSquares = generateInterposingAttackedSquares(squareToBitboard[from],
+			Bitboard attackedSquares = getInterAttackedSquares(squareToBitboard[from],
 					getAllPieces(),getPiecesByType(makePiece(side,KING)),attackers);
 			attackedSquares &= getIntersectSquares(from, kingSquare)^squareToBitboard[kingSquare];
 			Square interposeSquare = extractLSB(attackedSquares);

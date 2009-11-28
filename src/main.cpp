@@ -16,7 +16,7 @@
 
     You should have received a copy of the GNU General Public License
     along with Redqueen.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
 /**
  * main.cpp
@@ -52,7 +52,7 @@ int main() {
 
 	Uci *uci = Uci::getInstance();
 
-	std::string paramNumProcs = StringUtil::toStr(omp_get_num_procs ( ));
+	std::string paramNumProcs = StringUtil::toStr(omp_get_num_procs());
 
 	// creating uci options
 	std::vector< UciOption *> options;
@@ -62,20 +62,17 @@ int main() {
 	options.push_back(new UciOption("Clear Hash",UciOption::BUTTON,"",""));
 	// set options into uci handler
 	uci->setUciOption(options);
-
 	std::cout << Constant::ENGINE_COPYRIGHT << std::endl;
 
 	//uci loop
-	while (true) {
-		if (uci->getUserInput()==Uci::QUIT){
-			break;
-		}
+	Uci::Command command=Uci::NONE;
+	while (command != Uci::QUIT) {
+		command=uci->getUserInput();
 		uci->execute();
 	}
 
 	uci->clearUciOption();
 	SearchAgent::getInstance()->destroyHash();
-
 
 	return 0;
 }

@@ -673,8 +673,8 @@ public:
 	const Bitboard generateAttackedSquares(const PieceColor color);
 	const Bitboard generateAttackedSquares(const PieceTypeByColor piece);
 	const Bitboard generateAttackedSquares(const PieceColor color, const Bitboard occupied);
-	const Bitboard generateInterposingAttackedSquares(const PieceColor color, const Bitboard occupied, const Bitboard attackedPieces, Bitboard& attackers);
-	const Bitboard generateInterposingAttackedSquares(const Bitboard attackingPieces, const Bitboard occupied, const Bitboard attackedPieces, Bitboard& attackers);
+	const Bitboard getInterAttackedSquares(const PieceColor color, const Bitboard occupied, const Bitboard attackedPieces, Bitboard& attackers);
+	const Bitboard getInterAttackedSquares(const Bitboard attackingPieces, const Bitboard occupied, const Bitboard attackedPieces, Bitboard& attackers);
 	const Bitboard findAttackBlocker(Square square);
 
 	static void initializeZobrist();
@@ -1331,7 +1331,7 @@ inline const Bitboard Board::generateAttackedSquares(const PieceColor color, con
 }
 
 // get attacking bitboard insersecting attackedPieces
-inline const Bitboard Board::generateInterposingAttackedSquares(const Bitboard attackingPieces, const Bitboard occupied, const Bitboard attackedPieces, Bitboard& attackers) {
+inline const Bitboard Board::getInterAttackedSquares(const Bitboard attackingPieces, const Bitboard occupied, const Bitboard attackedPieces, Bitboard& attackers) {
 
 	Bitboard all = attackingPieces;
 	Bitboard attacks = EMPTY_BB;
@@ -1372,7 +1372,8 @@ inline const Bitboard Board::findAttackBlocker(Square square) {
 	}
 
 	Bitboard attackers;
-	Bitboard attacked = generateInterposingAttackedSquares(allAttackers,getPiecesByColor(otherSide)|squareToBitboard[square],squareToBitboard[square],attackers);
+	Bitboard attacked = getInterAttackedSquares(allAttackers,getPiecesByColor(otherSide)|
+			squareToBitboard[square],squareToBitboard[square],attackers);
 	Bitboard likelyBlockers = (getPiecesByColor(side) & attacked)^squareToBitboard[square];
 	Square from = this->extractLSB(likelyBlockers);
 
