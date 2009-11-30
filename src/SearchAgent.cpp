@@ -97,10 +97,23 @@ void SearchAgent::startSearch() {
 	clearHash();
 	setSearchInProgress(true);
 
-	SimplePVSearch simplePV(board, getDepth());
+	SimplePVSearch simplePV(board);
+
+	if (this->getSearchMode()==SearchAgent::SEARCH_DEPTH) {
+		simplePV.setSearchFixedDepth(true);
+		simplePV.setDepth(this->getDepth());
+	} else if (this->getSearchMode()==SearchAgent::SEARCH_TIME || this->getSearchMode()==SearchAgent::SEARCH_MOVETIME) {
+		simplePV.setSearchFixedDepth(false);
+		simplePV.setTimeToSearch(this->getTimeToSearch());
+	} else if (this->getSearchMode()==SearchAgent::SEARCH_INFINITE) {
+		simplePV.setInfinite(true);
+		simplePV.setDepth(SimplePVSearchTypes::maxSearchDepth);
+	} else {
+		simplePV.setSearchFixedDepth(true);
+		simplePV.setDepth(defaultDepth);
+	}
 
 	boost::thread executor(simplePV);
-
 	//executor.join();
 
 }
@@ -110,6 +123,39 @@ void SearchAgent::stopSearch() {
 	setSearchInProgress(false);
 }
 
+
+const uint32_t SearchAgent::getTimeToSearch() {
+
+	static const int alpha = 2; // 0.5
+	if (this->getSearchMode()==SearchAgent::SEARCH_MOVETIME) {
+		return this->getMoveTime();
+	}
+
+	uint32_t time=board.getSideToMove()==WHITE ? this->getWhiteTime() : this->getBlackTime();
+	uint32_t incTime=board.getSideToMove()==WHITE ? this->getWhiteIncrement() : this->getBlackIncrement();
+
+	int movesLeft = defaultGameSize-board.getMoveCounter();
+
+	if (movesLeft<=1) {
+
+		movesLeft=defaultGameSizeInc;
+
+	} else {
+
+		uint32_t deltaT = board.getSideToMove()==WHITE ? this->getWhiteTime()-this->getBlackTime(): this->getBlackTime()-this->getWhiteTime();
+		if (deltaT > 0) {
+
+			int movesOppDiff = ( deltaT / (time / movesLeft) ) / alpha ;
+			movesLeft -= movesOppDiff;
+		}
+
+	}
+
+	time = time / movesLeft;
+
+	return time;
+
+}
 
 
 

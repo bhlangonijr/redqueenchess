@@ -35,14 +35,6 @@
 
 using namespace SimplePVSearchTypes;
 
-SimplePVSearch::SimplePVSearch(Board& board) :  _depth(1),  _board(board), _updateUci(true){
-
-}
-
-SimplePVSearch::~SimplePVSearch(){
-
-}
-
 // root search
 void SimplePVSearch::search() {
 
@@ -50,11 +42,13 @@ void SimplePVSearch::search() {
 	this->clearPv();
 	this->getPv().assign(_depth,Move());
 	errorCount=0;
-	uint32_t tmp = getTickCount();
+	_startTime = getTickCount();
 	_score = idSearch(board);
 	SearchAgent::getInstance()->setSearchInProgress(false);
-	_time = getTickCount() - tmp;
+	_time = getTickCount() - _startTime;
 
+#if CHECK_MOVE_GEN_ERRORS
+	// checks for data corruption
 	Key oldKey = _board.generateKey();
 	Key newKey = board.generateKey();
 
@@ -66,6 +60,7 @@ void SimplePVSearch::search() {
 	}
 
 	assert(oldKey==newKey);
+#endif
 
 }
 
@@ -91,7 +86,7 @@ int SimplePVSearch::idSearch(Board& board) {
 	_nodes = 0;
 
 	for (int depth = 1; depth <= _depth; depth++) {
-		if (!SearchAgent::getInstance()->getSearchInProgress()) {
+		if (stop()) {
 			break;
 		}
 		uint32_t time = getTickCount();
@@ -99,10 +94,6 @@ int SimplePVSearch::idSearch(Board& board) {
 		score = 0;
 		bestScore = -maxScore;
 		move = firstMove;
-		if (bestMove) {
-			bestMove->copy(move);
-			bestMove->next=NULL;
-		}
 
 		FOREACHMOVE(move) {
 
@@ -163,7 +154,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, int depth, int m
 	Board old(board);
 #endif
 
-	if( depth == 0 || !SearchAgent::getInstance()->getSearchInProgress() ) {
+	if( depth == 0 || stop() ) {
 		score = qSearch(board, alpha, beta, maxQuiescenceSearchDepth, maxQuiescenceSearchDepth);
 		SearchAgent::getInstance()->hashPut(board,score,depth,0);
 		return score;
@@ -302,7 +293,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int ma
 
 	int standPat = evaluate(board);
 
-	if (!SearchAgent::getInstance()->getSearchInProgress()) {
+	if (stop()) {
 		return standPat;
 	}
 
@@ -413,6 +404,24 @@ void SimplePVSearch::updatePv(Move* move, int depth, int maxDepth) {
 		updatePv(n,*tmp);
 		n++;
 	}
+
+}
+
+const bool SimplePVSearch::stop() {
+
+	return !SearchAgent::getInstance()->getSearchInProgress() || timeIsUp();
+
+
+}
+
+const bool SimplePVSearch::timeIsUp() {
+
+	if ( _searchFixedDepth || _infinite ) {
+		return false;
+	}
+
+	return !SearchAgent::getInstance()->getSearchInProgress() || ((getTickCount()-_startTime)>=_timeToSearch);
+
 
 }
 

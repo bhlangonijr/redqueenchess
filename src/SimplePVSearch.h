@@ -38,6 +38,7 @@ namespace SimplePVSearchTypes {
 static const int maxScore = 200000;
 static const int maxQuiescenceSearchDepth = 10;
 static const int materialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 325, 325, 500, 975, 10000, 100, 325, 325, 500, 975, 10000, 0};
+static const int maxSearchDepth = 40;
 
 }
 
@@ -47,13 +48,16 @@ class SimplePVSearch {
 
 public:
 
-	 void operator()() {
-		 this->search();
-	 }
+	void operator()() {
+		this->search();
+	}
 
-	SimplePVSearch(Board& board);
-	SimplePVSearch(Board& board, int depth ) : _depth(depth), _board(board), _updateUci(true), errorCount(0) {}
-	virtual ~SimplePVSearch();
+	SimplePVSearch(Board& board) :  _depth(maxSearchDepth),  _board(board), _updateUci(true), errorCount(0), _startTime(0), _searchFixedDepth(true), _infinite(false) {}
+	SimplePVSearch(Board& board, int depth ) : _depth(depth), _board(board), _updateUci(true), errorCount(0), _timeToSearch(0), _startTime(0), _searchFixedDepth(true), _infinite(false) {}
+	SimplePVSearch(Board& board, uint32_t timeToSearch ) : _depth(maxSearchDepth), _board(board), _updateUci(true), _timeToSearch(timeToSearch), errorCount(0), _startTime(0), _searchFixedDepth(false), _infinite(false) {}
+	SimplePVSearch(Board& board, bool infinite ) : _depth(maxSearchDepth), _board(board), _updateUci(true), errorCount(0), _timeToSearch(0), _startTime(0), _searchFixedDepth(true), _infinite(true) {}
+
+	virtual ~SimplePVSearch() {}
 	virtual void search();
 	virtual int getScore();
 
@@ -67,6 +71,46 @@ public:
 
 	const void setUpdateUci(const bool value) {
 		_updateUci = value;
+	}
+
+	const bool isSearchFixedDepth() const {
+		return _searchFixedDepth;
+	}
+
+	const void setSearchFixedDepth(const bool value) {
+		_searchFixedDepth = value;
+	}
+
+	const bool isInfinite() const {
+		return _infinite;
+	}
+
+	const void setInfinite(const bool value) {
+		_infinite = value;
+	}
+
+	const void setDepth(const int depth) {
+		_depth = depth;
+	}
+
+	const int getDepth() const {
+		return _depth;
+	}
+
+	const void setTimeToSearch(const uint32_t timeToSearch) {
+		_timeToSearch = timeToSearch;
+	}
+
+	const uint32_t getTimeToSearch() const {
+		return _timeToSearch;
+	}
+
+	const void setStartTime(const uint32_t startTime) {
+		_startTime = startTime;
+	}
+
+	const uint32_t getStartTime() const {
+		return _startTime;
 	}
 
 	void sort(std::vector<Move*>& moves);
@@ -119,9 +163,13 @@ private:
 	Board& _board;
 	int _depth;
 	int _score;
+	uint32_t _timeToSearch;
+	uint32_t _startTime;
 	uint64_t _nodes;
 	uint32_t _time;
+	bool _infinite;
 	bool _updateUci;
+	bool _searchFixedDepth;
 	int errorCount;
 	std::vector<Move> pv;
 
@@ -131,6 +179,12 @@ private:
 	int evaluate(Board& board);
 	void updatePv(Move* move, int depth, int maxDepth);
 
+	const bool stop();
+	const bool timeIsUp();
+
 };
+
+
+
 
 #endif /* SIMPLEPVSEARCH_H_ */

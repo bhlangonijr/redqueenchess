@@ -44,6 +44,9 @@ static const std::string mainHashName 		= "DefaultHashTable";
 static const int defaultDepth				= 5;
 static const int bucketSize					= 80;
 
+static const int defaultGameSize			= 40;
+static const int defaultGameSizeInc			= 5;
+
 
 
 class SearchAgent {
@@ -100,31 +103,31 @@ public:
 		threadNumber = _threadNumber;
 	}
 
-	const int getWhiteTime() const {
+	const uint32_t getWhiteTime() const {
 		return whiteTime;
 	}
-	void setWhiteTime(int _whiteTime) {
+	void setWhiteTime(uint32_t _whiteTime) {
 		whiteTime = _whiteTime;
 	}
 
-	const int getWhiteIncrement() const {
+	const uint32_t getWhiteIncrement() const {
 		return whiteIncrement;
 	}
-	void setWhiteIncrement(int _whiteIncrement) {
+	void setWhiteIncrement(uint32_t _whiteIncrement) {
 		whiteIncrement = _whiteIncrement;
 	}
 
-	const int getBlackTime() const {
+	const uint32_t getBlackTime() const {
 		return blackTime;
 	}
-	void setBlackTime(int _blackTime) {
+	void setBlackTime(uint32_t _blackTime) {
 		blackTime = _blackTime;
 	}
 
-	const int getBlackIncrement() const {
+	const uint32_t getBlackIncrement() const {
 		return blackIncrement;
 	}
-	void setBlackIncrement(int _blackIncrement) {
+	void setBlackIncrement(uint32_t _blackIncrement) {
 		blackIncrement = _blackIncrement;
 	}
 
@@ -142,10 +145,10 @@ public:
 		movesToGo = _movesToGo;
 	}
 
-	const int getMoveTime() const {
+	const uint32_t getMoveTime() const {
 		return moveTime;
 	}
-	void setMoveTime(int _moveTime) {
+	void setMoveTime(uint32_t _moveTime) {
 		moveTime = _moveTime;
 	}
 
@@ -244,19 +247,21 @@ private:
 	volatile bool searchInProgress;
 
 	size_t hashSize;
-	int threadNumber;
-	int whiteTime;
-	int whiteIncrement;
-	int blackTime;
-	int blackIncrement;
+	uint32_t threadNumber;
+	uint32_t whiteTime;
+	uint32_t whiteIncrement;
+	uint32_t blackTime;
+	uint32_t blackIncrement;
 	int depth;
 	int movesToGo;
-	int moveTime;
+	uint32_t moveTime;
 	bool infinite;
 
 	int activeHash;
 	std::vector<TranspositionTable<Key,HashData>*> transTable;
 	managed_shared_memory* sharedMemory;
+
+	const uint32_t getTimeToSearch();
 
 };
 
