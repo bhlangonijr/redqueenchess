@@ -112,7 +112,7 @@ void SearchAgent::startSearch() {
 		simplePV.setSearchFixedDepth(true);
 		simplePV.setDepth(defaultDepth);
 	}
-
+	// TODO implement movestogo and nodes
 	boost::thread executor(simplePV);
 	//executor.join();
 
@@ -137,21 +137,10 @@ const uint32_t SearchAgent::getTimeToSearch() {
 	int movesLeft = defaultGameSize-board.getMoveCounter();
 
 	if (movesLeft<=1) {
-
 		movesLeft=defaultGameSizeInc;
-
-	} else {
-
-		uint32_t deltaT = board.getSideToMove()==WHITE ? this->getWhiteTime()-this->getBlackTime(): this->getBlackTime()-this->getWhiteTime();
-		if (deltaT > 0) {
-
-			int movesOppDiff = ( deltaT / (time / movesLeft) ) / alpha ;
-			movesLeft -= movesOppDiff;
-		}
-
 	}
 
-	time = time / movesLeft;
+	time /= movesLeft;
 
 	return time;
 
