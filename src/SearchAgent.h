@@ -27,9 +27,6 @@
 #ifndef SEARCHAGENT_H_
 #define SEARCHAGENT_H_
 
-#include <boost/thread/thread.hpp>
-#include <boost/bind.hpp>
-
 #include <boost/unordered_map.hpp>
 #include <iostream>
 #include <assert.h>
@@ -231,6 +228,7 @@ public:
 		releaseSharedMemory();
 	}
 
+	void *startThreadSearch();
 
 protected:
 

@@ -502,8 +502,7 @@ struct Node {
 	Node () : key(0ULL), piece(), moveCounter(0)
 	{}
 
-	Node (const Node& node) : key(node.key), piece( node.piece ), moveCounter(node.moveCounter),
-	enPassant( node.enPassant ), sideToMove( node.sideToMove )
+	Node (const Node& node) : key(node.key), piece( node.piece ), moveCounter(node.moveCounter), enPassant( node.enPassant ), sideToMove( node.sideToMove )
 	{
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=node.square[x];

@@ -26,6 +26,7 @@
 
 #include "SearchAgent.h"
 
+extern "C" void *threadStartup(void *);
 
 SearchAgent* SearchAgent::searchAgent = 0;
 
@@ -88,11 +89,11 @@ void SearchAgent::setPositionFromFEN(std::string fenMoves) {
 }
 
 // start search
-void SearchAgent::startSearch() {
+void* SearchAgent::startThreadSearch() {
 
 	if (getSearchInProgress()) {
 		Uci::getInstance()->text("Search in progress...");
-		return;
+		return 0;
 	}
 	clearHash();
 	setSearchInProgress(true);
@@ -113,8 +114,16 @@ void SearchAgent::startSearch() {
 		simplePV.setDepth(defaultDepth);
 	}
 	// TODO implement movestogo and nodes
-	boost::thread executor(simplePV);
-	//executor.join();
+	simplePV.search();
+
+}
+// start search
+void SearchAgent::startSearch() {
+
+	pthread_t executor;
+	int ret = 0;
+
+	ret = pthread_create( &executor, NULL, threadStartup, this);
 
 }
 
@@ -131,7 +140,7 @@ const uint32_t SearchAgent::getTimeToSearch() {
 	}
 
 	uint32_t time=board.getSideToMove()==WHITE ? this->getWhiteTime() : this->getBlackTime();
-	uint32_t incTime=board.getSideToMove()==WHITE ? this->getWhiteIncrement() : this->getBlackIncrement();
+	//uint32_t incTime=board.getSideToMove()==WHITE ? this->getWhiteIncrement() : this->getBlackIncrement();
 
 	int movesLeft = defaultGameSize-board.getMoveCounter();
 
@@ -145,7 +154,12 @@ const uint32_t SearchAgent::getTimeToSearch() {
 
 }
 
-
+void *threadStartup(void *_object) {
+  SearchAgent *object = (SearchAgent *)_object;
+  void *threadResult = object->startThreadSearch();
+  //delete object;
+  return threadResult;
+}
 
 
 

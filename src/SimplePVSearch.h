@@ -52,10 +52,10 @@ public:
 		this->search();
 	}
 
-	SimplePVSearch(Board& board) :  _depth(maxSearchDepth),  _board(board), _updateUci(true), errorCount(0), _startTime(0), _searchFixedDepth(true), _infinite(false) {}
-	SimplePVSearch(Board& board, int depth ) : _depth(depth), _board(board), _updateUci(true), errorCount(0), _timeToSearch(0), _startTime(0), _searchFixedDepth(true), _infinite(false) {}
-	SimplePVSearch(Board& board, uint32_t timeToSearch ) : _depth(maxSearchDepth), _board(board), _updateUci(true), _timeToSearch(timeToSearch), errorCount(0), _startTime(0), _searchFixedDepth(false), _infinite(false) {}
-	SimplePVSearch(Board& board, bool infinite ) : _depth(maxSearchDepth), _board(board), _updateUci(true), errorCount(0), _timeToSearch(0), _startTime(0), _searchFixedDepth(true), _infinite(true) {}
+	SimplePVSearch(Board& board) :   _board(board), _depth(maxSearchDepth), _updateUci(true), errorCount(0), _startTime(0), _searchFixedDepth(true), _infinite(false) {}
+	SimplePVSearch(Board& board, int depth ) : _board(board), _depth(depth), _updateUci(true), errorCount(0), _timeToSearch(0), _startTime(0), _searchFixedDepth(true), _infinite(false) {}
+	SimplePVSearch(Board& board, uint32_t timeToSearch ) : _board(board), _depth(maxSearchDepth), _updateUci(true), errorCount(0), _timeToSearch(timeToSearch), _startTime(0), _searchFixedDepth(false), _infinite(false) {}
+	SimplePVSearch(Board& board, bool infinite ) : _board(board), _depth(maxSearchDepth), _updateUci(true), errorCount(0), _timeToSearch(0), _startTime(0), _searchFixedDepth(true), _infinite(true) {}
 
 	virtual ~SimplePVSearch() {}
 	virtual void search();
@@ -163,14 +163,15 @@ private:
 	Board& _board;
 	int _depth;
 	int _score;
+	bool _updateUci;
+	int errorCount;
 	uint32_t _timeToSearch;
 	uint32_t _startTime;
 	uint64_t _nodes;
 	uint32_t _time;
-	bool _infinite;
-	bool _updateUci;
 	bool _searchFixedDepth;
-	int errorCount;
+	bool _infinite;
+
 	std::vector<Move> pv;
 
 	int idSearch(Board& board);
