@@ -126,7 +126,6 @@ void SearchAgent::stopSearch() {
 
 const uint32_t SearchAgent::getTimeToSearch() {
 
-	static const int alpha = 2; // 0.5
 	if (this->getSearchMode()==SearchAgent::SEARCH_MOVETIME) {
 		return this->getMoveTime();
 	}
