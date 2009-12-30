@@ -40,8 +40,8 @@ SearchAgent* SearchAgent::getInstance ()
 }
 
 SearchAgent::SearchAgent() :
-	searchMode(SEARCH_TIME), hashSize(defaultSharedMemorySize/sizeof(SearchAgent::HashData)), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
-	blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), infinite(false), searchInProgress(false), activeHash(0), sharedMemory(0)
+	searchMode(SEARCH_TIME), searchInProgress(false), hashSize(defaultHashSize), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
+	blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), infinite(false), activeHash(0)
 	{
 	// creates initial hashtables
 	createHash();
@@ -79,13 +79,12 @@ void SearchAgent::setBoard(Board _board) {
 
 // set position from SAN moves
 void SearchAgent::setPositionFromSAN(std::string startPosMoves) {
-	board = Board();
 	board.loadFromString(startPosMoves);
 }
 
 // set position from FEN moves
 void SearchAgent::setPositionFromFEN(std::string fenMoves) {
-	// TODO create loadFromFEN in class Board
+	board.loadFromFEN(fenMoves);
 }
 
 // start search
@@ -95,7 +94,7 @@ void* SearchAgent::startThreadSearch() {
 		Uci::getInstance()->text("Search in progress...");
 		return 0;
 	}
-	clearHash();
+	//clearHash();
 	setSearchInProgress(true);
 
 	SimplePVSearch simplePV(board);
@@ -115,7 +114,7 @@ void* SearchAgent::startThreadSearch() {
 	}
 	// TODO implement movestogo and nodes
 	simplePV.search();
-
+	return 0;
 }
 // start search
 void SearchAgent::startSearch() {
@@ -131,7 +130,6 @@ void SearchAgent::startSearch() {
 void SearchAgent::stopSearch() {
 	setSearchInProgress(false);
 }
-
 
 const uint32_t SearchAgent::getTimeToSearch() {
 
@@ -160,6 +158,7 @@ void *threadStartup(void *_object) {
   //delete object;
   return threadResult;
 }
+
 
 
 

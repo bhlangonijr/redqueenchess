@@ -27,18 +27,12 @@
 
 #ifndef TRANSPOSITIONTABLE_H_
 #define TRANSPOSITIONTABLE_H_
-#include <boost/interprocess/managed_shared_memory.hpp>
-#include <boost/interprocess/allocators/allocator.hpp>
 
-#include <functional>
-#include <boost/functional/hash.hpp>
-#include <boost/unordered_map.hpp>
-
+#include <cstring>
+#include <cmath>
 #include "Board.h"
 
-using namespace boost::interprocess;
-
-#define DEFAULT_INITIAL_SIZE 3
+#define DEFAULT_INITIAL_SIZE 64
 
 template<class _Key, class _Value>
 class TranspositionTable {
@@ -47,40 +41,27 @@ public:
 	typedef _Key HashKeyType;
 	typedef _Value HashValueType;
 
-	typedef std::pair<const HashKeyType, HashValueType> ValueType;
+	typedef struct _Entry {
+		_Key key;
+		_Value value;
+	} HashEntry;
 
-	typedef allocator<ValueType, managed_shared_memory::segment_manager> ShmemAllocator;
-	// Transposition Table type
-	typedef boost::unordered_map<HashKeyType, HashValueType, boost::hash<HashKeyType> , std::equal_to<HashKeyType>, ShmemAllocator > CustomHashTable;
-
-	TranspositionTable(std::string id_, managed_shared_memory* segment_) :
-		transTable(NULL),
-		segment(segment_),
-		id(id_) {
-
-		transTable = segment_->construct<CustomHashTable>(id_.c_str())
-									( DEFAULT_INITIAL_SIZE, boost::hash<HashKeyType>() , std::equal_to<HashKeyType>()
-											, segment_->get_allocator<ValueType>());
+	TranspositionTable(std::string id_) :
+		hashSize(DEFAULT_INITIAL_SIZE),
+		id(id_),
+		writes(0) {
+		init();
 	}
-	TranspositionTable(std::string id_, size_t initialSize, managed_shared_memory* segment_) :
+
+	TranspositionTable(std::string id_, size_t initialSize) :
 		hashSize(initialSize),
-		transTable(NULL),
-		segment(segment_),
-		id(id_) {
-		transTable = segment_->construct<CustomHashTable>(id_.c_str())
-							( DEFAULT_INITIAL_SIZE, boost::hash<HashKeyType>() , std::equal_to<HashKeyType>()
-									, segment_->get_allocator<ValueType>());
+		id(id_),
+		writes(0) {
+		init();
 	}
 
 	virtual ~TranspositionTable() {
-		if (segment) {
-			try {
-				segment->destroy<CustomHashTable>(getId().c_str());
-			} catch (...) {
-				std::cerr << "Error while trying to release HashTable" << std::endl;
-			}
-
-		}
+		delete [] transTable;
 	}
 
 	const size_t getHashSize() const;
@@ -90,14 +71,28 @@ public:
 	bool hashGet(const HashKeyType key, HashValueType& value);
 	void resizeHash();
 	bool isHashFull();
-	managed_shared_memory* getSegment();
 	const std::string getId() const;
 
 private:
+
+	void init() {
+		for (_size = 2; _size * sizeof(_Value) <= hashSize << 20; _size *= 2);
+		_size /= 2;
+		_mask = _size - 1;
+		transTable = new HashEntry[_size];
+		if (transTable == NULL) {
+			std::cerr << "Failed to allocate memory for transposition table." << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		clearHash();
+
+	}
 	size_t hashSize;
-	CustomHashTable* transTable;
-	managed_shared_memory* segment;
 	std::string id;
+	size_t _size;
+	size_t _mask;
+	HashEntry* transTable;
+	size_t writes;
 
 };
 
@@ -113,41 +108,50 @@ inline void TranspositionTable<HashKeyType, HashValueType>::setHashSize(const si
 
 template<class HashKeyType, class HashValueType>
 inline void TranspositionTable<HashKeyType, HashValueType>::clearHash() {
-	transTable->clear();
+	memset(transTable, 0, _size * sizeof(HashEntry));
 }
 
 template<class HashKeyType, class HashValueType>
 inline bool TranspositionTable<HashKeyType, HashValueType>::hashPut(const HashKeyType key, const HashValueType value) {
-
-	if (transTable->size() >= hashSize) {
-		return false; // hash full
+	HashEntry *entry;
+	entry = transTable + (key & _mask);
+	if (!entry) {
+		return false;
 	}
-	transTable->insert(ValueType(key,value));
+	entry->key = key;
+	entry->value = value;
+	writes++;
 	return true;
 }
 
 template<class HashKeyType, class HashValueType>
 inline bool TranspositionTable<HashKeyType, HashValueType>::hashGet(const HashKeyType key, HashValueType& value) {
-	if (transTable->count(key)>0) {
-		value = transTable->at(key);
+
+	HashEntry *entry;
+	entry = transTable + (key & _mask);
+	if (entry->key==key) {
+		value = entry->value;
 		return true;
 	}
+
 	return false;
 }
 
 template<class HashKeyType, class HashValueType>
 inline void TranspositionTable<HashKeyType, HashValueType>::resizeHash() {
-	transTable->rehash(hashSize);
+
+	if (transTable) {
+		delete [] transTable;
+	}
+	init();
+
 }
 
 template<class HashKeyType, class HashValueType>
 inline bool TranspositionTable<HashKeyType, HashValueType>::isHashFull() {
-	return transTable->size() >= hashSize;
-}
-
-template<class HashKeyType, class HashValueType>
-inline managed_shared_memory* TranspositionTable<HashKeyType, HashValueType>::getSegment() {
-	return segment;
+	//double n = double(_size);
+	//int i = int(1000 * (1 - exp(writes * log(1.0 - 1.0/n))));
+	return false;
 }
 
 template<class HashKeyType, class HashValueType>

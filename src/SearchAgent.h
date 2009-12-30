@@ -27,7 +27,6 @@
 #ifndef SEARCHAGENT_H_
 #define SEARCHAGENT_H_
 
-#include <boost/unordered_map.hpp>
 #include <iostream>
 #include <assert.h>
 #include "Uci.h"
@@ -35,16 +34,11 @@
 #include "SimplePVSearch.h"
 #include "TranspositionTable.h"
 
-static const std::string sharedMemoryName 	= "Redqueen_HashTableSharedMemory";
-static const size_t defaultSharedMemorySize = 64*1024*1024; // bytes
 static const std::string mainHashName 		= "DefaultHashTable";
-static const int defaultDepth				= 5;
-static const int bucketSize					= 80;
-
-static const int defaultGameSize			= 40;
-static const int defaultGameSizeInc			= 5;
-
-
+static const size_t defaultDepth			= 5;
+static const size_t defaultHashSize			= 64;
+static const size_t defaultGameSize			= 40;
+static const size_t defaultGameSizeInc		= 5;
 
 class SearchAgent {
 public:
@@ -55,6 +49,7 @@ public:
 	struct HashData {
 		HashData() : value(0), depth(0), generation(0)  {};
 		HashData(int _value, uint32_t _depth, uint32_t _generation) : value(_value), depth(_depth), generation(_generation)  {};
+		HashData(const HashData& hashData) : value(hashData.value), depth(hashData.depth), generation(hashData.generation)  {};
 		int value;
 		uint32_t depth;
 		uint32_t generation;
@@ -161,7 +156,6 @@ public:
 		}
 	}
 	bool hashPut(const Board& board, const int value, const uint32_t depth, const uint32_t generation) {
-		if (isHashFull()) return false;
 		if (transTable.size()>getActiveHash()) {
 			return transTable[getActiveHash()]->hashPut(board.getKey(), HashData(value,depth,generation));
 		}
@@ -177,7 +171,6 @@ public:
 	}
 
 	bool isHashFull() {
-		if (getSharedMemory()->get_free_memory()<bucketSize) return true;
 
 		if (transTable.size()>getActiveHash()) {
 			return transTable[getActiveHash()]->isHashFull();
@@ -189,34 +182,16 @@ public:
 		transTable.push_back(table);
 	}
 
-	inline int getActiveHash() {
+	inline size_t getActiveHash() {
 		return activeHash;
 	}
 
-	inline void setActiveHash(const int active) {
+	inline void setActiveHash(const size_t active) {
 		activeHash = active;
 	}
 
-	void createShareMemory(size_t size_) {
-		releaseSharedMemory();
-		sharedMemory = new managed_shared_memory(create_only,sharedMemoryName.c_str(),size_);
-	}
-
-	managed_shared_memory* getSharedMemory() {
-		return sharedMemory;
-	}
-
-	void releaseSharedMemory() {
-		shared_memory_object::remove(sharedMemoryName.c_str());
-		if (getSharedMemory()) {
-			delete sharedMemory;
-			sharedMemory=0;
-		}
-	}
-
 	void createHash() {
-		createShareMemory(getHashSize()*sizeof(HashData));
-		TranspositionTable<Key,HashData>* table = new TranspositionTable<Key,HashData>(mainHashName, getHashSize(), getSharedMemory());
+		TranspositionTable<Key,HashData>* table = new TranspositionTable<Key,HashData>(mainHashName, getHashSize());
 		addTranspositionTable(table);
 	}
 
@@ -225,7 +200,6 @@ public:
 			delete transTable[getActiveHash()];
 		}
 		transTable.clear();
-		releaseSharedMemory();
 	}
 
 	void *startThreadSearch();
@@ -255,9 +229,8 @@ private:
 	uint32_t moveTime;
 	bool infinite;
 
-	int activeHash;
+	size_t activeHash;
 	std::vector<TranspositionTable<Key,HashData>*> transTable;
-	managed_shared_memory* sharedMemory;
 
 	const uint32_t getTimeToSearch();
 

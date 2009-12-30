@@ -26,6 +26,8 @@
 #include <inttypes.h>
 #include <iostream>
 
+#define MIN(x,y) x<y?x:y;
+
 static const uint64_t debruijn64 = 0x07EDD5E59A4E28C2ULL;
 
 static const uint32_t index64[64] = {
@@ -103,3 +105,24 @@ uint32_t _BitCount(const uint64_t data)
    #endif
 }
 
+#if !defined(_MSC_VER)
+
+#  if defined(_SC_NPROCESSORS_ONLN)
+int getNumProcs() {
+  return MIN(sysconf( _SC_NPROCESSORS_ONLN ), 8);
+}
+#  else
+int getNumProcs() {
+  return 1;
+}
+#  endif
+
+#else
+
+int getNumProcs() {
+  SYSTEM_INFO s;
+  GetSystemInfo(&s);
+  return MIN(s.dwNumberOfProcessors, 8);
+}
+
+#endif

@@ -7,3 +7,4 @@ Ben-Hur Langoni Junior
 3) Finish SimplePVSearch
 4) Implement Monte Carlo & Boltzmann in search
 5) Implement time management in search
+6) Clear old data in hash

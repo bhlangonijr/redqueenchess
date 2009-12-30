@@ -32,35 +32,29 @@ using namespace BoardTypes;
 
 NodeZobrist zobrist;
 
-Board::Board() : currentBoard() {
+Board::Board() : currentBoard()
+{
 	setInitialPosition();
+	lastAttackedKey[WHITE]=0x0ULL;
+	lastAttackedKey[BLACK]=0x0ULL;
+
 }
 
 Board::Board(const Board& board) : currentBoard( Node(board.currentBoard) ) {
-
+	lastAttackedKey[WHITE]=board.lastAttackedKey[WHITE];
+	lastAttackedKey[BLACK]=board.lastAttackedKey[BLACK];
 }
 
 Board::~Board(){
 }
 
-// initialize zobrist keys
-void Board::initializeZobrist() {
-	for(int piece=0; piece<ALL_PIECE_TYPE_BY_COLOR; piece++) {
-		for(int square=0; square<ALL_SQUARE; square++) {
-			zobrist.pieceSquare[piece][square]=genrand_int64();
-		}
-	}
-	zobrist.sideToMove=genrand_int64();
-	for(int file=0; file<ALL_FILE; file++) {
-		zobrist.enPassant[file]=genrand_int64();
-	}
-	for(int castle=0; castle<ALL_CASTLE_RIGHT*ALL_CASTLE_RIGHT; castle++) {
-		zobrist.castleRight[castle]=genrand_int64();
-	}
+// print board for debug
+const void Board::printBoard() {
+	printBoard("");
 }
 
 // print board for debug
-const void Board::printBoard() {
+const void Board::printBoard(const std::string pad) {
 
 	std::vector< std::string> ranks(8);
 	int j=0;
@@ -81,13 +75,13 @@ const void Board::printBoard() {
 			j++;
 		}
 	}
-	std::cout << "__________________________________" << std::endl;
+	std::cout << pad << "__________________________________" << std::endl;
 	for(int x=7;x>=0;x--) {
-		std::cout << (x+1) << "|" << ranks[x] << std::endl;
-		std::cout << "__________________________________" << std::endl;
+		std::cout << pad << (x+1) << "|" << ranks[x] << std::endl;
+		std::cout << pad << "__________________________________" << std::endl;
 	}
 
-	std::cout << "    a   b   c   d   e   f   g   h " << std::endl;
+	std::cout << pad << "    a   b   c   d   e   f   g   h " << std::endl;
 
 }
 
@@ -98,38 +92,44 @@ void Board::genericTest() {
 	printBoard();
 	uint32_t start = getTickCount();
 	PieceColor color = getSideToMove();
-	int counter=1;
-	for (int x=0;x<10;x++)
+	int counter=0;
+	for (int x=0;x<1;x++)
 	{
 
-		MovePool movePool(100);
-		Move* move=this->generateAllMoves(movePool,color);
+		MoveIterator moves;
+		this->generateAllMoves(moves,color);
+		moves.first();
+		while (moves.hasNext()) {
 
-		while (move) {
-			//std::cout << counter << " - " << move->toString() << std::endl;
+			MoveIterator::Move move = moves.next();
+			std::cout << counter << " - " << move.toString() << std::endl;
 			MoveBackup backup;
-			doMove(*move,backup);
+			doMove(move,backup);
 			//printBoard();
 			undoMove(backup);
 			counter++;
-			move = move->next;
 
 		}
 
-		movePool.~object_pool();
 	}
+	unsigned int square;
+
+	unsigned char ret = _BitScanForward(&square, squareToBitboard[A1]);
+
 	std::cout << "sideToMove: "<< color << std::endl;
 	std::cout << "Key inc:  " << getKey() << std::endl;
 	std::cout << "Key gen:  " << generateKey() << std::endl;
 	std::cout << "Time: " << (this->getTickCount()-start) << std::endl;
-	std::cout << "Perft: " << (counter-1) << std::endl;
+	std::cout << "Perft: " << (counter) << std::endl;
 	std::cout << "MoveCounter: " << getMoveCounter() << std::endl;
+
+	std::cout << "index of A1: " << square << " ret " << ret << std::endl;
 
 
 }
 
 // do a move and set backup info into struct MoveBackup
-void Board::doMove(const Move& move, MoveBackup& backup){
+void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 
 	PieceTypeByColor fromPiece=this->getPieceBySquare(move.from);
 	PieceTypeByColor toPiece=this->getPieceBySquare(move.to);
@@ -243,6 +243,9 @@ void Board::doMove(const Move& move, MoveBackup& backup){
 				}
 			}
 		}
+		if (fromPiece==makePiece(getSideToMove(),KING)) {
+			removeCastleRights(getSideToMove(),BOTH_SIDE_CASTLE);
+		}
 	}
 
 	setKey(getKey() ^ zobrist.castleRight[getZobristCastleIndex()]);
@@ -329,47 +332,7 @@ void Board::undoMove(MoveBackup& backup){
 // set initial classic position to the board
 void Board::setInitialPosition() {
 
-	clearBoard();
-
-	putPiece(WHITE_ROOK, A1);
-	putPiece(WHITE_KNIGHT, B1);
-	putPiece(WHITE_BISHOP, C1);
-	putPiece(WHITE_QUEEN, D1);
-	putPiece(WHITE_KING, E1);
-	putPiece(WHITE_BISHOP, F1);
-	putPiece(WHITE_KNIGHT, G1);
-	putPiece(WHITE_ROOK, H1);
-
-	putPiece(BLACK_ROOK, A8);
-	putPiece(BLACK_KNIGHT, B8);
-	putPiece(BLACK_BISHOP, C8);
-	putPiece(BLACK_QUEEN, D8);
-	putPiece(BLACK_KING, E8);
-	putPiece(BLACK_BISHOP, F8);
-	putPiece(BLACK_KNIGHT, G8);
-	putPiece(BLACK_ROOK, H8);
-
-	for(register int x=A2;x<=H2;x++){
-		putPiece(WHITE_PAWN, Square(x));
-	}
-
-	for(register int x=A7;x<=H7;x++){
-		putPiece(BLACK_PAWN, Square(x));
-	}
-
-	//initial side to move
-	setSideToMove(WHITE);
-
-	//initial castle rights
-	setCastleRights(WHITE, BOTH_SIDE_CASTLE);
-	setCastleRights(BLACK, BOTH_SIDE_CASTLE);
-
-	//en passant
-	setEnPassant(NONE);
-
-	setKey(generateKey());
-	updateKeyHistory();
-
+	this->loadFromFEN(startFENPosition);
 
 }
 // load an specific chess position ex.: d2d4 g8f6 c2c4 e7e6 g1f3 b7b6 b1c3 c8b7 ...
@@ -383,8 +346,8 @@ void Board::loadFromString(const std::string startPosMoves) {
 	setInitialPosition();
 
 	StringUtil::normalizeString(moves);
-	int last = 0;
-	int position = moves.find(" ");
+	size_t last = 0;
+	size_t position = moves.find(" ");
 	MoveBackup backup;
 
 	while ( position != std::string::npos )  {
@@ -406,7 +369,7 @@ void Board::loadFromString(const std::string startPosMoves) {
 			}
 		}
 
-		this->doMove(Move(Square(St2Sq(moveFrom[0],moveFrom[1])), Square(St2Sq(moveTo[0],moveTo[1])), promotionPiece),backup);
+		this->doMove(MoveIterator::Move(Square(St2Sq(moveFrom[0],moveFrom[1])), Square(St2Sq(moveTo[0],moveTo[1])), promotionPiece),backup);
 		promotionPiece=EMPTY;
 		last=position+1;
 		position = moves.find(" ", position+1);
@@ -414,223 +377,175 @@ void Board::loadFromString(const std::string startPosMoves) {
 
 }
 
-// generate only capture moves
-Move* Board::generateCaptures(MovePool& movePool, const PieceColor side) {
+// load an specific chess position using FEN notation ex.: rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1
+void Board::loadFromFEN(const std::string startFENMoves) {
 
-	Move* move=NULL;
-	PieceColor otherSide = flipSide(side);
-	Bitboard pieces = getPiecesByColor(side)^
-			(getPiecesByType(makePiece(side,PAWN)) | getPiecesByType(makePiece(side,KING)) |
-					findAttackBlocker(bitboardToSquare(getPiecesByType(makePiece(side,KING)))));
-	Bitboard otherPieces = getPiecesByColor(otherSide);
-	Bitboard attacks = EMPTY_BB;
-	Square from = extractLSB(pieces);
+	std::string ranks = startFENMoves.substr(0,startFENMoves.find(" "))+"/";
+	std::string states = StringUtil::getMiddleString(startFENMoves," ");
 
-	while ( from!=NONE ) {
-		attacks = getAttacksFrom(from)&otherPieces;
-		Square target = extractLSB(attacks);
-		while ( target!=NONE ) {
-			move = movePool.construct(Move(move,from,target,EMPTY));
-			target = extractLSB(attacks);
-		}
-		from = extractLSB(pieces);
-	}
+	clearBoard();
 
-	pieces = getPiecesByType(makePiece(side,KING));
-	from = extractLSB(pieces);
-	while ( from!=NONE ) {
-		attacks = getAttacksFrom(from)&otherPieces&(~getAttackedSquares(otherSide));
-		Square target = extractLSB(attacks);
-		while ( target!=NONE ) {
-			move = movePool.construct(Move(move,from,target,EMPTY));
-			target = extractLSB(attacks);
-		}
-		from = extractLSB(pieces);
-	}
-	pieces = getPiecesByType(makePiece(side,PAWN));
-	from = extractLSB(pieces);
-	while ( from!=NONE ) {
-		attacks = getPawnCaptures(from)&otherPieces;
-		Square target = extractLSB(attacks);
-		while ( target!=NONE ) {
-			bool promotion=((getSquareRank(from)==RANK_7&&side==WHITE) ||
-					(getSquareRank(from)==RANK_2&&side==BLACK));
-			if (promotion) {
-				move = movePool.construct(Move(move,from,target,makePiece(side,QUEEN)));
-				move = movePool.construct(Move(move,from,target,makePiece(side,ROOK)));
-				move = movePool.construct(Move(move,from,target,makePiece(side,BISHOP)));
-				move = movePool.construct(Move(move,from,target,makePiece(side,KNIGHT)));
-			} else {
-				move = movePool.construct(Move(move,from,target,EMPTY));
-			}
-			target = extractLSB(attacks);
-		}
-		from = extractLSB(pieces);
-	}
+	size_t last = 0;
+	size_t position = ranks.find("/");
+	size_t square=0;
 
-	return move;
-}
+	//process piece positions
+	while ( position != std::string::npos )  {
 
-//generate only non capture moves
-Move* Board::generateNonCaptures(MovePool& movePool, const PieceColor side){
+		std::string rank=ranks.substr(last,(position-last));
+		for (size_t idx=0;idx<rank.length();idx++) {
 
-	Move* move=NULL;
-	PieceColor otherSide = flipSide(side);
-	Bitboard pieces = getPiecesByColor(side)^
-			(getPiecesByType(makePiece(side,PAWN)) | getPiecesByType(makePiece(side,KING)) |
-					findAttackBlocker(bitboardToSquare(getPiecesByType(makePiece(side,KING)))));
-	Bitboard empty = getEmptySquares();
-	Bitboard attacks = EMPTY_BB;
-
-	Square from = extractLSB(pieces);
-	while ( from!=NONE ) {
-		attacks = getAttacksFrom(from)&empty;
-		Square target = extractLSB(attacks);
-		while ( target!=NONE ) {
-			move = movePool.construct(Move(move,from,target,EMPTY));
-			target = extractLSB(attacks);
-		}
-		from = extractLSB(pieces);
-	}
-
-	pieces = getPiecesByType(makePiece(side,KING));
-	from = extractLSB(pieces);
-	while ( from!=NONE ) {
-		attacks = getAttacksFrom(from)&empty&(~getAttackedSquares(otherSide));
-		Square target = extractLSB(attacks);
-		while ( target!=NONE ) {
-			move = movePool.construct(Move(move,from,target,EMPTY));
-			target = extractLSB(attacks);
-		}
-		from = extractLSB(pieces);
-	}
-
-	pieces = getPiecesByType(makePiece(side,PAWN));
-	from = extractLSB(pieces);
-	while ( from!=NONE ) {
-		attacks = getPawnMoves(from)&empty;
-		Square target = extractLSB(attacks);
-		bool promotion=((getSquareRank(from)==RANK_7&&side==WHITE) || (getSquareRank(from)==RANK_2&&side==BLACK));
-		while ( target!=NONE ) {
-			if (promotion) {
-				move = movePool.construct(Move(move,from,target,makePiece(side,QUEEN)));
-				move = movePool.construct(Move(move,from,target,makePiece(side,ROOK)));
-				move = movePool.construct(Move(move,from,target,makePiece(side,BISHOP)));
-				move = movePool.construct(Move(move,from,target,makePiece(side,KNIGHT)));
-			} else {
-				move = movePool.construct(Move(move,from,target,EMPTY));
-			}
-			target = extractLSB(attacks);
-		}
-		from = extractLSB(pieces);
-	}
-
-	if (canCastle(side, KING_SIDE_CASTLE)) {
-		if (side==WHITE) {
-			move = movePool.construct(Move(move,E1,G1,EMPTY));
-		} else {
-			move = movePool.construct(Move(move,E8,G8,EMPTY));
-		}
-	}
-
-	if (canCastle(side, QUEEN_SIDE_CASTLE)) {
-		if (side==WHITE) {
-			move = movePool.construct(Move(move,E1,C1,EMPTY));
-		} else {
-			move = movePool.construct(Move(move,E8,C8,EMPTY));
-		}
-	}
-
-	return move;
-}
-
-//generate check evasions: move to non attacked square / interpose king / capture cheking piece
-Move* Board::generateCheckEvasions(MovePool& movePool, const PieceColor side) {
-
-	Move* move=NULL;
-	PieceColor otherSide = flipSide(side);
-	Bitboard pieces = getPiecesByType(makePiece(side,KING));
-	Bitboard otherPieces = getPiecesByColor(otherSide);
-	Bitboard attacks = EMPTY_BB;
-	Bitboard notAttacked = ~generateAttackedSquares(otherSide,
-			getAllPieces()^pieces)&getEmptySquares();
-
-	Square kingSquare = bitboardToSquare(pieces);
-	Square from = extractLSB(pieces);
-	//moves to non attacked square
-	while ( from!=NONE ) {
-		attacks = getAttacksFrom(from)&notAttacked;
-		Square target = extractLSB(attacks);
-		while ( target!=NONE ) {
-			move = movePool.construct(Move(move,from,target,EMPTY));
-			target = extractLSB(attacks);
-		}
-		from = extractLSB(pieces);
-	}
-	// try to capture the checker piece or interpose a piece between king and attacking piece
-	Bitboard allAttackers = getPiecesByType(makePiece(otherSide,ROOK)) |
-			getPiecesByType(makePiece(otherSide,BISHOP)) |
-			getPiecesByType(makePiece(otherSide,QUEEN));
-
-	Bitboard kingAttackers = getAttacksTo(allAttackers,getAllPieces(),
-			getPiecesByType(makePiece(side,KING))) &
-			getPiecesByColor(otherSide);
-
-	if (kingAttackers) {
-		from = extractLSB(kingAttackers);
-		if (!kingAttackers) {
-			attacks = getAttacksTo(from)&getPiecesByColor(side);
-			if (attacks) { // may capture the attacker
-				Square captureAttacker = extractLSB(attacks);
-				while ( captureAttacker!=NONE ) {
-					move = movePool.construct(Move(move,captureAttacker,from,EMPTY));
-					captureAttacker = extractLSB(attacks);
-				}
-			}
-			//will try to interpose the attack with a piece
-			Bitboard attackers = EMPTY_BB;
-			Bitboard attackedSquares = getInterAttackedSquares(squareToBitboard[from],
-					getAllPieces(),getPiecesByType(makePiece(side,KING)),attackers);
-			attackedSquares &= getIntersectSquares(from, kingSquare)^squareToBitboard[kingSquare];
-			Square interposeSquare = extractLSB(attackedSquares);
-			Bitboard allPiecesMinusKing = (getPiecesByColor(side)^getPiecesByType(makePiece(side,KING)));
-
-			while ( interposeSquare!=NONE ) {
-				Bitboard interposePiece = getMovesTo(interposeSquare)&allPiecesMinusKing;
-				if (interposePiece) {
-					Square interposePieceSquare = extractLSB(interposePiece);
-					while ( interposePieceSquare!=NONE ) {
-						move = movePool.construct(Move(move,interposePieceSquare,interposeSquare,EMPTY));
-						interposePieceSquare = extractLSB(interposePiece);
-					}
-				}
-				interposeSquare = extractLSB(attackedSquares);
+			if (std::isalpha(rank[idx])) {
+				this->putPiece(encodePieceChar(rank[idx]), Square(square));
+				square++;
+			} else if (std::isdigit(rank[idx])) {
+				size_t count = StringUtil::toInt(rank[idx]);
+				square += count;
 			}
 
 		}
+
+		last=position+1;
+		position = ranks.find("/", position+1);
 	}
 
-	return move;
-}
-
-//generate all moves - captures + noncaptures
-Move* Board::generateAllMoves(MovePool& movePool, const PieceColor side) {
-
-	Move* moves=NULL;
-
-	if (isAttacked(side, KING)) {
-		moves = generateCheckEvasions(movePool, side);
+	// process board states
+	// side to move
+	if (states[0]=='w') {
+		this->setSideToMove(WHITE);
 	} else {
-		moves = generateCaptures(movePool, side);
-		Move* nonCaptures = generateNonCaptures(movePool, side);
-		if (moves) {
-			CATMOVE(moves,nonCaptures);
+		this->setSideToMove(BLACK);
+	}
+
+	std::string tokens = StringUtil::getMiddleString(states, " ");
+	std::string castleRights = tokens.substr(0,tokens.find(" "));
+
+	// white castle rights
+	if (castleRights.find("KQ")!=std::string::npos) {
+		this->setCastleRights(WHITE, BOTH_SIDE_CASTLE);
+	} else {
+		if (castleRights.find("K")!=std::string::npos) {
+			this->setCastleRights(WHITE, KING_SIDE_CASTLE);
+		} else if (castleRights.find("Q")!=std::string::npos) {
+			this->setCastleRights(WHITE, QUEEN_SIDE_CASTLE);
 		} else {
-			moves = nonCaptures;
+			this->setCastleRights(WHITE, NO_CASTLE);
+		}
+	}
+	// black castle rights
+	if (castleRights.find("kq")!=std::string::npos) {
+		this->setCastleRights(BLACK, BOTH_SIDE_CASTLE);
+	} else {
+		if (castleRights.find("k")!=std::string::npos) {
+			this->setCastleRights(BLACK, KING_SIDE_CASTLE);
+		} else if (castleRights.find("q")!=std::string::npos) {
+			this->setCastleRights(BLACK, QUEEN_SIDE_CASTLE);
+		} else {
+			this->setCastleRights(BLACK, NO_CASTLE);
+		}
+	}
+	// en passant
+	tokens = StringUtil::getMiddleString(tokens, " ");
+	std::string enPassant = tokens.substr(0,tokens.find(" "));
+
+	if (enPassant[0]=='-') {
+		setEnPassant(NONE);
+	} else {
+		setEnPassant(Square(St2Sq(enPassant[0],enPassant[1])));
+	}
+
+	//halfmove clock
+	tokens = StringUtil::getMiddleString(tokens, " ");
+	std::string halfMove = tokens.substr(0,tokens.find(" "));
+
+	this->currentBoard.halfMoveCounter = StringUtil::toInt(halfMove);
+
+	//fullmove counter
+	tokens = StringUtil::getMiddleString(tokens, " ");
+	this->currentBoard.moveCounter = StringUtil::toInt(tokens);
+
+	setKey(generateKey());
+	updateKeyHistory();
+
+}
+
+// get FEN from current board
+const std::string Board::getFEN() {
+
+	std::string fen="";
+	size_t count=0;
+	size_t rank=1;
+	for(size_t sq=A1;sq<=H8;sq++) {
+
+		PieceTypeByColor piece = this->getPieceBySquare(Square(sq));
+		if (piece!=EMPTY) {
+			if (count>0) {
+				fen+=StringUtil::toStr(count);
+			}
+			fen+=pieceChar[piece];
+			count=0;
+		} else {
+			count++;
+		}
+		if ((sq+1)%8==0) {
+			if (count>0) {
+				fen+=StringUtil::toStr(count);
+				count=0;
+			}
+			if (rank<8) {
+				fen+="/";
+			}
+			rank++;
 		}
 	}
 
-	return moves;
+	fen+=this->getSideToMove()==WHITE?" w":" b";
+
+	std::string castleRights = "";
+
+	if (this->getCastleRights(BLACK)==BOTH_SIDE_CASTLE) {
+		castleRights+="KQ";
+	} else if (this->getCastleRights(BLACK)==KING_SIDE_CASTLE) {
+		castleRights+="K";
+	} if (this->getCastleRights(BLACK)==QUEEN_SIDE_CASTLE) {
+		castleRights+="Q";
+	}
+
+	if (this->getCastleRights(WHITE)==BOTH_SIDE_CASTLE) {
+		castleRights+="kq";
+	} else if (this->getCastleRights(WHITE)==KING_SIDE_CASTLE) {
+		castleRights+="k";
+	} if (this->getCastleRights(WHITE)==QUEEN_SIDE_CASTLE) {
+		castleRights+="q";
+	}
+
+	castleRights = castleRights.length()==0?"-":castleRights;
+
+	fen+=" "+castleRights;
+
+	fen+=this->getEnPassant()==NONE?" -":" "+squareToString[this->getEnPassant()];
+
+	fen+=" "+StringUtil::toStr(this->getHalfMoveCounter());
+
+	fen+=" "+StringUtil::toStr(this->getMoveCounter());
+
+	return fen;
+}
+
+// initialize zobrist keys
+void Board::initializeZobrist() {
+	for(int piece=0; piece<ALL_PIECE_TYPE_BY_COLOR; piece++) {
+		for(int square=0; square<ALL_SQUARE; square++) {
+			zobrist.pieceSquare[piece][square]=genrand_int64();
+		}
+	}
+	zobrist.sideToMove=genrand_int64();
+	for(int file=0; file<ALL_FILE; file++) {
+		zobrist.enPassant[file]=genrand_int64();
+	}
+	for(int castle=0; castle<ALL_CASTLE_RIGHT*ALL_CASTLE_RIGHT; castle++) {
+		zobrist.castleRight[castle]=genrand_int64();
+	}
 }
 
 // get index for zobrist index

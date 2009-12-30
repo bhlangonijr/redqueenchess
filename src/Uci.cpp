@@ -67,7 +67,7 @@ Uci::Command Uci::getUserInput()
 	this->setRawInput(input);
 	input = input.substr(0,input.find(" "));
 
-	for(int x=0;x<=NU_COMMANDS;x++) {
+	for(int x=0;x<NU_COMMANDS;x++) {
 		if (input==strCommand[x]) {
 			command=Command(x);
 		}
@@ -205,7 +205,7 @@ void Uci::executeSetOption() {
 
 	// Handle Hash Size
 	if (optionName=="Hash") {
-		SearchAgent::getInstance()->setHashSize(toInt(this->getUciOption("Hash").getValue())*1024*1024/sizeof(SearchAgent::HashData));
+		SearchAgent::getInstance()->setHashSize(toInt(this->getUciOption("Hash").getValue()));
 		SearchAgent::getInstance()->destroyHash();
 		SearchAgent::getInstance()->createHash();
 	}
@@ -265,8 +265,8 @@ void Uci::executePosition() {
 	if (containsString(this->rawInput,"position startpos moves ")) {
 		std::string startPosMoves = getMiddleString(this->rawInput,"position startpos moves ");
 		searchAgent->setPositionFromSAN(startPosMoves);
-	} else if (containsString(this->rawInput,"position fen moves ")) {
-		std::string startPosMoves = getMiddleString(this->rawInput,"position fen moves ");
+	} else if (containsString(this->rawInput,"position fen ")) {
+		std::string startPosMoves = getMiddleString(this->rawInput,"position fen ");
 		searchAgent->setPositionFromFEN(startPosMoves);
 	}
 
@@ -315,6 +315,12 @@ void Uci::executeTest() {
 	board.genericTest();
 	board2.genericTest();
 	board3.genericTest();
+
+	Board board4;
+	board4.loadFromFEN("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
+	board4.genericTest();
+
+	board4.printBoard();
 
 	//delete board;
 	//delete board2;

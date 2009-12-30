@@ -46,6 +46,11 @@ const int toInt(const std::string value) {
 	return atoi(value.c_str());
 };
 
+// str to int
+const int toInt(const char value) {
+	return (int)(value-48);
+};
+
 // normalize - remove extra space
 void normalizeString(std::string &str) {
 
@@ -65,8 +70,8 @@ void normalizeString(std::string &str) {
 std::string getMiddleString(const std::string source, const std::string before, const std::string after) {
 
 	std::string result="";
-	int posFirst=source.find(before);
-	int posLast=source.find(after);
+	size_t posFirst=source.find(before);
+	size_t posLast=source.find(after);
 
 	try {
 		if (posFirst!=std::string::npos&&posFirst!=std::string::npos){
@@ -83,7 +88,7 @@ std::string getMiddleString(const std::string source, const std::string before, 
 std::string getMiddleString(const std::string source, const std::string before) {
 
 	std::string result="";
-	int posFirst=source.find(before);
+	size_t posFirst=source.find(before);
 
 	try {
 		if (posFirst!=std::string::npos){

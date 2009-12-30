@@ -27,7 +27,6 @@
  * 	e-mail: bhlangonijr@yahoo.com.br
  */
 #include <iostream>
-#include <omp.h>
 #include <stdio.h>
 
 #include "Uci.h"
@@ -52,7 +51,7 @@ int main() {
 
 	Uci *uci = Uci::getInstance();
 
-	std::string paramNumProcs = StringUtil::toStr(omp_get_num_procs());
+	std::string paramNumProcs = StringUtil::toStr(getNumProcs());
 
 	// creating uci options
 	std::vector< UciOption *> options;
