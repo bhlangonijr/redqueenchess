@@ -374,31 +374,31 @@ inline bool Board::canCastle(const PieceColor color, const CastleRight castleRig
 			return false;
 		}
 	}
-	if (currentBoard.sideToMove==WHITE) {
+	if (color==WHITE) {
 		if (castleRight==BOTH_SIDE_CASTLE) {
-			if (!currentBoard.piece.array[WHITE_ROOK]==(squareToBitboard[A1]&squareToBitboard[H1])) {
-				return false;
-			}
-		} else if (castleRight==KING_SIDE_CASTLE) {
-			if (!currentBoard.piece.array[WHITE_ROOK]==squareToBitboard[A1]) {
+			if (!(currentBoard.square[A1]==WHITE_ROOK&&currentBoard.square[H1]==WHITE_ROOK)) {
 				return false;
 			}
 		} else if (castleRight==QUEEN_SIDE_CASTLE) {
-			if (!currentBoard.piece.array[WHITE_ROOK]==squareToBitboard[H1]) {
+			if (!(currentBoard.square[A1]==WHITE_ROOK)) {
+				return false;
+			}
+		} else if (castleRight==KING_SIDE_CASTLE) {
+			if (!(currentBoard.square[H1]==WHITE_ROOK)) {
 				return false;
 			}
 		}
 	} else {
 		if (castleRight==BOTH_SIDE_CASTLE) {
-			if (!currentBoard.piece.array[BLACK_ROOK]==(squareToBitboard[A8]&squareToBitboard[H8])) {
-				return false;
-			}
-		} else if (castleRight==KING_SIDE_CASTLE) {
-			if (!currentBoard.piece.array[BLACK_ROOK]==squareToBitboard[A8]) {
+			if (!(currentBoard.square[A8]==BLACK_ROOK&&currentBoard.square[H8]==BLACK_ROOK)) {
 				return false;
 			}
 		} else if (castleRight==QUEEN_SIDE_CASTLE) {
-			if (!currentBoard.piece.array[BLACK_ROOK]==squareToBitboard[H8]) {
+			if (!(currentBoard.square[A8]==BLACK_ROOK)) {
+				return false;
+			}
+		} else if (castleRight==KING_SIDE_CASTLE) {
+			if (!(currentBoard.square[H8]==BLACK_ROOK)) {
 				return false;
 			}
 		}
@@ -659,35 +659,22 @@ inline const Bitboard Board::getPawnAttacks(const Square square, const Bitboard 
 // return a bitboard with move squares by the pawn in the given square
 inline const Bitboard Board::getPawnMoves(const Square square, const Bitboard occupied) {
 
-	Bitboard moves;
 	Bitboard occ = occupied;
-	Bitboard pawnAttacks;
-	int move=8;
-	int doubleMove=16;
+	PieceColor color = getPieceColorBySquare(square);
 
 	if (getPieceBySquare(square)==EMPTY) {
 		return EMPTY_BB;
 	}
 
-	if (getPieceColorBySquare(square)==WHITE) {
-		move=8;
-		doubleMove=16;
-		pawnAttacks=whitePawnAttacks[square];
-	} else {
-		move=-8;
-		doubleMove=-16;
-		pawnAttacks=blackPawnAttacks[square];
-	}
+	Bitboard pawnAttacks = color==WHITE ? whitePawnAttacks[square] : blackPawnAttacks[square];
 
 	if (squareRank[square]==RANK_2 || squareRank[square]==RANK_7) {
-		if (squareToBitboard[square+move]&occ) {
-			occ |= squareToBitboard[square+doubleMove]; // double move
+		if (squareToBitboard[square+(color==WHITE?8:-8)]&occ) {
+			occ |= squareToBitboard[square+(color==WHITE?16:-16)]; // double move
 		}
 	}
 
-	moves = (fileAttacks[square] & pawnAttacks) & ~occ ;
-
-	return moves;
+	return (fileAttacks[square] & pawnAttacks) & ~occ ;
 }
 
 // overload method - gets current occupied squares in the board
@@ -698,30 +685,20 @@ inline const Bitboard Board::getPawnCaptures(const Square square) {
 // return a bitboard with captures by the pawn in the given square
 inline const Bitboard Board::getPawnCaptures(const Square square, const Bitboard occupied) {
 
-	Bitboard captures;
 	Bitboard occ = occupied;
-	Bitboard pawnAttacks;
-	int move=8;
+	PieceColor color = getPieceColorBySquare(square);
 
 	if (getPieceBySquare(square)==EMPTY) {
 		return EMPTY_BB;
 	}
 
-	if (getPieceColorBySquare(square)==WHITE) {
-		move=8;
-		pawnAttacks=whitePawnAttacks[square];
-	} else {
-		move=-8;
-		pawnAttacks=blackPawnAttacks[square];
-	}
+	Bitboard pawnAttacks = color==WHITE ? whitePawnAttacks[square] : blackPawnAttacks[square];
 
 	if (getEnPassant()!=NONE) {
-		occ |= (squareToBitboard[getEnPassant()]+move)&adjacentSquares[square]; // en passant
+		occ |= (squareToBitboard[Square(getEnPassant() + (color==WHITE?8:-8))]); // en passant
 	}
 
-	captures = (diagA1H8Attacks[square]|diagH1A8Attacks[square]) & pawnAttacks & occ ;
-
-	return captures;
+	return (diagA1H8Attacks[square]|diagH1A8Attacks[square]) & pawnAttacks & occ ;
 }
 
 // overload method - gets current occupied squares in the board
@@ -817,7 +794,7 @@ inline void Board::generateCaptures(MoveIterator& moves, const PieceColor side) 
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		attacks = getPawnCaptures(from,otherPieces) & otherPieces;
+		attacks = getPawnCaptures(from,otherPieces);
 		Square target = extractLSB(attacks);
 		bool promotion=((getSquareRank(from)==RANK_7&&side==WHITE) ||
 				(getSquareRank(from)==RANK_2&&side==BLACK));

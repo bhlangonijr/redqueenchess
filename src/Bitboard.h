@@ -113,7 +113,8 @@ enum PieceTypeByColor {
 };
 
 // array with piece codes
-static const char pieceChar[ALL_PIECE_TYPE_BY_COLOR+1] = "pnbrqkPNBRQK ";
+static const char pieceChar[ALL_PIECE_TYPE_BY_COLOR+1] = "PNBRQKpnbrqk ";
+
 //color of a given piece
 static const PieceColor pieceColor[ALL_PIECE_TYPE_BY_COLOR] = {
 		WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, BLACK, BLACK, BLACK, BLACK, BLACK, BLACK, COLOR_NONE

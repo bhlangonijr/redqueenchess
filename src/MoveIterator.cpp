@@ -32,8 +32,7 @@ void MoveIterator::sort() {
 
 		}
 	}
-
-	/*for (uint32_t x=0;x<_size;x++) {
+/*	for (uint32_t x=0;x<_size;x++) {
 		std::cout << list[x].toString() << " - score: " << list[x].score << std::endl;
 	}*/
 

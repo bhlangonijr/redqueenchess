@@ -223,6 +223,7 @@ void Uci::executeGo() {
 		searchAgent->setWhiteIncrement(toInt(getMiddleString(this->rawInput,"winc "," ")));
 		searchAgent->setBlackTime(toInt(getMiddleString(this->rawInput,"btime "," ")));
 		searchAgent->setBlackIncrement(toInt(getMiddleString(this->rawInput,"binc ")));
+		searchAgent->setMovesToGo(toInt(getMiddleString(this->rawInput,"movestogo ")));
 
 	} else if (containsString(this->rawInput, "go depth")) {
 

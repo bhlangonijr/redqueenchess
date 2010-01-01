@@ -121,7 +121,6 @@ void SearchAgent::startSearch() {
 
 	pthread_t executor;
 	int ret = 0;
-
 	ret = pthread_create( &executor, NULL, threadStartup, this);
 
 }
@@ -137,16 +136,18 @@ const uint32_t SearchAgent::getTimeToSearch() {
 		return this->getMoveTime();
 	}
 
-	uint32_t time=board.getSideToMove()==WHITE ? this->getWhiteTime() : this->getBlackTime();
+	uint32_t time=board.getSideToMove()==WHITE ?  this->getWhiteTime() : this->getBlackTime();
 	//uint32_t incTime=board.getSideToMove()==WHITE ? this->getWhiteIncrement() : this->getBlackIncrement();
 
-	int movesLeft = defaultGameSize-board.getMoveCounter();
+	size_t movesLeft = movesToGo>0?movesToGo : defaultGameSize-board.getMoveCounter();
 
 	if (movesLeft<=1) {
 		movesLeft=defaultGameSizeInc;
 	}
 
 	time /= movesLeft;
+
+	std::cout << "TimeToSearch: " << time << std::endl;
 
 	return time;
 
@@ -155,7 +156,6 @@ const uint32_t SearchAgent::getTimeToSearch() {
 void *threadStartup(void *_object) {
   SearchAgent *object = (SearchAgent *)_object;
   void *threadResult = object->startThreadSearch();
-  //delete object;
   return threadResult;
 }
 

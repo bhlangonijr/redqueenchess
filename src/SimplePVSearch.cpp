@@ -125,6 +125,7 @@ int SimplePVSearch::idSearch(Board& board) {
 
 			board.undoMove(backup);
 		}
+
 		moves.sort();
 
 		if ((!stop() || moves.get(0).score < moves.get(0).score)&&moves.get(0).from!=NONE ) {
@@ -173,21 +174,24 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth) 
 #endif
 
 	if (depth==0||stop()) {
-
 /*
 		int eval = evaluate(board);
 		if (true) return eval;
 */
-
 		score = qSearch(board, alpha, beta, maxQuiescenceSearchDepth);
-		SearchAgent::getInstance()->hashPut(board,score,depth,0);
 		return score;
 	}
 	_nodes++;
+	int oldAlpha = alpha;
 	SearchAgent::HashData hashData;
 	if (SearchAgent::getInstance()->hashGet(board.getKey(), hashData)) {
 		if (hashData.depth>=depth) {
-			return hashData.value;
+			if ((hashData.flag == SearchAgent::UPPER && hashData.value <= alpha) ||
+				(hashData.flag == SearchAgent::LOWER && hashData.value >= beta) ||
+				(hashData.flag == SearchAgent::EXACT)) {
+				return hashData.value;
+			}
+
 		}
 	}
 
@@ -197,6 +201,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth) 
 #if CHECK_MOVE_GEN_ERRORS
 	Key key1 = old.generateKey();
 #endif
+
 	while (moves.hasNext()) {
 		if (stop()) {
 			break;
@@ -247,7 +252,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth) 
 			newBoard.printBoard();
 			std::cout << "Board with undone move: " << std::endl;
 			board.printBoard();
-			std::cout << move->toString() << std::endl;
+			std::cout << move.toString() << std::endl;
 			std::cout << "End - Error in undoMove " << std::endl;
 			if (errorCount>EXIT_PROGRAM_THRESHOLD) {
 				std::cout << "Error count exceed threshold: " << errorCount << std::endl;
@@ -256,7 +261,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth) 
 		}
 #endif
 		if( score >= beta ) {
-			SearchAgent::getInstance()->hashPut(board,score,depth,0);
+			SearchAgent::getInstance()->hashPut(board,score,depth,0,SearchAgent::LOWER);
 			return beta;
 		}
 
@@ -268,7 +273,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth) 
 		}
 	}
 
-	SearchAgent::getInstance()->hashPut(board,alpha,depth,0);
+	SearchAgent::getInstance()->hashPut(board,alpha,depth,0,(alpha>oldAlpha ? SearchAgent::EXACT : SearchAgent::UPPER));
 
 	return alpha;
 
@@ -291,7 +296,6 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth) {
 #endif
 		return standPat;
 	}
-
 
 	if (depth==0||stop()) {
 		return standPat;
@@ -367,7 +371,6 @@ const bool SimplePVSearch::stop() {
 
 	return !SearchAgent::getInstance()->getSearchInProgress() || timeIsUp();
 
-
 }
 
 const bool SimplePVSearch::timeIsUp() {
@@ -377,7 +380,6 @@ const bool SimplePVSearch::timeIsUp() {
 	}
 
 	return !SearchAgent::getInstance()->getSearchInProgress() || ((getTickCount()-_startTime)>=_timeToSearch);
-
 
 }
 

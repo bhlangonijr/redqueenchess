@@ -46,13 +46,18 @@ public:
 		SEARCH_TIME, SEARCH_DEPTH, SEARCH_MOVESTOGO, SEARCH_MOVETIME, SEARCH_MOVES, SEARCH_INFINITE
 	};
 
+	enum NodeFlag {
+		LOWER, UPPER, EXACT
+	};
+
 	struct HashData {
-		HashData() : value(0), depth(0), generation(0)  {};
-		HashData(int _value, uint32_t _depth, uint32_t _generation) : value(_value), depth(_depth), generation(_generation)  {};
-		HashData(const HashData& hashData) : value(hashData.value), depth(hashData.depth), generation(hashData.generation)  {};
+		HashData() : value(0), depth(0), generation(0), flag(LOWER)  {};
+		HashData(int _value, uint32_t _depth, uint32_t _generation, NodeFlag _flag) : value(_value), depth(_depth), generation(_generation), flag(_flag)  {};
+		HashData(const HashData& hashData) : value(hashData.value), depth(hashData.depth), generation(hashData.generation), flag(hashData.flag)  {};
 		int value;
 		uint32_t depth;
 		uint32_t generation;
+		NodeFlag flag;
 	};
 
 	static SearchAgent* getInstance();
@@ -130,10 +135,10 @@ public:
 		depth = _depth;
 	}
 
-	const int getMovesToGo() const {
+	const uint32_t getMovesToGo() const {
 		return movesToGo;
 	}
-	void setMovesToGo(int _movesToGo) {
+	void setMovesToGo(uint32_t _movesToGo) {
 		movesToGo = _movesToGo;
 	}
 
@@ -155,9 +160,9 @@ public:
 			transTable[getActiveHash()]->clearHash();
 		}
 	}
-	bool hashPut(const Board& board, const int value, const uint32_t depth, const uint32_t generation) {
+	bool hashPut(const Board& board, const int value, const uint32_t depth, const uint32_t generation, const NodeFlag flag) {
 		if (transTable.size()>getActiveHash()) {
-			return transTable[getActiveHash()]->hashPut(board.getKey(), HashData(value,depth,generation));
+			return transTable[getActiveHash()]->hashPut(board.getKey(), HashData(value,depth,generation,flag));
 		}
 		return false;
 	}
@@ -225,7 +230,7 @@ private:
 	uint32_t blackTime;
 	uint32_t blackIncrement;
 	int depth;
-	int movesToGo;
+	uint32_t movesToGo;
 	uint32_t moveTime;
 	bool infinite;
 

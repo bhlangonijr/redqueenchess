@@ -56,7 +56,7 @@ const void Board::printBoard() {
 // print board for debug
 const void Board::printBoard(const std::string pad) {
 
-	std::vector< std::string> ranks(8);
+	std::string ranks[8];
 	int j=0;
 
 	for(int x=0;x<ALL_SQUARE;x++) {
@@ -191,8 +191,8 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 					setKey(getKey()^zobrist.pieceSquare[WHITE_ROOK][D1]);
 					backup.hasWhiteQueenCastle=true;
 				}
-				removeCastleRights(WHITE,BOTH_SIDE_CASTLE);
 			}
+			removeCastleRights(WHITE,BOTH_SIDE_CASTLE);
 		} else if (fromPiece==BLACK_KING) {
 			if (move.from==E8) {
 				if (move.to==G8) { // castle king side
@@ -208,10 +208,9 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 					setKey(getKey()^zobrist.pieceSquare[BLACK_ROOK][D8]);
 					backup.hasBlackQueenCastle=true;
 				}
-				removeCastleRights(BLACK,BOTH_SIDE_CASTLE);
 			}
-		}
-		if (fromPiece==makePiece(getSideToMove(),ROOK)) {
+			removeCastleRights(BLACK,BOTH_SIDE_CASTLE);
+		} else if (fromPiece==makePiece(getSideToMove(),ROOK)) {
 			if (getSideToMove()==WHITE) {
 				if (move.from==A1) {
 					removeCastleRights(WHITE,QUEEN_SIDE_CASTLE);
@@ -243,9 +242,6 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 				}
 			}
 		}
-		if (fromPiece==makePiece(getSideToMove(),KING)) {
-			removeCastleRights(getSideToMove(),BOTH_SIDE_CASTLE);
-		}
 	}
 
 	setKey(getKey() ^ zobrist.castleRight[getZobristCastleIndex()]);
@@ -256,20 +252,18 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 
 	if (fromPiece==makePiece(getSideToMove(),PAWN)){
 
-		int signal = getSideToMove()==WHITE?-1:+1;
-		Rank doubleInitialRank = getSideToMove()==WHITE?RANK_2:RANK_7;
-		Rank doubleFinalRank = getSideToMove()==WHITE?RANK_4:RANK_5;
-
 		if (getEnPassant()!=NONE) {
 			if (getSquareFile(move.from)!=getSquareFile(move.to)&&toPiece==EMPTY) { // en passant
-				Square capturedSquare=makeSquare(Rank(getSquareRank(move.to)+signal), getSquareFile(move.to));
-				removePiece(makePiece(otherSide,PAWN),capturedSquare);
-				setKey(getKey()^zobrist.pieceSquare[makePiece(otherSide,PAWN)][capturedSquare]);
+				removePiece(makePiece(otherSide,PAWN),getEnPassant());
+				setKey(getKey()^zobrist.pieceSquare[makePiece(otherSide,PAWN)][getEnPassant()]);
 				backup.hasCapture=true;
-				backup.capturedPiece=toPiece;
-				backup.capturedSquare=capturedSquare;
+				backup.capturedPiece=makePiece(otherSide,PAWN);
+				backup.capturedSquare=getEnPassant();
 			}
 		}
+
+		Rank doubleInitialRank = getSideToMove()==WHITE?RANK_2:RANK_7;
+		Rank doubleFinalRank = getSideToMove()==WHITE?RANK_4:RANK_5;
 
 		if (getSquareRank(move.to)==doubleFinalRank&&getSquareRank(move.from)==doubleInitialRank) {
 			setEnPassant(move.to);
@@ -387,20 +381,21 @@ void Board::loadFromFEN(const std::string startFENMoves) {
 
 	size_t last = 0;
 	size_t position = ranks.find("/");
-	size_t square=0;
+	size_t square=63;
 
 	//process piece positions
 	while ( position != std::string::npos )  {
-
 		std::string rank=ranks.substr(last,(position-last));
-		for (size_t idx=0;idx<rank.length();idx++) {
+		size_t length = rank.length()-1;
+
+		for (int idx=length;idx>=0;idx--) {
 
 			if (std::isalpha(rank[idx])) {
 				this->putPiece(encodePieceChar(rank[idx]), Square(square));
-				square++;
+				square--;
 			} else if (std::isdigit(rank[idx])) {
 				size_t count = StringUtil::toInt(rank[idx]);
-				square += count;
+				square -= count;
 			}
 
 		}
