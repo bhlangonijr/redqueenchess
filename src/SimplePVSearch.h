@@ -32,12 +32,12 @@
 
 #include "Uci.h"
 #include "SearchAgent.h"
+#include "Evaluator.h"
 
 namespace SimplePVSearchTypes {
 
 static const int maxScore = 200000;
 static const uint32_t maxQuiescenceSearchDepth = 20;
-static const int materialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 325, 325, 500, 975, 10000, 100, 325, 325, 500, 975, 10000, 0};
 static const uint32_t maxSearchDepth = 40;
 
 }
@@ -135,13 +135,13 @@ private:
 	uint32_t _time;
 	bool _searchFixedDepth;
 	bool _infinite;
+	Evaluator evaluator;
 
 	std::vector<MoveIterator::Move> pv;
 
 	int idSearch(Board& board);
 	int pvSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv);
 	int qSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv);
-	int evaluate(Board& board);
 	const std::string pvLineToString(const PvLine* pv);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
 

@@ -83,7 +83,7 @@ int SimplePVSearch::idSearch(Board& board) {
 
 #if DEBUG_ID
 	board.printBoard();
-	std::cout << "Eval: " << evaluate(board) << std::endl;
+	std::cout << "Eval: " << evaluator.evaluate(board) << std::endl;
 #endif
 	_nodes = 0;
 	uint32_t totalTime = 0;
@@ -180,7 +180,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 
 	if (depth==0||stop()) {
 		/*
-		int eval = evaluate(board);
+		int eval = evaluator.evaluate(board);
 		if (true) return eval;
 		 */
 		return qSearch(board, alpha, beta, maxQuiescenceSearchDepth, pv);
@@ -293,7 +293,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth, P
 
 	_nodes++;
 
-	int standPat = evaluate(board);
+	int standPat = evaluator.evaluate(board);
 
 	if(standPat>=beta||(depth==0||stop())) {
 #if DEBUG_QS
@@ -351,27 +351,6 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth, P
 	}
 
 	return alpha;
-}
-
-// simplest eval function
-int SimplePVSearch::evaluate(Board& board) {
-
-	int result = 0;
-	PieceColor side = board.getSideToMove();
-
-	int whiteMaterial = 0;
-	int blackMaterial = 0;
-
-	for(int pieceType = WHITE_PAWN; pieceType <= WHITE_KING; pieceType++) {
-		whiteMaterial += board.getPieceCountByType(PieceTypeByColor(pieceType)) * materialValues[pieceType];
-	}
-
-	for(int pieceType = BLACK_PAWN; pieceType <= BLACK_KING; pieceType++) {
-		blackMaterial += board.getPieceCountByType(PieceTypeByColor(pieceType)) * materialValues[pieceType];
-	}
-
-	result = side==WHITE?whiteMaterial-blackMaterial : blackMaterial-whiteMaterial;
-	return result;
 }
 
 const bool SimplePVSearch::stop() {

@@ -18,41 +18,26 @@
     along with Redqueen.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * MoveIterator.cpp
+ * Evaluator.h
  *
- *  Created on: Dec 26, 2009
+ *  Created on: Jan 1, 2010
  *      Author: bhlangonijr
  */
 
-#include "MoveIterator.h"
+#ifndef EVALUATOR_H_
+#define EVALUATOR_H_
 
-MoveIterator::MoveIterator() : _size(0), idx(0) {
-	// TODO Auto-generated constructor stub
+#include "Board.h"
 
-}
+static const int materialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 325, 325, 500, 975, 10000, 100, 325, 325, 500, 975, 10000, 0};
 
-MoveIterator::~MoveIterator() {
-	// TODO Auto-generated destructor stub
-}
+class Evaluator {
+public:
+	Evaluator();
+	virtual ~Evaluator();
+	const int evaluate(const Board& board);
+	const int evalMaterial(const Board& board);
 
-//sort
-void MoveIterator::sort() {
-	bool flag=true;
-	for(uint32_t i = 0; i < _size&&flag; i++){
-		flag=false;
-		for(uint32_t j = 0; j < _size-1; j++)
-		{
-			if (list[j+1].score > list[j].score) {
-				Move tmp=list[j];
-				list[j]=list[j+1];
-				list[j+1]=tmp;
-				flag=true;
-			}
+};
 
-		}
-	}
-/*	for (uint32_t x=0;x<_size;x++) {
-		std::cout << list[x].toString() << " - score: " << list[x].score << std::endl;
-	}*/
-
-}
+#endif /* EVALUATOR_H_ */
