@@ -27,16 +27,30 @@
 #ifndef EVALUATOR_H_
 #define EVALUATOR_H_
 
+#include <string.h>
 #include "Board.h"
 
-static const int materialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 325, 325, 500, 975, 10000, 100, 325, 325, 500, 975, 10000, 0};
+static const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 325, 325, 500, 975, 10000, 100, 325, 325, 500, 975, 10000, 0};
 
 class Evaluator {
 public:
+
 	Evaluator();
 	virtual ~Evaluator();
 	const int evaluate(const Board& board);
 	const int evalMaterial(const Board& board);
+
+	const int getPieceMaterialValue(const PieceTypeByColor piece) {
+		return materialValues[piece];
+	}
+
+	void setPieceMaterialValue(const PieceTypeByColor piece, const int value) {
+		materialValues[piece]=value;
+	}
+
+
+private:
+	int materialValues[ALL_PIECE_TYPE_BY_COLOR];
 
 };
 

@@ -27,7 +27,7 @@
 #include "Evaluator.h"
 
 Evaluator::Evaluator() {
-
+	memcpy(materialValues, defaultMaterialValues, ALL_PIECE_TYPE_BY_COLOR*sizeof(int));
 }
 
 Evaluator::~Evaluator() {
