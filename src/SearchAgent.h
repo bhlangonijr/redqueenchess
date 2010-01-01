@@ -183,6 +183,14 @@ public:
 		return true;
 	}
 
+	int hashFull() {
+
+		if (transTable.size()>getActiveHash()) {
+			return transTable[getActiveHash()]->hashFull();
+		}
+		return true;
+	}
+
 	void addTranspositionTable(TranspositionTable<Key,HashData>* table) {
 		transTable.push_back(table);
 	}
@@ -205,6 +213,12 @@ public:
 			delete transTable[getActiveHash()];
 		}
 		transTable.clear();
+	}
+
+	void newSearchHash() {
+		if (transTable.size()>getActiveHash()) {
+			return transTable[getActiveHash()]->newSearch();
+		}
 	}
 
 	void *startThreadSearch();

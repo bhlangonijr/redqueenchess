@@ -57,10 +57,6 @@ typedef uint64_t Bitboard;
 
 #define FULL_BB						 0xFFFFFFFFFFFFFFFFULL
 #define EMPTY_BB					 0x0ULL
-#define INITIAL_WHITE_BITBOARD  	 0xFFFFULL
-#define INITIAL_BLACK_BITBOARD  	 0xFFFF000000000000ULL
-#define INITIAL_WHITE_PAWN_BITBOARD  0xFF00ULL
-#define INITIAL_BLACK_PAWN_BITBOARD  0xFF000000000000ULL
 
 #define bitsBetween(BB,S1,S2)		((S2>S1? ((squareToBitboard[S2]|(squareToBitboard[S2]-squareToBitboard[S1]))) : ((squareToBitboard[S1]|(squareToBitboard[S1]-squareToBitboard[S2]))) )  & BB)
 

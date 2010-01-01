@@ -71,7 +71,9 @@ public:
 	bool hashGet(const HashKeyType key, HashValueType& value);
 	void resizeHash();
 	bool isHashFull();
+	const int hashFull();
 	const std::string getId() const;
+	void newSearch();
 
 private:
 
@@ -139,7 +141,7 @@ inline bool TranspositionTable<HashKeyType, HashValueType>::hashGet(const HashKe
 
 template<class HashKeyType, class HashValueType>
 inline void TranspositionTable<HashKeyType, HashValueType>::resizeHash() {
-
+	writes=0;
 	if (transTable) {
 		delete [] transTable;
 	}
@@ -149,14 +151,23 @@ inline void TranspositionTable<HashKeyType, HashValueType>::resizeHash() {
 
 template<class HashKeyType, class HashValueType>
 inline bool TranspositionTable<HashKeyType, HashValueType>::isHashFull() {
-	//double n = double(_size);
-	//int i = int(1000 * (1 - exp(writes * log(1.0 - 1.0/n))));
 	return false;
+}
+
+template<class HashKeyType, class HashValueType>
+inline const int TranspositionTable<HashKeyType, HashValueType>::hashFull() {
+	double n = double(_size);
+	return int(1000 * (1 - exp(writes * log(1.0 - 1.0/n))));
 }
 
 template<class HashKeyType, class HashValueType>
 inline const std::string TranspositionTable<HashKeyType, HashValueType>::getId() const {
 	return id;
+}
+
+template<class HashKeyType, class HashValueType>
+inline void TranspositionTable<HashKeyType, HashValueType>::newSearch() {
+	writes=0;
 }
 
 #endif /* TRANSPOSITIONTABLE_H_ */

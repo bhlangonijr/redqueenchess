@@ -31,8 +31,8 @@
 // Exit the program if the count of errors in CHECK_MOVE_GEN_ERRORS exceed the threshold - used for trace purposes
 #define EXIT_PROGRAM_THRESHOLD 100
 // If true uses Principal Variation Search
-#define PV_SEARCH false
-// debug id search
+#define PV_SEARCH true
+// debug iterative d search
 #define DEBUG_ID false
 // debug alpha-beta search
 #define DEBUG_AB false
@@ -49,6 +49,7 @@ void SimplePVSearch::search() {
 	_startTime = getTickCount();
 	_score = idSearch(board);
 	SearchAgent::getInstance()->setSearchInProgress(false);
+	SearchAgent::getInstance()->newSearchHash();
 	_time = getTickCount() - _startTime;
 
 #if CHECK_MOVE_GEN_ERRORS
@@ -85,12 +86,12 @@ int SimplePVSearch::idSearch(Board& board) {
 	std::cout << "Eval: " << evaluate(board) << std::endl;
 #endif
 	_nodes = 0;
+	uint32_t totalTime = 0;
 	for (uint32_t depth = 1; depth <= _depth; depth++) {
 		if (stop()) {
 			break;
 		}
 		uint32_t time = getTickCount();
-		uint32_t totalTime = 0;
 		uint64_t nodes = _nodes;
 		int bestScore = -maxScore;
 		int moveCounter=0;
@@ -110,7 +111,11 @@ int SimplePVSearch::idSearch(Board& board) {
 				move.score=-maxScore;
 				continue; // not legal
 			}
+
 			moveCounter++;
+			if (isUpdateUci() && totalTime > 1000) {
+				std::cout << "info currmove " << move.toString() << " currmovenumber " << moveCounter << std::endl;
+			}
 			int score = -pvSearch(board, -maxScore, maxScore, depth-1);
 			move.score=score;
 
@@ -137,13 +142,10 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		if (isUpdateUci()) {
 
+			uint64_t nps = time>1000 ?  ((_nodes-nodes)/(time/1000)) : _nodes;
 			std::cout << "info depth "<< depth << std::endl;
-			std::cout << "info score cp " << bestMove.score << " depth " << depth << " nodes " << (_nodes-nodes) << " time " << time << " pv " << bestMove.toString() << std::endl;
-			if (time>1000) {
-				std::cout << "info nps " << ((_nodes-nodes)/(time/1000)) << std::endl;
-			} else {
-				std::cout << "info nps " << _nodes << std::endl;
-			}
+			std::cout << "info depth "<< depth << " score cp " << bestMove.score << " time " << time << " nodes " << (_nodes-nodes) << " nps " << nps << " pv " << bestMove.toString() << std::endl;
+			std::cout << "info nodes " << (_nodes-nodes) << " time " << time << " nps " << nps << " hashfull " << SearchAgent::getInstance()->hashFull() << std::endl;
 
 		}
 		if (moveCounter==1) {
@@ -174,10 +176,10 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth) 
 #endif
 
 	if (depth==0||stop()) {
-/*
+		/*
 		int eval = evaluate(board);
 		if (true) return eval;
-*/
+		 */
 		score = qSearch(board, alpha, beta, maxQuiescenceSearchDepth);
 		return score;
 	}
@@ -187,8 +189,8 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth) 
 	if (SearchAgent::getInstance()->hashGet(board.getKey(), hashData)) {
 		if (hashData.depth>=depth) {
 			if ((hashData.flag == SearchAgent::UPPER && hashData.value <= alpha) ||
-				(hashData.flag == SearchAgent::LOWER && hashData.value >= beta) ||
-				(hashData.flag == SearchAgent::EXACT)) {
+					(hashData.flag == SearchAgent::LOWER && hashData.value >= beta) ||
+					(hashData.flag == SearchAgent::EXACT)) {
 				return hashData.value;
 			}
 
