@@ -52,12 +52,14 @@ public:
 
 	struct HashData {
 		HashData() : value(0), depth(0), generation(0), flag(LOWER)  {};
-		HashData(int _value, uint32_t _depth, uint32_t _generation, NodeFlag _flag) : value(_value), depth(_depth), generation(_generation), flag(_flag)  {};
-		HashData(const HashData& hashData) : value(hashData.value), depth(hashData.depth), generation(hashData.generation), flag(hashData.flag)  {};
+		HashData(const int& _value, const uint32_t& _depth, const uint32_t& _generation, const NodeFlag& _flag, const MoveIterator::Move& _move) :
+			value(_value), depth(_depth), generation(_generation), flag(_flag), move(_move)  {};
+		HashData(const HashData& hashData) : value(hashData.value), depth(hashData.depth), generation(hashData.generation), flag(hashData.flag), move(hashData.move)  {};
 		int value;
 		uint32_t depth;
 		uint32_t generation;
 		NodeFlag flag;
+		MoveIterator::Move move;
 	};
 
 	static SearchAgent* getInstance();
@@ -160,9 +162,9 @@ public:
 			transTable[getActiveHash()]->clearHash();
 		}
 	}
-	bool hashPut(const Board& board, const int value, const uint32_t depth, const uint32_t generation, const NodeFlag flag) {
+	bool hashPut(const Board& board, const int& value, const uint32_t& depth, const uint32_t& generation, const NodeFlag& flag, const MoveIterator::Move& move) {
 		if (transTable.size()>getActiveHash()) {
-			return transTable[getActiveHash()]->hashPut(board.getKey(), HashData(value,depth,generation,flag));
+			return transTable[getActiveHash()]->hashPut(board.getKey(), HashData(value,depth,generation,flag,move));
 		}
 		return false;
 	}

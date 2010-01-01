@@ -48,6 +48,11 @@ class SimplePVSearch {
 
 public:
 
+	typedef struct PvLine {
+	    int index;
+	    MoveIterator::Move moves[maxSearchDepth];
+	}   PvLine;
+
 	void operator()() {
 		this->search();
 	}
@@ -134,10 +139,11 @@ private:
 	std::vector<MoveIterator::Move> pv;
 
 	int idSearch(Board& board);
-	int pvSearch(Board& board, int alpha, int beta, uint32_t depth);
-	int qSearch(Board& board, int alpha, int beta, uint32_t depth);
+	int pvSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv);
+	int qSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv);
 	int evaluate(Board& board);
-	void updatePv(MoveIterator::Move* move, int depth, int maxDepth);
+	const std::string pvLineToString(const PvLine* pv);
+	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
 
 	const bool stop();
 	const bool timeIsUp();
