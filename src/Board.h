@@ -508,7 +508,8 @@ inline const bool Board::isAttacked(const PieceColor color, const PieceType type
 				(getRookAttacks(from) & (getPiecesByType(makePiece(other,ROOK)) |
 						getPiecesByType(makePiece(other,QUEEN)))) ||
 						(getKnightAttacks(from) & getPiecesByType(makePiece(other,KNIGHT))) ||
-						(getPawnAttacks(from) & getPiecesByType(makePiece(other,PAWN)));
+						(getPawnAttacks(from) & getPiecesByType(makePiece(other,PAWN))) ||
+						(getKingAttacks(from) & getPiecesByType(makePiece(other,KING)));
 	}
 
 	return false;
@@ -527,7 +528,8 @@ inline const bool Board::isAttacked(const Bitboard occupation, const PieceColor 
 				(getRookAttacks(from) & (getPiecesByType(makePiece(attackingSide,ROOK)) |
 						getPiecesByType(makePiece(attackingSide,QUEEN)))) ||
 						(getKnightAttacks(from) & getPiecesByType(makePiece(attackingSide,KNIGHT))) ||
-						(getPawnAttacks(from) & getPiecesByType(makePiece(attackingSide,PAWN)));
+						(getPawnAttacks(from) & getPiecesByType(makePiece(attackingSide,PAWN))) ||
+						(getKingAttacks(from) & getPiecesByType(makePiece(attackingSide,KING)));
 
 		from = extractLSB(pieces);
 
