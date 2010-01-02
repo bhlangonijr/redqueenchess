@@ -28,6 +28,7 @@
 #define EVALUATOR_H_
 
 #include <string.h>
+#include "Inline.h"
 #include "Board.h"
 
 static const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 325, 325, 500, 975, 10000, 100, 325, 325, 500, 975, 10000, 0};
@@ -37,8 +38,9 @@ public:
 
 	Evaluator();
 	virtual ~Evaluator();
-	const int evaluate(const Board& board);
-	const int evalMaterial(const Board& board);
+	const int evaluate(Board& board);
+	const int evalMaterial(Board& board);
+	const int evalMobility(Board& board, PieceColor color);
 
 	const int getPieceMaterialValue(const PieceTypeByColor piece) {
 		return materialValues[piece];

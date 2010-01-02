@@ -32,8 +32,6 @@
 #include <inttypes.h>
 #include <time.h>
 #include <assert.h>
-#include <boost/pool/object_pool.hpp>
-
 
 #include "Bitboard.h"
 #include "MoveIterator.h"

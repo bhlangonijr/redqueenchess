@@ -30,6 +30,7 @@
 
 #include <cstring>
 #include <cmath>
+#include <stdlib.h>
 #include "Board.h"
 
 #define DEFAULT_INITIAL_SIZE 64

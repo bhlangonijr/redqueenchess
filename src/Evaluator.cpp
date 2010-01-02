@@ -34,17 +34,19 @@ Evaluator::~Evaluator() {
 }
 
 // main eval function
-const int Evaluator::evaluate(const Board& board) {
+const int Evaluator::evaluate(Board& board) {
 
 	int material = evalMaterial(board);
-
-
+	int mobility = evalMobility(board, board.getSideToMove()) - evalMobility(board, board.flipSide(board.getSideToMove()));
 	// ...
-	return material;
+
+	//std::cout << "material: " << material << std::endl;
+	//std::cout << "mobility: " << mobility << std::endl;
+	return material+mobility;
 }
 
 // material eval function
-const int Evaluator::evalMaterial(const Board& board) {
+const int Evaluator::evalMaterial(Board& board) {
 
 	int result = 0;
 	PieceColor side = board.getSideToMove();
@@ -63,3 +65,38 @@ const int Evaluator::evalMaterial(const Board& board) {
 	result = side==WHITE?whiteMaterial-blackMaterial : blackMaterial-whiteMaterial;
 	return result;
 }
+
+// mobility eval function
+const int Evaluator::evalMobility(Board& board, PieceColor color) {
+
+	Bitboard pieces = EMPTY_BB;
+	Square from = NONE;
+	Bitboard attacks = EMPTY;
+
+	pieces = board.getPiecesByType(board.makePiece(color,BISHOP));
+	from = extractLSB(pieces);
+
+	while ( from!=NONE ) {
+		attacks |= board.getBishopAttacks(from);
+		from = extractLSB(pieces);
+	}
+
+	pieces = board.getPiecesByType(board.makePiece(color,ROOK));
+	from = extractLSB(pieces);
+
+	while ( from!=NONE ) {
+		attacks |= board.getRookAttacks(from);
+		from = extractLSB(pieces);
+	}
+
+	pieces = board.getPiecesByType(board.makePiece(color,QUEEN));
+	from = extractLSB(pieces);
+
+	while ( from!=NONE ) {
+		attacks |= board.getQueenAttacks(from);
+		from = extractLSB(pieces);
+	}
+
+	return _BitCount(attacks);
+}
+
