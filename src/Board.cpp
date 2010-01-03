@@ -289,6 +289,37 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 
 }
 
+// do a null move and set backup info into struct MoveBackup
+void Board::doNullMove(MoveBackup& backup){
+
+	PieceColor otherSide = flipSide(getSideToMove());
+
+	backup.key=getKey();
+	backup.enPassant=getEnPassant();
+	backup.whiteCastleRight=getCastleRights(WHITE);
+	backup.blackCastleRight=getCastleRights(BLACK);
+	backup.hasWhiteKingCastle=false;
+	backup.hasWhiteQueenCastle=false;
+	backup.hasBlackKingCastle=false;
+	backup.hasBlackQueenCastle=false;
+
+	if (getEnPassant()!=NONE)
+	{
+		setEnPassant(NONE);
+	}
+
+	if (getEnPassant()!=NONE) {
+		setKey(getKey()^zobrist.enPassant[getSquareFile(getEnPassant())]);
+	}
+
+	increaseMoveCounter();
+	updateKeyHistory();
+
+	setKey(getKey()^zobrist.sideToMove);
+	setSideToMove(otherSide);
+
+}
+
 // undo a move based on struct MoveBackup
 void Board::undoMove(MoveBackup& backup){
 
@@ -314,6 +345,19 @@ void Board::undoMove(MoveBackup& backup){
 		putPiece(BLACK_ROOK,A8);
 	}
 
+	setCastleRights(WHITE, backup.whiteCastleRight);
+	setCastleRights(BLACK, backup.blackCastleRight);
+	setEnPassant(backup.enPassant);
+	decreaseMoveCounter();
+	setSideToMove(sideToMove);
+	setKey(backup.key);
+
+}
+
+// undo a null move based on struct MoveBackup
+void Board::undoNullMove(MoveBackup& backup){
+
+	PieceColor sideToMove=flipSide(getSideToMove());
 	setCastleRights(WHITE, backup.whiteCastleRight);
 	setCastleRights(BLACK, backup.blackCastleRight);
 	setEnPassant(backup.enPassant);

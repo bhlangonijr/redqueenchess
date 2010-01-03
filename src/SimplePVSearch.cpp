@@ -49,7 +49,6 @@ void SimplePVSearch::search() {
 	_startTime = getTickCount();
 	_score = idSearch(board);
 	SearchAgent::getInstance()->setSearchInProgress(false);
-	SearchAgent::getInstance()->newSearchHash();
 	_time = getTickCount() - _startTime;
 
 #if CHECK_MOVE_GEN_ERRORS
@@ -80,6 +79,7 @@ int SimplePVSearch::idSearch(Board& board) {
 	MoveIterator moves;
 	board.generateAllMoves(moves, board.getSideToMove());
 	MoveIterator::Move bestMove = MoveIterator::Move(NONE,NONE,EMPTY);
+	bestMove.score = -maxScore;
 
 #if DEBUG_ID
 	board.printBoard();
@@ -87,17 +87,31 @@ int SimplePVSearch::idSearch(Board& board) {
 #endif
 	_nodes = 0;
 	uint32_t totalTime = 0;
+
+	uint32_t searchDepth = 0;
 	for (uint32_t depth = 1; depth <= _depth; depth++) {
 		if (stop()) {
 			break;
 		}
+		SearchAgent::HashData hashData;
+		if (SearchAgent::getInstance()->hashGet(board.getKey(), hashData)) {
+			if (hashData.depth>=depth) {
+				if (hashData.flag == SearchAgent::EXACT) {
+					bestMove = hashData.move;
+					break;
+				}
+
+			}
+		}
+
 		uint32_t time = getTickCount();
 		uint64_t nodes = _nodes;
-		int bestScore = -maxScore;
 		int moveCounter=0;
+		int bestScore = -maxScore;
 		PvLine pv;
 		pv.index=0;
 		moves.first();
+
 		while (moves.hasNext()) {
 			if (stop()) {
 				break;
@@ -119,7 +133,7 @@ int SimplePVSearch::idSearch(Board& board) {
 				std::cout << "info currmove " << move.toString() << " currmovenumber " << moveCounter << std::endl;
 			}
 
-			int score = -pvSearch(board, -maxScore, maxScore, depth-1, &pv);
+			int score = -pvSearch(board, -maxScore, -bestScore, depth-1, &pv, true);
 			move.score=score;
 
 #if DEBUG_ID
@@ -127,18 +141,23 @@ int SimplePVSearch::idSearch(Board& board) {
 			board.printBoard();
 #endif
 
+			board.undoMove(backup);
+
 			if (score > bestScore && !stop()) {
 				bestScore = score;
+				bestMove = move;
+				searchDepth=depth;
 			}
 
-			board.undoMove(backup);
+			if( score >= maxScore && !stop() ) {
+				bestScore = score;
+				bestMove = move;
+				searchDepth=depth;
+				break;
+			}
 		}
 
 		moves.sort();
-
-		if ((!stop() || moves.get(0).score < moves.get(0).score)&&moves.get(0).from!=NONE ) {
-			bestMove = moves.get(0);
-		}
 
 		time = getTickCount()-time;
 		totalTime += time;
@@ -154,6 +173,9 @@ int SimplePVSearch::idSearch(Board& board) {
 		if (moveCounter==1) {
 			break;
 		}
+		if (bestMove.from!=NONE) {
+			SearchAgent::getInstance()->hashPut(board,bestMove.score,searchDepth,0,SearchAgent::EXACT,bestMove);
+		}
 	}
 
 	if (bestMove.from!=NONE) {
@@ -168,7 +190,7 @@ int SimplePVSearch::idSearch(Board& board) {
 }
 
 // principal variation search
-int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv) {
+int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv, const bool allowNullMove) {
 
 #if PV_SEARCH
 	bool bSearch = true;
@@ -178,11 +200,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 	Board old(board);
 #endif
 
-	if (depth==0||stop()) {
-		/*
-		int eval = evaluator.evaluate(board);
-		if (true) return eval;
-		 */
+	if (depth<=0||stop()) {
 		return qSearch(board, alpha, beta, maxQuiescenceSearchDepth, pv);
 	}
 	int score = 0;
@@ -199,6 +217,21 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 				return hashData.value;
 			}
 
+		}
+	}
+
+	if (!board.isAttacked(board.getSideToMove(),KING) && beta < maxScore &&
+			(board.getPiecesByType(WHITE_PAWN)|board.getPiecesByType(BLACK_PAWN)) &&
+			allowNullMove ) {
+
+		MoveBackup backup;
+		board.doNullMove(backup);
+		score = -pvSearch(board, -beta, 1-beta, depth-1, &line, false);
+		board.undoNullMove(backup);
+
+		if (score >= beta) {
+			SearchAgent::getInstance()->hashPut(board,score,depth,0,SearchAgent::LOWER,MoveIterator::Move());
+			return score;
 		}
 	}
 
@@ -230,12 +263,12 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 #if PV_SEARCH
 		if ( bSearch ) {
 #endif
-			score = -pvSearch(board, -beta, -alpha, depth-1, &line);
+			score = -pvSearch(board, -beta, -alpha, depth-1, &line, true);
 #if PV_SEARCH
 		} else {
-			score = -pvSearch(board, -alpha-1, -alpha, depth-1, &line);
+			score = -pvSearch(board, -alpha-1, -alpha, depth-1, &line, true);
 			if ( score > alpha ) {
-				score = -pvSearch(board, -beta, -alpha, depth-1, &line);
+				score = -pvSearch(board, -beta, -alpha, depth-1, &line, true);
 			}
 		}
 #endif

@@ -90,13 +90,6 @@ void SearchAgent::setPositionFromFEN(std::string fenMoves) {
 // start search
 void* SearchAgent::startThreadSearch() {
 
-	if (getSearchInProgress()) {
-		Uci::getInstance()->text("Search in progress...");
-		return 0;
-	}
-	//clearHash();
-	setSearchInProgress(true);
-
 	SimplePVSearch simplePV(board);
 
 	if (this->getSearchMode()==SearchAgent::SEARCH_DEPTH) {
@@ -119,9 +112,22 @@ void* SearchAgent::startThreadSearch() {
 // start search
 void SearchAgent::startSearch() {
 
+	if (getSearchInProgress()) {
+		Uci::getInstance()->text("Search in progress...");
+		return;
+	}
+
+	setSearchInProgress(true);
+	newSearchHash();
+
 	pthread_t executor;
 	int ret = 0;
 	ret = pthread_create( &executor, NULL, threadStartup, this);
+
+	/*pthread_t executor2;
+	int ret2 = 0;
+	ret2 = pthread_create( &executor2, NULL, threadStartup, this);
+*/
 
 }
 

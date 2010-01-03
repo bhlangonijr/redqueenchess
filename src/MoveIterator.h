@@ -30,6 +30,7 @@
 #include "Bitboard.h"
 
 #define MOVE_LIST_MAX_SIZE 128
+#define DEFAULT_SCORE -32000
 
 class MoveIterator {
 public:
@@ -37,10 +38,10 @@ public:
 	// Move representation
 	struct Move {
 
-		Move() : from(NONE), to(NONE), score(0)
+		Move() : from(NONE), to(NONE), score(DEFAULT_SCORE)
 		{}
 		Move(const Square fromSquare, const Square toSquare, const PieceTypeByColor piece) :
-			from(fromSquare), to(toSquare), promotionPiece(piece), score(0)
+			from(fromSquare), to(toSquare), promotionPiece(piece), score(DEFAULT_SCORE)
 			{}
 
 		Move(const Move& move) :
@@ -71,46 +72,25 @@ public:
 		}
 	};
 
-	const void add(const Move move) {
-		list[_size++]=move;
-	}
+	const void add(const Move move) ;
 
-	const void add(const Square from, const Square to, const PieceTypeByColor piece) {
-		list[_size++]=Move(from,to,piece);
-	}
+	const void add(const Square from, const Square to, const PieceTypeByColor piece);
 
-	const void remove(const size_t index) {
-		for (size_t x=index;x<_size-1;x++) {
-			list[x]=list[x+1];
-		}
-		_size--;
-	}
+	const void remove(const size_t index);
 
-	const bool hasNext() {
-		return idx<_size;
-	}
+	const bool hasNext();
 
-	Move& next() {
-		return list[idx++];
-	}
+	Move& next();
 
-	Move& get() {
-		return list[idx];
-	}
+	Move& get();
 
-	const void first() {
-		idx=0;
-	}
+	const void first();
 
-	const size_t size() {
-		return _size;
-	}
+	const size_t size();
 
 	void sort();
 
-	const Move& get(const size_t index) {
-		return list[index];
-	}
+	const Move& get(const size_t index);
 
 	MoveIterator();
 	virtual ~MoveIterator();
@@ -121,5 +101,44 @@ private:
 	size_t idx;
 
 };
+
+inline const void MoveIterator::add(const Move move) {
+	list[_size++]=move;
+}
+
+inline const void MoveIterator::add(const Square from, const Square to, const PieceTypeByColor piece) {
+	list[_size++]=Move(from,to,piece);
+}
+
+inline const void MoveIterator::remove(const size_t index) {
+	for (size_t x=index;x<_size-1;x++) {
+		list[x]=list[x+1];
+	}
+	_size--;
+}
+
+inline const bool MoveIterator::hasNext() {
+	return idx<_size;
+}
+
+inline MoveIterator::Move& MoveIterator::next() {
+	return list[idx++];
+}
+
+inline MoveIterator::Move& MoveIterator::get() {
+	return list[idx];
+}
+
+inline const void MoveIterator::first() {
+	idx=0;
+}
+
+inline const size_t MoveIterator::size() {
+	return _size;
+}
+
+inline const MoveIterator::Move& MoveIterator::get(const size_t index) {
+	return list[index];
+}
 
 #endif /* MOVEITERATOR_H_ */

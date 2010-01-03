@@ -203,7 +203,9 @@ public:
 	const void printBoard(const std::string pad);
 	void genericTest();
 	void doMove(const MoveIterator::Move& move, MoveBackup& backup);
+	void doNullMove(MoveBackup& backup);
 	void undoMove(MoveBackup& backup);
+	void undoNullMove(MoveBackup& backup);
 	void setInitialPosition();
 	void loadFromString(const std::string startPosMoves);
 	void loadFromFEN(const std::string startFENMoves);
@@ -580,10 +582,10 @@ inline const Bitboard Board::getRookAttacks(const Square square, const Bitboard 
 	Square minor;
 	Square major;
 
-	setNearBlocker(((fileAttacks[square] ^ squareToBitboard[square]) & occupied) , square, minor, major);
-	Bitboard file = bitsBetween(fileAttacks[square], minor, major) ^ squareToBitboard[square];
-	setNearBlocker(((rankAttacks[square]^ squareToBitboard[square]) & occupied) , square, minor, major);
-	Bitboard rank = bitsBetween(rankAttacks[square], minor, major) ^ squareToBitboard[square];
+	setNearBlocker(fileAttacks[square] & occupied , square, minor, major);
+	Bitboard file = bitsBetween(fileAttacks[square], minor, major) ;
+	setNearBlocker(rankAttacks[square] & occupied , square, minor, major);
+	Bitboard rank = bitsBetween(rankAttacks[square], minor, major) ;
 
 	return file | rank;
 }
@@ -599,10 +601,10 @@ inline const Bitboard Board::getBishopAttacks(const Square square, const Bitboar
 	Square minor;
 	Square major;
 
-	setNearBlocker(((diagA1H8Attacks[square] ^ squareToBitboard[square]) & occupied), square, minor, major);
-	Bitboard diagA1H8 = bitsBetween(diagA1H8Attacks[square], minor, major) ^ squareToBitboard[square];
-	setNearBlocker(((diagH1A8Attacks[square] ^ squareToBitboard[square]) & occupied), square, minor, major);
-	Bitboard diagH1A8 = bitsBetween(diagH1A8Attacks[square], minor, major) ^ squareToBitboard[square];
+	setNearBlocker(diagA1H8Attacks[square] & occupied, square, minor, major);
+	Bitboard diagA1H8 = bitsBetween(diagA1H8Attacks[square], minor, major);
+	setNearBlocker(diagH1A8Attacks[square] & occupied, square, minor, major);
+	Bitboard diagH1A8 = bitsBetween(diagH1A8Attacks[square], minor, major);
 
 	return diagA1H8 | diagH1A8;
 }

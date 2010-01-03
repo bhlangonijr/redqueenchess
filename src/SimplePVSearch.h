@@ -37,7 +37,7 @@
 namespace SimplePVSearchTypes {
 
 static const int maxScore = 200000;
-static const uint32_t maxQuiescenceSearchDepth = 20;
+static const uint32_t maxQuiescenceSearchDepth = 10;
 static const uint32_t maxSearchDepth = 40;
 
 }
@@ -140,7 +140,7 @@ private:
 	std::vector<MoveIterator::Move> pv;
 
 	int idSearch(Board& board);
-	int pvSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv);
+	int pvSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv, const bool allowNullMove);
 	int qSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv);
 	const std::string pvLineToString(const PvLine* pv);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);

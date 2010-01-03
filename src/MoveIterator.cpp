@@ -27,12 +27,10 @@
 #include "MoveIterator.h"
 
 MoveIterator::MoveIterator() : _size(0), idx(0) {
-	// TODO Auto-generated constructor stub
 
 }
 
 MoveIterator::~MoveIterator() {
-	// TODO Auto-generated destructor stub
 }
 
 //sort
@@ -51,8 +49,8 @@ void MoveIterator::sort() {
 
 		}
 	}
-/*	for (uint32_t x=0;x<_size;x++) {
-		std::cout << list[x].toString() << " - score: " << list[x].score << std::endl;
-	}*/
+//	for (uint32_t x=0;x<_size;x++) {
+//		std::cout << list[x].toString() << " - score: " << list[x].score << std::endl;
+//	}
 
 }

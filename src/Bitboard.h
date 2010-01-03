@@ -44,11 +44,11 @@ typedef uint64_t Bitboard;
 #define SqBB(S)					0x1ULL << (int)S													// Encode a square enum to a bitboard
 #define Sq2Bb(X)				squareToBitboard[X] 												// square to bitboard macro
 
-#define Sq2FA(X)				fileBB[squareFile[X]]												// Encode Square to File Attack
-#define Sq2RA(X)				rankBB[squareRank[X]]												// Encode Square to Rank Attack
+#define Sq2FA(X)				fileBB[squareFile[X]]^squareToBitboard[X]							// Encode Square to File Attack
+#define Sq2RA(X)				rankBB[squareRank[X]]^squareToBitboard[X]							// Encode Square to Rank Attack
 
-#define Sq2A1(X)				diagonalA1H8BB[squareToDiagonalA1H8[X]]								// Encode Square to Diagonal A1H1 Attack
-#define Sq2H1(X)				diagonalH1A8BB[squareToDiagonalH1A8[X]]								// Encode Square to Diagonal H1A1 Attack
+#define Sq2A1(X)				diagonalA1H8BB[squareToDiagonalA1H8[X]]^squareToBitboard[X]			// Encode Square to Diagonal A1H1 Attack
+#define Sq2H1(X)				diagonalH1A8BB[squareToDiagonalH1A8[X]]^squareToBitboard[X]			// Encode Square to Diagonal H1A1 Attack
 
 #define Sq2UM(X)				~(squareToBitboard[X]-1) 											// Encode Square to BB uppermask
 #define Sq2LM(X)				squareToBitboard[X]-1												// Encode Square to BB lowermask
@@ -58,7 +58,8 @@ typedef uint64_t Bitboard;
 #define FULL_BB						 0xFFFFFFFFFFFFFFFFULL
 #define EMPTY_BB					 0x0ULL
 
-#define bitsBetween(BB,S1,S2)		((S2>S1? ((squareToBitboard[S2]|(squareToBitboard[S2]-squareToBitboard[S1]))) : ((squareToBitboard[S1]|(squareToBitboard[S1]-squareToBitboard[S2]))) )  & BB)
+//#define bitsBetween(BB,S1,S2)		((S2>S1? ((squareToBitboard[S2]|(squareToBitboard[S2]-squareToBitboard[S1]))) : ((squareToBitboard[S1]|(squareToBitboard[S1]-squareToBitboard[S2]))) )  & BB)
+#define bitsBetween(BB,S1,S2)		(((squareToBitboard[S2]|(squareToBitboard[S2]-squareToBitboard[S1]))) & BB)
 
 // squares
 enum Square {
