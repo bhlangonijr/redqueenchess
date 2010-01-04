@@ -328,7 +328,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth, P
 
 	int standPat = evaluator.evaluate(board);
 
-	if(standPat>=beta||(depth==0||stop())) {
+	if(standPat>=beta||depth==0||stop()) {
 #if DEBUG_QS
 		std::cout << "(QS) beta: " << beta << " / eval: " << standPat << " / depth " << depth << std::endl;
 		std::string pad=" ";
