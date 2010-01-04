@@ -95,6 +95,7 @@ struct MoveBackup {
 	PieceTypeByColor movingPiece;
 	Square from;
 	Square to;
+	int halfMoveCounter;
 
 };
 
@@ -234,6 +235,8 @@ public:
 	const File getSquareFile(const Square square) const;
 	const bool isAttacked(const PieceColor color, const PieceType type);
 	const bool isAttacked(const Bitboard occupation, const PieceColor attackingSide);
+	const bool isNotLegal();
+	const bool isDraw();
 
 	const Bitboard getPiecesByColor(const PieceColor color) const;
 	const Bitboard getAllPieces() const;
@@ -536,6 +539,33 @@ inline const bool Board::isAttacked(const Bitboard occupation, const PieceColor 
 	}
 
 	return false;
+}
+
+// verify board legality
+inline const bool Board::isNotLegal() {
+
+	return isAttacked(flipSide(getSideToMove()),KING);
+
+}
+
+// verify draw by 50th move rule and 3 fold rep
+inline const bool Board::isDraw() {
+
+	if (getMoveCounter()>=6){
+		int repetition = 0;
+
+		for (int x=1;x<getMoveCounter();x++) {
+			if (currentBoard.keyHistory[getMoveCounter()]==currentBoard.keyHistory[x]) {
+				repetition++;
+			}
+			if (repetition>=3) {
+				return true;
+			}
+		}
+	}
+
+	return getHalfMoveCounter()>=100;
+
 }
 
 // get all pieces of a given color

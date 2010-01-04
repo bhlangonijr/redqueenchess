@@ -105,7 +105,7 @@ void* SearchAgent::startThreadSearch() {
 		simplePV.setSearchFixedDepth(true);
 		simplePV.setDepth(defaultDepth);
 	}
-	// TODO implement movestogo and nodes
+
 	simplePV.search();
 	return 0;
 }
@@ -142,10 +142,10 @@ const uint32_t SearchAgent::getTimeToSearch() {
 		return this->getMoveTime();
 	}
 
-	uint32_t time=board.getSideToMove()==WHITE ?  this->getWhiteTime() : this->getBlackTime();
+	int time=board.getSideToMove()==WHITE ?  this->getWhiteTime() : this->getBlackTime();
 	//uint32_t incTime=board.getSideToMove()==WHITE ? this->getWhiteIncrement() : this->getBlackIncrement();
 
-	size_t movesLeft = movesToGo>0?movesToGo : defaultGameSize-board.getMoveCounter();
+	int movesLeft = movesToGo>0?movesToGo : defaultGameSize-board.getMoveCounter();
 
 	if (movesLeft<=1) {
 		movesLeft=defaultGameSizeInc;

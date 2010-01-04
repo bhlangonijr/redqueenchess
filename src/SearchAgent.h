@@ -29,6 +29,7 @@
 
 #include <iostream>
 #include <assert.h>
+#include <pthread.h>
 #include "Uci.h"
 #include "Board.h"
 #include "SimplePVSearch.h"

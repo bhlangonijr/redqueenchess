@@ -98,7 +98,7 @@ int SimplePVSearch::idSearch(Board& board) {
 			if (hashData.depth>=depth) {
 				if (hashData.flag == SearchAgent::EXACT) {
 					bestMove = hashData.move;
-					break;
+					continue;
 				}
 
 			}
@@ -119,10 +119,9 @@ int SimplePVSearch::idSearch(Board& board) {
 			MoveIterator::Move& move = moves.next();
 			_nodes++;
 			MoveBackup backup;
-
 			board.doMove(move,backup);
 
-			if (board.isAttacked(board.flipSide(board.getSideToMove()),KING)) {
+			if (board.isNotLegal()) {
 				board.undoMove(backup);
 				move.score=-maxScore;
 				continue; // not legal
@@ -195,16 +194,20 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 #if PV_SEARCH
 	bool bSearch = true;
 #endif
-
+	PvLine line;
 #if CHECK_MOVE_GEN_ERRORS
 	Board old(board);
 #endif
 
-	if (depth<=0||stop()) {
-		return qSearch(board, alpha, beta, maxQuiescenceSearchDepth, pv);
+	if (board.isDraw()) {
+		return 0;
 	}
+
+	if (depth<=0||stop()) {
+		return qSearch(board, alpha, beta, maxQuiescenceSearchDepth, &line);
+	}
+
 	int score = 0;
-	PvLine line;
 	_nodes++;
 	int oldAlpha = alpha;
 	SearchAgent::HashData hashData;
@@ -220,7 +223,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 		}
 	}
 
-	if (!board.isAttacked(board.getSideToMove(),KING) && beta < maxScore &&
+	if (!board.isNotLegal() && beta < maxScore &&
 			(board.getPiecesByType(WHITE_PAWN)|board.getPiecesByType(BLACK_PAWN)) &&
 			allowNullMove ) {
 
@@ -251,7 +254,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 		MoveBackup backup;
 		board.doMove(move,backup);
 
-		if (board.isAttacked(board.flipSide(board.getSideToMove()),KING)) {
+		if (board.isNotLegal()) {
 			board.undoMove(backup);
 			continue; // not legal
 		}
@@ -326,6 +329,10 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth, P
 
 	_nodes++;
 
+	if (board.isDraw()) {
+		return 0;
+	}
+
 	int standPat = evaluator.evaluate(board);
 
 	if(standPat>=beta||depth==0||stop()) {
@@ -356,7 +363,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth, P
 
 		board.doMove(move,backup);
 
-		if (board.isAttacked(board.flipSide(board.getSideToMove()),KING)) {
+		if (board.isNotLegal()) {
 			board.undoMove(backup);
 			continue; // not legal
 		}

@@ -147,7 +147,9 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	backup.hasWhiteQueenCastle=false;
 	backup.hasBlackKingCastle=false;
 	backup.hasBlackQueenCastle=false;
+	backup.halfMoveCounter =  getHalfMoveCounter();
 
+	increaseHalfMoveCounter();
 	removePiece(fromPiece,move.from);
 	setKey(getKey()^zobrist.pieceSquare[fromPiece][move.from]);
 
@@ -157,6 +159,7 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 		backup.hasCapture=true;
 		backup.capturedPiece=toPiece;
 		backup.capturedSquare=move.to;
+		resetHalfMoveCounter();
 	} else {
 		backup.capturedPiece=EMPTY;
 		backup.capturedSquare=NONE;
@@ -251,7 +254,7 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	}
 
 	if (fromPiece==makePiece(getSideToMove(),PAWN)){
-
+		resetHalfMoveCounter();
 		if (getEnPassant()!=NONE) {
 			if (getSquareFile(move.from)!=getSquareFile(move.to)&&toPiece==EMPTY) { // en passant
 				removePiece(makePiece(otherSide,PAWN),getEnPassant());
@@ -271,14 +274,15 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 		}
 	}
 
+	if (getEnPassant()!=NONE) {
+		setKey(getKey()^zobrist.enPassant[getSquareFile(getEnPassant())]);
+	}
+
 	if (!enPassant) {
 		if (getEnPassant()!=NONE)
 		{
 			setEnPassant(NONE);
 		}
-	}
-	if (getEnPassant()!=NONE) {
-		setKey(getKey()^zobrist.enPassant[getSquareFile(getEnPassant())]);
 	}
 
 	increaseMoveCounter();
@@ -327,6 +331,7 @@ void Board::undoMove(MoveBackup& backup){
 	PieceColor sideToMove=flipSide(getSideToMove());
 	removePiece(currentBoard.square[backup.to],backup.to);
 	putPiece(piece,backup.from);
+	currentBoard.halfMoveCounter = backup.halfMoveCounter;
 
 	if (backup.hasCapture) {
 		putPiece(backup.capturedPiece,backup.capturedSquare);
