@@ -39,7 +39,7 @@
 // debug qs search
 #define DEBUG_QS false
 // show stats info
-#define SHOW_STATS true
+#define SHOW_STATS false
 
 using namespace SimplePVSearchTypes;
 
@@ -127,7 +127,7 @@ int SimplePVSearch::idSearch(Board& board) {
 				std::cout << "info currmove " << move.toString() << " currmovenumber " << moveCounter << std::endl;
 			}
 
-			int score = -pvSearch(board, -maxScore, maxScore, depth-1, &pv, true);
+			int score = -pvSearch(board, -maxScore, -bestScore, depth-1, &pv, true);
 			move.score=score;
 
 #if DEBUG_ID
