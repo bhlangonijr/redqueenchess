@@ -32,6 +32,7 @@
 
 #include "Uci.h"
 #include "SearchAgent.h"
+#include "StringUtil.h"
 #include "Evaluator.h"
 
 namespace SimplePVSearchTypes {
@@ -49,9 +50,49 @@ class SimplePVSearch {
 public:
 
 	typedef struct PvLine {
-	    int index;
-	    MoveIterator::Move moves[maxSearchDepth];
-	}   PvLine;
+		int index;
+		MoveIterator::Move moves[maxSearchDepth];
+	} PvLine;
+
+	typedef struct SearchStats {
+
+		SearchStats():
+			ttHits(0), ttLower(0), ttUpper(0), ttExact(0), nullMoveHits(0), pvChanges(0), searchTime(0), searchNodes(0) {}
+
+		long ttHits;
+		long ttLower;
+		long ttUpper;
+		long ttExact;
+		long nullMoveHits;
+		long pvChanges;
+		uint32_t searchTime;
+		uint64_t searchNodes;
+
+		std::string toString() {
+			std::string result =
+			"ttHits:      " + StringUtil::toStr(ttHits) + "\n" ;
+			result += "ttLower:     " + StringUtil::toStr(ttLower) + "\n";
+			result += "ttUpper:     " + StringUtil::toStr(ttUpper) + "\n";
+			result += "ttExact:     " + StringUtil::toStr(ttExact) + "\n";
+			result += "nullMoveHits:" + StringUtil::toStr(nullMoveHits) + "\n";
+			result += "pvChanges:   " + StringUtil::toStr(pvChanges) + "\n";
+			result += "searchTime:  " + StringUtil::toStr(searchTime) + "\n";
+			result += "searchNodes: " + StringUtil::toStr(searchNodes) + "\n";
+			return result;
+		}
+		void clear() {
+			ttHits=0;
+			ttLower=0;
+			ttUpper=0;
+			ttExact=0;
+			nullMoveHits=0;
+			pvChanges=0;
+			searchTime=0;
+			searchNodes=0;
+		}
+
+	} SearchStats;
+
 
 	void operator()() {
 		this->search();
@@ -136,6 +177,7 @@ private:
 	bool _searchFixedDepth;
 	bool _infinite;
 	Evaluator evaluator;
+	SearchStats stats;
 
 	std::vector<MoveIterator::Move> pv;
 
