@@ -410,8 +410,8 @@ inline bool Board::canCastle(const PieceColor color, const CastleRight castleRig
 	if (castleSquare[color][castleRight]&getAllPieces()) { // pieces interposing king & rooks?
 		return false;
 	}
-	Bitboard castle=getPiecesByType(makePiece(color,KING))|(castleSquare[color][castleRight]&getPiecesByColor(color));
-	if (isAttacked(castle,flipSide(color))) { // squares through castle & king destination attacked?
+	Bitboard castle=getPiecesByType(makePiece(color,KING))|(castleSquare[color][castleRight]);
+	if (isAttacked(castle,color)) { // squares through castle & king destination attacked?
 		return false;
 	}
 	return true;
