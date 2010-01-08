@@ -321,7 +321,7 @@ void Uci::executeTest() {
 	board4.loadFromFEN("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
 	board4.genericTest();
 
-	board4.printBoard();
+	//board4.printBoard();
 
 	//delete board;
 	//delete board2;

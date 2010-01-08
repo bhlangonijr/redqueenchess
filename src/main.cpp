@@ -32,6 +32,7 @@
 #include "Uci.h"
 #include "Constant.h"
 #include "Board.h"
+#include "Bitboard.h"
 #include "SearchAgent.h"
 #include "mersenne.h"
 #include "Inline.h"
@@ -48,6 +49,7 @@ int main() {
 	init_mersenne();
 	Board::initializeZobrist();
 	SearchAgent::getInstance();
+	initializeBitboards();
 
 	Uci *uci = Uci::getInstance();
 

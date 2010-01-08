@@ -41,6 +41,7 @@ typedef uint64_t Bitboard;
 #define ALL_RANK				8																	// all ranks
 #define ALL_FILE				8																	// all files
 #define ALL_DIAGONAL			15																	// all diagonals
+#define ALL_SLIDER_ATTACKS      256																	// all sliders attacks per orientation
 #define SqBB(S)					0x1ULL << (int)S													// Encode a square enum to a bitboard
 #define Sq2Bb(X)				squareToBitboard[X] 												// square to bitboard macro
 
@@ -58,7 +59,6 @@ typedef uint64_t Bitboard;
 #define FULL_BB						 0xFFFFFFFFFFFFFFFFULL
 #define EMPTY_BB					 0x0ULL
 
-//#define bitsBetween(BB,S1,S2)		((S2>S1? ((squareToBitboard[S2]|(squareToBitboard[S2]-squareToBitboard[S1]))) : ((squareToBitboard[S1]|(squareToBitboard[S1]-squareToBitboard[S2]))) )  & BB)
 #define bitsBetween(BB,S1,S2)		(((squareToBitboard[S2]|(squareToBitboard[S2]-squareToBitboard[S1]))) & BB)
 
 // squares
@@ -110,27 +110,27 @@ enum PieceTypeByColor {
 };
 
 // array with piece codes
-static const char pieceChar[ALL_PIECE_TYPE_BY_COLOR+1] = "PNBRQKpnbrqk ";
+const char pieceChar[ALL_PIECE_TYPE_BY_COLOR+1] = "PNBRQKpnbrqk ";
 
 //color of a given piece
-static const PieceColor pieceColor[ALL_PIECE_TYPE_BY_COLOR] = {
+const PieceColor pieceColor[ALL_PIECE_TYPE_BY_COLOR] = {
 		WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, BLACK, BLACK, BLACK, BLACK, BLACK, BLACK, COLOR_NONE
 };
 
 // type of a given piece
-static const PieceType pieceType[ALL_PIECE_TYPE_BY_COLOR] = {
+const PieceType pieceType[ALL_PIECE_TYPE_BY_COLOR] = {
 		PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, PIECE_EMPTY
 };
 
 // make piece color by color and piece type
-static const PieceTypeByColor pieceTypeByColor[ALL_PIECE_COLOR][ALL_PIECE_TYPE] = {
+const PieceTypeByColor pieceTypeByColor[ALL_PIECE_COLOR][ALL_PIECE_TYPE] = {
 		{WHITE_PAWN, WHITE_KNIGHT, WHITE_BISHOP, WHITE_ROOK, WHITE_QUEEN, WHITE_KING, EMPTY},
 		{BLACK_PAWN, BLACK_KNIGHT, BLACK_BISHOP, BLACK_ROOK, BLACK_QUEEN, BLACK_KING, EMPTY},
 		{EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY}
 };
 
 //Encode square to String
-static const std::string squareToString[ALL_SQUARE]= {
+const std::string squareToString[ALL_SQUARE]= {
 		"a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1",
 		"a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
 		"a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3",
@@ -142,7 +142,7 @@ static const std::string squareToString[ALL_SQUARE]= {
 };
 
 // Rank of a given square
-static const Rank squareRank[ALL_SQUARE]={
+const Rank squareRank[ALL_SQUARE]={
 		RANK_1, RANK_1, RANK_1, RANK_1, RANK_1, RANK_1, RANK_1, RANK_1,
 		RANK_2, RANK_2, RANK_2, RANK_2, RANK_2, RANK_2, RANK_2, RANK_2,
 		RANK_3, RANK_3, RANK_3, RANK_3, RANK_3, RANK_3, RANK_3, RANK_3,
@@ -154,7 +154,7 @@ static const Rank squareRank[ALL_SQUARE]={
 };
 
 // File of a given square
-static const File squareFile[ALL_SQUARE]={
+const File squareFile[ALL_SQUARE]={
 		FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
 		FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
 		FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
@@ -166,7 +166,7 @@ static const File squareFile[ALL_SQUARE]={
 };
 
 //encode square by rank & file
-static const Square encodeSquare[ALL_RANK][ALL_FILE]= {
+const Square encodeSquare[ALL_RANK][ALL_FILE]= {
 		{A1, B1, C1, D1, E1, F1, G1, H1},
 		{A2, B2, C2, D2, E2, F2, G2, H2},
 		{A3, B3, C3, D3, E3, F3, G3, H3},
@@ -178,7 +178,7 @@ static const Square encodeSquare[ALL_RANK][ALL_FILE]= {
 };
 
 // represents square location within the bitboard - it's simply a power of 2 to distinguish the squares
-static const Bitboard squareToBitboard[ALL_SQUARE]={
+const Bitboard squareToBitboard[ALL_SQUARE]={
 		SqBB(A1), SqBB(B1), SqBB(C1), SqBB(D1), SqBB(E1), SqBB(F1), SqBB(G1), SqBB(H1),
 		SqBB(A2), SqBB(B2), SqBB(C2), SqBB(D2), SqBB(E2), SqBB(F2), SqBB(G2), SqBB(H2),
 		SqBB(A3), SqBB(B3), SqBB(C3), SqBB(D3), SqBB(E3), SqBB(F3), SqBB(G3), SqBB(H3),
@@ -190,19 +190,19 @@ static const Bitboard squareToBitboard[ALL_SQUARE]={
 };
 
 // bitboard for all ranks
-static const Bitboard rankBB[ALL_RANK]={
+const Bitboard rankBB[ALL_RANK]={
 		0x00000000000000FFULL,0x000000000000FF00ULL,0x0000000000FF0000ULL,0x00000000FF000000ULL,
 		0x000000FF00000000ULL,0x0000FF0000000000ULL,0x00FF000000000000ULL,0xFF00000000000000ULL
 };
 
 // bitboard for all files
-static const Bitboard fileBB[ALL_FILE]={
+const Bitboard fileBB[ALL_FILE]={
 		0x0101010101010101ULL,0x0202020202020202ULL,0x0404040404040404ULL,0x0808080808080808ULL,
 		0x1010101010101010ULL,0x2020202020202020ULL,0x4040404040404040ULL,0x8080808080808080ULL
 };
 
 // bitboard for all diagonal A1..H8
-static const Bitboard diagonalA1H8BB[ALL_DIAGONAL]={
+const Bitboard diagonalA1H8BB[ALL_DIAGONAL]={
 		Sq2Bb(A8),
 		Sq2Bb(B8)|Sq2Bb(A7),
 		Sq2Bb(C8)|Sq2Bb(B7)|Sq2Bb(A6),
@@ -220,7 +220,7 @@ static const Bitboard diagonalA1H8BB[ALL_DIAGONAL]={
 		Sq2Bb(H1) };
 
 // square to enum diagonal A1..H8
-static const DiagonalA1H8 squareToDiagonalA1H8[ALL_SQUARE]={
+const DiagonalA1H8 squareToDiagonalA1H8[ALL_SQUARE]={
 		H8_A1, B1_H7, C1_H6, D1_H5, E1_H4, F1_H3, G1_H2, H1_H1,
 		G8_A2, H8_A1, B1_H7, C1_H6, D1_H5, E1_H4, F1_H3, G1_H2,
 		F8_A3, G8_A2, H8_A1, B1_H7, C1_H6, D1_H5, E1_H4, F1_H3,
@@ -231,7 +231,7 @@ static const DiagonalA1H8 squareToDiagonalA1H8[ALL_SQUARE]={
 		A8_A8, B8_A7, C8_A6, D8_A5, E8_A4, F8_A3, G8_A2, H8_A1};
 
 // bitboard for all diagonal H1..A8
-static const Bitboard diagonalH1A8BB[ALL_DIAGONAL]={
+const Bitboard diagonalH1A8BB[ALL_DIAGONAL]={
 		Sq2Bb(A1),
 		Sq2Bb(B1)|Sq2Bb(A2),
 		Sq2Bb(C1)|Sq2Bb(B2)|Sq2Bb(A3),
@@ -249,7 +249,7 @@ static const Bitboard diagonalH1A8BB[ALL_DIAGONAL]={
 		Sq2Bb(H8) };
 
 // square to enum diagonal A1..H8
-static const DiagonalH1A8 squareToDiagonalH1A8[ALL_SQUARE]={
+const DiagonalH1A8 squareToDiagonalH1A8[ALL_SQUARE]={
 		A1_A1, B1_A2, C1_A3, D1_A4, E1_A5, F1_A6, G1_A7, H1_A8,
 		B1_A2, C1_A3, D1_A4, E1_A5, F1_A6, G1_A7, H1_A8, B8_H2,
 		C1_A3, D1_A4, E1_A5, F1_A6, G1_A7, H1_A8, B8_H2, C8_H3,
@@ -260,7 +260,7 @@ static const DiagonalH1A8 squareToDiagonalH1A8[ALL_SQUARE]={
 		H1_A8, B8_H2, C8_H3, D8_H4, E8_H5, F8_H6, G8_H7, H8_H8};
 
 // bitboard for rank attacks
-static const Bitboard rankAttacks[ALL_SQUARE]={
+const Bitboard rankAttacks[ALL_SQUARE]={
 		Sq2RA(A1), Sq2RA(B1), Sq2RA(C1), Sq2RA(D1), Sq2RA(E1), Sq2RA(F1), Sq2RA(G1), Sq2RA(H1),
 		Sq2RA(A2), Sq2RA(B2), Sq2RA(C2), Sq2RA(D2), Sq2RA(E2), Sq2RA(F2), Sq2RA(G2), Sq2RA(H2),
 		Sq2RA(A3), Sq2RA(B3), Sq2RA(C3), Sq2RA(D3), Sq2RA(E3), Sq2RA(F3), Sq2RA(G3), Sq2RA(H3),
@@ -271,7 +271,7 @@ static const Bitboard rankAttacks[ALL_SQUARE]={
 		Sq2RA(A8), Sq2RA(B8), Sq2RA(C8), Sq2RA(D8), Sq2RA(E8), Sq2RA(F8), Sq2RA(G8), Sq2RA(H8) };
 
 // bitboard for file attacks
-static const Bitboard fileAttacks[ALL_SQUARE]={
+const Bitboard fileAttacks[ALL_SQUARE]={
 		Sq2FA(A1), Sq2FA(B1), Sq2FA(C1), Sq2FA(D1), Sq2FA(E1), Sq2FA(F1), Sq2FA(G1), Sq2FA(H1),
 		Sq2FA(A2), Sq2FA(B2), Sq2FA(C2), Sq2FA(D2), Sq2FA(E2), Sq2FA(F2), Sq2FA(G2), Sq2FA(H2),
 		Sq2FA(A3), Sq2FA(B3), Sq2FA(C3), Sq2FA(D3), Sq2FA(E3), Sq2FA(F3), Sq2FA(G3), Sq2FA(H3),
@@ -282,7 +282,7 @@ static const Bitboard fileAttacks[ALL_SQUARE]={
 		Sq2FA(A8), Sq2FA(B8), Sq2FA(C8), Sq2FA(D8), Sq2FA(E8), Sq2FA(F8), Sq2FA(G8), Sq2FA(H8) };
 
 // bitboard for diagonal attacks
-static const Bitboard diagA1H8Attacks[ALL_SQUARE]={
+const Bitboard diagA1H8Attacks[ALL_SQUARE]={
 		Sq2A1(A1), Sq2A1(B1), Sq2A1(C1), Sq2A1(D1), Sq2A1(E1), Sq2A1(F1), Sq2A1(G1), Sq2A1(H1),
 		Sq2A1(A2), Sq2A1(B2), Sq2A1(C2), Sq2A1(D2), Sq2A1(E2), Sq2A1(F2), Sq2A1(G2), Sq2A1(H2),
 		Sq2A1(A3), Sq2A1(B3), Sq2A1(C3), Sq2A1(D3), Sq2A1(E3), Sq2A1(F3), Sq2A1(G3), Sq2A1(H3),
@@ -293,7 +293,7 @@ static const Bitboard diagA1H8Attacks[ALL_SQUARE]={
 		Sq2A1(A8), Sq2A1(B8), Sq2A1(C8), Sq2A1(D8), Sq2A1(E8), Sq2A1(F8), Sq2A1(G8), Sq2A1(H8) };
 
 // bitboard for diagonal attacks
-static const Bitboard diagH1A8Attacks[ALL_SQUARE]={
+const Bitboard diagH1A8Attacks[ALL_SQUARE]={
 		Sq2H1(A1), Sq2H1(B1), Sq2H1(C1), Sq2H1(D1), Sq2H1(E1), Sq2H1(F1), Sq2H1(G1), Sq2H1(H1),
 		Sq2H1(A2), Sq2H1(B2), Sq2H1(C2), Sq2H1(D2), Sq2H1(E2), Sq2H1(F2), Sq2H1(G2), Sq2H1(H2),
 		Sq2H1(A3), Sq2H1(B3), Sq2H1(C3), Sq2H1(D3), Sq2H1(E3), Sq2H1(F3), Sq2H1(G3), Sq2H1(H3),
@@ -304,7 +304,7 @@ static const Bitboard diagH1A8Attacks[ALL_SQUARE]={
 		Sq2H1(A8), Sq2H1(B8), Sq2H1(C8), Sq2H1(D8), Sq2H1(E8), Sq2H1(F8), Sq2H1(G8), Sq2H1(H8) };
 
 // bitboard for all Slider Attacks
-static const Bitboard allSliderAttacks[ALL_SQUARE]={
+const Bitboard allSliderAttacks[ALL_SQUARE]={
 		Sq2SL(A1), Sq2SL(B1), Sq2SL(C1), Sq2SL(D1), Sq2SL(E1), Sq2SL(F1), Sq2SL(G1), Sq2SL(H1),
 		Sq2SL(A2), Sq2SL(B2), Sq2SL(C2), Sq2SL(D2), Sq2SL(E2), Sq2SL(F2), Sq2SL(G2), Sq2SL(H2),
 		Sq2SL(A3), Sq2SL(B3), Sq2SL(C3), Sq2SL(D3), Sq2SL(E3), Sq2SL(F3), Sq2SL(G3), Sq2SL(H3),
@@ -315,7 +315,7 @@ static const Bitboard allSliderAttacks[ALL_SQUARE]={
 		Sq2SL(A8), Sq2SL(B8), Sq2SL(C8), Sq2SL(D8), Sq2SL(E8), Sq2SL(F8), Sq2SL(G8), Sq2SL(H8) };
 
 // bitboard for all knight attacks
-static const Bitboard knightAttacks[ALL_SQUARE]={
+const Bitboard knightAttacks[ALL_SQUARE]={
 		0x0000000000020400ULL,0x0000000000050800ULL,0x00000000000a1100ULL,0x0000000000142200ULL,0x0000000000284400ULL,0x0000000000508800ULL,0x0000000000a01000ULL,0x0000000000402000ULL,
 		0x0000000002040004ULL,0x0000000005080008ULL,0x000000000a110011ULL,0x0000000014220022ULL,0x0000000028440044ULL,0x0000000050880088ULL,0x00000000a0100010ULL,0x0000000040200020ULL,
 		0x0000000204000402ULL,0x0000000508000805ULL,0x0000000a1100110aULL,0x0000001422002214ULL,0x0000002844004428ULL,0x0000005088008850ULL,0x000000a0100010a0ULL,0x0000004020002040ULL,
@@ -326,7 +326,7 @@ static const Bitboard knightAttacks[ALL_SQUARE]={
 		0x0004020000000000ULL,0x0008050000000000ULL,0x00110a0000000000ULL,0x0022140000000000ULL,0x0044280000000000ULL,0x0088500000000000ULL,0x0010a00000000000ULL,0x0020400000000000ULL};
 
 // bitboard for all white pawn attacks
-static const Bitboard whitePawnAttacks[ALL_SQUARE]={
+const Bitboard whitePawnAttacks[ALL_SQUARE]={
 		0x0000000000000300ULL,0x0000000000000700ULL,0x0000000000000e00ULL,0x0000000000001c00ULL,0x0000000000003800ULL,0x0000000000007000ULL,0x000000000000e000ULL,0x000000000000c000ULL,
 		0x0000000001030000ULL,0x0000000002070000ULL,0x00000000040e0000ULL,0x00000000081c0000ULL,0x0000000010380000ULL,0x0000000020700000ULL,0x0000000040e00000ULL,0x0000000080c00000ULL,
 		0x0000000003000000ULL,0x0000000007000000ULL,0x000000000e000000ULL,0x000000001c000000ULL,0x0000000038000000ULL,0x0000000070000000ULL,0x00000000e0000000ULL,0x00000000c0000000ULL,
@@ -337,7 +337,7 @@ static const Bitboard whitePawnAttacks[ALL_SQUARE]={
 		0x0000000000000000ULL,0x0000000000000000ULL,0x0000000000000000ULL,0x0000000000000000ULL,0x0000000000000000ULL,0x0000000000000000ULL,0x0000000000000000ULL,0x0000000000000000ULL};
 
 // bitboard for all black pawn attacks
-static const Bitboard blackPawnAttacks[ALL_SQUARE]={
+const Bitboard blackPawnAttacks[ALL_SQUARE]={
 		0x0000000000000000ULL,0x0000000000000000ULL,0x0000000000000000ULL,0x0000000000000000ULL,0x0000000000000000ULL,0x0000000000000000ULL,0x0000000000000000ULL,0x0000000000000000ULL,
 		0x0000000000000003ULL,0x0000000000000007ULL,0x000000000000000eULL,0x000000000000001cULL,0x0000000000000038ULL,0x0000000000000070ULL,0x00000000000000e0ULL,0x00000000000000c0ULL,
 		0x0000000000000300ULL,0x0000000000000700ULL,0x0000000000000e00ULL,0x0000000000001c00ULL,0x0000000000003800ULL,0x0000000000007000ULL,0x000000000000e000ULL,0x000000000000c000ULL,
@@ -348,7 +348,7 @@ static const Bitboard blackPawnAttacks[ALL_SQUARE]={
 		0x0003000000000000ULL,0x0007000000000000ULL,0x000e000000000000ULL,0x001c000000000000ULL,0x0038000000000000ULL,0x0070000000000000ULL,0x00e0000000000000ULL,0x00c0000000000000ULL};
 
 // bitboard for all adjacent squares
-static const Bitboard adjacentSquares[ALL_SQUARE]={
+const Bitboard adjacentSquares[ALL_SQUARE]={
 		0x0000000000000302ULL,0x0000000000000705ULL,0x0000000000000e0aULL,0x0000000000001c14ULL,0x0000000000003828ULL,0x0000000000007050ULL,0x000000000000e0a0ULL,0x000000000000c040ULL,
 		0x0000000000030203ULL,0x0000000000070507ULL,0x00000000000e0a0eULL,0x00000000001c141cULL,0x0000000000382838ULL,0x0000000000705070ULL,0x0000000000e0a0e0ULL,0x0000000000c040c0ULL,
 		0x0000000003020300ULL,0x0000000007050700ULL,0x000000000e0a0e00ULL,0x000000001c141c00ULL,0x0000000038283800ULL,0x0000000070507000ULL,0x00000000e0a0e000ULL,0x00000000c040c000ULL,
@@ -358,8 +358,11 @@ static const Bitboard adjacentSquares[ALL_SQUARE]={
 		0x0302030000000000ULL,0x0705070000000000ULL,0x0e0a0e0000000000ULL,0x1c141c0000000000ULL,0x3828380000000000ULL,0x7050700000000000ULL,0xe0a0e00000000000ULL,0xc040c00000000000ULL,
 		0x0203000000000000ULL,0x0507000000000000ULL,0x0a0e000000000000ULL,0x141c000000000000ULL,0x2838000000000000ULL,0x5070000000000000ULL,0xa0e0000000000000ULL,0x40c0000000000000ULL};
 
+// bitboard for all bishop attacks
+//static const Bitboard bishopAttacks[ALL_SQUARE][ALL_SLIDER_ATTACKS];
+
 // upper bound bitboard mask
-static const Bitboard upperMaskBitboard[ALL_SQUARE]={
+const Bitboard upperMaskBitboard[ALL_SQUARE]={
 		Sq2UM(A1), Sq2UM(B1), Sq2UM(C1), Sq2UM(D1), Sq2UM(E1), Sq2UM(F1), Sq2UM(G1), Sq2UM(H1),
 		Sq2UM(A2), Sq2UM(B2), Sq2UM(C2), Sq2UM(D2), Sq2UM(E2), Sq2UM(F2), Sq2UM(G2), Sq2UM(H2),
 		Sq2UM(A3), Sq2UM(B3), Sq2UM(C3), Sq2UM(D3), Sq2UM(E3), Sq2UM(F3), Sq2UM(G3), Sq2UM(H3),
@@ -380,9 +383,100 @@ static const Bitboard lowerMaskBitboard[ALL_SQUARE]={
 		Sq2LM(A7), Sq2LM(B7), Sq2LM(C7), Sq2LM(D7), Sq2LM(E7), Sq2LM(F7), Sq2LM(G7), Sq2LM(H7),
 		Sq2LM(A8), Sq2LM(B8), Sq2LM(C8), Sq2LM(D8), Sq2LM(E8), Sq2LM(F8), Sq2LM(G8), Sq2LM(H8) };
 
-void printBitboard(Bitboard bb);
-Square bitboardToSquare(const Bitboard bitboard);
-Bitboard getIntersectSquares(Square squarea, Square squareb);
-void setNearBlocker(const Bitboard mask, const Square start, Square& minor, Square& major);
-Square extractLSB(Bitboard& bitboard);
+// bits between to squares
+extern Bitboard bitsBetweenSquares[ALL_SQUARE][ALL_SQUARE];
+
+extern void printBitboard(Bitboard bb);
+
+extern void initializeBitboards();
+
+extern Bitboard getIntersectSquares(Square squarea, Square squareb);
+
+inline Bitboard getBitsBetween(Square a, Square b) {
+	return  bitsBetweenSquares[a][b];
+}
+
+// get the bit index from a bitboard
+inline Square bitboardToSquare(const Bitboard& bitboard) {
+
+	unsigned int square = 0;
+	unsigned char ret = _BitScanForward(&square, bitboard);
+
+	if (!ret) {
+		return Square(NONE);
+	}
+
+	return Square( square );
+
+}
+
+// lookup and set the nearest bits given a starting square index in the bitboard - downside and upside
+inline void setNearBlocker(const Bitboard& mask, const Square start, Square& minor, Square& major)
+{
+
+	unsigned int minorInt=A1;
+	unsigned int majorInt=H8;
+	unsigned char ret;
+
+	if (!mask) {
+		minor=A1;
+		major=H8;
+		return;
+	}
+
+	Bitboard lowerMask= mask & lowerMaskBitboard[start];
+	Bitboard upperMask= mask & upperMaskBitboard[start];
+
+	if (lowerMask) {
+		ret = _BitScanReverse(&minorInt, lowerMask);
+		if (!ret) {
+			minorInt=A1;
+		}
+	}
+	if (upperMask) {
+		ret = _BitScanForward(&majorInt, upperMask);
+		if (!ret) {
+			majorInt=H8;
+		}
+	}
+
+	if (minorInt<0) {
+		minorInt=A1;
+	}
+	minor = Square(minorInt);
+	major = Square(majorInt);
+}
+
+// extract least significant bit of a bitboard
+inline Square extractLSB(Bitboard& bitboard) {
+
+	if (!bitboard) {
+		return Square(NONE);
+	}
+
+	unsigned int square = 0;
+	unsigned char ret = _BitScanForward(&square, bitboard);
+
+	bitboard &= bitboard - 1;
+
+	if (!ret) {
+		return Square(NONE);
+	}
+
+	return Square( square );
+
+}
+
+inline void initializeBitboards() {
+
+	// initialize bitsBetween
+	for(int x=A1;x<=H8;x++) {
+		for(int y=A1;y<=H8;y++) {
+			bitsBetweenSquares[x][y] = getIntersectSquares(Square(x), Square(y));
+		//	std::cout << squareToString[x] << "-" << squareToString[y] << std::endl;
+		//	printBitboard(bitsBetweenSquares[x][y]);
+		}
+	}
+}
+
 #endif /* BITBOARD_H_ */

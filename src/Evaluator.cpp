@@ -39,7 +39,6 @@ const int Evaluator::evaluate(Board& board) {
 	int material = evalMaterial(board);
 	int mobility = evalMobility(board, board.getSideToMove()) - evalMobility(board, board.flipSide(board.getSideToMove()));
 	// ...
-
 	//std::cout << "material: " << material << std::endl;
 	//std::cout << "mobility: " << mobility << std::endl;
 	return material+mobility;

@@ -410,8 +410,9 @@ inline bool Board::canCastle(const PieceColor color, const CastleRight castleRig
 	if (castleSquare[color][castleRight]&getAllPieces()) { // pieces interposing king & rooks?
 		return false;
 	}
+
 	Bitboard castle=getPiecesByType(makePiece(color,KING))|(castleSquare[color][castleRight]);
-	if (isAttacked(castle,color)) { // squares through castle & king destination attacked?
+	if (isAttacked(castle,flipSide(color))) { // squares through castle & king destination attacked?
 		return false;
 	}
 	return true;
@@ -612,10 +613,17 @@ inline const Bitboard Board::getRookAttacks(const Square square, const Bitboard 
 	Square minor;
 	Square major;
 
+/*	setNearBlocker(fileAttacks[square] & occupied , square, minor, major);
+	Bitboard file = getBitsBetween(minor, major);
+	setNearBlocker(rankAttacks[square] & occupied , square, minor, major);
+	Bitboard rank = getBitsBetween(minor, major);*/
+
 	setNearBlocker(fileAttacks[square] & occupied , square, minor, major);
 	Bitboard file = bitsBetween(fileAttacks[square], minor, major) ;
+	//assert(getBitsBetween(minor, major)==file);
 	setNearBlocker(rankAttacks[square] & occupied , square, minor, major);
 	Bitboard rank = bitsBetween(rankAttacks[square], minor, major) ;
+	//assert(getBitsBetween(minor, major)==rank);
 
 	return file | rank;
 }
@@ -633,8 +641,25 @@ inline const Bitboard Board::getBishopAttacks(const Square square, const Bitboar
 
 	setNearBlocker(diagA1H8Attacks[square] & occupied, square, minor, major);
 	Bitboard diagA1H8 = bitsBetween(diagA1H8Attacks[square], minor, major);
+	//if (getBitsBetween(minor, major)!=diagA1H8) {
+	/*	printBoard();
+	    printBitboard(diagA1H8Attacks[square] & occupied);
+	    std::cout << squareToString[minor] << " - " << squareToString[Square(minor)] << "-" << squareToString[Square(major)] << std::endl;
+		printBitboard(getBitsBetween(minor, major));
+		printBitboard(diagA1H8);
+		printBitboard(getBitsBetween(C3, F6));*/
+
+	//}
+	//assert(getBitsBetween(minor, major)==diagA1H8);
 	setNearBlocker(diagH1A8Attacks[square] & occupied, square, minor, major);
 	Bitboard diagH1A8 = bitsBetween(diagH1A8Attacks[square], minor, major);
+	//assert(getBitsBetween(minor, major)==diagH1A8);
+
+
+/*	setNearBlocker(diagA1H8Attacks[square] & occupied, square, minor, major);
+	Bitboard diagA1H8 = getBitsBetween(minor, major);
+	setNearBlocker(diagH1A8Attacks[square] & occupied, square, minor, major);
+	Bitboard diagH1A8 = getBitsBetween(minor, major);*/
 
 	return diagA1H8 | diagH1A8;
 }

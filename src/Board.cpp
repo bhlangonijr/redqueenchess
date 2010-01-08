@@ -93,7 +93,7 @@ void Board::genericTest() {
 	uint32_t start = getTickCount();
 	PieceColor color = getSideToMove();
 	int counter=0;
-	for (int x=0;x<1;x++)
+	for (int x=0;x<1000000;x++)
 	{
 
 		MoveIterator moves;
@@ -102,7 +102,7 @@ void Board::genericTest() {
 		while (moves.hasNext()) {
 
 			MoveIterator::Move move = moves.next();
-			std::cout << counter << " - " << move.toString() << std::endl;
+			//std::cout << counter << " - " << move.toString() << std::endl;
 			MoveBackup backup;
 			doMove(move,backup);
 			//printBoard();
@@ -112,9 +112,6 @@ void Board::genericTest() {
 		}
 
 	}
-	unsigned int square;
-
-	unsigned char ret = _BitScanForward(&square, squareToBitboard[A1]);
 
 	std::cout << "sideToMove: "<< color << std::endl;
 	std::cout << "Key inc:  " << getKey() << std::endl;
@@ -122,8 +119,7 @@ void Board::genericTest() {
 	std::cout << "Time: " << (this->getTickCount()-start) << std::endl;
 	std::cout << "Perft: " << (counter) << std::endl;
 	std::cout << "MoveCounter: " << getMoveCounter() << std::endl;
-
-	std::cout << "index of A1: " << square << " ret " << ret << std::endl;
+	std::cout << "NPS: " << (counter/((this->getTickCount()-start)/1000) ) << std::endl;
 
 
 }
