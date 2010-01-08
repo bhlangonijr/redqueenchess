@@ -510,10 +510,10 @@ inline const bool Board::isAttacked(const PieceColor color, const PieceType type
 		return 	(getBishopAttacks(from) & (getPiecesByType(makePiece(other,BISHOP)) |
 				getPiecesByType(makePiece(other,QUEEN)))) ||
 				(getRookAttacks(from) & (getPiecesByType(makePiece(other,ROOK)) |
-						getPiecesByType(makePiece(other,QUEEN)))) ||
-						(getKnightAttacks(from) & getPiecesByType(makePiece(other,KNIGHT))) ||
-						(getPawnAttacks(from) & getPiecesByType(makePiece(other,PAWN))) ||
-						(getKingAttacks(from) & getPiecesByType(makePiece(other,KING)));
+				getPiecesByType(makePiece(other,QUEEN)))) ||
+				(getKnightAttacks(from) & getPiecesByType(makePiece(other,KNIGHT))) ||
+				(getPawnAttacks(from) & getPiecesByType(makePiece(other,PAWN))) ||
+				(getKingAttacks(from) & getPiecesByType(makePiece(other,KING)));
 	}
 
 	return false;
@@ -527,13 +527,17 @@ inline const bool Board::isAttacked(const Bitboard occupation, const PieceColor 
 
 	while ( from!=NONE ) {
 
-		return (getBishopAttacks(from) & (getPiecesByType(makePiece(attackingSide,BISHOP)) |
-				getPiecesByType(makePiece(attackingSide,QUEEN)))) ||
-				(getRookAttacks(from) & (getPiecesByType(makePiece(attackingSide,ROOK)) |
-						getPiecesByType(makePiece(attackingSide,QUEEN)))) ||
-						(getKnightAttacks(from) & getPiecesByType(makePiece(attackingSide,KNIGHT))) ||
-						(getPawnAttacks(from) & getPiecesByType(makePiece(attackingSide,PAWN))) ||
-						(getKingAttacks(from) & getPiecesByType(makePiece(attackingSide,KING)));
+		bool result= (getBishopAttacks(from) & (getPiecesByType(makePiece(attackingSide,BISHOP)) |
+					 getPiecesByType(makePiece(attackingSide,QUEEN)))) ||
+					 (getRookAttacks(from) & (getPiecesByType(makePiece(attackingSide,ROOK)) |
+					 getPiecesByType(makePiece(attackingSide,QUEEN)))) ||
+					 (getKnightAttacks(from) & getPiecesByType(makePiece(attackingSide,KNIGHT))) ||
+					 (getPawnAttacks(from) & getPiecesByType(makePiece(attackingSide,PAWN))) ||
+					 (getKingAttacks(from) & getPiecesByType(makePiece(attackingSide,KING)));
+
+		if (result) {
+			return true;
+		}
 
 		from = extractLSB(pieces);
 
@@ -556,16 +560,16 @@ inline const bool Board::isDraw() {
 		int repetition = 0;
 
 		for (int x=1;x<getMoveCounter();x++) {
-			if (currentBoard.keyHistory[getMoveCounter()]==currentBoard.keyHistory[x]) {
+			if (getKey()==currentBoard.keyHistory[x]) {
 				repetition++;
 			}
-			if (repetition>=3) {
-				return true;
-			}
+		}
+		if (repetition>=3) {
+			return true;
 		}
 	}
 
-	return getHalfMoveCounter()>=100;
+	return getHalfMoveCounter()>=50;
 
 }
 

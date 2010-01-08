@@ -204,7 +204,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 		int score = qSearch(board, alpha, beta, maxQuiescenceSearchDepth, &line);
 		SearchAgent::getInstance()->hashPut(board,score,depth,0,SearchAgent::LOWER,MoveIterator::Move());
 #if SHOW_STATS
-			stats.ttLower++;
+		stats.ttLower++;
 #endif
 		return score;
 	}
@@ -221,7 +221,13 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 #if SHOW_STATS
 				stats.ttHits++;
 #endif
-				return hashData.value;
+				score = hashData.value;
+				if (score >= maxScore) {
+					score -= (_depth-depth);
+				} else if (score <= -maxScore) {
+					score += (_depth-depth);
+				}
+				return score;
 			}
 		}
 	}
@@ -239,6 +245,12 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 #if SHOW_STATS
 			stats.nullMoveHits++;
 #endif
+			if (score >= maxScore) {
+				score -= (_depth-depth);
+			} else if (score <= -maxScore) {
+				score += (_depth-depth);
+			}
+
 			SearchAgent::getInstance()->hashPut(board,score,depth,0,SearchAgent::LOWER,MoveIterator::Move());
 			return score;
 		}
@@ -313,6 +325,13 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 #if SHOW_STATS
 			stats.ttLower++;
 #endif
+
+			if (score >= maxScore) {
+				score -= (_depth-depth);
+			} else if (score <= -maxScore) {
+				score += (_depth-depth);
+			}
+
 			SearchAgent::getInstance()->hashPut(board,score,depth,0,SearchAgent::LOWER,move);
 			return beta;
 		}
@@ -333,7 +352,15 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 		stats.ttUpper++;
 	}
 #endif
-	SearchAgent::getInstance()->hashPut(board,alpha,depth,0,(alpha>oldAlpha ? SearchAgent::EXACT : SearchAgent::UPPER),pv->moves[0]);
+
+	score = alpha;
+	if (score >= maxScore) {
+		score -= (_depth-depth);
+	} else if (score <= -maxScore) {
+		score += (_depth-depth);
+	}
+
+	SearchAgent::getInstance()->hashPut(board,score,depth,0,(alpha>oldAlpha ? SearchAgent::EXACT : SearchAgent::UPPER),pv->moves[0]);
 
 	return alpha;
 
