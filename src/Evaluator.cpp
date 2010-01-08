@@ -70,13 +70,13 @@ const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
 	Bitboard pieces = EMPTY_BB;
 	Square from = NONE;
-	Bitboard attacks = EMPTY;
+	int count=0;
 
 	pieces = board.getPiecesByType(board.makePiece(color,BISHOP));
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		attacks |= board.getBishopAttacks(from);
+		count+=_BitCount(board.getBishopAttacks(from));
 		from = extractLSB(pieces);
 	}
 
@@ -84,7 +84,7 @@ const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		attacks |= board.getRookAttacks(from);
+		count+=_BitCount(board.getRookAttacks(from));
 		from = extractLSB(pieces);
 	}
 
@@ -92,10 +92,10 @@ const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		attacks |= board.getQueenAttacks(from);
+		count+=_BitCount(board.getQueenAttacks(from));
 		from = extractLSB(pieces);
 	}
 
-	return _BitCount(attacks);
+	return count;
 }
 

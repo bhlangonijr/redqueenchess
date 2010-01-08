@@ -46,22 +46,3 @@ void printBitboard(Bitboard bb) {
 	std::cout << std::endl;
 
 }
-
-// get squares between squarea and squareb
-Bitboard getIntersectSquares(Square squarea, Square squareb) {
-
-	Bitboard squares=EMPTY_BB;
-
-	if (squareRank[squarea]==squareRank[squareb]) {
-		squares = rankBB[squareRank[squarea]];
-	} else if (squareFile[squarea]==squareFile[squareb]){
-		squares = fileBB[squareFile[squarea]];
-	} else if (squareToDiagonalA1H8[squarea]==squareToDiagonalA1H8[squareb]) {
-		squares = diagonalA1H8BB[squareToDiagonalA1H8[squarea]];
-	} else if (squareToDiagonalH1A8[squarea]==squareToDiagonalH1A8[squareb]) {
-		squares = diagonalH1A8BB[squareToDiagonalH1A8[squarea]];
-	}
-
-	return bitsBetween(squares, MIN(squarea, squareb), MAX(squarea, squareb));
-}
-

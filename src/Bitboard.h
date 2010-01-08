@@ -383,18 +383,7 @@ static const Bitboard lowerMaskBitboard[ALL_SQUARE]={
 		Sq2LM(A7), Sq2LM(B7), Sq2LM(C7), Sq2LM(D7), Sq2LM(E7), Sq2LM(F7), Sq2LM(G7), Sq2LM(H7),
 		Sq2LM(A8), Sq2LM(B8), Sq2LM(C8), Sq2LM(D8), Sq2LM(E8), Sq2LM(F8), Sq2LM(G8), Sq2LM(H8) };
 
-// bits between to squares
-extern Bitboard bitsBetweenSquares[ALL_SQUARE][ALL_SQUARE];
-
 extern void printBitboard(Bitboard bb);
-
-extern void initializeBitboards();
-
-extern Bitboard getIntersectSquares(Square squarea, Square squareb);
-
-inline Bitboard getBitsBetween(Square a, Square b) {
-	return  bitsBetweenSquares[a][b];
-}
 
 // get the bit index from a bitboard
 inline Square bitboardToSquare(const Bitboard& bitboard) {
@@ -411,40 +400,40 @@ inline Square bitboardToSquare(const Bitboard& bitboard) {
 }
 
 // lookup and set the nearest bits given a starting square index in the bitboard - downside and upside
-inline void setNearBlocker(const Bitboard& mask, const Square start, Square& minor, Square& major)
+inline Bitboard getSliderAttacks(const Bitboard& attacks, const Bitboard& mask, const Square start)
 {
-
-	unsigned int minorInt=A1;
-	unsigned int majorInt=H8;
+	unsigned int minor=A1;
+	unsigned int major=H8;
 	unsigned char ret;
 
-	if (!mask) {
-		minor=A1;
-		major=H8;
-		return;
+	Bitboard occ= mask & attacks;
+
+	if (!occ) {
+		return attacks;
 	}
 
-	Bitboard lowerMask= mask & lowerMaskBitboard[start];
-	Bitboard upperMask= mask & upperMaskBitboard[start];
+	Bitboard lowerMask= occ & lowerMaskBitboard[start];
+	Bitboard upperMask= occ & upperMaskBitboard[start];
 
 	if (lowerMask) {
-		ret = _BitScanReverse(&minorInt, lowerMask);
+		ret = _BitScanReverse(&minor, lowerMask);
 		if (!ret) {
-			minorInt=A1;
+			minor=A1;
 		}
 	}
 	if (upperMask) {
-		ret = _BitScanForward(&majorInt, upperMask);
+		ret = _BitScanForward(&major, upperMask);
 		if (!ret) {
-			majorInt=H8;
+			major=H8;
 		}
 	}
 
-	if (minorInt<0) {
-		minorInt=A1;
+	if (minor<0) {
+		minor=A1;
 	}
-	minor = Square(minorInt);
-	major = Square(majorInt);
+
+	return bitsBetween(attacks, minor, major);
+
 }
 
 // extract least significant bit of a bitboard
@@ -465,18 +454,6 @@ inline Square extractLSB(Bitboard& bitboard) {
 
 	return Square( square );
 
-}
-
-inline void initializeBitboards() {
-
-	// initialize bitsBetween
-	for(int x=A1;x<=H8;x++) {
-		for(int y=A1;y<=H8;y++) {
-			bitsBetweenSquares[x][y] = getIntersectSquares(Square(x), Square(y));
-		//	std::cout << squareToString[x] << "-" << squareToString[y] << std::endl;
-		//	printBitboard(bitsBetweenSquares[x][y]);
-		}
-	}
 }
 
 #endif /* BITBOARD_H_ */
