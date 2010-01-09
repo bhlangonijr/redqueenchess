@@ -202,6 +202,11 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 	if (depth==0||stop()) {
 		//return evaluator.evaluate(board);
 		int score = qSearch(board, alpha, beta, maxQuiescenceSearchDepth, &line);
+		if (score >= maxScore) {
+			score -= (_depth-depth);
+		} else if (score <= -maxScore) {
+			score += (_depth-depth);
+		}
 		SearchAgent::getInstance()->hashPut(board,score,depth,0,SearchAgent::LOWER,MoveIterator::Move());
 #if SHOW_STATS
 		stats.ttLower++;
