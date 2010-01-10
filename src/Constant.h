@@ -31,8 +31,8 @@ namespace Constant {
 
 const static std::string ENGINE_NAME = "Redqueen";
 const static std::string ENGINE_AUTHOR = "Ben-Hur Carlos Vieira Langoni Junior";
-const static std::string ENGINE_VERSION = "0.1";
-const static std::string ENGINE_COPYRIGHT = ENGINE_NAME + ". Copyright (C) 2008-2009 " + ENGINE_AUTHOR + ". ";
+const static std::string ENGINE_VERSION = "0.2";
+const static std::string ENGINE_COPYRIGHT = ENGINE_NAME + ". Copyright (C) 2008-2010 " + ENGINE_AUTHOR + ". ";
 
 }
 
