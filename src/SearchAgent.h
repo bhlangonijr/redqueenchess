@@ -52,13 +52,12 @@ public:
 	};
 
 	struct HashData {
-		HashData() : value(0), depth(0), generation(0), flag(LOWER)  {};
-		HashData(const int& _value, const uint32_t& _depth, const uint32_t& _generation, const NodeFlag& _flag, const MoveIterator::Move& _move) :
-			value(_value), depth(_depth), generation(_generation), flag(_flag), move(_move)  {};
-		HashData(const HashData& hashData) : value(hashData.value), depth(hashData.depth), generation(hashData.generation), flag(hashData.flag), move(hashData.move)  {};
+		HashData() : value(0), depth(0), flag(LOWER)  {};
+		HashData(const int& _value, const uint32_t& _depth, const NodeFlag& _flag, const MoveIterator::Move& _move) :
+			value(_value), depth(_depth), flag(_flag), move(_move)  {};
+		HashData(const HashData& hashData) : value(hashData.value), depth(hashData.depth), flag(hashData.flag), move(hashData.move)  {};
 		int value;
 		uint32_t depth;
-		uint32_t generation;
 		NodeFlag flag;
 		MoveIterator::Move move;
 	};
@@ -89,96 +88,124 @@ public:
 	void startSearch();
 	void stopSearch();
 
-	const size_t getHashSize() const {
+	inline const size_t getHashSize() const {
 		return hashSize;
 	}
-	void setHashSize(size_t _hashSize) {
+
+	inline void setHashSize(size_t _hashSize) {
 		hashSize = _hashSize;
 	}
 
-	const int getThreadNumber() const {
+	inline const int getThreadNumber() const {
 		return threadNumber;
 	}
-	void setThreadNumber(int _threadNumber) {
+
+	inline void setThreadNumber(int _threadNumber) {
 		threadNumber = _threadNumber;
 	}
 
-	const uint32_t getWhiteTime() const {
+	inline const uint32_t getWhiteTime() const {
 		return whiteTime;
 	}
-	void setWhiteTime(uint32_t _whiteTime) {
+
+	inline void setWhiteTime(uint32_t _whiteTime) {
 		whiteTime = _whiteTime;
 	}
 
-	const uint32_t getWhiteIncrement() const {
+	inline const uint32_t getWhiteIncrement() const {
 		return whiteIncrement;
 	}
-	void setWhiteIncrement(uint32_t _whiteIncrement) {
+
+	inline void setWhiteIncrement(uint32_t _whiteIncrement) {
 		whiteIncrement = _whiteIncrement;
 	}
 
-	const uint32_t getBlackTime() const {
+	inline const uint32_t getBlackTime() const {
 		return blackTime;
 	}
-	void setBlackTime(uint32_t _blackTime) {
+
+	inline void setBlackTime(uint32_t _blackTime) {
 		blackTime = _blackTime;
 	}
 
-	const uint32_t getBlackIncrement() const {
+	inline const uint32_t getBlackIncrement() const {
 		return blackIncrement;
 	}
-	void setBlackIncrement(uint32_t _blackIncrement) {
+
+	inline void setBlackIncrement(uint32_t _blackIncrement) {
 		blackIncrement = _blackIncrement;
 	}
 
-	const int getDepth() const {
+	inline const int getDepth() const {
 		return depth;
 	}
-	void setDepth(int _depth) {
+
+	inline void setDepth(int _depth) {
 		depth = _depth;
 	}
 
-	const uint32_t getMovesToGo() const {
+	inline const uint32_t getMovesToGo() const {
 		return movesToGo;
 	}
-	void setMovesToGo(uint32_t _movesToGo) {
+
+	inline void setMovesToGo(uint32_t _movesToGo) {
 		movesToGo = _movesToGo;
 	}
 
-	const uint32_t getMoveTime() const {
+	inline const uint32_t getMoveTime() const {
 		return moveTime;
 	}
-	void setMoveTime(uint32_t _moveTime) {
+
+	inline void setMoveTime(uint32_t _moveTime) {
 		moveTime = _moveTime;
 	}
 
-	const bool getInfinite() const {
+	inline const bool getInfinite() const {
 		return infinite;
 	}
-	void setInfinite(int _infinite) {
+
+	inline void setInfinite(int _infinite) {
 		infinite = _infinite;
 	}
-	void clearHash() {
+
+	inline void clearHash() {
 		if (transTable.size()>getActiveHash()) {
 			transTable[getActiveHash()]->clearHash();
 		}
 	}
-	bool hashPut(const Board& board, const int& value, const uint32_t& depth, const uint32_t& generation, const NodeFlag& flag, const MoveIterator::Move& move) {
+
+	inline bool hashPut(const Board& board, int value, const uint32_t& depth, const uint32_t ply, const int maxScore, const NodeFlag& flag, const MoveIterator::Move& move) {
 		if (transTable.size()>getActiveHash()) {
-			return transTable[getActiveHash()]->hashPut(board.getKey(), HashData(value,depth,generation,flag,move));
+
+			if (value >= maxScore) {
+				value -= ply;
+			} else if (value <= -maxScore) {
+				value += ply;
+			}
+
+			return transTable[getActiveHash()]->hashPut(board.getKey(), HashData(value,depth,flag,move));
 		}
 		return false;
 	}
 
-	bool hashGet(const Key _key, HashData& hashData) {
+	inline bool hashGet(const Key _key, HashData& hashData, const uint32_t ply, const int maxScore) {
 		if (transTable.size()>getActiveHash()) {
-			return transTable[getActiveHash()]->hashGet(_key, hashData);
+
+			bool result = transTable[getActiveHash()]->hashGet(_key, hashData);
+
+			if (hashData.value >= maxScore) {
+				hashData.value -= ply;
+			} else if (hashData.value <= -maxScore) {
+				hashData.value += ply;
+			}
+
+			return result;
 		}
 		return false;
 
 	}
 
-	bool isHashFull() {
+	inline bool isHashFull() {
 
 		if (transTable.size()>getActiveHash()) {
 			return transTable[getActiveHash()]->isHashFull();
@@ -186,7 +213,7 @@ public:
 		return true;
 	}
 
-	int hashFull() {
+	inline int hashFull() {
 
 		if (transTable.size()>getActiveHash()) {
 			return transTable[getActiveHash()]->hashFull();
@@ -194,7 +221,7 @@ public:
 		return true;
 	}
 
-	void addTranspositionTable(TranspositionTable<Key,HashData>* table) {
+	inline void addTranspositionTable(TranspositionTable<Key,HashData>* table) {
 		transTable.push_back(table);
 	}
 

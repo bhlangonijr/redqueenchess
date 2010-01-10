@@ -127,7 +127,7 @@ int SimplePVSearch::idSearch(Board& board) {
 				std::cout << "info currmove " << move.toString() << " currmovenumber " << moveCounter << std::endl;
 			}
 
-			int score = -pvSearch(board, -maxScore, -bestScore, depth-1, &pv, true);
+			int score = -pvSearch(board, -maxScore, -bestScore, depth-1, 0, &pv, true);
 			move.score=score;
 
 #if DEBUG_ID
@@ -185,7 +185,7 @@ int SimplePVSearch::idSearch(Board& board) {
 }
 
 // principal variation search
-int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv, const bool allowNullMove) {
+int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, uint32_t ply, PvLine* pv, const bool allowNullMove) {
 
 #if PV_SEARCH
 	bool bSearch = true;
@@ -202,12 +202,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 	if (depth==0||stop()) {
 		//return evaluator.evaluate(board);
 		int score = qSearch(board, alpha, beta, maxQuiescenceSearchDepth, &line);
-		if (score >= maxScore) {
-			score -= (_depth-depth);
-		} else if (score <= -maxScore) {
-			score += (_depth-depth);
-		}
-		SearchAgent::getInstance()->hashPut(board,score,depth,0,SearchAgent::LOWER,MoveIterator::Move());
+		SearchAgent::getInstance()->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,MoveIterator::Move());
 #if SHOW_STATS
 		stats.ttLower++;
 #endif
@@ -218,7 +213,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 	int oldAlpha = alpha;
 	int score = 0;
 	SearchAgent::HashData hashData;
-	if (SearchAgent::getInstance()->hashGet(board.getKey(), hashData)) {
+	if (SearchAgent::getInstance()->hashGet(board.getKey(), hashData, ply, maxScore)) {
 		if (hashData.depth>=depth) {
 			if ((hashData.flag == SearchAgent::UPPER && hashData.value <= alpha) ||
 					(hashData.flag == SearchAgent::LOWER && hashData.value >= beta) ||
@@ -226,15 +221,14 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 #if SHOW_STATS
 				stats.ttHits++;
 #endif
-				score = hashData.value;
-				if (score >= maxScore) {
-					score -= (_depth-depth);
-				} else if (score <= -maxScore) {
-					score += (_depth-depth);
-				}
-				return score;
+
+				return hashData.value;
 			}
 		}
+	}
+
+	if (alpha>=beta) {
+		return alpha;
 	}
 
 	if (!board.isNotLegal() && beta < maxScore &&
@@ -243,20 +237,15 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 
 		MoveBackup backup;
 		board.doNullMove(backup);
-		score = -pvSearch(board, -beta, 1-beta, depth-1, &line, false);
+		score = -pvSearch(board, -beta, 1-beta, depth-1, ply+1, &line, false);
 		board.undoNullMove(backup);
 
 		if (score >= beta) {
 #if SHOW_STATS
 			stats.nullMoveHits++;
 #endif
-			if (score >= maxScore) {
-				score -= (_depth-depth);
-			} else if (score <= -maxScore) {
-				score += (_depth-depth);
-			}
 
-			SearchAgent::getInstance()->hashPut(board,score,depth,0,SearchAgent::LOWER,MoveIterator::Move());
+			SearchAgent::getInstance()->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,MoveIterator::Move());
 			return score;
 		}
 	}
@@ -264,6 +253,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 	MoveIterator moves;
 	board.generateAllMoves(moves, board.getSideToMove());
 	moves.first();
+	int moveCounter=0;
 #if CHECK_MOVE_GEN_ERRORS
 	Key key1 = old.generateKey();
 #endif
@@ -289,12 +279,12 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 #if PV_SEARCH
 		if ( bSearch ) {
 #endif
-			score = -pvSearch(board, -beta, -alpha, depth-1, &line, true);
+			score = -pvSearch(board, -beta, -alpha, depth-1, ply+1, &line, true);
 #if PV_SEARCH
 		} else {
-			score = -pvSearch(board, -alpha-1, -alpha, depth-1, &line, true);
+			score = -pvSearch(board, -alpha-1, -alpha, depth-1, ply+1, &line, true);
 			if ( score > alpha ) {
-				score = -pvSearch(board, -beta, -alpha, depth-1, &line, true);
+				score = -pvSearch(board, -beta, -alpha, depth-1, ply+1, &line, true);
 			}
 		}
 #endif
@@ -331,13 +321,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 			stats.ttLower++;
 #endif
 
-			if (score >= maxScore) {
-				score -= (_depth-depth);
-			} else if (score <= -maxScore) {
-				score += (_depth-depth);
-			}
-
-			SearchAgent::getInstance()->hashPut(board,score,depth,0,SearchAgent::LOWER,move);
+			SearchAgent::getInstance()->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,move);
 			return beta;
 		}
 
@@ -349,6 +333,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 			updatePv(pv, line, move);
 
 		}
+		moveCounter++;
 	}
 #if SHOW_STATS
 	if (alpha>oldAlpha) {
@@ -358,14 +343,11 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 	}
 #endif
 
-	score = alpha;
-	if (score >= maxScore) {
-		score -= (_depth-depth);
-	} else if (score <= -maxScore) {
-		score += (_depth-depth);
+	if (!moveCounter) {
+		return board.isAttacked(board.getSideToMove(),KING) ? -maxScore+ply : 0;
 	}
 
-	SearchAgent::getInstance()->hashPut(board,score,depth,0,(alpha>oldAlpha ? SearchAgent::EXACT : SearchAgent::UPPER),pv->moves[0]);
+	SearchAgent::getInstance()->hashPut(board,alpha,depth,ply,maxScore,(alpha>oldAlpha ? SearchAgent::EXACT : SearchAgent::UPPER),pv->moves[0]);
 
 	return alpha;
 

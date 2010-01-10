@@ -377,7 +377,7 @@ inline bool Board::canCastle(const PieceColor color, const CastleRight castleRig
 			return false;
 		}
 	}
-	if (color==WHITE) {
+	/*if (color==WHITE) {
 		if (castleRight==BOTH_SIDE_CASTLE) {
 			if (!(currentBoard.square[A1]==WHITE_ROOK&&currentBoard.square[H1]==WHITE_ROOK)) {
 				return false;
@@ -405,7 +405,7 @@ inline bool Board::canCastle(const PieceColor color, const CastleRight castleRig
 				return false;
 			}
 		}
-	}
+	}*/
 
 	if (castleSquare[color][castleRight]&getAllPieces()) { // pieces interposing king & rooks?
 		return false;
@@ -569,7 +569,7 @@ inline const bool Board::isDraw() {
 		}
 	}
 
-	return getHalfMoveCounter()>=50;
+	return getHalfMoveCounter()>=100;
 
 }
 

@@ -29,8 +29,6 @@
 #define MIN(x,y) (x<y?x:y)
 #define MAX(x,y) (x>y?x:y)
 
-Bitboard bitsBetweenSquares[ALL_SQUARE][ALL_SQUARE];
-
 // print a bitboard in a readble form
 void printBitboard(Bitboard bb) {
 

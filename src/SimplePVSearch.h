@@ -107,62 +107,57 @@ public:
 	virtual void search();
 	virtual int getScore();
 
-	const uint32_t getTickCount() {
+	inline const uint32_t getTickCount() {
 		return ((clock() * 1000) / CLOCKS_PER_SEC);
 	}
 
-	const bool isUpdateUci() const {
+	inline const bool isUpdateUci() const {
 		return _updateUci;
 	}
 
-	const void setUpdateUci(const bool value) {
+	inline const void setUpdateUci(const bool value) {
 		_updateUci = value;
 	}
 
-	const bool isSearchFixedDepth() const {
+	inline const bool isSearchFixedDepth() const {
 		return _searchFixedDepth;
 	}
 
-	const void setSearchFixedDepth(const bool value) {
+	inline const void setSearchFixedDepth(const bool value) {
 		_searchFixedDepth = value;
 	}
 
-	const bool isInfinite() const {
+	inline const bool isInfinite() const {
 		return _infinite;
 	}
 
-	const void setInfinite(const bool value) {
+	inline const void setInfinite(const bool value) {
 		_infinite = value;
 	}
 
-	const void setDepth(const uint32_t depth) {
+	inline const void setDepth(const uint32_t depth) {
 		_depth = depth;
 	}
 
-	const uint32_t getDepth() const {
+	inline const uint32_t getDepth() const {
 		return _depth;
 	}
 
-	const void setTimeToSearch(const uint32_t timeToSearch) {
+	inline const void setTimeToSearch(const uint32_t timeToSearch) {
 		_timeToSearch = timeToSearch;
 	}
 
-	const uint32_t getTimeToSearch() const {
+	inline const uint32_t getTimeToSearch() const {
 		return _timeToSearch;
 	}
 
-	const void setStartTime(const uint32_t startTime) {
+	inline const void setStartTime(const uint32_t startTime) {
 		_startTime = startTime;
 	}
 
-	const uint32_t getStartTime() const {
+	inline const uint32_t getStartTime() const {
 		return _startTime;
 	}
-
-	void addPv(const MoveIterator::Move move) {
-		pv.push_back(move);
-	}
-
 
 private:
 	Board& _board;
@@ -179,10 +174,8 @@ private:
 	Evaluator evaluator;
 	SearchStats stats;
 
-	std::vector<MoveIterator::Move> pv;
-
 	int idSearch(Board& board);
-	int pvSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv, const bool allowNullMove);
+	int pvSearch(Board& board, int alpha, int beta, uint32_t depth, uint32_t ply, PvLine* pv, const bool allowNullMove);
 	int qSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv);
 	const std::string pvLineToString(const PvLine* pv);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);

@@ -60,7 +60,7 @@ public:
 			score=move.score;
 		}
 
-		const std::string toString() const {
+		inline const std::string toString() const {
 			if (from==NONE || to==NONE ) {
 				return "";
 			}
