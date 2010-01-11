@@ -138,21 +138,28 @@ void SearchAgent::stopSearch() {
 
 const uint32_t SearchAgent::getTimeToSearch() {
 
+	static int gameSizeCheck=5;
+
 	if (this->getSearchMode()==SearchAgent::SEARCH_MOVETIME) {
 		return this->getMoveTime();
 	}
 
-	int time=board.getSideToMove()==WHITE ?  this->getWhiteTime() : this->getBlackTime();
+	int time=board.getSideToMove()==WHITE ?  this->getWhiteTime()-10 : this->getBlackTime()-10;
 	//uint32_t incTime=board.getSideToMove()==WHITE ? this->getWhiteIncrement() : this->getBlackIncrement();
 
-	int movesLeft = movesToGo>0?movesToGo : defaultGameSize-board.getMoveCounter();
-
-	if (movesLeft<=1) {
-		movesLeft=defaultGameSizeInc;
+	int movesLeft = defaultGameSize-board.getMoveCounter();
+	if (movesToGo>0) {
+		movesLeft = movesToGo;
+	} else {
+		int check = defaultGameSize / gameSizeCheck;
+		if (movesLeft <= check) {
+			movesLeft+=defaultGameSizeInc;
+		}
 	}
 
 	time /= movesLeft;
 
+	std::cout << "Time To Think: " << time << std::endl;
 	return time;
 
 }

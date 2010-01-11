@@ -26,7 +26,11 @@
 
 #include "MoveIterator.h"
 
-MoveIterator::MoveIterator() : _size(0), idx(0) {
+MoveIterator::MoveIterator(Move* _list, size_t* size, size_t* _idx) : list(_list), _size(size), idx(_idx) {
+
+}
+
+MoveIterator::MoveIterator() {
 
 }
 
@@ -36,9 +40,9 @@ MoveIterator::~MoveIterator() {
 //sort
 void MoveIterator::sort() {
 	bool flag=true;
-	for(uint32_t i = 0; i < _size&&flag; i++){
+	for(uint32_t i = 0; i < *_size&&flag; i++){
 		flag=false;
-		for(uint32_t j = 0; j < _size-1; j++)
+		for(uint32_t j = 0; j < *_size-1; j++)
 		{
 			if (list[j+1].score > list[j].score) {
 				Move tmp=list[j];

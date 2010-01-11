@@ -95,9 +95,13 @@ void Board::genericTest() {
 	int counter=0;
 	for (int x=0;x<1000000;x++)
 	{
+		MoveIterator::Move list[MOVE_LIST_MAX_SIZE];
+		size_t size=0;
+		size_t idx=0;
 
-		MoveIterator moves;
+		MoveIterator moves(list, &size, &idx);
 		this->generateAllMoves(moves,color);
+
 		moves.first();
 		while (moves.hasNext()) {
 

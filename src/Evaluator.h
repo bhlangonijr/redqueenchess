@@ -42,11 +42,11 @@ public:
 	const int evalMaterial(Board& board);
 	const int evalMobility(Board& board, PieceColor color);
 
-	const int getPieceMaterialValue(const PieceTypeByColor piece) {
+	inline const int getPieceMaterialValue(const PieceTypeByColor piece) {
 		return materialValues[piece];
 	}
 
-	void setPieceMaterialValue(const PieceTypeByColor piece, const int value) {
+	inline void setPieceMaterialValue(const PieceTypeByColor piece, const int value) {
 		materialValues[piece]=value;
 	}
 
@@ -55,5 +55,74 @@ private:
 	int materialValues[ALL_PIECE_TYPE_BY_COLOR];
 
 };
+
+// main eval function
+inline const int Evaluator::evaluate(Board& board) {
+
+	int material = 0;
+	int mobility = 0;
+	material = evalMaterial(board);
+	mobility = evalMobility(board, board.getSideToMove()) - evalMobility(board, board.flipSide(board.getSideToMove()));
+	// ...
+	//std::cout << "material: " << material << std::endl;
+	//std::cout << "mobility: " << mobility << std::endl;
+	return material+mobility;
+}
+
+// material eval function
+inline const int Evaluator::evalMaterial(Board& board) {
+
+	int result = 0;
+	PieceColor side = board.getSideToMove();
+
+	int whiteMaterial = 0;
+	int blackMaterial = 0;
+
+	for(int pieceType = WHITE_PAWN; pieceType <= WHITE_KING; pieceType++) {
+		whiteMaterial += board.getPieceCountByType(PieceTypeByColor(pieceType)) * materialValues[pieceType];
+	}
+
+	for(int pieceType = BLACK_PAWN; pieceType <= BLACK_KING; pieceType++) {
+		blackMaterial += board.getPieceCountByType(PieceTypeByColor(pieceType)) * materialValues[pieceType];
+	}
+
+	result = side==WHITE?whiteMaterial-blackMaterial : blackMaterial-whiteMaterial;
+	return result;
+}
+
+// mobility eval function
+inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
+
+	Bitboard pieces = EMPTY_BB;
+	Square from = NONE;
+	int count=0;
+
+	pieces = board.getPiecesByType(board.makePiece(color,BISHOP));
+	from = extractLSB(pieces);
+
+	while ( from!=NONE ) {
+		count+=_BitCount(board.getBishopAttacks(from));
+		from = extractLSB(pieces);
+	}
+
+	pieces = board.getPiecesByType(board.makePiece(color,ROOK));
+	from = extractLSB(pieces);
+
+	while ( from!=NONE ) {
+		count+=_BitCount(board.getRookAttacks(from));
+		from = extractLSB(pieces);
+	}
+
+	pieces = board.getPiecesByType(board.makePiece(color,QUEEN));
+	from = extractLSB(pieces);
+
+	while ( from!=NONE ) {
+		count+=_BitCount(board.getQueenAttacks(from));
+		from = extractLSB(pieces);
+	}
+
+	return count;
+}
+
 
 #endif /* EVALUATOR_H_ */

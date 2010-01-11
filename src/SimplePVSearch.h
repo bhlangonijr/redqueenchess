@@ -40,6 +40,7 @@ namespace SimplePVSearchTypes {
 static const int maxScore = 200000;
 static const uint32_t maxQuiescenceSearchDepth = 10;
 static const uint32_t maxSearchDepth = 40;
+static const uint32_t maxSearchPly = 30;
 
 }
 
@@ -57,8 +58,13 @@ public:
 	typedef struct SearchStats {
 
 		SearchStats():
-			ttHits(0), ttLower(0), ttUpper(0), ttExact(0), nullMoveHits(0), pvChanges(0), searchTime(0), searchNodes(0) {}
+			ttHits(0), ttLower(0), ttUpper(0), ttExact(0), nullMoveHits(0), pvChanges(0), searchTime(0), searchNodes(0), searchDepth(0) {}
 
+		SearchStats(const SearchStats& stats):
+					ttHits(stats.ttHits), ttLower(stats.ttLower),
+					ttUpper(stats.ttUpper), ttExact(stats.ttExact),
+					nullMoveHits(stats.nullMoveHits), pvChanges(stats.pvChanges),
+					searchTime(stats.searchTime), searchNodes(stats.searchNodes), searchDepth(stats.searchDepth) {}
 		long ttHits;
 		long ttLower;
 		long ttUpper;
@@ -67,6 +73,7 @@ public:
 		long pvChanges;
 		uint32_t searchTime;
 		uint64_t searchNodes;
+		uint32_t searchDepth;
 
 		std::string toString() {
 			std::string result =
@@ -78,6 +85,7 @@ public:
 			result += "pvChanges:   " + StringUtil::toStr(pvChanges) + "\n";
 			result += "searchTime:  " + StringUtil::toStr(searchTime) + "\n";
 			result += "searchNodes: " + StringUtil::toStr(searchNodes) + "\n";
+			result += "searchDepth: " + StringUtil::toStr(searchDepth) + "\n";
 			return result;
 		}
 		void clear() {
@@ -89,10 +97,10 @@ public:
 			pvChanges=0;
 			searchTime=0;
 			searchNodes=0;
+			searchDepth=0;
 		}
 
 	} SearchStats;
-
 
 	void operator()() {
 		this->search();
@@ -173,18 +181,50 @@ private:
 	bool _infinite;
 	Evaluator evaluator;
 	SearchStats stats;
+	MoveIterator moves;
 
 	int idSearch(Board& board);
 	int pvSearch(Board& board, int alpha, int beta, uint32_t depth, uint32_t ply, PvLine* pv, const bool allowNullMove);
 	int qSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv);
 	const std::string pvLineToString(const PvLine* pv);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
-
-	const bool stop();
+	const bool stop(const bool searchInProgress);
 	const bool timeIsUp();
 
 };
 
+inline const bool SimplePVSearch::stop(const bool searchInProgress) {
+
+	return !searchInProgress || timeIsUp();
+
+}
+
+inline const bool SimplePVSearch::timeIsUp() {
+
+	static const uint64_t checkNodes=4000;
+
+	if ( _searchFixedDepth || _infinite || _nodes % checkNodes != 0) {
+		return false;
+	}
+
+	return (getTickCount()-_startTime)>=_timeToSearch;
+
+}
+
+inline const std::string SimplePVSearch::pvLineToString(const PvLine* pv) {
+	std::string result="";
+	for(int x=0;x<pv->index;x++) {
+		result += " ";
+		result += pv->moves[x].toString();
+	}
+	return result;
+}
+
+inline void SimplePVSearch::updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move) {
+	pv->moves[0] = move;
+	memcpy(pv->moves + 1, line.moves, line.index * sizeof(MoveIterator::Move));
+	pv->index = line.index + 1;
+}
 
 
 

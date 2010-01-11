@@ -53,13 +53,6 @@ public:
 		PieceTypeByColor promotionPiece;
 		int score;
 
-		void copy(const Move& move) {
-			from=move.from;
-			to=move.to;
-			promotionPiece=move.promotionPiece;
-			score=move.score;
-		}
-
 		inline const std::string toString() const {
 			if (from==NONE || to==NONE ) {
 				return "";
@@ -72,7 +65,7 @@ public:
 		}
 	};
 
-	const void add(const Move move) ;
+	const void add(const Move& move) ;
 
 	const void add(const Square from, const Square to, const PieceTypeByColor piece);
 
@@ -92,49 +85,58 @@ public:
 
 	const Move& get(const size_t index);
 
+	void operator()(Move* _list, size_t* size, size_t* _idx) {
+		list = _list;
+		_size = size;
+		idx = _idx;
+	}
+
+	MoveIterator(Move* _list, size_t* size, size_t* _idx);
+
 	MoveIterator();
+
 	virtual ~MoveIterator();
 private:
 
-	Move list[MOVE_LIST_MAX_SIZE];
-	size_t _size;
-	size_t idx;
+	Move* list;
+	size_t* _size;
+	size_t* idx;
 
 };
 
-inline const void MoveIterator::add(const Move move) {
-	list[_size++]=move;
+inline const void MoveIterator::add(const Move& move) {
+	list[(*_size)++]=move;
 }
 
 inline const void MoveIterator::add(const Square from, const Square to, const PieceTypeByColor piece) {
-	list[_size++]=Move(from,to,piece);
+	list[(*_size)++]=Move(from,to,piece);
 }
 
 inline const void MoveIterator::remove(const size_t index) {
-	for (size_t x=index;x<_size-1;x++) {
+	for (size_t x=index;x<(*_size)-1;x++) {
 		list[x]=list[x+1];
 	}
-	_size--;
+	*_size--;
 }
 
 inline const bool MoveIterator::hasNext() {
-	return idx<_size;
+	return *idx<*_size;
 }
 
 inline MoveIterator::Move& MoveIterator::next() {
-	return list[idx++];
+	return list[(*idx)++];
 }
 
 inline MoveIterator::Move& MoveIterator::get() {
-	return list[idx];
+	return list[(*idx)++];
 }
 
 inline const void MoveIterator::first() {
-	idx=0;
+	*idx=0;
 }
 
 inline const size_t MoveIterator::size() {
-	return _size;
+	return *_size;
 }
 
 inline const MoveIterator::Move& MoveIterator::get(const size_t index) {

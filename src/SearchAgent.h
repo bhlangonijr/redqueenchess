@@ -34,12 +34,13 @@
 #include "Board.h"
 #include "SimplePVSearch.h"
 #include "TranspositionTable.h"
+#include "StringUtil.h"
 
 static const std::string mainHashName 		= "DefaultHashTable";
 static const size_t defaultDepth			= 5;
 static const size_t defaultHashSize			= 64;
-static const size_t defaultGameSize			= 40;
-static const size_t defaultGameSizeInc		= 5;
+static const int defaultGameSize			= 40;
+static const int defaultGameSizeInc		= 5;
 
 class SearchAgent {
 public:
