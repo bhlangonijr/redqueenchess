@@ -59,9 +59,20 @@ private:
 // main eval function
 inline const int Evaluator::evaluate(Board& board) {
 
+/*	if (board.isDraw()) {
+		return 0;
+	}*/
+
 	int material = 0;
 	int mobility = 0;
 	material = evalMaterial(board);
+
+	if (!(board.getPiecesByType(WHITE_PAWN)|board.getPiecesByType(BLACK_PAWN))) {
+		if (material <= materialValues[WHITE_KNIGHT]) {
+			return 0;
+		}
+	}
+
 	mobility = evalMobility(board, board.getSideToMove()) - evalMobility(board, board.flipSide(board.getSideToMove()));
 	// ...
 	//std::cout << "material: " << material << std::endl;
@@ -97,6 +108,15 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	Square from = NONE;
 	int count=0;
 
+
+	pieces = board.getPiecesByType(board.makePiece(color,KNIGHT));
+	from = extractLSB(pieces);
+
+	while ( from!=NONE ) {
+		count+=_BitCount(board.getKnightAttacks(from));
+		from = extractLSB(pieces);
+	}
+
 	pieces = board.getPiecesByType(board.makePiece(color,BISHOP));
 	from = extractLSB(pieces);
 
@@ -123,6 +143,5 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
 	return count;
 }
-
 
 #endif /* EVALUATOR_H_ */

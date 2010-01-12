@@ -80,7 +80,7 @@ int SimplePVSearch::getScore() {
 int SimplePVSearch::idSearch(Board& board) {
 
 	MoveIterator moves;
-
+	SearchAgent* agent = SearchAgent::getInstance();
 	board.generateAllMoves(moves, board.getSideToMove());
 	MoveIterator::Move bestMove = MoveIterator::Move(NONE,NONE,EMPTY);
 	bestMove.score = -maxScore;
@@ -93,7 +93,7 @@ int SimplePVSearch::idSearch(Board& board) {
 	uint32_t totalTime = 0;
 
 	for (uint32_t depth = 1; depth <= _depth; depth++) {
-		if (stop(SearchAgent::getInstance()->getSearchInProgress())) {
+		if (stop(agent->getSearchInProgress())) {
 			break;
 		}
 
@@ -106,7 +106,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		moves.first();
 
 		while (moves.hasNext()) {
-			if (stop(SearchAgent::getInstance()->getSearchInProgress())) {
+			if (stop(agent->getSearchInProgress())) {
 				break;
 			}
 			MoveIterator::Move& move = moves.next();
@@ -135,7 +135,7 @@ int SimplePVSearch::idSearch(Board& board) {
 
 			board.undoMove(backup);
 
-			if (score > bestScore && !stop(SearchAgent::getInstance()->getSearchInProgress())) {
+			if (score > bestScore && !stop(agent->getSearchInProgress())) {
 				bestScore = score;
 				bestMove = move;
 				stats.pvChanges++;
@@ -154,7 +154,7 @@ int SimplePVSearch::idSearch(Board& board) {
 			uint64_t nps = time>1000 ?  ((_nodes-nodes)/(time/1000)) : _nodes;
 			std::cout << "info depth "<< depth << std::endl;
 			std::cout << "info depth "<< depth << " score cp " << bestMove.score << " time " << time << " nodes " << (_nodes-nodes) << " nps " << nps << " pv " << bestMove.toString() << pvLineToString(&pv) << std::endl;
-			std::cout << "info nodes " << (_nodes-nodes) << " time " << time << " nps " << nps << " hashfull " << SearchAgent::getInstance()->hashFull() << std::endl;
+			std::cout << "info nodes " << (_nodes-nodes) << " time " << time << " nps " << nps << " hashfull " << agent->hashFull() << std::endl;
 
 		}
 		if (moveCounter==1) {
@@ -178,7 +178,7 @@ int SimplePVSearch::idSearch(Board& board) {
 }
 
 // some sort of internal iterative deepening
-int SimplePVSearch::iid(Board& board, MoveIterator& moves, int alpha, int beta) {
+int SimplePVSearch::iid(Board& board, MoveIterator& moves, int alpha, int beta, uint32_t ply) {
 
 	static const int iidDepth=1;
 	PvLine line;
@@ -196,7 +196,7 @@ int SimplePVSearch::iid(Board& board, MoveIterator& moves, int alpha, int beta) 
 			continue; // not legal
 		}
 
-		int score = -pvSearch(board, -beta, -alpha, iidDepth, 1, &line, true, false);
+		int score = -pvSearch(board,  -beta, -alpha, iidDepth, ply+1, &line, true, false);
 		move.score=score;
 		board.undoMove(backup);
 
@@ -216,6 +216,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 #if PV_SEARCH
 	bool bSearch = true;
 #endif
+	SearchAgent* agent = SearchAgent::getInstance();
 	PvLine line = PvLine();
 #if CHECK_MOVE_GEN_ERRORS
 	Board old(board);
@@ -225,9 +226,9 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 		return 0;
 	}
 
-	if (depth==0||stop(SearchAgent::getInstance()->getSearchInProgress())) {
+	if (depth==0||stop(agent->getSearchInProgress())) {
 		int score = qSearch(board, alpha, beta, maxQuiescenceSearchDepth, &line);
-		SearchAgent::getInstance()->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,MoveIterator::Move());
+		agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,MoveIterator::Move());
 		stats.ttLower++;
 		return score;
 	}
@@ -236,7 +237,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 	int oldAlpha = alpha;
 	int score = 0;
 	SearchAgent::HashData hashData;
-	if (SearchAgent::getInstance()->hashGet(board.getKey(), hashData, ply, maxScore)) {
+	if (agent->hashGet(board.getKey(), hashData, ply, maxScore)) {
 		if (hashData.depth>=depth) {
 			if ((hashData.flag == SearchAgent::UPPER && hashData.value <= alpha) ||
 					(hashData.flag == SearchAgent::LOWER && hashData.value >= beta) ||
@@ -252,6 +253,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 	}
 
 	if (ply >= maxSearchPly) {
+		pv->index=0;
 		return evaluator.evaluate(board);
 	}
 
@@ -266,7 +268,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 
 		if (score >= beta) {
 			stats.nullMoveHits++;
-			SearchAgent::getInstance()->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,MoveIterator::Move());
+			agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,MoveIterator::Move());
 			return score;
 		}
 	}
@@ -275,7 +277,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 	board.generateAllMoves(moves, board.getSideToMove());
 
 	if (allowIid) {
-		score = iid(board, moves, alpha, beta);
+		score = iid(board, moves, alpha, beta, ply);
 	}
 
 	moves.first();
@@ -285,7 +287,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 #endif
 
 	while (moves.hasNext()) {
-		if (stop(SearchAgent::getInstance()->getSearchInProgress())) {
+		if (stop(agent->getSearchInProgress())) {
 			break;
 		}
 
@@ -347,7 +349,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 #endif
 		if( score >= beta ) {
 			stats.ttLower++;
-			SearchAgent::getInstance()->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,move);
+			agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,move);
 			return beta;
 		}
 
@@ -373,7 +375,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 		return board.isAttacked(board.getSideToMove(),KING) ? -maxScore+ply : 0;
 	}
 
-	SearchAgent::getInstance()->hashPut(board,alpha,depth,ply,maxScore,(alpha>oldAlpha ? SearchAgent::EXACT : SearchAgent::UPPER),pv->moves[0]);
+	agent->hashPut(board,alpha,depth,ply,maxScore,(alpha>oldAlpha ? SearchAgent::EXACT : SearchAgent::UPPER),pv->moves[0]);
 
 	return alpha;
 
@@ -390,7 +392,9 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth, P
 
 	int standPat = evaluator.evaluate(board);
 
-	if(standPat>=beta||depth==0||stop(SearchAgent::getInstance()->getSearchInProgress())) {
+	SearchAgent* agent = SearchAgent::getInstance();
+
+	if(standPat>=beta||depth==0||stop(agent->getSearchInProgress())) {
 #if DEBUG_QS
 		std::cout << "(QS) beta: " << beta << " / eval: " << standPat << " / depth " << depth << std::endl;
 		std::string pad=" ";
@@ -411,7 +415,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth, P
 	board.generateCaptures(moves, board.getSideToMove());
 	moves.first();
 	while (moves.hasNext())  {
-		if (stop(SearchAgent::getInstance()->getSearchInProgress())) {
+		if (stop(agent->getSearchInProgress())) {
 			break;
 		}
 		MoveIterator::Move& move = moves.next();
