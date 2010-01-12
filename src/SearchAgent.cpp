@@ -159,7 +159,7 @@ const uint32_t SearchAgent::getTimeToSearch() {
 
 	time /= movesLeft;
 
-	std::cout << "Time To Think: " << time << std::endl;
+	//std::cout << "Think time: " << time << std::endl;
 	return time;
 
 }

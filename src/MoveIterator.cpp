@@ -26,35 +26,38 @@
 
 #include "MoveIterator.h"
 
-MoveIterator::MoveIterator(Move* _list, size_t* size, size_t* _idx) : list(_list), _size(size), idx(_idx) {
+MoveIterator::MoveIterator(Data& data) : _data(data) {
 
 }
 
-MoveIterator::MoveIterator() {
+MoveIterator::MoveIterator() : _data(internal) {
 
 }
 
 MoveIterator::~MoveIterator() {
 }
 
-//sort
+// sort
 void MoveIterator::sort() {
 	bool flag=true;
-	for(uint32_t i = 0; i < *_size&&flag; i++){
+	for(uint32_t i = 0; i < _data.size&&flag; i++){
 		flag=false;
-		for(uint32_t j = 0; j < *_size-1; j++)
+		for(uint32_t j = 0; j < _data.size-1; j++)
 		{
-			if (list[j+1].score > list[j].score) {
-				Move tmp=list[j];
-				list[j]=list[j+1];
-				list[j+1]=tmp;
+			if (_data.list[j+1].score > _data.list[j].score) {
+				Move tmp=_data.list[j];
+				_data.list[j]=_data.list[j+1];
+				_data.list[j+1]=tmp;
 				flag=true;
 			}
 
 		}
 	}
-//	for (uint32_t x=0;x<_size;x++) {
-//		std::cout << list[x].toString() << " - score: " << list[x].score << std::endl;
-//	}
-
+	/*
+	std::cout << "----- init " << std::endl;
+	for (uint32_t x=0;x<_data.size;x++) {
+		std::cout << _data.list[x].toString() << " - score: " << _data.list[x].score << std::endl;
+	}
+	std::cout << "----- end " << std::endl;
+	 */
 }

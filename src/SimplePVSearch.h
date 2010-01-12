@@ -38,6 +38,7 @@
 namespace SimplePVSearchTypes {
 
 static const int maxScore = 200000;
+static const int notLegal = -400000;
 static const uint32_t maxQuiescenceSearchDepth = 10;
 static const uint32_t maxSearchDepth = 40;
 static const uint32_t maxSearchPly = 30;
@@ -181,10 +182,10 @@ private:
 	bool _infinite;
 	Evaluator evaluator;
 	SearchStats stats;
-	MoveIterator moves;
 
 	int idSearch(Board& board);
-	int pvSearch(Board& board, int alpha, int beta, uint32_t depth, uint32_t ply, PvLine* pv, const bool allowNullMove);
+	int iid(Board& board, MoveIterator& moves, int alpha, int beta);
+	int pvSearch(Board& board, int alpha, int beta, uint32_t depth, uint32_t ply, PvLine* pv, const bool allowNullMove, const bool allowIid);
 	int qSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv);
 	const std::string pvLineToString(const PvLine* pv);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);

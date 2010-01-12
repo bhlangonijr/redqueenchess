@@ -79,10 +79,7 @@ int SimplePVSearch::getScore() {
 // iterative deepening
 int SimplePVSearch::idSearch(Board& board) {
 
-	MoveIterator::Move list[MOVE_LIST_MAX_SIZE];
-	size_t size=0;
-	size_t idx=0;
-	moves(list, &size, &idx);
+	MoveIterator moves;
 
 	board.generateAllMoves(moves, board.getSideToMove());
 	MoveIterator::Move bestMove = MoveIterator::Move(NONE,NONE,EMPTY);
@@ -128,7 +125,7 @@ int SimplePVSearch::idSearch(Board& board) {
 				std::cout << "info currmove " << move.toString() << " currmovenumber " << moveCounter << std::endl;
 			}
 
-			int score = -pvSearch(board, -maxScore, -bestScore, depth-1, 0, &pv, true);
+			int score = -pvSearch(board, -maxScore, -bestScore, depth-1, 0, &pv, true, true);
 			move.score=score;
 
 #if DEBUG_ID
@@ -143,7 +140,6 @@ int SimplePVSearch::idSearch(Board& board) {
 				bestMove = move;
 				stats.pvChanges++;
 			}
-			moves(list, &size, &idx);
 		}
 
 		stats.searchDepth=depth;
@@ -181,8 +177,41 @@ int SimplePVSearch::idSearch(Board& board) {
 	return bestMove.score;
 }
 
+// some sort of internal iterative deepening
+int SimplePVSearch::iid(Board& board, MoveIterator& moves, int alpha, int beta) {
+
+	static const int iidDepth=1;
+	PvLine line;
+	moves.first();
+
+	while (moves.hasNext()) {
+
+		MoveIterator::Move& move = moves.next();
+		MoveBackup backup;
+		board.doMove(move,backup);
+
+		if (board.isNotLegal()) {
+			board.undoMove(backup);
+			move.score=notLegal;
+			continue; // not legal
+		}
+
+		int score = -pvSearch(board, -beta, -alpha, iidDepth, 1, &line, true, false);
+		move.score=score;
+		board.undoMove(backup);
+
+		if (score > alpha) {
+			alpha = score;
+		}
+	}
+	moves.sort();
+
+	return alpha;
+
+}
+
 // principal variation search
-int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, uint32_t ply, PvLine* pv, const bool allowNullMove) {
+int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, uint32_t ply, PvLine* pv, const bool allowNullMove, const bool allowIid) {
 
 #if PV_SEARCH
 	bool bSearch = true;
@@ -232,7 +261,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 
 		MoveBackup backup;
 		board.doNullMove(backup);
-		score = -pvSearch(board, -beta, 1-beta, depth >= 4? depth-4 : depth-1, ply+1, &line, false);
+		score = -pvSearch(board, -beta, 1-beta, depth >= 4? depth-4 : depth-1, ply+1, &line, false, false);
 		board.undoNullMove(backup);
 
 		if (score >= beta) {
@@ -242,12 +271,13 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 		}
 	}
 
-	MoveIterator::Move list[MOVE_LIST_MAX_SIZE];
-	size_t size=0;
-	size_t idx=0;
-	moves(list, &size, &idx);
-
+	MoveIterator moves;
 	board.generateAllMoves(moves, board.getSideToMove());
+
+	if (allowIid) {
+		score = iid(board, moves, alpha, beta);
+	}
+
 	moves.first();
 	int moveCounter=0;
 #if CHECK_MOVE_GEN_ERRORS
@@ -260,6 +290,9 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 		}
 
 		MoveIterator::Move& move = moves.next();
+		if (move.score==notLegal) {
+			continue;
+		}
 		MoveBackup backup;
 		board.doMove(move,backup);
 
@@ -275,12 +308,12 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 #if PV_SEARCH
 		if ( bSearch ) {
 #endif
-			score = -pvSearch(board, -beta, -alpha, depth-1, ply+1, &line, true);
+			score = -pvSearch(board, -beta, -alpha, depth-1, ply+1, &line, allowNullMove, allowIid);
 #if PV_SEARCH
 		} else {
-			score = -pvSearch(board, -alpha-1, -alpha, depth-1, ply+1, &line, true);
+			score = -pvSearch(board, -alpha-1, -alpha, depth-1, ply+1, &line, allowNullMove, allowIid);
 			if ( score > alpha ) {
-				score = -pvSearch(board, -beta, -alpha, depth-1, ply+1, &line, true);
+				score = -pvSearch(board, -beta, -alpha, depth-1, ply+1, &line, allowNullMove, allowIid);
 			}
 		}
 #endif
@@ -326,7 +359,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 			updatePv(pv, line, move);
 
 		}
-		moves(list, &size, &idx);
+
 		moveCounter++;
 	}
 
@@ -373,10 +406,8 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth, P
 	}
 
 	PvLine line = PvLine();
-	MoveIterator::Move list[MOVE_LIST_MAX_SIZE];
-	size_t size=0;
-	size_t idx=0;
-	moves(list, &size, &idx);
+
+	MoveIterator moves;
 	board.generateCaptures(moves, board.getSideToMove());
 	moves.first();
 	while (moves.hasNext())  {
@@ -412,7 +443,6 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth, P
 			alpha = score;
 			updatePv(pv, line, move);
 		}
-		moves(list, &size, &idx);
 
 	}
 

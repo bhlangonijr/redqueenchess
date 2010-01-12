@@ -65,6 +65,16 @@ public:
 		}
 	};
 
+	struct Data {
+
+		Data(): size(0), idx(0) {};
+		Data(Data& data) : list(data.list), size(data.size), idx(data.idx){};
+		Move list[MOVE_LIST_MAX_SIZE];
+		size_t size;
+		size_t idx;
+
+	};
+
 	const void add(const Move& move) ;
 
 	const void add(const Square from, const Square to, const PieceTypeByColor piece);
@@ -85,62 +95,61 @@ public:
 
 	const Move& get(const size_t index);
 
-	void operator()(Move* _list, size_t* size, size_t* _idx) {
-		list = _list;
-		_size = size;
-		idx = _idx;
+	void operator()(Data& data) {
+		_data=data;
 	}
 
-	MoveIterator(Move* _list, size_t* size, size_t* _idx);
+	void quickSort(int left, int right);
+
+	MoveIterator(Data& data);
 
 	MoveIterator();
 
 	virtual ~MoveIterator();
 private:
 
-	Move* list;
-	size_t* _size;
-	size_t* idx;
+	Data& _data;
+	Data internal;
 
 };
 
 inline const void MoveIterator::add(const Move& move) {
-	list[(*_size)++]=move;
+	_data.list[_data.size++]=move;
 }
 
 inline const void MoveIterator::add(const Square from, const Square to, const PieceTypeByColor piece) {
-	list[(*_size)++]=Move(from,to,piece);
+	_data.list[_data.size++]=Move(from,to,piece);
 }
 
 inline const void MoveIterator::remove(const size_t index) {
-	for (size_t x=index;x<(*_size)-1;x++) {
-		list[x]=list[x+1];
+	for (size_t x=index;x<_data.size-1;x++) {
+		_data.list[x]=_data.list[x+1];
 	}
-	*_size--;
+	_data.size--;
 }
 
 inline const bool MoveIterator::hasNext() {
-	return *idx<*_size;
+	return _data.idx<_data.size;
 }
 
 inline MoveIterator::Move& MoveIterator::next() {
-	return list[(*idx)++];
+	return _data.list[_data.idx++];
 }
 
 inline MoveIterator::Move& MoveIterator::get() {
-	return list[(*idx)++];
+	return _data.list[_data.idx++];
 }
 
 inline const void MoveIterator::first() {
-	*idx=0;
+	_data.idx=0;
 }
 
 inline const size_t MoveIterator::size() {
-	return *_size;
+	return _data.size;
 }
 
 inline const MoveIterator::Move& MoveIterator::get(const size_t index) {
-	return list[index];
+	return _data.list[index];
 }
 
 #endif /* MOVEITERATOR_H_ */
