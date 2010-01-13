@@ -59,16 +59,16 @@ private:
 // main eval function
 inline const int Evaluator::evaluate(Board& board) {
 
-/*	if (board.isDraw()) {
-		return 0;
-	}*/
 
+	static int drawValue=350;
 	int material = 0;
 	int mobility = 0;
 	material = evalMaterial(board);
 
 	if (!(board.getPiecesByType(WHITE_PAWN)|board.getPiecesByType(BLACK_PAWN))) {
-		if (material <= materialValues[WHITE_KNIGHT]) {
+		if (_BitCount(board.getPiecesByColor(WHITE))<=2 &&
+			_BitCount(board.getPiecesByColor(BLACK))<=2 &&
+			material <= drawValue) {
 			return 0;
 		}
 	}
