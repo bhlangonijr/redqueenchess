@@ -553,20 +553,35 @@ inline const bool Board::isNotLegal() {
 
 }
 
-// verify draw by 50th move rule and 3 fold rep
+// verify draw by 50th move rule, 3 fold rep and insuficient material
 inline const bool Board::isDraw() {
 
 	if (getMoveCounter()>=6){
 		int repetition = 0;
 
-		for (int x=1;x<getMoveCounter();x++) {
+		for (int x=getMoveCounter()-1;x>=1;x--) {
 			if (getKey()==currentBoard.keyHistory[x]) {
 				repetition++;
 			}
+			if (repetition>=3) {
+				return true;
+			}
 		}
-		if (repetition>=3) {
+
+	}
+
+	if (!(getPiecesByType(WHITE_PAWN)|getPiecesByType(BLACK_PAWN))) {
+
+		if (_BitCount(getAllPieces())<=3 &&
+			(getPiecesByType(WHITE_KING) &&
+			 getPiecesByType(BLACK_KING)) &&
+			(getPiecesByType(WHITE_KNIGHT) ||
+			 getPiecesByType(WHITE_BISHOP) ||
+			 getPiecesByType(BLACK_KNIGHT) ||
+			 getPiecesByType(BLACK_BISHOP))	) {
 			return true;
 		}
+
 	}
 
 	return getHalfMoveCounter()>=100;

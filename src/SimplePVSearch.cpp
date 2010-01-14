@@ -82,7 +82,7 @@ int SimplePVSearch::idSearch(Board& board) {
 	MoveIterator moves;
 	SearchAgent* agent = SearchAgent::getInstance();
 	board.generateAllMoves(moves, board.getSideToMove());
-	MoveIterator::Move bestMove = MoveIterator::Move(NONE,NONE,EMPTY);
+	MoveIterator::Move bestMove = MoveIterator::Move();
 	bestMove.score = -maxScore;
 
 #if DEBUG_ID
@@ -256,21 +256,28 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 		pv->index=0;
 		return evaluator.evaluate(board);
 	}
+	if (!board.isAttacked(board.getSideToMove(),KING)) {
 
-	if (!board.isNotLegal() && beta < maxScore &&
-			(board.getPiecesByType(WHITE_PAWN)|board.getPiecesByType(BLACK_PAWN)) &&
-			allowNullMove ) {
+		Bitboard pawns = board.getPiecesByType(WHITE_PAWN) |
+				board.getPiecesByType(BLACK_PAWN);
 
-		MoveBackup backup;
-		board.doNullMove(backup);
-		score = -pvSearch(board, -beta, 1-beta, depth >= 4? depth-4 : depth-1, ply+1, &line, false, false);
-		board.undoNullMove(backup);
+		if (beta < maxScore && allowNullMove && pawns) {
 
-		if (score >= beta) {
-			stats.nullMoveHits++;
-			agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,MoveIterator::Move());
-			return score;
+			int reduction = depth >= 4 ? 4 : depth;
+
+			MoveBackup backup;
+			board.doNullMove(backup);
+			score = -pvSearch(board, -beta, 1-beta, depth-reduction, ply+1, &line, false, false);
+			board.undoNullMove(backup);
+
+			if (score >= beta) {
+				stats.nullMoveHits++;
+				agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,MoveIterator::Move());
+				return score;
+			}
 		}
+	} else {
+		depth++;
 	}
 
 	MoveIterator moves;

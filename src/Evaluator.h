@@ -59,20 +59,9 @@ private:
 // main eval function
 inline const int Evaluator::evaluate(Board& board) {
 
-
-	static int drawValue=350;
 	int material = 0;
 	int mobility = 0;
 	material = evalMaterial(board);
-
-	if (!(board.getPiecesByType(WHITE_PAWN)|board.getPiecesByType(BLACK_PAWN))) {
-		if (_BitCount(board.getPiecesByColor(WHITE))<=2 &&
-			_BitCount(board.getPiecesByColor(BLACK))<=2 &&
-			material <= drawValue) {
-			return 0;
-		}
-	}
-
 	mobility = evalMobility(board, board.getSideToMove()) - evalMobility(board, board.flipSide(board.getSideToMove()));
 	// ...
 	//std::cout << "material: " << material << std::endl;
