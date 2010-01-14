@@ -256,12 +256,15 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 		pv->index=0;
 		return evaluator.evaluate(board);
 	}
-	if (!board.isAttacked(board.getSideToMove(),KING)) {
+
+	bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
+
+	if (!isKingAttacked) {
 
 		Bitboard pawns = board.getPiecesByType(WHITE_PAWN) |
 				board.getPiecesByType(BLACK_PAWN);
 
-		if (beta < maxScore && allowNullMove && pawns) {
+		if (beta < maxScore && allowNullMove && pawns && depth > 1) {
 
 			int reduction = depth >= 4 ? 4 : depth;
 
@@ -379,7 +382,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 	}
 
 	if (!moveCounter) {
-		return board.isAttacked(board.getSideToMove(),KING) ? -maxScore+ply : 0;
+		return isKingAttacked ? -maxScore+ply : 0;
 	}
 
 	agent->hashPut(board,alpha,depth,ply,maxScore,(alpha>oldAlpha ? SearchAgent::EXACT : SearchAgent::UPPER),pv->moves[0]);
@@ -421,6 +424,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth, P
 	MoveIterator moves;
 	board.generateCaptures(moves, board.getSideToMove());
 	moves.first();
+
 	while (moves.hasNext())  {
 		if (stop(agent->getSearchInProgress())) {
 			break;
