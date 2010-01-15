@@ -50,6 +50,8 @@ void SimplePVSearch::search() {
 	stats.clear();
 	errorCount=0;
 	_startTime = getTickCount();
+	timeToStop = clock() + (((_timeToSearch - 5)*CLOCKS_PER_SEC)/1000);
+
 	_score = idSearch(board);
 	SearchAgent::getInstance()->setSearchInProgress(false);
 	_time = getTickCount() - _startTime;
@@ -153,7 +155,7 @@ int SimplePVSearch::idSearch(Board& board) {
 
 			uint64_t nps = time>1000 ?  ((_nodes-nodes)/(time/1000)) : _nodes;
 			std::cout << "info depth "<< depth << std::endl;
-			std::cout << "info depth "<< depth << " score cp " << bestMove.score << " time " << time << " nodes " << (_nodes-nodes) << " nps " << nps << " pv " << bestMove.toString() << pvLineToString(&pv) << std::endl;
+			std::cout << "info depth "<< depth << " score cp " << bestMove.score << " time " << totalTime << " nodes " << (_nodes-nodes) << " nps " << nps << " pv " << bestMove.toString() << pvLineToString(&pv) << std::endl;
 			std::cout << "info nodes " << (_nodes-nodes) << " time " << time << " nps " << nps << " hashfull " << agent->hashFull() << std::endl;
 
 		}
@@ -180,7 +182,7 @@ int SimplePVSearch::idSearch(Board& board) {
 // some sort of internal iterative deepening
 int SimplePVSearch::iid(Board& board, MoveIterator& moves, int alpha, int beta, uint32_t ply) {
 
-	static const int iidDepth=1;
+	static const int iidDepth=2;
 	PvLine line;
 	moves.first();
 
@@ -203,8 +205,9 @@ int SimplePVSearch::iid(Board& board, MoveIterator& moves, int alpha, int beta, 
 		if (score > alpha) {
 			alpha = score;
 		}
+		moves.sortOne();
 	}
-	moves.sort();
+	//moves.sort();
 
 	return alpha;
 
@@ -240,8 +243,8 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 	if (agent->hashGet(board.getKey(), hashData, ply, maxScore)) {
 		if (hashData.depth>=depth) {
 			if ((hashData.flag == SearchAgent::UPPER && hashData.value <= alpha) ||
-					(hashData.flag == SearchAgent::LOWER && hashData.value >= beta) ||
-					(hashData.flag == SearchAgent::EXACT)) {
+				(hashData.flag == SearchAgent::LOWER && hashData.value >= beta) ||
+				(hashData.flag == SearchAgent::EXACT)) {
 				stats.ttHits++;
 				return hashData.value;
 			}
@@ -262,11 +265,15 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 	if (!isKingAttacked) {
 
 		Bitboard pawns = board.getPiecesByType(WHITE_PAWN) |
-				board.getPiecesByType(BLACK_PAWN);
+						 board.getPiecesByType(BLACK_PAWN);
+		Bitboard kings = board.getPiecesByType(WHITE_KING) |
+						 board.getPiecesByType(BLACK_KING);
 
-		if (beta < maxScore && allowNullMove && pawns && depth > 1) {
+		bool okToNullMove = ((pawns|kings)^board.getAllPieces());
 
-			int reduction = depth >= 4 ? 4 : depth;
+		if (beta < maxScore && allowNullMove && pawns && depth > 1 && okToNullMove) {
+
+			int reduction = depth >= 4 ? 4 : 2;
 
 			MoveBackup backup;
 			board.doNullMove(backup);

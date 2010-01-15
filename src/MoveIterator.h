@@ -85,8 +85,6 @@ public:
 
 	Move& next();
 
-	Move& get();
-
 	const void first();
 
 	const size_t size();
@@ -94,6 +92,10 @@ public:
 	void sort();
 
 	const Move& get(const size_t index);
+
+	const void bringToTop();
+
+	const void sortOne();
 
 	void operator()(Data& data) {
 		_data=data;
@@ -136,10 +138,6 @@ inline MoveIterator::Move& MoveIterator::next() {
 	return _data.list[_data.idx++];
 }
 
-inline MoveIterator::Move& MoveIterator::get() {
-	return _data.list[_data.idx++];
-}
-
 inline const void MoveIterator::first() {
 	_data.idx=0;
 }
@@ -151,5 +149,44 @@ inline const size_t MoveIterator::size() {
 inline const MoveIterator::Move& MoveIterator::get(const size_t index) {
 	return _data.list[index];
 }
+
+inline const void MoveIterator::bringToTop() {
+
+	if (_data.idx==0) {
+		return;
+	}
+
+	Move tmp=_data.list[0];
+	_data.list[0]=_data.list[1];
+	_data.list[1]=tmp;
+
+	if (_data.idx>1) {
+		const size_t index = _data.idx-1;
+		tmp=_data.list[0];
+		_data.list[0]=_data.list[index];
+		_data.list[index]=tmp;
+	};
+
+}
+
+inline const void MoveIterator::sortOne() {
+
+	const size_t index = _data.idx-1;
+	for(size_t x=0;x<_data.idx;x++) {
+
+		if (_data.list[index].score>_data.list[x].score) {
+			Move tmp=_data.list[x];
+			_data.list[x]=_data.list[index];
+			_data.list[index]=tmp;
+			break;
+
+		}
+
+	}
+
+
+}
+
+
 
 #endif /* MOVEITERATOR_H_ */

@@ -442,15 +442,13 @@ inline Square extractLSB(Bitboard& bitboard) {
 	if (!bitboard) {
 		return Square(NONE);
 	}
-
 	unsigned int square = 0;
-	unsigned char ret = _BitScanForward(&square, bitboard);
 
-	bitboard &= bitboard - 1;
-
-	if (!ret) {
+	if (!_BitScanForward(&square, bitboard)) {
 		return Square(NONE);
 	}
+
+	bitboard &= bitboard - 1;
 
 	return Square( square );
 

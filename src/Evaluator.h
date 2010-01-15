@@ -94,43 +94,76 @@ inline const int Evaluator::evalMaterial(Board& board) {
 inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
 	Bitboard pieces = EMPTY_BB;
+	PieceColor other = board.flipSide(color);
 	Square from = NONE;
+	Bitboard attacks = EMPTY;
+	Bitboard smallAttacks = EMPTY;
 	int count=0;
+	int goodAttacks=0;
+	int mediumAttacks=0;
 
+	Bitboard bigPieces = (board.getPiecesByType(board.makePiece(other,QUEEN)) |
+						  board.getPiecesByType(board.makePiece(other,ROOK))  |
+						  board.getPiecesByType(board.makePiece(other,KING)));
+
+	Bitboard smallPieces = (board.getPiecesByColor(other)^bigPieces);
 
 	pieces = board.getPiecesByType(board.makePiece(color,KNIGHT));
 	from = extractLSB(pieces);
 
+	attacks = EMPTY;
 	while ( from!=NONE ) {
-		count+=_BitCount(board.getKnightAttacks(from));
+
+		attacks |= board.getKnightAttacks(from);
 		from = extractLSB(pieces);
 	}
+
+	count+=_BitCount(attacks);
+	goodAttacks+= _BitCount(attacks & bigPieces);
+	smallAttacks |= attacks & smallPieces;
 
 	pieces = board.getPiecesByType(board.makePiece(color,BISHOP));
 	from = extractLSB(pieces);
 
+	attacks = EMPTY;
 	while ( from!=NONE ) {
-		count+=_BitCount(board.getBishopAttacks(from));
+
+		attacks |= board.getBishopAttacks(from);
 		from = extractLSB(pieces);
 	}
+
+	count+=_BitCount(attacks);
+	goodAttacks+= _BitCount(attacks & bigPieces);
+	smallAttacks |= attacks & smallPieces;
 
 	pieces = board.getPiecesByType(board.makePiece(color,ROOK));
 	from = extractLSB(pieces);
 
+	attacks = EMPTY;
 	while ( from!=NONE ) {
-		count+=_BitCount(board.getRookAttacks(from));
+		attacks |= board.getRookAttacks(from);
 		from = extractLSB(pieces);
 	}
+
+	count+=_BitCount(attacks);
+	goodAttacks+= _BitCount(attacks & bigPieces);
+	smallAttacks |= attacks & smallPieces;
 
 	pieces = board.getPiecesByType(board.makePiece(color,QUEEN));
 	from = extractLSB(pieces);
 
+	attacks = EMPTY;
 	while ( from!=NONE ) {
-		count+=_BitCount(board.getQueenAttacks(from));
+		attacks |= board.getQueenAttacks(from);
 		from = extractLSB(pieces);
 	}
+	count+=_BitCount(attacks);
+	goodAttacks+= _BitCount(attacks & bigPieces);
+	smallAttacks |= attacks & smallPieces;
 
-	return count;
+	mediumAttacks = _BitCount(smallAttacks);
+
+	return count + goodAttacks + mediumAttacks;
 }
 
 #endif /* EVALUATOR_H_ */

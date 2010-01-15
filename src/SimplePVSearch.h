@@ -37,8 +37,8 @@
 
 namespace SimplePVSearchTypes {
 
-static const int maxScore = 200000;
-static const int notLegal = -400000;
+static const int maxScore = 10000;
+static const int notLegal = -40000;
 static const uint32_t maxQuiescenceSearchDepth = 10;
 static const uint32_t maxSearchDepth = 40;
 static const uint32_t maxSearchPly = 30;
@@ -182,6 +182,7 @@ private:
 	bool _infinite;
 	Evaluator evaluator;
 	SearchStats stats;
+	uint32_t timeToStop;
 
 	int idSearch(Board& board);
 	int iid(Board& board, MoveIterator& moves, int alpha, int beta, uint32_t ply);
@@ -202,13 +203,13 @@ inline const bool SimplePVSearch::stop(const bool searchInProgress) {
 
 inline const bool SimplePVSearch::timeIsUp() {
 
-	static const uint64_t checkNodes=4000;
+	static const uint64_t checkNodes=1000;
 
 	if ( _searchFixedDepth || _infinite || _nodes % checkNodes != 0) {
 		return false;
 	}
 
-	return (getTickCount()-_startTime)>=_timeToSearch;
+	return clock() >= timeToStop;
 
 }
 
