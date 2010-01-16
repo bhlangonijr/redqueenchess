@@ -50,7 +50,7 @@ void SimplePVSearch::search() {
 	stats.clear();
 	errorCount=0;
 	_startTime = getTickCount();
-	timeToStop = clock() + (((_timeToSearch - 5)*CLOCKS_PER_SEC)/1000);
+	timeToStop = clock() + ((((_timeToSearch - 5)/1000)*CLOCKS_PER_SEC));
 	evaluator.setGameStage(evaluator.getGameStage(board));
 	_score = idSearch(board);
 	SearchAgent::getInstance()->setSearchInProgress(false);
@@ -213,41 +213,9 @@ int SimplePVSearch::iid(Board& board, MoveIterator& moves, int alpha, int beta, 
 
 }
 
-// some sort of internal iterative deepening
-int SimplePVSearch::iidQ(Board& board, MoveIterator& moves, int alpha, int beta) {
-
-	static const int iidDepth=2;
-	PvLine line;
-	moves.first();
-
-	while (moves.hasNext()) {
-
-		MoveIterator::Move& move = moves.next();
-		MoveBackup backup;
-		board.doMove(move,backup);
-
-		if (board.isNotLegal()) {
-			board.undoMove(backup);
-			move.score=notLegal;
-			continue; // not legal
-		}
-
-		int score = -qSearch(board, -beta, -alpha, iidDepth, &line, false);
-		move.score=score;
-		board.undoMove(backup);
-
-		if (score > alpha) {
-			alpha = score;
-		}
-		moves.sortOne();
-	}
-
-	return alpha;
-
-}
-
 // principal variation search
 int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, uint32_t ply, PvLine* pv, const bool allowNullMove, const bool allowIid) {
+
 
 #if PV_SEARCH
 	bool bSearch = true;
@@ -272,8 +240,8 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 	if (agent->hashGet(board.getKey(), hashData, ply, maxScore)) {
 		if (hashData.depth>=depth) {
 			if ((hashData.flag == SearchAgent::UPPER && hashData.value <= alpha) ||
-				(hashData.flag == SearchAgent::LOWER && hashData.value >= beta) ||
-				(hashData.flag == SearchAgent::EXACT)) {
+					(hashData.flag == SearchAgent::LOWER && hashData.value >= beta) ||
+					(hashData.flag == SearchAgent::EXACT)) {
 				stats.ttHits++;
 				return hashData.value;
 			}
@@ -455,14 +423,6 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth, P
 
 	MoveIterator moves;
 	board.generateCaptures(moves, board.getSideToMove());
-
-/*	if (allowIid) {
-		int score = iidQ(board, moves, alpha, beta);
-
-		if( score >= beta ) {
-			return beta;
-		}
-	}*/
 
 	moves.first();
 

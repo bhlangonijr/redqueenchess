@@ -537,17 +537,22 @@ inline const bool Board::isNotLegal() {
 // verify draw by 50th move rule, 3 fold rep and insuficient material
 inline const bool Board::isDraw() {
 
-	if (getMoveCounter()>=6){
+	if (getMoveCounter()>=10){
 		int repetition = 0;
 
-		for (int x=1;x<getMoveCounter();x++) {
+		//std::cout << getMoveCounter() << " -  " << currentBoard.keyHistory[getMoveCounter()]<< std::endl;
+		for (int x=getMoveCounter()-10;x<getMoveCounter();x++) {
+			//std::cout << x << " -  " << currentBoard.keyHistory[x]<< std::endl;
 			if (currentBoard.keyHistory[getMoveCounter()]==currentBoard.keyHistory[x]) {
+				//std::cout << "repetition at " << x << ": " << currentBoard.keyHistory[x]<< std::endl;
 				repetition++;
 			}
-			if (repetition>=3) {
+			if (repetition>=2) {
+				//std::cout << "detected draw!" << std::endl;
 				return true;
 			}
 		}
+		//std::cout << getMoveCounter() << " -----------------------------------  " << std::endl;
 
 	}
 
