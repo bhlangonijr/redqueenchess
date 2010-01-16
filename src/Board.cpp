@@ -176,7 +176,7 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 
 	setKey(getKey() ^ zobrist.castleRight[getZobristCastleIndex()]);
 
-	if (getCastleRights(getSideToMove())!=NO_CASTLE) {
+	if (!isCastleDone(getSideToMove()) && getCastleRights(getSideToMove())!=NO_CASTLE) {
 		if (fromPiece==WHITE_KING) {
 			if (move.from==E1) {
 				if (move.to==G1) { // castle king side
@@ -185,12 +185,14 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 					setKey(getKey()^zobrist.pieceSquare[WHITE_ROOK][H1]);
 					setKey(getKey()^zobrist.pieceSquare[WHITE_ROOK][F1]);
 					backup.hasWhiteKingCastle=true;
+					currentBoard.castleDone[WHITE]=true;
 				} else if (move.to==C1) { // castle queen side
 					removePiece(WHITE_ROOK,A1);
 					putPiece(WHITE_ROOK,D1);
 					setKey(getKey()^zobrist.pieceSquare[WHITE_ROOK][A1]);
 					setKey(getKey()^zobrist.pieceSquare[WHITE_ROOK][D1]);
 					backup.hasWhiteQueenCastle=true;
+					currentBoard.castleDone[WHITE]=true;
 				}
 			}
 			removeCastleRights(WHITE,BOTH_SIDE_CASTLE);
@@ -202,12 +204,14 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 					setKey(getKey()^zobrist.pieceSquare[BLACK_ROOK][H8]);
 					setKey(getKey()^zobrist.pieceSquare[BLACK_ROOK][F8]);
 					backup.hasBlackKingCastle=true;
+					currentBoard.castleDone[BLACK]=true;
 				} else if (move.to==C8) { // castle queen side
 					removePiece(BLACK_ROOK,A8);
 					putPiece(BLACK_ROOK,D8);
 					setKey(getKey()^zobrist.pieceSquare[BLACK_ROOK][A8]);
 					setKey(getKey()^zobrist.pieceSquare[BLACK_ROOK][D8]);
 					backup.hasBlackQueenCastle=true;
+					currentBoard.castleDone[BLACK]=true;
 				}
 			}
 			removeCastleRights(BLACK,BOTH_SIDE_CASTLE);
@@ -227,6 +231,8 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 				}
 			}
 		}
+	}
+	if (!isCastleDone(otherSide) && getCastleRights(otherSide)!=NO_CASTLE) {
 		if (toPiece==makePiece(otherSide,ROOK)) {
 			if (getSideToMove()==WHITE) {
 				if (move.to==A8) {
@@ -305,13 +311,9 @@ void Board::doNullMove(MoveBackup& backup){
 	backup.hasBlackKingCastle=false;
 	backup.hasBlackQueenCastle=false;
 
-	if (getEnPassant()!=NONE)
-	{
-		setEnPassant(NONE);
-	}
-
 	if (getEnPassant()!=NONE) {
 		setKey(getKey()^zobrist.enPassant[getSquareFile(getEnPassant())]);
+		setEnPassant(NONE);
 	}
 
 	increaseMoveCounter();

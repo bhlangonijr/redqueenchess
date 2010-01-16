@@ -105,7 +105,9 @@ struct Node {
 	Node () : key(0ULL), piece(), moveCounter(0), halfMoveCounter(0)
 	{}
 
-	Node (const Node& node) : key(node.key), piece( node.piece ), enPassant( node.enPassant ), sideToMove( node.sideToMove ), moveCounter(node.moveCounter), halfMoveCounter(node.halfMoveCounter)
+	Node (const Node& node) : key(node.key), piece( node.piece ), enPassant( node.enPassant ),
+							  sideToMove( node.sideToMove ), moveCounter(node.moveCounter),
+							  halfMoveCounter(node.halfMoveCounter)
 	{
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=node.square[x];
@@ -117,6 +119,9 @@ struct Node {
 		pieceColor[BLACK]=node.pieceColor[BLACK];
 		castleRight[WHITE]=node.castleRight[WHITE];
 		castleRight[BLACK]=node.castleRight[BLACK];
+		castleDone[WHITE]=node.castleDone[WHITE];
+		castleDone[BLACK]=node.castleDone[BLACK];
+
 	}
 
 	Key key;
@@ -142,6 +147,7 @@ struct Node {
 	}piece;
 
 	CastleRight castleRight[ALL_PIECE_COLOR];
+	bool castleDone[ALL_PIECE_COLOR];
 	Square enPassant;
 	PieceColor sideToMove;
 	PieceTypeByColor square[ALL_SQUARE];
@@ -172,8 +178,11 @@ struct Node {
 		pieceColor[COLOR_NONE]=FULL_BB;
 		castleRight[WHITE]=NO_CASTLE;
 		castleRight[BLACK]=NO_CASTLE;
+		castleDone[WHITE]=false;
+		castleDone[BLACK]=false;
 		enPassant=NONE;
 		sideToMove=COLOR_NONE;
+
 	}
 
 };
@@ -237,6 +246,7 @@ public:
 	const bool isAttacked(const Bitboard occupation, const PieceColor attackingSide);
 	const bool isNotLegal();
 	const bool isDraw();
+	const bool isCastleDone(const PieceColor color);
 
 	const Bitboard getPiecesByColor(const PieceColor color) const;
 	const Bitboard getAllPieces() const;
@@ -377,35 +387,6 @@ inline bool Board::canCastle(const PieceColor color, const CastleRight castleRig
 			return false;
 		}
 	}
-	/*if (color==WHITE) {
-		if (castleRight==BOTH_SIDE_CASTLE) {
-			if (!(currentBoard.square[A1]==WHITE_ROOK&&currentBoard.square[H1]==WHITE_ROOK)) {
-				return false;
-			}
-		} else if (castleRight==QUEEN_SIDE_CASTLE) {
-			if (!(currentBoard.square[A1]==WHITE_ROOK)) {
-				return false;
-			}
-		} else if (castleRight==KING_SIDE_CASTLE) {
-			if (!(currentBoard.square[H1]==WHITE_ROOK)) {
-				return false;
-			}
-		}
-	} else {
-		if (castleRight==BOTH_SIDE_CASTLE) {
-			if (!(currentBoard.square[A8]==BLACK_ROOK&&currentBoard.square[H8]==BLACK_ROOK)) {
-				return false;
-			}
-		} else if (castleRight==QUEEN_SIDE_CASTLE) {
-			if (!(currentBoard.square[A8]==BLACK_ROOK)) {
-				return false;
-			}
-		} else if (castleRight==KING_SIDE_CASTLE) {
-			if (!(currentBoard.square[H8]==BLACK_ROOK)) {
-				return false;
-			}
-		}
-	}*/
 
 	if (castleSquare[color][castleRight]&getAllPieces()) { // pieces interposing king & rooks?
 		return false;
@@ -560,7 +541,7 @@ inline const bool Board::isDraw() {
 		int repetition = 0;
 
 		for (int x=1;x<getMoveCounter();x++) {
-			if (getKey()==currentBoard.keyHistory[x]) {
+			if (currentBoard.keyHistory[getMoveCounter()]==currentBoard.keyHistory[x]) {
 				repetition++;
 			}
 			if (repetition>=3) {
@@ -585,6 +566,12 @@ inline const bool Board::isDraw() {
 	}
 
 	return getHalfMoveCounter()>=100;
+
+}
+
+// verify if castle has been made
+inline const bool Board::isCastleDone(const PieceColor color) {
+	return currentBoard.castleDone[color];
 
 }
 

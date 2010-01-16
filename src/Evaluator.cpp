@@ -27,9 +27,49 @@
 #include "Evaluator.h"
 
 Evaluator::Evaluator() {
-	memcpy(materialValues, defaultMaterialValues, ALL_PIECE_TYPE_BY_COLOR*sizeof(int));
+	setGameStage(OPENING);
 }
 
 Evaluator::~Evaluator() {
 
 }
+
+const void Evaluator::setGameStage(const GamePhase phase) {
+
+	if (phase==ENDGAME) {
+		memcpy(materialValues, endGameMaterialValues, ALL_PIECE_TYPE_BY_COLOR*sizeof(int));
+		memcpy(pieceSquareTable, endGamePieceSquareTable, ALL_SQUARE*ALL_PIECE_TYPE_BY_COLOR*sizeof(int));
+
+	} else {
+		memcpy(materialValues, defaultMaterialValues, ALL_PIECE_TYPE_BY_COLOR*sizeof(int));
+		memcpy(pieceSquareTable, defaultPieceSquareTable, ALL_SQUARE*ALL_PIECE_TYPE_BY_COLOR*sizeof(int));
+
+	}
+
+}
+
+const Evaluator::GamePhase Evaluator::getGameStage(Board& board) {
+
+	// very simple game stage detection
+	static const int openingMoves=16;
+	static const int openingPieces=28;
+
+	static const int endGameMoves=34;
+	static const int endGamePieces=12;
+
+	static const int piecesOnBoard =_BitCount(board.getAllPieces());
+
+	if (board.getMoveCounter() >= endGameMoves &&
+			piecesOnBoard <= endGamePieces) {
+		return ENDGAME;
+	} else if (board.getMoveCounter() <= openingMoves &&
+			piecesOnBoard >= openingPieces) {
+		return OPENING;
+	}
+
+	return MIDDLEGAME;
+}
+
+
+
+
