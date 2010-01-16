@@ -289,11 +289,12 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 		}
 	}
 
+	setKey(getKey()^zobrist.sideToMove);
+	setSideToMove(otherSide);
+
 	increaseMoveCounter();
 	updateKeyHistory();
 
-	setKey(getKey()^zobrist.sideToMove);
-	setSideToMove(otherSide);
 
 }
 
@@ -316,11 +317,11 @@ void Board::doNullMove(MoveBackup& backup){
 		setEnPassant(NONE);
 	}
 
-	increaseMoveCounter();
-	updateKeyHistory();
-
 	setKey(getKey()^zobrist.sideToMove);
 	setSideToMove(otherSide);
+
+	increaseMoveCounter();
+	updateKeyHistory();
 
 }
 

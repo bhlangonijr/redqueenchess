@@ -56,8 +56,10 @@ typedef uint64_t Bitboard;
 #define Sq2SL(X)				diagH1A8Attacks[X]|diagA1H8Attacks[X] | \
 								rankAttacks[X]|fileAttacks[X]										// Encode Square to All Slider Attacks
 
-#define FULL_BB						 0xFFFFFFFFFFFFFFFFULL
-#define EMPTY_BB					 0x0ULL
+#define FULL_BB					0xFFFFFFFFFFFFFFFFULL
+#define EMPTY_BB				0x0ULL
+#define WHITE_SQUARES 			0x55AA55AA55AA55AAULL
+#define BLACK_SQUARES 			0xAA55AA55AA55AA55ULL
 
 #define bitsBetween(BB,S1,S2)		(((squareToBitboard[S2]|(squareToBitboard[S2]-squareToBitboard[S1]))) & BB)
 
@@ -388,6 +390,9 @@ extern void printBitboard(Bitboard bb);
 // get the bit index from a bitboard
 inline Square bitboardToSquare(const Bitboard& bitboard) {
 
+	if (!bitboard) {
+		return Square(NONE);
+	}
 	unsigned int square = 0;
 	unsigned char ret = _BitScanForward(&square, bitboard);
 

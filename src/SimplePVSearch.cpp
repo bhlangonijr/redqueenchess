@@ -216,7 +216,7 @@ int SimplePVSearch::iid(Board& board, MoveIterator& moves, int alpha, int beta, 
 // some sort of internal iterative deepening
 int SimplePVSearch::iidQ(Board& board, MoveIterator& moves, int alpha, int beta) {
 
-	static const int iidDepth=1;
+	static const int iidDepth=2;
 	PvLine line;
 	moves.first();
 
@@ -456,13 +456,13 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth, P
 	MoveIterator moves;
 	board.generateCaptures(moves, board.getSideToMove());
 
-	if (allowIid) {
+/*	if (allowIid) {
 		int score = iidQ(board, moves, alpha, beta);
 
 		if( score >= beta ) {
 			return beta;
 		}
-	}
+	}*/
 
 	moves.first();
 

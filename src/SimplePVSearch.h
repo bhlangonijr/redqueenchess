@@ -37,8 +37,8 @@
 
 namespace SimplePVSearchTypes {
 
-static const int maxScore = 40000;
-static const int notLegal = -50000;
+static const int maxScore = 20000;
+static const int notLegal = -30000;
 static const uint32_t maxQuiescenceSearchDepth = 10;
 static const uint32_t maxSearchDepth = 40;
 static const uint32_t maxSearchPly = 30;
@@ -210,7 +210,7 @@ inline const bool SimplePVSearch::timeIsUp() {
 		return false;
 	}
 
-	return clock() >= timeToStop;
+	return (uint32_t)clock() >= timeToStop;
 
 }
 

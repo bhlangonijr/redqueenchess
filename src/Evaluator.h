@@ -31,142 +31,142 @@
 #include "Inline.h"
 #include "Board.h"
 
-static const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 325, 330, 500, 900, 20000, 100, 325, 330, 500, 900, 20000, 0};
-static const int endGameMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {120, 310, 310, 540, 930, 20000, 120, 310, 310, 540, 930, 20000, 0};
+static const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 318, 325, 520, 975, 10000, 100, 318, 325, 520, 975, 10000, 0};
+static const int endGameMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {110, 310, 325, 520, 975, 10000, 110, 310, 325, 520, 975, 10000, 0};
 
 // opening and middlegame piece square table
 static const int defaultPieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 
 		{ // white pawn
-		0,  0,  0,  0,  0,  0,  0,  0,
-		5,  10, 10,-20,-20, 10, 10, 5,
-		5, -5,-10,  0,  0, -10, -5, 5,
-		0,  0,  0, 20, 20,  0,  0,  0,
-		5,  5, 10, 25, 25, 10,  5,  5,
-		10, 10, 20, 30, 30, 20, 10, 10,
-		50, 50, 50, 50, 50, 50, 50, 50,
-		0,  0,  0,  0,  0,  0,  0,  0,
+				0,  0,  0,  0,  0,  0,  0,  0,
+				5,  10, 10,-20,-20, 10, 10, 5,
+				5, -5,-10,  0,  0, -10, -5, 5,
+				0,  0,  0, 20, 20,  0,  0,  0,
+				5,  5, 10, 25, 25, 10,  5,  5,
+				10, 10, 20, 30, 30, 20, 10, 10,
+				50, 50, 50, 50, 50, 50, 50, 50,
+				0,  0,  0,  0,  0,  0,  0,  0,
 		},
 		{//white knight
-		-50,-40,-30,-30,-30,-30,-40,-50,
-		-40,-20,  0,  5,  5,  0,-20,-40,
-		-30,  5, 10, 15, 15, 10,  5,-30,
-		-30,  0, 15, 20, 20, 15,  0,-30,
-		-30,  5, 15, 20, 20, 15,  5,-30,
-		-30,  0, 10, 15, 15, 10,  0,-30,
-		-40,-20,  0,  0,  0,  0,-20,-40,
-		-50,-40,-30,-30,-30,-30,-40,-50,
+				-50,-40,-30,-30,-30,-30,-40,-50,
+				-40,-20,  0,  5,  5,  0,-20,-40,
+				-30,  5, 10, 15, 15, 10,  5,-30,
+				-30,  0, 15, 20, 20, 15,  0,-30,
+				-30,  5, 15, 20, 20, 15,  5,-30,
+				-30,  0, 10, 15, 15, 10,  0,-30,
+				-40,-20,  0,  0,  0,  0,-20,-40,
+				-50,-40,-30,-30,-30,-30,-40,-50,
 		},
 		{//white bishop
-		-20,-10,-10,-10,-10,-10,-10,-20,
-		-10,  5,  0,  0,  0,  0,  5,-10,
-		-10, 10, 10, 10, 10, 10, 10,-10,
-		-10,  0, 10, 10, 10, 10,  0,-10,
-		-10,  5,  5, 10, 10,  5,  5,-10,
-		-10,  0,  5, 10, 10,  5,  0,-10,
-		-10,  0,  0,  0,  0,  0,  0,-10,
-		-20,-10,-10,-10,-10,-10,-10,-20,
+				-20,-10,-10,-10,-10,-10,-10,-20,
+				-10,  5,  0,  0,  0,  0,  5,-10,
+				-10, 10, 10, 10, 10, 10, 10,-10,
+				-10,  0, 10, 10, 10, 10,  0,-10,
+				-10,  5,  5, 10, 10,  5,  5,-10,
+				-10,  0,  5, 10, 10,  5,  0,-10,
+				-10,  0,  0,  0,  0,  0,  0,-10,
+				-20,-10,-10,-10,-10,-10,-10,-20,
 		},
 		{//white rook
-		 0,  0,  0,  0,  0,  0,  0,  0,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		 5, 10, 10, 10, 10, 10, 10,  5,
-		 0,  0,  0,  5,  5,  0,  0,  0,
+				0,  0,  0,  0,  0,  0,  0,  0,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				5, 10, 10, 10, 10, 10, 10,  5,
+				0,  0,  0,  5,  5,  0,  0,  0,
 		},
 		{//white queen
-		-20,-10,-10, -5, -5,-10,-10,-20,
-		-10,  0,  5,  0,  0,  0,  0,-10,
-		-10,  5,  5,  5,  5,  5,  0,-10,
-		 0,  0,  5,  5,  5,  5,  0, -5,
-		-5,  0,  5,  5,  5,  5,  0, -5,
-		-10,  0,  5,  5,  5,  5,  0,-10,
-		-10,  0,  0,  0,  0,  0,  0,-10,
-		-20,-10,-10, -5, -5,-10,-10,-20,
+				-20,-10,-10, -5, -5,-10,-10,-20,
+				-10,  0,  5,  0,  0,  0,  0,-10,
+				-10,  5,  5,  5,  5,  5,  0,-10,
+				0,  0,  5,  5,  5,  5,  0, -5,
+				-5,  0,  5,  5,  5,  5,  0, -5,
+				-10,  0,  5,  5,  5,  5,  0,-10,
+				-10,  0,  0,  0,  0,  0,  0,-10,
+				-20,-10,-10, -5, -5,-10,-10,-20,
 		},
 		{//white king
-		20, 30, 10,  0,  0, 10, 30, 20,
-		20, 20,  0,  0,  0,  0, 20, 20,
-		-10,-20,-20,-20,-20,-20,-20,-10,
-		-20,-30,-30,-40,-40,-30,-30,-20,
-		-30,-40,-40,-50,-50,-40,-40,-30,
-		-30,-40,-40,-50,-50,-40,-40,-30,
-		-30,-40,-40,-50,-50,-40,-40,-30,
-		-30,-40,-40,-50,-50,-40,-40,-30,
+				20, 30, 10,  0,  0, 10, 30, 20,
+				20, 20,  0,  0,  0,  0, 20, 20,
+				-10,-20,-20,-20,-20,-20,-20,-10,
+				-20,-30,-30,-40,-40,-30,-30,-20,
+				-30,-40,-40,-50,-50,-40,-40,-30,
+				-30,-40,-40,-50,-50,-40,-40,-30,
+				-30,-40,-40,-50,-50,-40,-40,-30,
+				-30,-40,-40,-50,-50,-40,-40,-30,
 		},
-  	    {//black pawn
-		0,  0,  0,  0,  0,  0,  0,  0,
-		50, 50, 50, 50, 50, 50, 50, 50,
-		10, 10, 20, 30, 30, 20, 10, 10,
-		5,  5, 10, 25, 25, 10,  5,  5,
-		0,  0,  0, 20, 20,  0,  0,  0,
-		5, -5,-10,  0,  0,-10, -5,  5,
-		5, 10, 10,-20,-20, 10, 10,  5,
-		0,  0,  0,  0,  0,  0,  0,  0,
+		{//black pawn
+				0,  0,  0,  0,  0,  0,  0,  0,
+				50, 50, 50, 50, 50, 50, 50, 50,
+				10, 10, 20, 30, 30, 20, 10, 10,
+				5,  5, 10, 25, 25, 10,  5,  5,
+				0,  0,  0, 20, 20,  0,  0,  0,
+				5, -5,-10,  0,  0,-10, -5,  5,
+				5, 10, 10,-20,-20, 10, 10,  5,
+				0,  0,  0,  0,  0,  0,  0,  0,
 		},
 		{//black knight
-		-50,-40,-30,-30,-30,-30,-40,-50,
-		-40,-20,  0,  0,  0,  0,-20,-40,
-		-30,  0, 10, 15, 15, 10,  0,-30,
-		-30,  5, 15, 20, 20, 15,  5,-30,
-		-30,  0, 15, 20, 20, 15,  0,-30,
-		-30,  5, 10, 15, 15, 10,  5,-30,
-		-40,-20,  0,  5,  5,  0,-20,-40,
-		-50,-40,-30,-30,-30,-30,-40,-50,
+				-50,-40,-30,-30,-30,-30,-40,-50,
+				-40,-20,  0,  0,  0,  0,-20,-40,
+				-30,  0, 10, 15, 15, 10,  0,-30,
+				-30,  5, 15, 20, 20, 15,  5,-30,
+				-30,  0, 15, 20, 20, 15,  0,-30,
+				-30,  5, 10, 15, 15, 10,  5,-30,
+				-40,-20,  0,  5,  5,  0,-20,-40,
+				-50,-40,-30,-30,-30,-30,-40,-50,
 		},
 		{//black bishop
-		-20,-10,-10,-10,-10,-10,-10,-20,
-		-10,  0,  0,  0,  0,  0,  0,-10,
-		-10,  0,  5, 10, 10,  5,  0,-10,
-		-10,  5,  5, 10, 10,  5,  5,-10,
-		-10,  0, 10, 10, 10, 10,  0,-10,
-		-10, 10, 10, 10, 10, 10, 10,-10,
-		-10,  5,  0,  0,  0,  0,  5,-10,
-		-20,-10,-10,-10,-10,-10,-10,-20,
+				-20,-10,-10,-10,-10,-10,-10,-20,
+				-10,  0,  0,  0,  0,  0,  0,-10,
+				-10,  0,  5, 10, 10,  5,  0,-10,
+				-10,  5,  5, 10, 10,  5,  5,-10,
+				-10,  0, 10, 10, 10, 10,  0,-10,
+				-10, 10, 10, 10, 10, 10, 10,-10,
+				-10,  5,  0,  0,  0,  0,  5,-10,
+				-20,-10,-10,-10,-10,-10,-10,-20,
 		},
 		{//black rook
-		 0,  0,  0,  0,  0,  0,  0,  0,
-		 5, 10, 10, 10, 10, 10, 10,  5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		 0,  0,  0,  5,  5,  0,  0,  0,
+				0,  0,  0,  0,  0,  0,  0,  0,
+				5, 10, 10, 10, 10, 10, 10,  5,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				0,  0,  0,  5,  5,  0,  0,  0,
 		},
 		{//black queen:
-		-20,-10,-10, -5, -5,-10,-10,-20,
-		-10,  0,  0,  0,  0,  0,  0,-10,
-		-10,  0,  5,  5,  5,  5,  0,-10,
-		-5,  0,  5,  5,  5,  5,  0, -5,
-		 0,  0,  5,  5,  5,  5,  0, -5,
-		-10,  5,  5,  5,  5,  5,  0,-10,
-		-10,  0,  5,  0,  0,  0,  0,-10,
-		-20,-10,-10, -5, -5,-10,-10,-20,
+				-20,-10,-10, -5, -5,-10,-10,-20,
+				-10,  0,  0,  0,  0,  0,  0,-10,
+				-10,  0,  5,  5,  5,  5,  0,-10,
+				-5,  0,  5,  5,  5,  5,  0, -5,
+				0,  0,  5,  5,  5,  5,  0, -5,
+				-10,  5,  5,  5,  5,  5,  0,-10,
+				-10,  0,  5,  0,  0,  0,  0,-10,
+				-20,-10,-10, -5, -5,-10,-10,-20,
 		},
 		{//black king
-		-30,-40,-40,-50,-50,-40,-40,-30,
-		-30,-40,-40,-50,-50,-40,-40,-30,
-		-30,-40,-40,-50,-50,-40,-40,-30,
-		-30,-40,-40,-50,-50,-40,-40,-30,
-		-20,-30,-30,-40,-40,-30,-30,-20,
-		-10,-20,-20,-20,-20,-20,-20,-10,
-		 20, 20,  0,  0,  0,  0, 20, 20,
-		 20, 30, 10,  0,  0, 10, 30, 20,
+				-30,-40,-40,-50,-50,-40,-40,-30,
+				-30,-40,-40,-50,-50,-40,-40,-30,
+				-30,-40,-40,-50,-50,-40,-40,-30,
+				-30,-40,-40,-50,-50,-40,-40,-30,
+				-20,-30,-30,-40,-40,-30,-30,-20,
+				-10,-20,-20,-20,-20,-20,-20,-10,
+				20, 20,  0,  0,  0,  0, 20, 20,
+				20, 30, 10,  0,  0, 10, 30, 20,
 		},
-     	 { // empty
-		  0, 0, 0, 0, 0, 0, 0, 0,
-		  0, 0, 0, 0, 0, 0, 0, 0,
-		  0, 0, 0, 0, 0, 0, 0, 0,
-		  0, 0, 0, 0, 0, 0, 0, 0,
-		  0, 0, 0, 0, 0, 0, 0, 0,
-		  0, 0, 0, 0, 0, 0, 0, 0,
-		  0, 0, 0, 0, 0, 0, 0, 0,
-		  0, 0, 0, 0, 0, 0, 0, 0
-		  }
+		{ // empty
+				0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0
+		}
 
 };
 
@@ -174,134 +174,134 @@ static const int defaultPieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 static const int endGamePieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 
 		{ // white pawn
-		0,  0,  0,  0,  0,  0,  0,  0,
-		5,  10, 10,-20,-20, 10, 10, 5,
-		5, -5,-10,  0,  0, -10, -5, 5,
-		0,  0,  0, 20, 20,  0,  0,  0,
-		5,  5, 10, 25, 25, 10,  5,  5,
-		10, 10, 20, 30, 30, 20, 10, 10,
-		50, 50, 50, 50, 50, 50, 50, 50,
-		0,  0,  0,  0,  0,  0,  0,  0,
+				0,  0,  0,  0,  0,  0,  0,  0,
+				5,  10, 10,-20,-20, 10, 10, 5,
+				5, -5,-10,  0,  0, -10, -5, 5,
+				0,  0,  0, 20, 20,  0,  0,  0,
+				5,  5, 10, 25, 25, 10,  5,  5,
+				10, 10, 20, 30, 30, 20, 10, 10,
+				50, 50, 50, 50, 50, 50, 50, 50,
+				0,  0,  0,  0,  0,  0,  0,  0,
 		},
 		{//white knight
-		-50,-40,-30,-30,-30,-30,-40,-50,
-		-40,-20,  0,  5,  5,  0,-20,-40,
-		-30,  5, 10, 15, 15, 10,  5,-30,
-		-30,  0, 15, 20, 20, 15,  0,-30,
-		-30,  5, 15, 20, 20, 15,  5,-30,
-		-30,  0, 10, 15, 15, 10,  0,-30,
-		-40,-20,  0,  0,  0,  0,-20,-40,
-		-50,-40,-30,-30,-30,-30,-40,-50,
+				-50,-40,-30,-30,-30,-30,-40,-50,
+				-40,-20,  0,  5,  5,  0,-20,-40,
+				-30,  5, 10, 15, 15, 10,  5,-30,
+				-30,  0, 15, 20, 20, 15,  0,-30,
+				-30,  5, 15, 20, 20, 15,  5,-30,
+				-30,  0, 10, 15, 15, 10,  0,-30,
+				-40,-20,  0,  0,  0,  0,-20,-40,
+				-50,-40,-30,-30,-30,-30,-40,-50,
 		},
 		{//white bishop
-		-20,-10,-10,-10,-10,-10,-10,-20,
-		-10,  5,  0,  0,  0,  0,  5,-10,
-		-10, 10, 10, 10, 10, 10, 10,-10,
-		-10,  0, 10, 10, 10, 10,  0,-10,
-		-10,  5,  5, 10, 10,  5,  5,-10,
-		-10,  0,  5, 10, 10,  5,  0,-10,
-		-10,  0,  0,  0,  0,  0,  0,-10,
-		-20,-10,-10,-10,-10,-10,-10,-20,
+				-20,-10,-10,-10,-10,-10,-10,-20,
+				-10,  5,  0,  0,  0,  0,  5,-10,
+				-10, 10, 10, 10, 10, 10, 10,-10,
+				-10,  0, 10, 10, 10, 10,  0,-10,
+				-10,  5,  5, 10, 10,  5,  5,-10,
+				-10,  0,  5, 10, 10,  5,  0,-10,
+				-10,  0,  0,  0,  0,  0,  0,-10,
+				-20,-10,-10,-10,-10,-10,-10,-20,
 		},
 		{//white rook
-		 0,  0,  0,  0,  0,  0,  0,  0,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		 5, 10, 10, 10, 10, 10, 10,  5,
-		 0,  0,  0,  5,  5,  0,  0,  0,
+				0,  0,  0,  0,  0,  0,  0,  0,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				5, 10, 10, 10, 10, 10, 10,  5,
+				0,  0,  0,  5,  5,  0,  0,  0,
 		},
 		{//white queen
-		-20,-10,-10, -5, -5,-10,-10,-20,
-		-10,  0,  5,  0,  0,  0,  0,-10,
-		-10,  5,  5,  5,  5,  5,  0,-10,
-		 0,  0,  5,  5,  5,  5,  0, -5,
-		-5,  0,  5,  5,  5,  5,  0, -5,
-		-10,  0,  5,  5,  5,  5,  0,-10,
-		-10,  0,  0,  0,  0,  0,  0,-10,
-		-20,-10,-10, -5, -5,-10,-10,-20,
+				-20,-10,-10, -5, -5,-10,-10,-20,
+				-10,  0,  5,  0,  0,  0,  0,-10,
+				-10,  5,  5,  5,  5,  5,  0,-10,
+				0,  0,  5,  5,  5,  5,  0, -5,
+				-5,  0,  5,  5,  5,  5,  0, -5,
+				-10,  0,  5,  5,  5,  5,  0,-10,
+				-10,  0,  0,  0,  0,  0,  0,-10,
+				-20,-10,-10, -5, -5,-10,-10,-20,
 		},
 		{//white king
-		-20,-15,-10,-10,-10,-10,-15,-20,
-		-15, -5,  0,  0,  0,  0, -5,-11,
-		-15,  0,  5,  5,  5,  5,  0,-15,
-		-8,  0,  5, 12, 12,  5,  0, -8,
-		-8,  0,  5, 12, 12,  5,  0, -8,
-		-15,  0,  5,  5,  5,  5,  0,-15,
-		-15, -5,  0,  0,  0,  0, -5,-11,
-		-20,-15,-10,-10,-10,-10,-15,-20,
+				-20,-15,-10,-10,-10,-10,-15,-20,
+				-15, -5,  0,  0,  0,  0, -5,-11,
+				-15,  0,  5,  5,  5,  5,  0,-15,
+				-8,  0,  5, 12, 12,  5,  0, -8,
+				-8,  0,  5, 12, 12,  5,  0, -8,
+				-15,  0,  5,  5,  5,  5,  0,-15,
+				-15, -5,  0,  0,  0,  0, -5,-11,
+				-20,-15,-10,-10,-10,-10,-15,-20,
 		},
-  	    {//black pawn
-		0,  0,  0,  0,  0,  0,  0,  0,
-		50, 50, 50, 50, 50, 50, 50, 50,
-		10, 10, 20, 30, 30, 20, 10, 10,
-		5,  5, 10, 25, 25, 10,  5,  5,
-		0,  0,  0, 20, 20,  0,  0,  0,
-		5, -5,-10,  0,  0,-10, -5,  5,
-		5, 10, 10,-20,-20, 10, 10,  5,
-		0,  0,  0,  0,  0,  0,  0,  0,
+		{//black pawn
+				0,  0,  0,  0,  0,  0,  0,  0,
+				50, 50, 50, 50, 50, 50, 50, 50,
+				10, 10, 20, 30, 30, 20, 10, 10,
+				5,  5, 10, 25, 25, 10,  5,  5,
+				0,  0,  0, 20, 20,  0,  0,  0,
+				5, -5,-10,  0,  0,-10, -5,  5,
+				5, 10, 10,-20,-20, 10, 10,  5,
+				0,  0,  0,  0,  0,  0,  0,  0,
 		},
 		{//black knight
-		-50,-40,-30,-30,-30,-30,-40,-50,
-		-40,-20,  0,  0,  0,  0,-20,-40,
-		-30,  0, 10, 15, 15, 10,  0,-30,
-		-30,  5, 15, 20, 20, 15,  5,-30,
-		-30,  0, 15, 20, 20, 15,  0,-30,
-		-30,  5, 10, 15, 15, 10,  5,-30,
-		-40,-20,  0,  5,  5,  0,-20,-40,
-		-50,-40,-30,-30,-30,-30,-40,-50,
+				-50,-40,-30,-30,-30,-30,-40,-50,
+				-40,-20,  0,  0,  0,  0,-20,-40,
+				-30,  0, 10, 15, 15, 10,  0,-30,
+				-30,  5, 15, 20, 20, 15,  5,-30,
+				-30,  0, 15, 20, 20, 15,  0,-30,
+				-30,  5, 10, 15, 15, 10,  5,-30,
+				-40,-20,  0,  5,  5,  0,-20,-40,
+				-50,-40,-30,-30,-30,-30,-40,-50,
 		},
 		{//black bishop
-		-20,-10,-10,-10,-10,-10,-10,-20,
-		-10,  0,  0,  0,  0,  0,  0,-10,
-		-10,  0,  5, 10, 10,  5,  0,-10,
-		-10,  5,  5, 10, 10,  5,  5,-10,
-		-10,  0, 10, 10, 10, 10,  0,-10,
-		-10, 10, 10, 10, 10, 10, 10,-10,
-		-10,  5,  0,  0,  0,  0,  5,-10,
-		-20,-10,-10,-10,-10,-10,-10,-20,
+				-20,-10,-10,-10,-10,-10,-10,-20,
+				-10,  0,  0,  0,  0,  0,  0,-10,
+				-10,  0,  5, 10, 10,  5,  0,-10,
+				-10,  5,  5, 10, 10,  5,  5,-10,
+				-10,  0, 10, 10, 10, 10,  0,-10,
+				-10, 10, 10, 10, 10, 10, 10,-10,
+				-10,  5,  0,  0,  0,  0,  5,-10,
+				-20,-10,-10,-10,-10,-10,-10,-20,
 		},
 		{//black rook
-		 0,  0,  0,  0,  0,  0,  0,  0,
-		 5, 10, 10, 10, 10, 10, 10,  5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		-5,  0,  0,  0,  0,  0,  0, -5,
-		 0,  0,  0,  5,  5,  0,  0,  0,
+				0,  0,  0,  0,  0,  0,  0,  0,
+				5, 10, 10, 10, 10, 10, 10,  5,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				-5,  0,  0,  0,  0,  0,  0, -5,
+				0,  0,  0,  5,  5,  0,  0,  0,
 		},
 		{//black queen:
-		-20,-10,-10, -5, -5,-10,-10,-20,
-		-10,  0,  0,  0,  0,  0,  0,-10,
-		-10,  0,  5,  5,  5,  5,  0,-10,
-		-5,  0,  5,  5,  5,  5,  0, -5,
-		 0,  0,  5,  5,  5,  5,  0, -5,
-		-10,  5,  5,  5,  5,  5,  0,-10,
-		-10,  0,  5,  0,  0,  0,  0,-10,
-		-20,-10,-10, -5, -5,-10,-10,-20,
+				-20,-10,-10, -5, -5,-10,-10,-20,
+				-10,  0,  0,  0,  0,  0,  0,-10,
+				-10,  0,  5,  5,  5,  5,  0,-10,
+				-5,  0,  5,  5,  5,  5,  0, -5,
+				0,  0,  5,  5,  5,  5,  0, -5,
+				-10,  5,  5,  5,  5,  5,  0,-10,
+				-10,  0,  5,  0,  0,  0,  0,-10,
+				-20,-10,-10, -5, -5,-10,-10,-20,
 		},
 		{//black king
-		-20,-15,-10,-10,-10,-10,-15,-20,
-		-15, -5,  0,  0,  0,  0, -5,-11,
-		-15,  0,  5,  5,  5,  5,  0,-15,
-		-8,  0,  5, 12, 12,  5,  0, -8,
-		-8,  0,  5, 12, 12,  5,  0, -8,
-		-15,  0,  5,  5,  5,  5,  0,-15,
-		-15, -5,  0,  0,  0,  0, -5,-11,
-		-20,-15,-10,-10,-10,-10,-15,-20,		},
-     	 { // empty
-		  0, 0, 0, 0, 0, 0, 0, 0,
-		  0, 0, 0, 0, 0, 0, 0, 0,
-		  0, 0, 0, 0, 0, 0, 0, 0,
-		  0, 0, 0, 0, 0, 0, 0, 0,
-		  0, 0, 0, 0, 0, 0, 0, 0,
-		  0, 0, 0, 0, 0, 0, 0, 0,
-		  0, 0, 0, 0, 0, 0, 0, 0,
-		  0, 0, 0, 0, 0, 0, 0, 0
-		  }
+				-20,-15,-10,-10,-10,-10,-15,-20,
+				-15, -5,  0,  0,  0,  0, -5,-11,
+				-15,  0,  5,  5,  5,  5,  0,-15,
+				-8,  0,  5, 12, 12,  5,  0, -8,
+				-8,  0,  5, 12, 12,  5,  0, -8,
+				-15,  0,  5,  5,  5,  5,  0,-15,
+				-15, -5,  0,  0,  0,  0, -5,-11,
+				-20,-15,-10,-10,-10,-10,-15,-20,		},
+				{ // empty
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0
+				}
 
 };
 
@@ -317,10 +317,11 @@ public:
 	Evaluator();
 	virtual ~Evaluator();
 	const int evaluate(Board& board);
-	const int evalMaterial(Board& board);
-	const int evalKing(Board& board, PieceColor color);
+	const int evalMaterial(Board& board, PieceColor color);
+	const int evalPieces(Board& board, PieceColor color);
 	const int evalMobility(Board& board, PieceColor color);
-	const int evalDevelopment(Board& board);
+	const int evalDevelopment(Board& board, PieceColor color);
+	const int evalImbalances(Board& board, PieceColor color);
 	const void setGameStage(const GamePhase phase);
 	const GamePhase getGameStage(Board& board);
 
@@ -334,6 +335,7 @@ public:
 
 
 private:
+	GamePhase gamePhase;
 	int materialValues[ALL_PIECE_TYPE_BY_COLOR];
 	int pieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 
@@ -342,186 +344,202 @@ private:
 // main eval function
 inline const int Evaluator::evaluate(Board& board) {
 
-	if 	(board.isDraw()) {
+	if	(board.isDraw()) {
 		return 0;
 	}
 
 	int material = 0;
 	int mobility = 0;
-	int kingSafety = 0;
+	int pieces = 0;
 	int development = 0;
+	int imbalances = 0;
 
 	PieceColor side = board.getSideToMove();
 	PieceColor other = board.flipSide(board.getSideToMove());
 
-	material = evalMaterial(board);
+	material = evalMaterial(board, side) - evalMaterial(board, other);
 	mobility = evalMobility(board, side) - evalMobility(board, other);
-	development = evalDevelopment(board);
-	kingSafety = evalKing(board, side) - evalKing(board, other);
-	// ...
-	//std::cout << "material: " << material << std::endl;
-	//std::cout << "mobility: " << mobility << std::endl;
-	return material+mobility+kingSafety+development;
+	development = evalDevelopment(board, side) - evalDevelopment(board, other);
+	pieces = evalPieces(board, side) - evalPieces(board, other);
+	imbalances = evalImbalances(board, side) - evalImbalances(board, other);
+
+/*
+	std::cout << "material:    " << material << std::endl;
+	std::cout << "mobility:    " << mobility << std::endl;
+	std::cout << "development: " << development << std::endl;
+	std::cout << "pieces:      " << pieces << std::endl;
+	std::cout << "--------      " << pieces << std::endl;
+*/
+
+	return material+mobility+pieces+development+imbalances;
 }
 
 // material eval function
-inline const int Evaluator::evalMaterial(Board& board) {
+inline const int Evaluator::evalMaterial(Board& board, PieceColor color) {
 
-	PieceColor side = board.getSideToMove();
+	int material = 0;
+	int first = board.makePiece(color,PAWN);
+	int last = board.makePiece(color,KING);
 
-	int whiteMaterial = 0;
-	int blackMaterial = 0;
-
-	for(int pieceType = WHITE_PAWN; pieceType <= WHITE_KING; pieceType++) {
-		whiteMaterial += board.getPieceCountByType(PieceTypeByColor(pieceType)) * materialValues[pieceType];
-	}
-
-	for(int pieceType = BLACK_PAWN; pieceType <= BLACK_KING; pieceType++) {
-		blackMaterial += board.getPieceCountByType(PieceTypeByColor(pieceType)) * materialValues[pieceType];
-	}
-
-	return side==WHITE?whiteMaterial-blackMaterial : blackMaterial-whiteMaterial;
-}
-
-// king eval function
-inline const int Evaluator::evalKing(Board& board, PieceColor color) {
-
-	static const int DONE_CASTLE_BONUS=10;
-	static const int CAN_CASTLE_BONUS=5;
-
-	PieceColor other = board.flipSide(color);
-
-	if (board.getPiecesByType(board.makePiece(other,QUEEN))) {
-		if (board.isCastleDone(color)) {
-			return DONE_CASTLE_BONUS;
-		} else if (board.getCastleRights(color)!=NO_CASTLE) {
-			return CAN_CASTLE_BONUS;
-		} else {
-			return -DONE_CASTLE_BONUS;
+	for(int pieceType = first; pieceType <= last; pieceType++) {
+		int count = board.getPieceCountByType(PieceTypeByColor(pieceType));
+		if (count > 0) {
+			material += count * materialValues[pieceType];
 		}
 	}
 
-	return 0;
+	return material;
+}
+
+// king eval function
+inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
+
+
+	int count=0;
+	static const int DONE_CASTLE_BONUS=10;
+	static const int CAN_CASTLE_BONUS=5;
+
+	static const int DOUBLED_PAWN_PENALTY = -10;
+	static const int ISOLATED_PAWN_PENALTY = -20;
+
+	if (gamePhase!=ENDGAME) {
+		PieceColor other = board.flipSide(color);
+		// king castle bonus
+		if (board.getPiecesByType(board.makePiece(other,QUEEN))) {
+			if (board.isCastleDone(color)) {
+				count= DONE_CASTLE_BONUS;
+			} else if (board.getCastleRights(color)!=NO_CASTLE) {
+				count= CAN_CASTLE_BONUS;
+			} else {
+				count= -DONE_CASTLE_BONUS;
+			}
+		}
+	}
+
+	Bitboard pawns = board.getPiecesByType(board.makePiece(color,PAWN));
+	//penalyze doubled & isolated pawns
+	if (pawns) {
+		Bitboard pieces=pawns;
+		Square from = extractLSB(pieces);
+		while ( from!=NONE ) {
+
+			if (fileAttacks[squareFile[from]]&(pawns)) {
+				count += DOUBLED_PAWN_PENALTY;
+			}
+
+			Bitboard neighbor =EMPTY_BB;
+
+			if (squareFile[from]!=FILE_H) {
+				neighbor = fileBB[squareFile[from+1]]&pawns;
+			}
+			if (squareFile[from]!=FILE_A) {
+				neighbor |= fileBB[squareFile[from-1]]&pawns;
+			}
+
+			if (!neighbor) {
+				count += ISOLATED_PAWN_PENALTY;
+			}
+
+			from = extractLSB(pieces);
+		}
+
+	}
+
+	return count;
 }
 
 // mobility eval function
 inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
-	Bitboard pieces = EMPTY_BB;
-	PieceColor other = board.flipSide(color);
-	Square from = NONE;
-	Bitboard attacks = EMPTY_BB;
-	int kingAttacks = 0;
+	static const int ENEMY_ATTACK_BONUS = 2;
+	static const int KING_ATTACK_BONUS = 7;
 
+	PieceColor other = board.flipSide(color);
+	Bitboard pieces = EMPTY_BB;
+	Bitboard moves = EMPTY_BB;
+	Bitboard enemies = board.getPiecesByColor(other);
+	Bitboard enemyKing = board.getPiecesByType(board.makePiece(other,KING));
+	Square kingSquare = bitboardToSquare(enemyKing);
+	Bitboard enemyKingSquares = enemyKing | adjacentSquares[kingSquare];
+	Square from = NONE;
 	int count=0;
 
-	Bitboard king = board.getPiecesByType(board.makePiece(other,KING));
-
-	pieces = board.getPiecesByType(board.makePiece(color,KNIGHT));
-	from = extractLSB(pieces);
-
-	attacks = EMPTY_BB;
-	while ( from!=NONE ) {
-
-		attacks |= board.getKnightAttacks(from);
-		from = extractLSB(pieces);
-	}
-
-	count+=_BitCount(attacks);
-
-	if (king & attacks) {
-		kingAttacks++;
-	}
 
 	pieces = board.getPiecesByType(board.makePiece(color,BISHOP));
 	from = extractLSB(pieces);
 
-	attacks = EMPTY_BB;
+	moves = EMPTY_BB;
 	while ( from!=NONE ) {
 
-		attacks |= board.getBishopAttacks(from);
+		moves |= board.getBishopAttacks(from);
 		from = extractLSB(pieces);
 	}
 
-	count+=_BitCount(attacks);
-
-	if (king & attacks) {
-		kingAttacks++;
-	}
+	count+=_BitCount(moves);
+	count+= (enemies&moves) ? ENEMY_ATTACK_BONUS : 0;
+	count+= (enemyKingSquares&moves) ? KING_ATTACK_BONUS : 0;
 
 	pieces = board.getPiecesByType(board.makePiece(color,ROOK));
 	from = extractLSB(pieces);
 
-	attacks = EMPTY_BB;
+	moves = EMPTY_BB;
 	while ( from!=NONE ) {
-		attacks |= board.getRookAttacks(from);
+		moves |= board.getRookAttacks(from);
 		from = extractLSB(pieces);
 	}
 
-	count+=_BitCount(attacks);
-
-	if (king & attacks) {
-		kingAttacks++;
-	}
+	count+=_BitCount(moves);
+	count+= (enemies&moves) ? ENEMY_ATTACK_BONUS : 0;
+	count+= (enemyKingSquares&moves) ? KING_ATTACK_BONUS : 0;
 
 	pieces = board.getPiecesByType(board.makePiece(color,QUEEN));
 	from = extractLSB(pieces);
 
-	attacks = EMPTY_BB;
+	moves = EMPTY_BB;
 	while ( from!=NONE ) {
-		attacks |= board.getQueenAttacks(from);
+		moves |= board.getQueenAttacks(from);
 		from = extractLSB(pieces);
 	}
 
-	count+=_BitCount(attacks);
+	count+=_BitCount(moves);
+	count+= (enemies&moves) ? ENEMY_ATTACK_BONUS : 0;
+	count+= (enemyKingSquares&moves) ? KING_ATTACK_BONUS : 0;
 
-	if (king & attacks) {
-		kingAttacks++;
-	}
-
-	return count + kingAttacks;
+	return count;
 }
 
 // material eval function
-inline const int Evaluator::evalDevelopment(Board& board) {
+inline const int Evaluator::evalDevelopment(Board& board, PieceColor color) {
 
-	int whiteBonus = 0;
-	int blackBonus = 0;
+	int bonus = 0;
+	int first = board.makePiece(color,PAWN);
+	int last = board.makePiece(color,KING);
 
-	PieceColor side = board.getSideToMove();
-
-	for(int pieceType = WHITE_PAWN; pieceType <= WHITE_KING; pieceType++) {
+	for(int pieceType = first; pieceType <= last; pieceType++) {
 		Bitboard pieces = board.getPiecesByType(PieceTypeByColor(pieceType));
 		Square from = extractLSB(pieces);
 		while ( from!=NONE ) {
-			whiteBonus += pieceSquareTable[pieceType][from];
+			bonus += pieceSquareTable[pieceType][from];
 			from = extractLSB(pieces);
 		}
 	}
 
-	for(int pieceType = BLACK_PAWN; pieceType <= BLACK_KING; pieceType++) {
-		Bitboard pieces = board.getPiecesByType(PieceTypeByColor(pieceType));
-		Square from = extractLSB(pieces);
-		while ( from!=NONE ) {
-			blackBonus += pieceSquareTable[pieceType][from];
-			from = extractLSB(pieces);
-		}
-	}
-
-/* why is not this code faster than the above one?
-	for(int square = A1; square <= H8; square++) {
-		PieceTypeByColor pieceType = board.getPieceBySquare(Square(square));
-		if (pieceType!=EMPTY) {
-			if (board.getPieceColor(pieceType)==WHITE) {
-				whiteBonus += pieceSquareTable[pieceType][square];
-			} else {
-				blackBonus += pieceSquareTable[pieceType][square];
-			}
-		}
-	}
-*/
-	return side==WHITE?whiteBonus-blackBonus : blackBonus-whiteBonus;
+	return bonus;
 }
 
+// mobility eval function
+inline const int Evaluator::evalImbalances(Board& board, PieceColor color) {
+
+	static const int bishopPairBonus = 50;
+	int count=0;
+
+	Bitboard bishop = board.getPiecesByType(board.makePiece(color,BISHOP));
+
+	if ((bishop & WHITE_SQUARES) && (bishop & BLACK_SQUARES)) {
+		count += bishopPairBonus;
+	}
+
+	return count;
+}
 
 #endif /* EVALUATOR_H_ */
