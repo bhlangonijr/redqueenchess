@@ -327,12 +327,13 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 		static uint32_t reductionFactor = 3;
 
 		uint32_t reduction=0;
-		if (move.score<alpha && depth > 3 && move.score < beta) {
-			reduction=reductionFactor;
-		} else if (move.score >= beta) {
-			reduction=(depth-1); // direct to quiescence
+		if (!isKingAttacked) {
+			if (move.score<alpha && depth > reductionFactor && move.score < beta) {
+				reduction=reductionFactor;
+			} else if (move.score >= beta) {
+				reduction=(depth-1); // direct to quiescence
+			}
 		}
-
 
 #if PV_SEARCH
 		if ( bSearch ) {
