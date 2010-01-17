@@ -324,26 +324,26 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 		Board newBoard(board);
 #endif
 
-		static uint32_t reductionFactor = 3;
-
-		uint32_t reduction=0;
+		uint32_t reduction=1;
 		if (!isKingAttacked) {
-			if (move.score<alpha && depth > reductionFactor && move.score < beta) {
-				reduction=reductionFactor;
-			} else if (move.score >= beta) {
-				reduction=(depth-1); // direct to quiescence
+			static uint32_t reductionFactor = 3;
+
+			if (move.score<=alpha && depth > reductionFactor && move.score < beta && depth > 2) {
+				reduction+=reductionFactor;
+			} else if ( move.score >= beta && depth > 2) {
+				reduction=(depth-2); // direct to quiescence
 			}
 		}
 
 #if PV_SEARCH
 		if ( bSearch ) {
 #endif
-			score = -pvSearch(board, -beta, -alpha, depth-1-reduction, ply+1, &line, allowNullMove, allowIid);
+			score = -pvSearch(board, -beta, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowIid);
 #if PV_SEARCH
 		} else {
-			score = -pvSearch(board, -alpha-1, -alpha, depth-1-reduction, ply+1, &line, allowNullMove, allowIid);
+			score = -pvSearch(board, -alpha-1, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowIid);
 			if ( score > alpha ) {
-				score = -pvSearch(board, -beta, -alpha, depth-1-reduction, ply+1, &line, allowNullMove, allowIid);
+				score = -pvSearch(board, -beta, -alpha, depth-1, ply+1, &line, allowNullMove, allowIid);
 			}
 		}
 #endif
