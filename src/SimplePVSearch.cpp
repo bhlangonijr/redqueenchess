@@ -216,6 +216,9 @@ int SimplePVSearch::iid(Board& board, MoveIterator& moves, int alpha, int beta, 
 // principal variation search
 int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, uint32_t ply, PvLine* pv, const bool allowNullMove, const bool allowIid) {
 
+	if	(board.isDraw()) {
+		return 0;
+	}
 
 #if PV_SEARCH
 	bool bSearch = true;
@@ -321,15 +324,25 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 		Board newBoard(board);
 #endif
 
+		static uint32_t reductionFactor = 3;
+
+		uint32_t reduction=0;
+		if (move.score<alpha && depth > 3 && move.score < beta) {
+			reduction=reductionFactor;
+		} else if (move.score >= beta) {
+			reduction=(depth-1); // direct to quiescence
+		}
+
+
 #if PV_SEARCH
 		if ( bSearch ) {
 #endif
-			score = -pvSearch(board, -beta, -alpha, depth-1, ply+1, &line, allowNullMove, allowIid);
+			score = -pvSearch(board, -beta, -alpha, depth-1-reduction, ply+1, &line, allowNullMove, allowIid);
 #if PV_SEARCH
 		} else {
-			score = -pvSearch(board, -alpha-1, -alpha, depth-1, ply+1, &line, allowNullMove, allowIid);
+			score = -pvSearch(board, -alpha-1, -alpha, depth-1-reduction, ply+1, &line, allowNullMove, allowIid);
 			if ( score > alpha ) {
-				score = -pvSearch(board, -beta, -alpha, depth-1, ply+1, &line, allowNullMove, allowIid);
+				score = -pvSearch(board, -beta, -alpha, depth-1-reduction, ply+1, &line, allowNullMove, allowIid);
 			}
 		}
 #endif
@@ -398,6 +411,9 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 //quiescence search
 int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv, const bool allowIid) {
 
+	if	(board.isDraw()) {
+		return 0;
+	}
 	_nodes++;
 
 	int standPat = evaluator.evaluate(board);

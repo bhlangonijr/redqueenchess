@@ -344,10 +344,6 @@ private:
 // main eval function
 inline const int Evaluator::evaluate(Board& board) {
 
-	if	(board.isDraw()) {
-		return 0;
-	}
-
 	int material = 0;
 	int mobility = 0;
 	int pieces = 0;
@@ -444,7 +440,7 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 		}
 
 	}
-
+	//TODO implement more piece evalutions
 	return count;
 }
 
@@ -538,7 +534,7 @@ inline const int Evaluator::evalImbalances(Board& board, PieceColor color) {
 	if ((bishop & WHITE_SQUARES) && (bishop & BLACK_SQUARES)) {
 		count += bishopPairBonus;
 	}
-
+	// TODO implement more imbalances
 	return count;
 }
 

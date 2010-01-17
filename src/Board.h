@@ -106,8 +106,8 @@ struct Node {
 	{}
 
 	Node (const Node& node) : key(node.key), piece( node.piece ), enPassant( node.enPassant ),
-							  sideToMove( node.sideToMove ), moveCounter(node.moveCounter),
-							  halfMoveCounter(node.halfMoveCounter)
+	sideToMove( node.sideToMove ), moveCounter(node.moveCounter),
+	halfMoveCounter(node.halfMoveCounter)
 	{
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=node.square[x];
@@ -491,10 +491,10 @@ inline const bool Board::isAttacked(const PieceColor color, const PieceType type
 		return 	(getBishopAttacks(from) & (getPiecesByType(makePiece(other,BISHOP)) |
 				getPiecesByType(makePiece(other,QUEEN)))) ||
 				(getRookAttacks(from) & (getPiecesByType(makePiece(other,ROOK)) |
-				getPiecesByType(makePiece(other,QUEEN)))) ||
-				(getKnightAttacks(from) & getPiecesByType(makePiece(other,KNIGHT))) ||
-				(getPawnAttacks(from) & getPiecesByType(makePiece(other,PAWN))) ||
-				(getKingAttacks(from) & getPiecesByType(makePiece(other,KING)));
+						getPiecesByType(makePiece(other,QUEEN)))) ||
+						(getKnightAttacks(from) & getPiecesByType(makePiece(other,KNIGHT))) ||
+						(getPawnAttacks(from) & getPiecesByType(makePiece(other,PAWN))) ||
+						(getKingAttacks(from) & getPiecesByType(makePiece(other,KING)));
 	}
 
 	return false;
@@ -509,12 +509,12 @@ inline const bool Board::isAttacked(const Bitboard occupation, const PieceColor 
 	while ( from!=NONE ) {
 
 		bool result= (getBishopAttacks(from) & (getPiecesByType(makePiece(attackingSide,BISHOP)) |
-					 getPiecesByType(makePiece(attackingSide,QUEEN)))) ||
-					 (getRookAttacks(from) & (getPiecesByType(makePiece(attackingSide,ROOK)) |
-					 getPiecesByType(makePiece(attackingSide,QUEEN)))) ||
-					 (getKnightAttacks(from) & getPiecesByType(makePiece(attackingSide,KNIGHT))) ||
-					 (getPawnAttacks(from) & getPiecesByType(makePiece(attackingSide,PAWN))) ||
-					 (getKingAttacks(from) & getPiecesByType(makePiece(attackingSide,KING)));
+				getPiecesByType(makePiece(attackingSide,QUEEN)))) ||
+				(getRookAttacks(from) & (getPiecesByType(makePiece(attackingSide,ROOK)) |
+						getPiecesByType(makePiece(attackingSide,QUEEN)))) ||
+						(getKnightAttacks(from) & getPiecesByType(makePiece(attackingSide,KNIGHT))) ||
+						(getPawnAttacks(from) & getPiecesByType(makePiece(attackingSide,PAWN))) ||
+						(getKingAttacks(from) & getPiecesByType(makePiece(attackingSide,KING)));
 
 		if (result) {
 			return true;
@@ -537,34 +537,29 @@ inline const bool Board::isNotLegal() {
 // verify draw by 50th move rule, 3 fold rep and insuficient material
 inline const bool Board::isDraw() {
 
-	if (getMoveCounter()>=10){
+	static const int RANGE_CHECK=10;
+	if (getMoveCounter()>=RANGE_CHECK){
 		int repetition = 0;
 
-		//std::cout << getMoveCounter() << " -  " << currentBoard.keyHistory[getMoveCounter()]<< std::endl;
-		for (int x=getMoveCounter()-10;x<getMoveCounter();x++) {
-			//std::cout << x << " -  " << currentBoard.keyHistory[x]<< std::endl;
+		for (int x=getMoveCounter()-RANGE_CHECK;x<getMoveCounter();x++) {
 			if (currentBoard.keyHistory[getMoveCounter()]==currentBoard.keyHistory[x]) {
-				//std::cout << "repetition at " << x << ": " << currentBoard.keyHistory[x]<< std::endl;
 				repetition++;
 			}
 			if (repetition>=2) {
-				//std::cout << "detected draw!" << std::endl;
 				return true;
 			}
 		}
-		//std::cout << getMoveCounter() << " -----------------------------------  " << std::endl;
-
 	}
 
 	if (!(getPiecesByType(WHITE_PAWN)|getPiecesByType(BLACK_PAWN))) {
 
 		if (_BitCount(getAllPieces())<=3 &&
-			(getPiecesByType(WHITE_KING) &&
-			 getPiecesByType(BLACK_KING)) &&
-			(getPiecesByType(WHITE_KNIGHT) ||
-			 getPiecesByType(WHITE_BISHOP) ||
-			 getPiecesByType(BLACK_KNIGHT) ||
-			 getPiecesByType(BLACK_BISHOP))	) {
+				(getPiecesByType(WHITE_KING) &&
+						getPiecesByType(BLACK_KING)) &&
+						(getPiecesByType(WHITE_KNIGHT) ||
+								getPiecesByType(WHITE_BISHOP) ||
+								getPiecesByType(BLACK_KNIGHT) ||
+								getPiecesByType(BLACK_BISHOP))	) {
 			return true;
 		}
 
