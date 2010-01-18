@@ -107,10 +107,8 @@ int SimplePVSearch::idSearch(Board& board) {
 		pv.index=0;
 		moves.first();
 
-		while (moves.hasNext()) {
-			if (stop(agent->getSearchInProgress())) {
-				break;
-			}
+		while (moves.hasNext() && !stop(agent->getSearchInProgress())) {
+
 			MoveIterator::Move& move = moves.next();
 			_nodes++;
 			MoveBackup backup;
@@ -185,6 +183,7 @@ int SimplePVSearch::iid(Board& board, MoveIterator& moves, int alpha, int beta, 
 	static const int iidDepth=2;
 	PvLine line;
 	moves.first();
+	int moveCounter=0;
 
 	while (moves.hasNext()) {
 
@@ -205,16 +204,19 @@ int SimplePVSearch::iid(Board& board, MoveIterator& moves, int alpha, int beta, 
 		if (score > alpha) {
 			alpha = score;
 		}
+		moveCounter++;
 		moves.sortOne();
 	}
 	//moves.sort();
 
-	return alpha;
+	return moveCounter;
 
 }
 
 // principal variation search
-int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, uint32_t ply, PvLine* pv, const bool allowNullMove, const bool allowIid) {
+int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
+							 uint32_t depth, uint32_t ply, PvLine* pv,
+							 const bool allowNullMove, const bool allowIid) {
 
 	if	(board.isDraw()) {
 		return 0;
@@ -230,7 +232,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 #endif
 
 	if (depth==0||stop(agent->getSearchInProgress())) {
-		int score = qSearch(board, alpha, beta, maxQuiescenceSearchDepth, &line, true);
+		int score = qSearch(board, alpha, beta, maxQuiescenceSearchDepth, &line);
 		agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,MoveIterator::Move());
 		stats.ttLower++;
 		return score;
@@ -262,7 +264,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 
 	bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 
-	if (!isKingAttacked) {
+	if (!(isKingAttacked || evaluator.getGameStage(board)==Evaluator::ENDGAME)) {
 
 		Bitboard pawns = board.getPiecesByType(WHITE_PAWN) |
 				board.getPiecesByType(BLACK_PAWN);
@@ -292,26 +294,31 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 
 	MoveIterator moves;
 	board.generateAllMoves(moves, board.getSideToMove());
+	int totalMoves = moves.size();
 
 	if (allowIid) {
-		score = iid(board, moves, alpha, beta, ply);
+		totalMoves = iid(board, moves, alpha, beta, ply);
+
+		if (!totalMoves) {
+			return isKingAttacked ? -maxScore+ply : 0;
+		}
 	}
 
 	moves.first();
 	int moveCounter=0;
+	static uint32_t prunningDepth=2;
+	//static int prunningMargin=400;
 #if CHECK_MOVE_GEN_ERRORS
 	Key key1 = old.generateKey();
 #endif
 
-	while (moves.hasNext()) {
-		if (stop(agent->getSearchInProgress())) {
-			break;
-		}
+	while (moves.hasNext() && !stop(agent->getSearchInProgress())) {
 
 		MoveIterator::Move& move = moves.next();
-		if (move.score==notLegal) {
+		if (move.score==notLegal/* || (depth > prunningDepth && move.score + prunningMargin <= alpha && moveCounter) */) {
 			continue;
 		}
+		moveCounter++;
 		MoveBackup backup;
 		board.doMove(move,backup);
 
@@ -325,13 +332,11 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 #endif
 
 		uint32_t reduction=1;
-		if (!isKingAttacked) {
-			static uint32_t reductionFactor = 2;
+		if (!isKingAttacked && allowIid) {
+			static uint32_t reductionValue = (depth >= 3? 3 : 2);
 
-			if (move.score<=alpha && depth > reductionFactor && move.score < beta && ply > 1) {
-				reduction+=reductionFactor;
-			} else if ( move.score<=alpha && move.score >= beta && depth > 3 && ply > 1) {
-				reduction=3;
+			if ((depth > prunningDepth) && (move.score <= alpha) && (!(backup.hasCapture || backup.hasPromotion))) {
+				reduction=reductionValue;
 			}
 		}
 
@@ -342,9 +347,11 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 
 #if PV_SEARCH
 		} else {
-			score = -pvSearch(board, -alpha-1, -alpha, depth-1, ply+1, &line, allowNullMove, allowIid);
+
+			score = -pvSearch(board, -alpha-1, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowIid);
+
 			if ( score > alpha ) {
-				score = -pvSearch(board, -beta, -alpha, depth-1, ply+1, &line, allowNullMove, allowIid);
+				score = -pvSearch(board, -beta, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowIid);
 			}
 		}
 #endif
@@ -391,7 +398,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 
 		}
 
-		moveCounter++;
 	}
 
 	if (alpha>oldAlpha) {
@@ -411,7 +417,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta, uint32_t depth, 
 }
 
 //quiescence search
-int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv, const bool allowIid) {
+int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv) {
 
 	if	(board.isDraw()) {
 		return 0;
@@ -444,10 +450,8 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth, P
 
 	moves.first();
 
-	while (moves.hasNext())  {
-		if (stop(agent->getSearchInProgress())) {
-			break;
-		}
+	while (moves.hasNext() && !stop(agent->getSearchInProgress()))  {
+
 		MoveIterator::Move& move = moves.next();
 		MoveBackup backup;
 
@@ -458,7 +462,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth, P
 			continue; // not legal
 		}
 
-		int score = -qSearch(board, -beta, -alpha, depth-1, &line, allowIid);
+		int score = -qSearch(board, -beta, -alpha, depth-1, &line);
 
 #if DEBUG_QS
 		std::cout << "(QS) score: " << alpha << " / move: " << move.toString() << " / depth " << depth << std::endl;
