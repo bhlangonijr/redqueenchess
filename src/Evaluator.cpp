@@ -55,7 +55,7 @@ const Evaluator::GamePhase Evaluator::getGameStage(Board& board) {
 	static const int openingPieces=28;
 
 	static const int endGameMoves=30;
-	static const int endGamePieces=12;
+	static const int endGamePieces=14;
 
 	GamePhase phase = MIDDLEGAME;
 

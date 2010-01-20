@@ -186,6 +186,7 @@ private:
 
 	int idSearch(Board& board);
 	int iid(Board& board, MoveIterator& moves, int alpha, int beta, uint32_t ply);
+	int sortMoves(Board& board, MoveIterator& moves);
 	int pvSearch(Board& board, int alpha, int beta, uint32_t depth, uint32_t ply, PvLine* pv, const bool allowNullMove, const bool allowIid);
 	int qSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv);
 	const std::string pvLineToString(const PvLine* pv);
