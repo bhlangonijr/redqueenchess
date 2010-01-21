@@ -394,11 +394,11 @@ inline const int Evaluator::evalMaterial(Board& board, PieceColor color) {
 // king eval function
 inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 
-	static const int DONE_CASTLE_BONUS=15;
-	static const int CAN_CASTLE_BONUS=5;
-	static const int DOUBLE_CAN_CASTLE_BONUS=10;
+	static const int DONE_CASTLE_BONUS=       15;
+	static const int CAN_CASTLE_BONUS=         5;
+	static const int DOUBLE_CAN_CASTLE_BONUS= 10;
 	static const int UNSTOPPABLE_PAWN_BONUS = 30;
-	static const int DOUBLED_PAWN_PENALTY = -10;
+	static const int DOUBLED_PAWN_PENALTY =  -10;
 	static const int ISOLATED_PAWN_PENALTY = -20;
 
 	PieceColor other = board.flipSide(color);
@@ -410,7 +410,7 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 			if (board.isCastleDone(color)) {
 				count= DONE_CASTLE_BONUS;
 			} else if (board.getCastleRights(color)!=NO_CASTLE) {
-				if (board.getCastleRights(color)!=BOTH_SIDE_CASTLE) {
+				if (board.getCastleRights(color)==BOTH_SIDE_CASTLE) {
 					count= DOUBLE_CAN_CASTLE_BONUS;
 				} else {
 					count= CAN_CASTLE_BONUS;
