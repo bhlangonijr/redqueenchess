@@ -436,7 +436,7 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 			Bitboard neighbor =EMPTY_BB;
 
 			if (squareFile[from]!=FILE_H) {
-				neighbor = fileBB[squareFile[from+1]]&pawns;
+				neighbor |= fileBB[squareFile[from+1]]&pawns;
 			}
 			if (squareFile[from]!=FILE_A) {
 				neighbor |= fileBB[squareFile[from-1]]&pawns;
@@ -450,7 +450,7 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 			Bitboard enemyNeighbor =EMPTY_BB;
 			enemyNeighbor |= fileBB[squareFile[from]]&enemyPawns;
 			if (squareFile[from]!=FILE_H) {
-				enemyNeighbor = fileBB[squareFile[from+1]]&enemyPawns;
+				enemyNeighbor |= fileBB[squareFile[from+1]]&enemyPawns;
 			}
 			if (squareFile[from]!=FILE_A) {
 				enemyNeighbor |= fileBB[squareFile[from-1]]&enemyPawns;
