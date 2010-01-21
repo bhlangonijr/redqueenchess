@@ -53,11 +53,11 @@ void MoveIterator::sort() {
 
 		}
 	}
-	/*
-	std::cout << "----- init " << std::endl;
+
+/*	std::cout << "----- init " << std::endl;
 	for (uint32_t x=0;x<_data.size;x++) {
 		std::cout << _data.list[x].toString() << " - score: " << _data.list[x].score << std::endl;
 	}
-	std::cout << "----- end " << std::endl;
-	 */
+	std::cout << "----- end " << std::endl;*/
+
 }

@@ -30,8 +30,6 @@
 #define CHECK_MOVE_GEN_ERRORS false
 // Exit the program if the count of errors in CHECK_MOVE_GEN_ERRORS exceed the threshold - used for trace purposes
 #define EXIT_PROGRAM_THRESHOLD 100
-// If true uses Principal Variation Search
-#define PV_SEARCH true
 // debug iterative d search
 #define DEBUG_ID false
 // debug alpha-beta search
@@ -252,9 +250,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 		return 0;
 	}
 
-#if PV_SEARCH
-	bool bSearch = true;
-#endif
 	SearchAgent* agent = SearchAgent::getInstance();
 	PvLine line = PvLine();
 #if CHECK_MOVE_GEN_ERRORS
@@ -294,7 +289,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 
 	bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 
-	if (!(isKingAttacked || evaluator.getGameStage(board)==Evaluator::ENDGAME)) {
+	if (!isKingAttacked) {
 
 		Bitboard pawns = board.getPiecesByType(WHITE_PAWN) |
 				board.getPiecesByType(BLACK_PAWN);
@@ -336,15 +331,13 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 
 	moves.first();
 	int moveCounter=0;
-	static const uint32_t reductionValue = (depth >= 3? 3 : 2);
 	static const int prunningMoves = 4;
-
 	static const uint32_t prunningDepth=2;
 
 #if CHECK_MOVE_GEN_ERRORS
 	Key key1 = old.generateKey();
 #endif
-
+	uint32_t reduction=1;
 	while (moves.hasNext() && !stop(agent->getSearchInProgress())) {
 
 		MoveIterator::Move& move = moves.next();
@@ -364,33 +357,24 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 		Board newBoard(board);
 #endif
 
-		uint32_t reduction=1;
+		int extend=false;
 		if (!isKingAttacked && allowIid && allowNullMove) {
 
 			if ((depth > prunningDepth) &&
-					(move.score <= alpha) &&
+					//(move.score <= alpha) &&
 					(moveCounter > prunningMoves) &&
 					(!(backup.hasCapture || backup.hasPromotion))) {
-				reduction=reductionValue;
+				if (reduction < depth)
+					reduction++;
+				extend=true;
 			}
 		}
 
+		score = -pvSearch(board, -beta, -alpha, depth-(extend?reduction:1), ply+1, &line, allowNullMove, allowIid);
 
-#if PV_SEARCH
-		if ( bSearch ) {
-#endif
-			score = -pvSearch(board, -beta, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowIid);
-
-#if PV_SEARCH
-		} else {
-
-			score = -pvSearch(board, -alpha-1, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowIid);
-
-			if ( score > alpha) {
-				score = -pvSearch(board, -beta, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowIid);
-			}
+		if ( score > alpha && extend ) {
+			score = -pvSearch(board, -beta, -alpha, depth-1, ply+1, &line, allowNullMove, allowIid);
 		}
-#endif
 #if DEBUG_AB
 		std::cout << "(AB) score: " << score << " / move: " << move.toString() << " / depth " << depth << std::endl;
 		std::string pad=" ";
@@ -404,7 +388,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 		Key key2 = board.generateKey();
 		if (key1!=key2) {
 			errorCount++;
-			std::cout << "CRITICAL - Error in undoMove: restored board differs from original " << std::endl;
+			std::cout << "AB ** CRITICAL - Error in undoMove: restored board differs from original " << std::endl;
 			std::cout << "Original board: " << std::endl;
 			old.printBoard();
 			std::cout << "Board with move: " << std::endl;
@@ -427,11 +411,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 
 		if( score > alpha ) {
 			alpha = score;
-#if PV_SEARCH
-			bSearch = false;
-#endif
 			updatePv(pv, line, move);
-
 		}
 
 	}
@@ -453,70 +433,96 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 }
 
 //quiescence search
-int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv) {
+int SimplePVSearch::qSearch(Board& board, int alpha, int beta,
+		uint32_t depth, PvLine* pv) {
+#if CHECK_MOVE_GEN_ERRORS
+	Board old(board);
+#endif
+	_nodes++;
 
 	if	(board.isDraw()) {
 		return 0;
 	}
-	_nodes++;
+
+	SearchAgent* agent = SearchAgent::getInstance();
+	PvLine line = PvLine();
 
 	int standPat = evaluator.evaluate(board);
 
-	SearchAgent* agent = SearchAgent::getInstance();
-
-	if(standPat>=beta||depth==0||stop(agent->getSearchInProgress())) {
-#if DEBUG_QS
-		std::cout << "(QS) beta: " << beta << " / eval: " << standPat << " / depth " << depth << std::endl;
-		std::string pad=" ";
-		pad.append((maxQuiescenceSearchDepth-depth+_depth)*4, ' ');
-		board.printBoard(pad);
-#endif
-		pv->index=0;
-		return standPat;
+	if (standPat>=beta||depth==0||stop(agent->getSearchInProgress())) {
+		return beta;
 	}
 
-	if( alpha < standPat ) {
+	if( standPat > alpha ) {
 		alpha = standPat;
 	}
-
-	PvLine line = PvLine();
 
 	MoveIterator moves;
 	board.generateCaptures(moves, board.getSideToMove());
 
-	sortMoves(board, moves);
 	moves.first();
-
-	while (moves.hasNext() && !stop(agent->getSearchInProgress()))  {
+	int moveCounter=0;
+#if CHECK_MOVE_GEN_ERRORS
+	Key key1 = old.generateKey();
+#endif
+	while (moves.hasNext() && !stop(agent->getSearchInProgress())) {
 
 		MoveIterator::Move& move = moves.next();
-		MoveBackup backup;
 		if (move.score==notLegal) {
 			continue;
 		}
+		moveCounter++;
+		MoveBackup backup;
 		board.doMove(move,backup);
 
 		if (board.isNotLegal()) {
 			board.undoMove(backup);
 			continue; // not legal
 		}
-
-		int score = -qSearch(board, -beta, -alpha, depth-1, &line);
-
-#if DEBUG_QS
-		std::cout << "(QS) score: " << alpha << " / move: " << move.toString() << " / depth " << depth << std::endl;
-		std::string pad=" ";
-		pad.append((depth)*4, ' ');
-		board.printBoard(pad);
+#if CHECK_MOVE_GEN_ERRORS
+		Board newBoard(board);
 #endif
+		int score = -qSearch(board, -beta, -alpha, depth-1, &line);
 
 		board.undoMove(backup);
 
+#if CHECK_MOVE_GEN_ERRORS
+		Key key2 = board.generateKey();
+		if (key1!=key2) {
+			errorCount++;
+			std::cout << "QS ** CRITICAL - Error in undoMove: restored board differs from original " << std::endl;
+			std::cout << "Original board: " << std::endl;
+			old.printBoard();
+			std::cout << "Board with move: " << std::endl;
+			newBoard.printBoard();
+			std::cout << "Board with undone move: " << std::endl;
+			board.printBoard();
+			std::cout << move.toString() << std::endl;
+			std::cout << "End - Error in undoMove " << std::endl;
+			if (errorCount>EXIT_PROGRAM_THRESHOLD) {
+				std::cout << "Error count exceed threshold: " << errorCount << std::endl;
+				exit(1);
+			}
+		}
+#endif
 		if( score >= beta ) {
+#if DEBUG_QS
+		std::cout << "(QS) score >= beta: " << score << " / move: " << move.toString() << " / depth " << depth << std::endl;
+		std::string pad=" ";
+		pad.append((20-depth)*4, ' ');
+		board.printBoard(pad);
+#endif
+
 			return beta;
 		}
 
 		if( score > alpha ) {
+#if DEBUG_QS
+		std::cout << "(QS) score > alpha: " << score << " / move: " << move.toString() << " / depth " << depth << std::endl;
+		std::string pad=" ";
+		pad.append((20-depth)*4, ' ');
+		board.printBoard(pad);
+#endif
 			alpha = score;
 			updatePv(pv, line, move);
 		}
@@ -524,5 +530,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, uint32_t depth, P
 	}
 
 	return alpha;
+
 }
+
 
