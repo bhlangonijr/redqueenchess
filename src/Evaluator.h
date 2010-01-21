@@ -224,14 +224,14 @@ static const int endGamePieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 				-20,-10,-10, -5, -5,-10,-10,-20,
 		},
 		{//white king
-			     0,  10, 20, 30, 30, 20, 10,  0,
-				 10, 20, 30, 40, 40, 30, 20, 10,
-				 20, 30, 40, 50, 50, 40, 30, 20,
-				 30, 40, 50, 60, 60, 50, 40, 30,
-				 30, 40, 50, 60, 60, 50, 40, 30,
-				 20, 30, 40, 50, 50, 40, 30, 20,
-				 10, 20, 30, 40, 40, 30, 20, 10,
-				  0, 10, 20, 30, 30, 20, 10,  0,
+				0,  10, 20, 30, 30, 20, 10,  0,
+				10, 20, 30, 40, 40, 30, 20, 10,
+				20, 30, 40, 50, 50, 40, 30, 20,
+				30, 40, 50, 60, 60, 50, 40, 30,
+				30, 40, 50, 60, 60, 50, 40, 30,
+				20, 30, 40, 50, 50, 40, 30, 20,
+				10, 20, 30, 40, 40, 30, 20, 10,
+				0, 10, 20, 30, 30, 20, 10,  0,
 		},
 		{//black pawn
 				0,  0,  0,  0,  0,  0,  0,  0,
@@ -284,24 +284,24 @@ static const int endGamePieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 				-20,-10,-10, -5, -5,-10,-10,-20,
 		},
 		{//black king
-		     0,  10, 20, 30, 30, 20, 10,  0,
-			 10, 20, 30, 40, 40, 30, 20, 10,
-			 20, 30, 40, 50, 50, 40, 30, 20,
-			 30, 40, 50, 60, 60, 50, 40, 30,
-			 30, 40, 50, 60, 60, 50, 40, 30,
-			 20, 30, 40, 50, 50, 40, 30, 20,
-			 10, 20, 30, 40, 40, 30, 20, 10,
-			  0, 10, 20, 30, 30, 20, 10,  0},
-		{ // empty
-			0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0,
-		    0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0,
-			0, 0, 0, 0, 0, 0, 0, 0
-		}
+				0,  10, 20, 30, 30, 20, 10,  0,
+				10, 20, 30, 40, 40, 30, 20, 10,
+				20, 30, 40, 50, 50, 40, 30, 20,
+				30, 40, 50, 60, 60, 50, 40, 30,
+				30, 40, 50, 60, 60, 50, 40, 30,
+				20, 30, 40, 50, 50, 40, 30, 20,
+				10, 20, 30, 40, 40, 30, 20, 10,
+				0, 10, 20, 30, 30, 20, 10,  0},
+				{ // empty
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0
+				}
 
 };
 
@@ -354,20 +354,18 @@ inline const int Evaluator::evaluate(Board& board) {
 	PieceColor other = board.flipSide(board.getSideToMove());
 
 	material = evalMaterial(board, side) - evalMaterial(board, other);
-	if (gamePhase!=ENDGAME) {
-		mobility = evalMobility(board, side) - evalMobility(board, other);
-	}
+	mobility = evalMobility(board, side) - evalMobility(board, other);
 	development = evalDevelopment(board, side) - evalDevelopment(board, other);
 	pieces = evalPieces(board, side) - evalPieces(board, other);
 	imbalances = evalImbalances(board, side) - evalImbalances(board, other);
 
-/*
+	/*
 	std::cout << "material:    " << material << std::endl;
 	std::cout << "mobility:    " << mobility << std::endl;
 	std::cout << "development: " << development << std::endl;
 	std::cout << "pieces:      " << pieces << std::endl;
 	std::cout << "--------      " << pieces << std::endl;
-*/
+	 */
 	int eval = material+mobility+pieces+development+imbalances;
 
 
@@ -394,12 +392,12 @@ inline const int Evaluator::evalMaterial(Board& board, PieceColor color) {
 // king eval function
 inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 
-	static const int DONE_CASTLE_BONUS=       15;
-	static const int CAN_CASTLE_BONUS=         5;
-	static const int DOUBLE_CAN_CASTLE_BONUS= 10;
-	static const int UNSTOPPABLE_PAWN_BONUS = 30;
+	static const int DONE_CASTLE_BONUS=       20;
+	static const int CAN_CASTLE_BONUS=        5;
+	static const int UNSTOPPABLE_PAWN_BONUS = 20;
 	static const int DOUBLED_PAWN_PENALTY =  -10;
-	static const int ISOLATED_PAWN_PENALTY = -20;
+	static const int ISOLATED_PAWN_PENALTY = -15;
+	static const int BACKWARD_PAWN_PENALTY = -5;
 
 	PieceColor other = board.flipSide(color);
 	int count=0;
@@ -409,13 +407,9 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 		if (board.getPiecesByType(board.makePiece(other,QUEEN))) {
 			if (board.isCastleDone(color)) {
 				count= DONE_CASTLE_BONUS;
-			} else if (board.getCastleRights(color)!=NO_CASTLE) {
-				if (board.getCastleRights(color)==BOTH_SIDE_CASTLE) {
-					count= DOUBLE_CAN_CASTLE_BONUS;
-				} else {
-					count= CAN_CASTLE_BONUS;
-				}
-			} else {
+			} else if (board.getCastleRights(color)==BOTH_SIDE_CASTLE) {
+				count= CAN_CASTLE_BONUS;
+			} else if (board.getCastleRights(color)==NO_CASTLE) {
 				count= -DONE_CASTLE_BONUS;
 			}
 		}
@@ -438,26 +432,47 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 			if (squareFile[from]!=FILE_H) {
 				neighbor |= fileBB[squareFile[from+1]]&pawns;
 			}
+
 			if (squareFile[from]!=FILE_A) {
 				neighbor |= fileBB[squareFile[from-1]]&pawns;
 			}
 
 			if (!neighbor) {
 				count += ISOLATED_PAWN_PENALTY;
+			} else {
+				if (!(adjacentSquares[from]&pawns)) {
+					count += BACKWARD_PAWN_PENALTY;
+				}
 			}
 
 
-			Bitboard enemyNeighbor =EMPTY_BB;
-			enemyNeighbor |= fileBB[squareFile[from]]&enemyPawns;
-			if (squareFile[from]!=FILE_H) {
-				enemyNeighbor |= fileBB[squareFile[from+1]]&enemyPawns;
-			}
-			if (squareFile[from]!=FILE_A) {
-				enemyNeighbor |= fileBB[squareFile[from-1]]&enemyPawns;
-			}
+			if ((color==WHITE && squareRank[from]>=RANK_5) ||
+					(color==BLACK && squareRank[from]<=RANK_4)) {
 
-			if (!enemyNeighbor) {
-				count += UNSTOPPABLE_PAWN_BONUS;
+				Bitboard enemyNeighbor =EMPTY_BB;
+
+				if (enemyPawns) {
+
+					enemyNeighbor |= fileBB[squareFile[from]];
+
+					if (squareFile[from]!=FILE_H) {
+						enemyNeighbor |= fileBB[squareFile[from+1]];
+					}
+
+					if (squareFile[from]!=FILE_A) {
+						enemyNeighbor |= fileBB[squareFile[from-1]];
+					}
+
+					Rank rank1 = color==WHITE?RANK_6:RANK_2;
+					Rank rank2 = color==WHITE?RANK_7:RANK_3;
+					enemyNeighbor &= (rankBB[rank1] | rankBB[rank2]) & enemyPawns;
+
+				}
+
+				if (!enemyNeighbor) {
+					count += UNSTOPPABLE_PAWN_BONUS;
+				}
+
 			}
 
 			from = extractLSB(pieces);
@@ -477,17 +492,14 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	Square from = NONE;
 	int count=0;
 
-
 	pieces = board.getPiecesByType(board.makePiece(color,BISHOP));
 	from = extractLSB(pieces);
 
-	moves = EMPTY_BB;
 	while ( from!=NONE ) {
 
 		moves |= board.getBishopAttacks(from);
 		from = extractLSB(pieces);
 	}
-
 	count+=_BitCount(moves);
 
 	pieces = board.getPiecesByType(board.makePiece(color,ROOK));
@@ -495,22 +507,21 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
 	moves = EMPTY_BB;
 	while ( from!=NONE ) {
-		moves |= board.getRookAttacks(from);
+		moves = board.getRookAttacks(from);
+		count+=_BitCount(moves);
 		from = extractLSB(pieces);
 	}
-
-	count+=_BitCount(moves);
 
 	pieces = board.getPiecesByType(board.makePiece(color,QUEEN));
 	from = extractLSB(pieces);
 
-	moves = EMPTY_BB;
 	while ( from!=NONE ) {
-		moves |= board.getQueenAttacks(from);
+		moves = board.getQueenAttacks(from);
+		count+=_BitCount(moves);
 		from = extractLSB(pieces);
 	}
 
-	count+=_BitCount(moves);
+
 
 	return count;
 }

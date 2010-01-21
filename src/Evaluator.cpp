@@ -54,12 +54,12 @@ const Evaluator::GamePhase Evaluator::getGameStage(Board& board) {
 	static const int openingMoves=16;
 	static const int openingPieces=28;
 
-	static const int endGameMoves=30;
+	static const int endGameMoves=25;
 	static const int endGamePieces=14;
 
 	GamePhase phase = MIDDLEGAME;
 
-	static const int piecesOnBoard =_BitCount(board.getAllPieces());
+	int piecesOnBoard =_BitCount(board.getAllPieces());
 
 	if (board.getMoveCounter() >= endGameMoves &&
 			piecesOnBoard <= endGamePieces) {
