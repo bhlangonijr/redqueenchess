@@ -183,6 +183,7 @@ private:
 	Evaluator evaluator;
 	SearchStats stats;
 	uint32_t timeToStop;
+	bool moveFound;
 
 	int idSearch(Board& board);
 	int iid(Board& board, MoveIterator& moves, int alpha, int beta, uint32_t ply);

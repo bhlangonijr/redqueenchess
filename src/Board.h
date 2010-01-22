@@ -615,7 +615,9 @@ inline const Bitboard Board::getRookAttacks(const Square square) {
 
 // return a bitboard with attacked squares by the rook in the given square
 inline const Bitboard Board::getRookAttacks(const Square square, const Bitboard occupied) {
-
+	if (getPieceBySquare(square)==EMPTY) {
+		return EMPTY_BB;
+	}
 	Bitboard file = getSliderAttacks(fileAttacks[square], occupied, square);
 	Bitboard rank = getSliderAttacks(rankAttacks[square], occupied, square);
 
@@ -629,7 +631,9 @@ inline const Bitboard Board::getBishopAttacks(const Square square) {
 
 // return a bitboard with attacked squares by the bishop in the given square
 inline const Bitboard Board::getBishopAttacks(const Square square, const Bitboard occupied) {
-
+	if (getPieceBySquare(square)==EMPTY) {
+		return EMPTY_BB;
+	}
 	Bitboard diagA1H8 = getSliderAttacks(diagA1H8Attacks[square], occupied, square);
 	Bitboard diagH1A8 = getSliderAttacks(diagH1A8Attacks[square], occupied, square);
 
@@ -643,16 +647,23 @@ inline const Bitboard Board::getQueenAttacks(const Square square) {
 
 // return a bitboard with attacked squares by the queen in the given square
 inline const Bitboard Board::getQueenAttacks(const Square square, const Bitboard occupied) {
+
 	return getBishopAttacks(square, occupied) | getRookAttacks(square, occupied);
 }
 
 // overload method - gets current occupied squares in the board
 inline const Bitboard Board::getKnightAttacks(const Square square) {
+	if (getPieceBySquare(square)==EMPTY) {
+		return EMPTY_BB;
+	}
 	return knightAttacks[square];
 }
 
 // return a bitboard with attacked squares by the pawn in the given square
 inline const Bitboard Board::getKnightAttacks(const Square square, const Bitboard occupied) {
+	if (getPieceBySquare(square)==EMPTY) {
+		return EMPTY_BB;
+	}
 	return knightAttacks[square] & occupied;
 }
 
@@ -754,6 +765,28 @@ inline void Board::generateCaptures(MoveIterator& moves, const PieceColor side) 
 	Bitboard attacks = EMPTY_BB;
 	Square from = NONE;
 
+	pieces = getPiecesByType(makePiece(side,PAWN));
+	from = extractLSB(pieces);
+
+	while ( from!=NONE ) {
+		attacks = getPawnCaptures(from,otherPieces);
+		Square target = extractLSB(attacks);
+		bool promotion=((getSquareRank(from)==RANK_7&&side==WHITE) ||
+				(getSquareRank(from)==RANK_2&&side==BLACK));
+		while ( target!=NONE ) {
+			if (promotion) {
+				moves.add(from,target,makePiece(side,QUEEN));
+				moves.add(from,target,makePiece(side,ROOK));
+				moves.add(from,target,makePiece(side,BISHOP));
+				moves.add(from,target,makePiece(side,KNIGHT));
+			} else {
+				moves.add(from,target,EMPTY);
+			}
+			target = extractLSB(attacks);
+		}
+		from = extractLSB(pieces);
+	}
+
 	pieces = getPiecesByType(makePiece(side,KNIGHT));
 	from = extractLSB(pieces);
 
@@ -819,11 +852,21 @@ inline void Board::generateCaptures(MoveIterator& moves, const PieceColor side) 
 		from = extractLSB(pieces);
 	}
 
+}
+
+//generate only non capture moves
+inline void Board::generateNonCaptures(MoveIterator& moves, const PieceColor side){
+
+	Bitboard pieces = EMPTY_BB;
+	Bitboard empty = getEmptySquares();
+	Bitboard attacks = EMPTY_BB;
+	Square from = NONE;
+
 	pieces = getPiecesByType(makePiece(side,PAWN));
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		attacks = getPawnCaptures(from,otherPieces);
+		attacks = getPawnMoves(from) & empty;
 		Square target = extractLSB(attacks);
 		bool promotion=((getSquareRank(from)==RANK_7&&side==WHITE) ||
 				(getSquareRank(from)==RANK_2&&side==BLACK));
@@ -840,16 +883,6 @@ inline void Board::generateCaptures(MoveIterator& moves, const PieceColor side) 
 		}
 		from = extractLSB(pieces);
 	}
-
-}
-
-//generate only non capture moves
-inline void Board::generateNonCaptures(MoveIterator& moves, const PieceColor side){
-
-	Bitboard pieces = EMPTY_BB;
-	Bitboard empty = getEmptySquares();
-	Bitboard attacks = EMPTY_BB;
-	Square from = NONE;
 
 	pieces = getPiecesByType(makePiece(side,KNIGHT));
 	from = extractLSB(pieces);
@@ -911,28 +944,6 @@ inline void Board::generateNonCaptures(MoveIterator& moves, const PieceColor sid
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
 			moves.add(from,target,EMPTY);
-			target = extractLSB(attacks);
-		}
-		from = extractLSB(pieces);
-	}
-
-	pieces = getPiecesByType(makePiece(side,PAWN));
-	from = extractLSB(pieces);
-
-	while ( from!=NONE ) {
-		attacks = getPawnMoves(from) & empty;
-		Square target = extractLSB(attacks);
-		bool promotion=((getSquareRank(from)==RANK_7&&side==WHITE) ||
-				(getSquareRank(from)==RANK_2&&side==BLACK));
-		while ( target!=NONE ) {
-			if (promotion) {
-				moves.add(from,target,makePiece(side,QUEEN));
-				moves.add(from,target,makePiece(side,ROOK));
-				moves.add(from,target,makePiece(side,BISHOP));
-				moves.add(from,target,makePiece(side,KNIGHT));
-			} else {
-				moves.add(from,target,EMPTY);
-			}
 			target = extractLSB(attacks);
 		}
 		from = extractLSB(pieces);

@@ -453,7 +453,7 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 
 				if (enemyPawns) {
 
-					enemyNeighbor |= fileBB[squareFile[from]];
+					enemyNeighbor |= fileAttacks[squareFile[from]];
 
 					if (squareFile[from]!=FILE_H) {
 						enemyNeighbor |= fileBB[squareFile[from+1]];
