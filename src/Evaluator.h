@@ -359,13 +359,13 @@ inline const int Evaluator::evaluate(Board& board) {
 	pieces = evalPieces(board, side) - evalPieces(board, other);
 	imbalances = evalImbalances(board, side) - evalImbalances(board, other);
 
-	/*
+
 	std::cout << "material:    " << material << std::endl;
 	std::cout << "mobility:    " << mobility << std::endl;
 	std::cout << "development: " << development << std::endl;
 	std::cout << "pieces:      " << pieces << std::endl;
 	std::cout << "--------      " << pieces << std::endl;
-	 */
+
 
 	return material+mobility+pieces+development+imbalances;
 }
@@ -390,15 +390,15 @@ inline const int Evaluator::evalMaterial(Board& board, PieceColor color) {
 // king eval function
 inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 
+	PieceColor other = board.flipSide(color);
+	int count=0;
+
 	const int DONE_CASTLE_BONUS=       (board.getPiecesByType(board.makePiece(other,QUEEN))) ? 30 : 20;
 	const int CAN_CASTLE_BONUS=        5;
 	const int UNSTOPPABLE_PAWN_BONUS = 20;
 	const int DOUBLED_PAWN_PENALTY =  -10;
 	const int ISOLATED_PAWN_PENALTY = -15;
 	const int BACKWARD_PAWN_PENALTY = -15;
-
-	PieceColor other = board.flipSide(color);
-	int count=0;
 
 	if (gamePhase!=ENDGAME) {
 		// king castle bonus
