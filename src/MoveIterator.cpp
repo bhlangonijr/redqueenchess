@@ -40,9 +40,9 @@ MoveIterator::~MoveIterator() {
 // sort
 void MoveIterator::sort() {
 	bool flag=true;
-	for(uint32_t i = 0; i < _data.size&&flag; i++){
+	for(int i = 0; i <(int)_data.size&&flag; i++){
 		flag=false;
-		for(uint32_t j = 0; j < _data.size-1; j++)
+		for(int j = 0; j <(int) _data.size-1; j++)
 		{
 			if (_data.list[j+1].score > _data.list[j].score) {
 				Move tmp=_data.list[j];
@@ -55,7 +55,7 @@ void MoveIterator::sort() {
 	}
 
 /*	std::cout << "----- init " << std::endl;
-	for (uint32_t x=0;x<_data.size;x++) {
+	for (int x=0;x<_data.size;x++) {
 		std::cout << _data.list[x].toString() << " - score: " << _data.list[x].score << std::endl;
 	}
 	std::cout << "----- end " << std::endl;*/

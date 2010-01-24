@@ -25,8 +25,6 @@
  */
 
 #include "Board.h"
-#include "StringUtil.h"
-#include "mersenne.h"
 
 using namespace BoardTypes;
 
@@ -35,14 +33,11 @@ NodeZobrist zobrist;
 Board::Board() : currentBoard()
 {
 	setInitialPosition();
-	lastAttackedKey[WHITE]=0x0ULL;
-	lastAttackedKey[BLACK]=0x0ULL;
 
 }
 
 Board::Board(const Board& board) : currentBoard( Node(board.currentBoard) ) {
-	lastAttackedKey[WHITE]=board.lastAttackedKey[WHITE];
-	lastAttackedKey[BLACK]=board.lastAttackedKey[BLACK];
+
 }
 
 Board::~Board(){
@@ -90,7 +85,7 @@ void Board::genericTest() {
 	//testing code
 
 	printBoard();
-	uint32_t start = getTickCount();
+	int start = getTickCount();
 	PieceColor color = getSideToMove();
 	int counter=0;
 	for (int x=0;x<1000000;x++)
@@ -115,13 +110,15 @@ void Board::genericTest() {
 
 	}
 
-	std::cout << "sideToMove: "<< color << std::endl;
-	std::cout << "Key inc:  " << getKey() << std::endl;
-	std::cout << "Key gen:  " << generateKey() << std::endl;
-	std::cout << "Time: " << (this->getTickCount()-start) << std::endl;
-	std::cout << "Perft: " << (counter) << std::endl;
+	//Evaluator evaluator;
+	//std::cout << "Eval:        " << evaluator.evaluate(this) << std::endl;
+	std::cout << "sideToMove:  " << color << std::endl;
+	std::cout << "Key inc:     " << getKey() << std::endl;
+	std::cout << "Key gen:     " << generateKey() << std::endl;
+	std::cout << "Time:        " << (this->getTickCount()-start) << std::endl;
+	std::cout << "Perft:       " << (counter) << std::endl;
 	std::cout << "MoveCounter: " << getMoveCounter() << std::endl;
-	std::cout << "NPS: " << (counter/((this->getTickCount()-start)/1000) ) << std::endl;
+	std::cout << "NPS:         " << (counter/((this->getTickCount()-start)/1000) ) << std::endl;
 
 
 }

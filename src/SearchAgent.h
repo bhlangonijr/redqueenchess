@@ -54,11 +54,11 @@ public:
 
 	struct HashData {
 		HashData() : value(0), depth(0), flag(LOWER)  {};
-		HashData(const int& _value, const uint32_t& _depth, const NodeFlag& _flag, const MoveIterator::Move& _move) :
+		HashData(const int& _value, const int& _depth, const NodeFlag& _flag, const MoveIterator::Move& _move) :
 			value(_value), depth(_depth), flag(_flag), move(_move)  {};
 		HashData(const HashData& hashData) : value(hashData.value), depth(hashData.depth), flag(hashData.flag), move(hashData.move)  {};
 		int value;
-		uint32_t depth;
+		int depth;
 		NodeFlag flag;
 		MoveIterator::Move move;
 	};
@@ -105,35 +105,35 @@ public:
 		threadNumber = _threadNumber;
 	}
 
-	inline const uint32_t getWhiteTime() const {
+	inline const int getWhiteTime() const {
 		return whiteTime;
 	}
 
-	inline void setWhiteTime(uint32_t _whiteTime) {
+	inline void setWhiteTime(int _whiteTime) {
 		whiteTime = _whiteTime;
 	}
 
-	inline const uint32_t getWhiteIncrement() const {
+	inline const int getWhiteIncrement() const {
 		return whiteIncrement;
 	}
 
-	inline void setWhiteIncrement(uint32_t _whiteIncrement) {
+	inline void setWhiteIncrement(int _whiteIncrement) {
 		whiteIncrement = _whiteIncrement;
 	}
 
-	inline const uint32_t getBlackTime() const {
+	inline const int getBlackTime() const {
 		return blackTime;
 	}
 
-	inline void setBlackTime(uint32_t _blackTime) {
+	inline void setBlackTime(int _blackTime) {
 		blackTime = _blackTime;
 	}
 
-	inline const uint32_t getBlackIncrement() const {
+	inline const int getBlackIncrement() const {
 		return blackIncrement;
 	}
 
-	inline void setBlackIncrement(uint32_t _blackIncrement) {
+	inline void setBlackIncrement(int _blackIncrement) {
 		blackIncrement = _blackIncrement;
 	}
 
@@ -145,19 +145,19 @@ public:
 		depth = _depth;
 	}
 
-	inline const uint32_t getMovesToGo() const {
+	inline const int getMovesToGo() const {
 		return movesToGo;
 	}
 
-	inline void setMovesToGo(uint32_t _movesToGo) {
+	inline void setMovesToGo(int _movesToGo) {
 		movesToGo = _movesToGo;
 	}
 
-	inline const uint32_t getMoveTime() const {
+	inline const int getMoveTime() const {
 		return moveTime;
 	}
 
-	inline void setMoveTime(uint32_t _moveTime) {
+	inline void setMoveTime(int _moveTime) {
 		moveTime = _moveTime;
 	}
 
@@ -175,7 +175,7 @@ public:
 		}
 	}
 
-	inline bool hashPut(const Board& board, int value, const uint32_t& depth, const uint32_t ply, const int maxScore, const NodeFlag& flag, const MoveIterator::Move& move) {
+	inline bool hashPut(const Board& board, int value, const int& depth, const int ply, const int maxScore, const NodeFlag& flag, const MoveIterator::Move& move) {
 		if (transTable.size()>getActiveHash()) {
 
 			if (value >= maxScore) {
@@ -189,7 +189,7 @@ public:
 		return false;
 	}
 
-	inline bool hashGet(const Key _key, HashData& hashData, const uint32_t ply, const int maxScore) {
+	inline bool hashGet(const Key _key, HashData& hashData, const int ply, const int maxScore) {
 		if (transTable.size()>getActiveHash()) {
 
 			bool result = transTable[getActiveHash()]->hashGet(_key, hashData);
@@ -269,20 +269,20 @@ private:
 	volatile bool searchInProgress;
 
 	size_t hashSize;
-	uint32_t threadNumber;
-	uint32_t whiteTime;
-	uint32_t whiteIncrement;
-	uint32_t blackTime;
-	uint32_t blackIncrement;
+	int threadNumber;
+	int whiteTime;
+	int whiteIncrement;
+	int blackTime;
+	int blackIncrement;
 	int depth;
-	uint32_t movesToGo;
-	uint32_t moveTime;
+	int movesToGo;
+	int moveTime;
 	bool infinite;
 
 	size_t activeHash;
 	std::vector<TranspositionTable<Key,HashData>*> transTable;
 
-	const uint32_t getTimeToSearch();
+	const int getTimeToSearch();
 
 };
 

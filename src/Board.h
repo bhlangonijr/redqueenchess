@@ -33,8 +33,11 @@
 #include <time.h>
 #include <assert.h>
 
+#include "StringUtil.h"
+#include "mersenne.h"
 #include "Bitboard.h"
 #include "MoveIterator.h"
+//#include "Evaluator.h"
 
 namespace BoardTypes{
 
@@ -55,14 +58,14 @@ enum CastleRight {
 };
 
 // castle squares
-static const Bitboard castleSquare[ALL_PIECE_COLOR][ALL_CASTLE_RIGHT]={
+const Bitboard castleSquare[ALL_PIECE_COLOR][ALL_CASTLE_RIGHT]={
 		/*WHITE*/{EMPTY_BB, Sq2Bb(F1)|Sq2Bb(G1), Sq2Bb(D1)|Sq2Bb(C1)|Sq2Bb(B1), Sq2Bb(F1)|Sq2Bb(G1)|Sq2Bb(D1)|Sq2Bb(C1)||Sq2Bb(B1)},
 		/*BLACK*/{EMPTY_BB, Sq2Bb(F8)|Sq2Bb(G8), Sq2Bb(D8)|Sq2Bb(C8)|Sq2Bb(B8), Sq2Bb(F8)|Sq2Bb(G8)|Sq2Bb(D8)|Sq2Bb(C8)|Sq2Bb(B8)},
 		/*NONE */{EMPTY_BB, EMPTY_BB, EMPTY_BB, EMPTY_BB }
 };
 
 // castle zobrist keys index table
-static const int zobristCastleIndex[ALL_CASTLE_RIGHT][ALL_CASTLE_RIGHT]={
+const int zobristCastleIndex[ALL_CASTLE_RIGHT][ALL_CASTLE_RIGHT]={
 		{0,1,2,3},
 		{4,5,6,7},
 		{8,9,10,11},
@@ -70,7 +73,7 @@ static const int zobristCastleIndex[ALL_CASTLE_RIGHT][ALL_CASTLE_RIGHT]={
 };
 
 //start FEN position
-static const std::string startFENPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+const std::string startFENPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 // Backup move
 struct MoveBackup {
@@ -230,9 +233,6 @@ public:
 	void setSideToMove(const PieceColor color);
 	const Square getEnPassant() const;
 	void setEnPassant(const Square square);
-	const Bitboard getAttackedSquares(const PieceColor color);
-	void setAttackedSquares();
-	void setAttackedSquares(const PieceColor color, Bitboard attacked);
 	const PieceColor flipSide(const PieceColor color);
 	const PieceColor getPieceColor(const PieceTypeByColor piece) const;
 	const PieceColor getPieceColorBySquare(const Square square) const;
@@ -252,7 +252,7 @@ public:
 	const Bitboard getAllPieces() const;
 	const Bitboard getEmptySquares() const;
 	const Bitboard getPiecesByType(const PieceTypeByColor piece) const;
-	inline const PieceTypeByColor getPieceBySquare(const Square square) const;
+	const PieceTypeByColor getPieceBySquare(const Square square) const;
 	int const getPieceCountByType(const PieceTypeByColor piece) const;
 
 	void generateCaptures(MoveIterator& moves, const PieceColor side);
@@ -277,8 +277,6 @@ public:
 	const Bitboard getKingAttacks(const Square square, const Bitboard occupied);
 
 	const Bitboard getAllSliderAttacks(const Square square) const;
-	const Bitboard generateAttackedSquares(const PieceColor color);
-	const Bitboard generateAttackedSquares(const PieceColor color, const Bitboard occupied);
 
 	static void initializeZobrist();
 	const int getZobristCastleIndex();
@@ -296,7 +294,7 @@ public:
 
 	void updateKeyHistory();
 
-	const uint32_t getTickCount() {
+	const long getTickCount() {
 		return ((clock() * 1000) / CLOCKS_PER_SEC);
 	}
 
@@ -308,8 +306,6 @@ private:
 	bool putPiece(const PieceTypeByColor piece, const Square square);
 	bool removePiece(const PieceTypeByColor piece, const Square square);
 
-	Key lastAttackedKey[ALL_PIECE_COLOR];
-	Bitboard attackedSquares[ALL_PIECE_COLOR];
 	Node currentBoard;
 	static NodeZobrist nodeZobrist;
 };
@@ -423,18 +419,6 @@ inline void Board::setEnPassant(const Square square)
 	currentBoard.enPassant=square;
 }
 
-// get attacked squares
-inline const Bitboard Board::getAttackedSquares(const PieceColor color) {
-
-
-	if (lastAttackedKey[color]!=this->getKey()) {
-		lastAttackedKey[color]=this->getKey();
-		attackedSquares[color]=generateAttackedSquares(color);
-	}
-
-	return attackedSquares[color];
-}
-
 // flip side
 inline const PieceColor Board::flipSide(const PieceColor color) {
 	return PieceColor((int)color ^ 1);
@@ -537,7 +521,7 @@ inline const bool Board::isNotLegal() {
 // verify draw by 50th move rule, 3 fold rep and insuficient material
 inline const bool Board::isDraw() {
 
-	static const int RANGE_CHECK=10;
+	const int RANGE_CHECK=10;
 	if (getMoveCounter()>=RANGE_CHECK){
 		int repetition = 0;
 
@@ -972,123 +956,6 @@ inline void Board::generateAllMoves(MoveIterator& moves, const PieceColor side) 
 
 	generateCaptures(moves, side);
 	generateNonCaptures(moves, side);
-
-}
-
-// get the set of attacked squares
-inline const Bitboard Board::generateAttackedSquares(const PieceColor color) {
-
-	Bitboard pieces = EMPTY_BB;
-	Bitboard attacks = EMPTY_BB;
-	Square from = NONE;
-
-	pieces = getPiecesByType(makePiece(color,KNIGHT));
-	from = extractLSB(pieces);
-
-	while ( from!=NONE ) {
-		attacks |= getKnightAttacks(from);
-		from = extractLSB(pieces);
-	}
-
-	pieces = getPiecesByType(makePiece(color,BISHOP));
-	from = extractLSB(pieces);
-
-	while ( from!=NONE ) {
-		attacks |= getBishopAttacks(from);
-		from = extractLSB(pieces);
-	}
-
-	pieces = getPiecesByType(makePiece(color,ROOK));
-	from = extractLSB(pieces);
-
-	while ( from!=NONE ) {
-		attacks |= getRookAttacks(from);
-		from = extractLSB(pieces);
-	}
-
-	pieces = getPiecesByType(makePiece(color,QUEEN));
-	from = extractLSB(pieces);
-
-	while ( from!=NONE ) {
-		attacks |= getQueenAttacks(from);
-		from = extractLSB(pieces);
-	}
-
-	pieces = getPiecesByType(makePiece(color,KING));
-	from = extractLSB(pieces);
-
-	while ( from!=NONE ) {
-		attacks |= getKingAttacks(from);
-		from = extractLSB(pieces);
-	}
-
-	pieces = getPiecesByType(makePiece(color,PAWN));
-	from = extractLSB(pieces);
-
-	while ( from!=NONE ) {
-		attacks |= getPawnAttacks(from);
-		from = extractLSB(pieces);
-	}
-
-	return attacks;
-}
-
-// get the set of attacked squares
-inline const Bitboard Board::generateAttackedSquares(const PieceColor color, const Bitboard occupied) {
-
-	Bitboard pieces = EMPTY_BB;
-	Bitboard attacks = EMPTY_BB;
-	Square from = NONE;
-
-	pieces = getPiecesByType(makePiece(color,KNIGHT));
-	from = extractLSB(pieces);
-
-	while ( from!=NONE ) {
-		attacks |= getKnightAttacks(from);
-		from = extractLSB(pieces);
-	}
-
-	pieces = getPiecesByType(makePiece(color,BISHOP));
-	from = extractLSB(pieces);
-
-	while ( from!=NONE ) {
-		attacks |= getBishopAttacks(from,occupied);
-		from = extractLSB(pieces);
-	}
-
-	pieces = getPiecesByType(makePiece(color,ROOK));
-	from = extractLSB(pieces);
-
-	while ( from!=NONE ) {
-		attacks |= getRookAttacks(from,occupied);
-		from = extractLSB(pieces);
-	}
-
-	pieces = getPiecesByType(makePiece(color,QUEEN));
-	from = extractLSB(pieces);
-
-	while ( from!=NONE ) {
-		attacks |= getQueenAttacks(from,occupied);
-		from = extractLSB(pieces);
-	}
-
-	pieces = getPiecesByType(makePiece(color,KING));
-	from = extractLSB(pieces);
-
-	while ( from!=NONE ) {
-		attacks |= getKingAttacks(from);
-		from = extractLSB(pieces);
-	}
-
-	pieces = getPiecesByType(makePiece(color,PAWN));
-	from = extractLSB(pieces);
-
-	while ( from!=NONE ) {
-		attacks |= getPawnAttacks(from, occupied);
-		from = extractLSB(pieces);
-	}
-
-	return attacks;
 
 }
 

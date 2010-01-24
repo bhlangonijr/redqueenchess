@@ -31,11 +31,11 @@
 #include "Inline.h"
 #include "Board.h"
 
-static const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 318, 325, 520, 975, 10000, 100, 318, 325, 520, 975, 10000, 0};
-static const int endGameMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {110, 310, 325, 520, 975, 10000, 110, 310, 325, 520, 975, 10000, 0};
+const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 318, 325, 520, 975, 10000, 100, 318, 325, 520, 975, 10000, 0};
+const int endGameMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {110, 310, 325, 520, 975, 10000, 110, 310, 325, 520, 975, 10000, 0};
 
 // opening and middlegame piece square table
-static const int defaultPieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
+const int defaultPieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 
 		{ // white pawn
 				0,  0,  0,  0,  0,  0,  0,  0,
@@ -171,7 +171,7 @@ static const int defaultPieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 };
 
 // end game piece square table
-static const int endGamePieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
+const int endGamePieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 
 		{ // white pawn
 				0,  0,  0,  0,  0,  0,  0,  0,
@@ -366,10 +366,8 @@ inline const int Evaluator::evaluate(Board& board) {
 	std::cout << "pieces:      " << pieces << std::endl;
 	std::cout << "--------      " << pieces << std::endl;
 	 */
-	int eval = material+mobility+pieces+development+imbalances;
 
-
-	return eval ;//side==WHITE?eval:-eval;
+	return material+mobility+pieces+development+imbalances;
 }
 
 // material eval function
@@ -392,26 +390,24 @@ inline const int Evaluator::evalMaterial(Board& board, PieceColor color) {
 // king eval function
 inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 
-	static const int DONE_CASTLE_BONUS=       20;
-	static const int CAN_CASTLE_BONUS=        5;
-	static const int UNSTOPPABLE_PAWN_BONUS = 20;
-	static const int DOUBLED_PAWN_PENALTY =  -10;
-	static const int ISOLATED_PAWN_PENALTY = -15;
-	static const int BACKWARD_PAWN_PENALTY = -5;
+	const int DONE_CASTLE_BONUS=       (board.getPiecesByType(board.makePiece(other,QUEEN))) ? 30 : 20;
+	const int CAN_CASTLE_BONUS=        5;
+	const int UNSTOPPABLE_PAWN_BONUS = 20;
+	const int DOUBLED_PAWN_PENALTY =  -10;
+	const int ISOLATED_PAWN_PENALTY = -15;
+	const int BACKWARD_PAWN_PENALTY = -15;
 
 	PieceColor other = board.flipSide(color);
 	int count=0;
 
 	if (gamePhase!=ENDGAME) {
 		// king castle bonus
-		if (board.getPiecesByType(board.makePiece(other,QUEEN))) {
-			if (board.isCastleDone(color)) {
-				count= DONE_CASTLE_BONUS;
-			} else if (board.getCastleRights(color)==BOTH_SIDE_CASTLE) {
-				count= CAN_CASTLE_BONUS;
-			} else if (board.getCastleRights(color)==NO_CASTLE) {
-				count= -DONE_CASTLE_BONUS;
-			}
+		if (board.isCastleDone(color)) {
+			count= DONE_CASTLE_BONUS;
+		} else if (board.getCastleRights(color)==BOTH_SIDE_CASTLE) {
+			count= CAN_CASTLE_BONUS;
+		} else if (board.getCastleRights(color)==NO_CASTLE) {
+			count= -DONE_CASTLE_BONUS;
 		}
 	}
 
@@ -521,8 +517,6 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 		from = extractLSB(pieces);
 	}
 
-
-
 	return count;
 }
 
@@ -548,7 +542,7 @@ inline const int Evaluator::evalDevelopment(Board& board, PieceColor color) {
 // mobility eval function
 inline const int Evaluator::evalImbalances(Board& board, PieceColor color) {
 
-	static const int bishopPairBonus = 50;
+	const int bishopPairBonus = 50;
 	int count=0;
 
 	Bitboard bishop = board.getPiecesByType(board.makePiece(color,BISHOP));

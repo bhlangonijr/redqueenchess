@@ -39,9 +39,9 @@ namespace SimplePVSearchTypes {
 
 static const int maxScore = 20000;
 static const int notLegal = -30000;
-static const uint32_t maxQuiescenceSearchDepth = 10;
-static const uint32_t maxSearchDepth = 40;
-static const uint32_t maxSearchPly = 30;
+static const int maxQuiescenceSearchDepth = 10;
+static const int maxSearchDepth = 40;
+static const int maxSearchPly = 30;
 
 }
 
@@ -72,9 +72,9 @@ public:
 		long ttExact;
 		long nullMoveHits;
 		long pvChanges;
-		uint32_t searchTime;
+		int searchTime;
 		uint64_t searchNodes;
-		uint32_t searchDepth;
+		int searchDepth;
 
 		std::string toString() {
 			std::string result =
@@ -109,14 +109,14 @@ public:
 
 	SimplePVSearch(Board& board) :   _board(board), _depth(maxSearchDepth), _updateUci(true), errorCount(0), _startTime(0), _searchFixedDepth(true), _infinite(false) {}
 	SimplePVSearch(Board& board, int depth ) : _board(board), _depth(depth), _updateUci(true), errorCount(0), _timeToSearch(0), _startTime(0), _searchFixedDepth(true), _infinite(false) {}
-	SimplePVSearch(Board& board, uint32_t timeToSearch ) : _board(board), _depth(maxSearchDepth), _updateUci(true), errorCount(0), _timeToSearch(timeToSearch), _startTime(0), _searchFixedDepth(false), _infinite(false) {}
+	SimplePVSearch(Board& board, int timeToSearch, int depth) : _board(board), _depth(depth), _updateUci(true), errorCount(0), _timeToSearch(timeToSearch), _startTime(0), _searchFixedDepth(false), _infinite(false) {}
 	SimplePVSearch(Board& board, bool infinite ) : _board(board), _depth(maxSearchDepth), _updateUci(true), errorCount(0), _timeToSearch(0), _startTime(0), _searchFixedDepth(true), _infinite(true) {}
 
 	virtual ~SimplePVSearch() {}
 	virtual void search();
 	virtual int getScore();
 
-	inline const uint32_t getTickCount() {
+	inline const int getTickCount() {
 		return ((clock() * 1000) / CLOCKS_PER_SEC);
 	}
 
@@ -144,52 +144,52 @@ public:
 		_infinite = value;
 	}
 
-	inline const void setDepth(const uint32_t depth) {
+	inline const void setDepth(const int depth) {
 		_depth = depth;
 	}
 
-	inline const uint32_t getDepth() const {
+	inline const int getDepth() const {
 		return _depth;
 	}
 
-	inline const void setTimeToSearch(const uint32_t timeToSearch) {
+	inline const void setTimeToSearch(const int timeToSearch) {
 		_timeToSearch = timeToSearch;
 	}
 
-	inline const uint32_t getTimeToSearch() const {
+	inline const int getTimeToSearch() const {
 		return _timeToSearch;
 	}
 
-	inline const void setStartTime(const uint32_t startTime) {
+	inline const void setStartTime(const int startTime) {
 		_startTime = startTime;
 	}
 
-	inline const uint32_t getStartTime() const {
+	inline const int getStartTime() const {
 		return _startTime;
 	}
 
 private:
 	Board& _board;
-	uint32_t _depth;
+	int _depth;
 	int _score;
 	bool _updateUci;
 	int errorCount;
-	uint32_t _timeToSearch;
-	uint32_t _startTime;
-	uint64_t _nodes;
-	uint32_t _time;
+	long _timeToSearch;
+	long _startTime;
+	long _nodes;
+	long _time;
 	bool _searchFixedDepth;
 	bool _infinite;
 	Evaluator evaluator;
 	SearchStats stats;
-	uint32_t timeToStop;
+	int timeToStop;
 	bool moveFound;
 
 	int idSearch(Board& board);
-	int iid(Board& board, MoveIterator& moves, int alpha, int beta, uint32_t ply);
-	int sortMoves(Board& board, MoveIterator& moves);
-	int pvSearch(Board& board, int alpha, int beta, uint32_t depth, uint32_t ply, PvLine* pv, const bool allowNullMove, const bool allowIid);
-	int qSearch(Board& board, int alpha, int beta, uint32_t depth, PvLine* pv);
+	int sortMoves(Board& board, MoveIterator& moves, int alpha, int beta, int ply);
+	int sortQMoves(Board& board, MoveIterator& moves);
+	int pvSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv, const bool allowNullMove, const bool allowIid);
+	int qSearch(Board& board, int alpha, int beta, int depth, PvLine* pv);
 	const std::string pvLineToString(const PvLine* pv);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
 	const bool stop(const bool searchInProgress);
@@ -205,13 +205,13 @@ inline const bool SimplePVSearch::stop(const bool searchInProgress) {
 
 inline const bool SimplePVSearch::timeIsUp() {
 
-	static const uint64_t checkNodes=1000;
+	static const uint64_t checkNodes=0x7d0;
 
-	if ( _searchFixedDepth || _infinite || _nodes % checkNodes != 0) {
+	if ( _searchFixedDepth || _infinite || (_nodes & checkNodes)) {
 		return false;
 	}
 
-	return (uint32_t)clock() >= timeToStop;
+	return (int)clock() >= timeToStop;
 
 }
 

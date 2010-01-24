@@ -95,7 +95,8 @@ void* SearchAgent::startThreadSearch() {
 	if (this->getSearchMode()==SearchAgent::SEARCH_DEPTH) {
 		simplePV.setSearchFixedDepth(true);
 		simplePV.setDepth(this->getDepth());
-	} else if (this->getSearchMode()==SearchAgent::SEARCH_TIME || this->getSearchMode()==SearchAgent::SEARCH_MOVETIME) {
+	} else if (this->getSearchMode()==SearchAgent::SEARCH_TIME ||
+				this->getSearchMode()==SearchAgent::SEARCH_MOVETIME) {
 		simplePV.setSearchFixedDepth(false);
 		simplePV.setTimeToSearch(this->getTimeToSearch());
 	} else if (this->getSearchMode()==SearchAgent::SEARCH_INFINITE) {
@@ -136,7 +137,7 @@ void SearchAgent::stopSearch() {
 	setSearchInProgress(false);
 }
 
-const uint32_t SearchAgent::getTimeToSearch() {
+const int SearchAgent::getTimeToSearch() {
 
 	static int gameSizeCheck=5;
 
@@ -145,7 +146,7 @@ const uint32_t SearchAgent::getTimeToSearch() {
 	}
 
 	int time=board.getSideToMove()==WHITE ?  this->getWhiteTime()-10 : this->getBlackTime()-10;
-	//uint32_t incTime=board.getSideToMove()==WHITE ? this->getWhiteIncrement() : this->getBlackIncrement();
+	int incTime=board.getSideToMove()==WHITE ? this->getWhiteIncrement() : this->getBlackIncrement();
 
 	int movesLeft = defaultGameSize-board.getMoveCounter();
 	if (movesToGo>0) {
@@ -157,7 +158,7 @@ const uint32_t SearchAgent::getTimeToSearch() {
 		}
 	}
 
-	time /= movesLeft;
+	time /= movesLeft + incTime;
 
 	//std::cout << "Think time: " << time << std::endl;
 	return time;
