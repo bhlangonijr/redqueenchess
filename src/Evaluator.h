@@ -359,12 +359,12 @@ inline const int Evaluator::evaluate(Board& board) {
 	pieces = evalPieces(board, side) - evalPieces(board, other);
 	imbalances = evalImbalances(board, side) - evalImbalances(board, other);
 
-
+/*
 	std::cout << "material:    " << material << std::endl;
 	std::cout << "mobility:    " << mobility << std::endl;
 	std::cout << "development: " << development << std::endl;
 	std::cout << "pieces:      " << pieces << std::endl;
-	std::cout << "--------      " << pieces << std::endl;
+	std::cout << "--------      " << pieces << std::endl;*/
 
 
 	return material+mobility+pieces+development+imbalances;

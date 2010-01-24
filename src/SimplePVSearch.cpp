@@ -50,7 +50,7 @@ void SimplePVSearch::search() {
 	stats.clear();
 	errorCount=0;
 	_startTime = getTickCount();
-	timeToStop = clock() + ((((_timeToSearch - 5)/1000)*CLOCKS_PER_SEC));
+	timeToStop = clock() + ((((_timeToSearch)/1000)*CLOCKS_PER_SEC));
 	evaluator.setGameStage(evaluator.getGameStage(board));
 	_score = idSearch(board);
 	SearchAgent::getInstance()->setSearchInProgress(false);
