@@ -35,23 +35,41 @@
 class MoveIterator {
 public:
 
+	enum MoveType {
+		MOVE_NONE, TT_MOVE, GOOD_CAPTURE, PROMO_CAPTURE, PROMO_NONCAPTURE, EQUAL_CAPTURE, KILLER1, KILLER2, NON_CAPTURE, BAD_CAPTURE
+	};
+
 	// Move representation
 	struct Move {
 
-		Move() : from(NONE), to(NONE), score(DEFAULT_SCORE)
+		Move() : from(NONE), to(NONE), score(DEFAULT_SCORE), type(MOVE_NONE)
 		{}
+
 		Move(const Square fromSquare, const Square toSquare, const PieceTypeByColor piece) :
-			from(fromSquare), to(toSquare), promotionPiece(piece), score(DEFAULT_SCORE)
+			from(fromSquare), to(toSquare), promotionPiece(piece), score(DEFAULT_SCORE), type(MOVE_NONE)
+			{}
+
+		Move(const Square fromSquare, const Square toSquare, const PieceTypeByColor piece, const MoveType type) :
+			from(fromSquare), to(toSquare), promotionPiece(piece), score(DEFAULT_SCORE), type(type)
 			{}
 
 		Move(const Move& move) :
-			from(move.from), to(move.to), promotionPiece(move.promotionPiece), score(move.score)
+			from(move.from), to(move.to), promotionPiece(move.promotionPiece), score(move.score), type(move.type)
 			{}
+
+		inline bool operator == (const Move &move) const {
+			return ( from==move.from && to==move.to && promotionPiece==move.promotionPiece);
+		}
+
+		inline bool operator != (const Move &move) const {
+			return (!(from==move.from && to==move.to && promotionPiece==move.promotionPiece));
+		}
 
 		Square from;
 		Square to;
 		PieceTypeByColor promotionPiece;
 		int score;
+		MoveType type;
 
 		inline const std::string toString() const {
 			if (from==NONE || to==NONE ) {
@@ -79,6 +97,8 @@ public:
 
 	const void add(const Square from, const Square to, const PieceTypeByColor piece);
 
+	const void add(const Square from, const Square to, const PieceTypeByColor piece, const MoveType type);
+
 	const void remove(const size_t index);
 
 	const bool hasNext();
@@ -91,6 +111,8 @@ public:
 
 	void sort();
 
+	void sortByType();
+
 	const Move& get(const size_t index);
 
 	const void bringToTop();
@@ -101,11 +123,17 @@ public:
 		_data=data;
 	}
 
-	void quickSort(int left, int right);
+	void operator()(MoveIterator& moves) {
+		_data=moves.getData();
+	}
 
 	MoveIterator(Data& data);
 
 	MoveIterator();
+
+	inline Data& getData() {
+		return _data;
+	}
 
 	virtual ~MoveIterator();
 private:
@@ -121,6 +149,10 @@ inline const void MoveIterator::add(const Move& move) {
 
 inline const void MoveIterator::add(const Square from, const Square to, const PieceTypeByColor piece) {
 	_data.list[_data.size++]=Move(from,to,piece);
+}
+
+inline const void MoveIterator::add(const Square from, const Square to, const PieceTypeByColor piece, const MoveType type) {
+	_data.list[_data.size++]=Move(from,to,piece,type);
 }
 
 inline const void MoveIterator::remove(const size_t index) {
@@ -174,7 +206,7 @@ inline const void MoveIterator::sortOne() {
 	const size_t index = _data.idx-1;
 	for(size_t x=0;x<_data.idx;x++) {
 
-		if (_data.list[index].score>_data.list[x].score) {
+		if (_data.list[index].score > _data.list[x].score) {
 			Move tmp=_data.list[x];
 			_data.list[x]=_data.list[index];
 			_data.list[index]=tmp;
@@ -183,7 +215,6 @@ inline const void MoveIterator::sortOne() {
 		}
 
 	}
-
 
 }
 

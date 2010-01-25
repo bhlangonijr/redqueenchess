@@ -316,6 +316,8 @@ const Bitboard allSliderAttacks[ALL_SQUARE]={
 		Sq2SL(A7), Sq2SL(B7), Sq2SL(C7), Sq2SL(D7), Sq2SL(E7), Sq2SL(F7), Sq2SL(G7), Sq2SL(H7),
 		Sq2SL(A8), Sq2SL(B8), Sq2SL(C8), Sq2SL(D8), Sq2SL(E8), Sq2SL(F8), Sq2SL(G8), Sq2SL(H8) };
 
+// center squares
+const Bitboard centerSquares = squareToBitboard[D4] | squareToBitboard[E4] | squareToBitboard[D5] | squareToBitboard[E5];
 // bitboard for all knight attacks
 const Bitboard knightAttacks[ALL_SQUARE]={
 		0x0000000000020400ULL,0x0000000000050800ULL,0x00000000000a1100ULL,0x0000000000142200ULL,0x0000000000284400ULL,0x0000000000508800ULL,0x0000000000a01000ULL,0x0000000000402000ULL,
@@ -375,7 +377,7 @@ const Bitboard upperMaskBitboard[ALL_SQUARE]={
 		Sq2UM(A8), Sq2UM(B8), Sq2UM(C8), Sq2UM(D8), Sq2UM(E8), Sq2UM(F8), Sq2UM(G8), Sq2UM(H8) };
 
 // lower bound bitboard mask
-static const Bitboard lowerMaskBitboard[ALL_SQUARE]={
+const Bitboard lowerMaskBitboard[ALL_SQUARE]={
 		Sq2LM(A1), Sq2LM(B1), Sq2LM(C1), Sq2LM(D1), Sq2LM(E1), Sq2LM(F1), Sq2LM(G1), Sq2LM(H1),
 		Sq2LM(A2), Sq2LM(B2), Sq2LM(C2), Sq2LM(D2), Sq2LM(E2), Sq2LM(F2), Sq2LM(G2), Sq2LM(H2),
 		Sq2LM(A3), Sq2LM(B3), Sq2LM(C3), Sq2LM(D3), Sq2LM(E3), Sq2LM(F3), Sq2LM(G3), Sq2LM(H3),
@@ -413,7 +415,7 @@ inline Bitboard getSliderAttacks(const Bitboard& attacks, const Bitboard& mask, 
 
 	Bitboard occ= mask & attacks;
 
-	if (!occ) {
+	if (!(occ&attacks)) {
 		return attacks;
 	}
 

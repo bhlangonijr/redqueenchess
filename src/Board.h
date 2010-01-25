@@ -75,6 +75,9 @@ const int zobristCastleIndex[ALL_CASTLE_RIGHT][ALL_CASTLE_RIGHT]={
 //start FEN position
 const std::string startFENPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
+//material values for move classification
+const int pieceMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 318, 325, 520, 975, 10000, 100, 318, 325, 520, 975, 10000, 0};
+
 // Backup move
 struct MoveBackup {
 	MoveBackup()
@@ -378,10 +381,9 @@ inline bool Board::canCastle(const PieceColor color, const CastleRight castleRig
 
 	if (currentBoard.castleRight[color] == NO_CASTLE) { // lost the right to castle?
 		return false;
-	} else if (currentBoard.castleRight[color]!=BOTH_SIDE_CASTLE) {
-		if (currentBoard.castleRight[color]!=castleRight) {
-			return false;
-		}
+	} else if (currentBoard.castleRight[color]!=BOTH_SIDE_CASTLE &&
+			currentBoard.castleRight[color]!=castleRight) {
+		return false;
 	}
 
 	if (castleSquare[color][castleRight]&getAllPieces()) { // pieces interposing king & rooks?
@@ -389,6 +391,7 @@ inline bool Board::canCastle(const PieceColor color, const CastleRight castleRig
 	}
 
 	Bitboard castle=getPiecesByType(makePiece(color,KING))|(castleSquare[color][castleRight]);
+
 	if (isAttacked(castle,flipSide(color))) { // squares through castle & king destination attacked?
 		return false;
 	}
@@ -599,9 +602,7 @@ inline const Bitboard Board::getRookAttacks(const Square square) {
 
 // return a bitboard with attacked squares by the rook in the given square
 inline const Bitboard Board::getRookAttacks(const Square square, const Bitboard occupied) {
-	if (getPieceBySquare(square)==EMPTY) {
-		return EMPTY_BB;
-	}
+
 	Bitboard file = getSliderAttacks(fileAttacks[square], occupied, square);
 	Bitboard rank = getSliderAttacks(rankAttacks[square], occupied, square);
 
@@ -615,9 +616,7 @@ inline const Bitboard Board::getBishopAttacks(const Square square) {
 
 // return a bitboard with attacked squares by the bishop in the given square
 inline const Bitboard Board::getBishopAttacks(const Square square, const Bitboard occupied) {
-	if (getPieceBySquare(square)==EMPTY) {
-		return EMPTY_BB;
-	}
+
 	Bitboard diagA1H8 = getSliderAttacks(diagA1H8Attacks[square], occupied, square);
 	Bitboard diagH1A8 = getSliderAttacks(diagH1A8Attacks[square], occupied, square);
 
@@ -645,9 +644,6 @@ inline const Bitboard Board::getKnightAttacks(const Square square) {
 
 // return a bitboard with attacked squares by the pawn in the given square
 inline const Bitboard Board::getKnightAttacks(const Square square, const Bitboard occupied) {
-	if (getPieceBySquare(square)==EMPTY) {
-		return EMPTY_BB;
-	}
 	return knightAttacks[square] & occupied;
 }
 
@@ -659,9 +655,7 @@ inline const Bitboard Board::getPawnMoves(const Square square) {
 inline const Bitboard Board::getPawnAttacks(const Square square) {
 	Bitboard captures;
 	Bitboard pawnAttacks;
-	if (getPieceBySquare(square)==EMPTY) {
-		return EMPTY_BB;
-	}
+
 	pawnAttacks=getPieceColorBySquare(square)==WHITE?whitePawnAttacks[square]:blackPawnAttacks[square];
 	captures = (diagA1H8Attacks[square]|diagH1A8Attacks[square]) & pawnAttacks ;
 	return captures;
@@ -672,9 +666,11 @@ inline const Bitboard Board::getPawnAttacks(const Square square, const Bitboard 
 
 	Bitboard captures;
 	Bitboard pawnAttacks;
+/*
 	if (getPieceBySquare(square)==EMPTY) {
 		return EMPTY_BB;
 	}
+*/
 	pawnAttacks=getPieceColorBySquare(square)==WHITE?whitePawnAttacks[square]:blackPawnAttacks[square];
 	captures = (diagA1H8Attacks[square]|diagH1A8Attacks[square]) & pawnAttacks & occupied;
 	return captures;
@@ -685,10 +681,6 @@ inline const Bitboard Board::getPawnMoves(const Square square, const Bitboard oc
 
 	Bitboard occ = occupied;
 	PieceColor color = getPieceColorBySquare(square);
-
-	if (getPieceBySquare(square)==EMPTY) {
-		return EMPTY_BB;
-	}
 
 	Bitboard pawnAttacks = color==WHITE ? whitePawnAttacks[square] : blackPawnAttacks[square];
 
@@ -711,10 +703,6 @@ inline const Bitboard Board::getPawnCaptures(const Square square, const Bitboard
 
 	Bitboard occ = occupied;
 	PieceColor color = getPieceColorBySquare(square);
-
-	if (getPieceBySquare(square)==EMPTY) {
-		return EMPTY_BB;
-	}
 
 	Bitboard pawnAttacks = color==WHITE ? whitePawnAttacks[square] : blackPawnAttacks[square];
 
@@ -757,14 +745,22 @@ inline void Board::generateCaptures(MoveIterator& moves, const PieceColor side) 
 		Square target = extractLSB(attacks);
 		bool promotion=((getSquareRank(from)==RANK_7&&side==WHITE) ||
 				(getSquareRank(from)==RANK_2&&side==BLACK));
+
+		MoveIterator::MoveType type = promotion ? MoveIterator::PROMO_CAPTURE : MoveIterator::EQUAL_CAPTURE;
+
 		while ( target!=NONE ) {
 			if (promotion) {
-				moves.add(from,target,makePiece(side,QUEEN));
-				moves.add(from,target,makePiece(side,ROOK));
-				moves.add(from,target,makePiece(side,BISHOP));
-				moves.add(from,target,makePiece(side,KNIGHT));
+				moves.add(from,target,makePiece(side,QUEEN), type);
+				moves.add(from,target,makePiece(side,ROOK), type);
+				moves.add(from,target,makePiece(side,BISHOP), type);
+				moves.add(from,target,makePiece(side,KNIGHT), type);
 			} else {
-				moves.add(from,target,EMPTY);
+				if (pieceMaterialValues[getPieceBySquare(target)]>pieceMaterialValues[getPieceBySquare(from)]) {
+					type=MoveIterator::GOOD_CAPTURE;
+				} else if (pieceMaterialValues[getPieceBySquare(target)]<pieceMaterialValues[getPieceBySquare(from)]) {
+					type=MoveIterator::BAD_CAPTURE;
+				}
+				moves.add(from,target,EMPTY,type);
 			}
 			target = extractLSB(attacks);
 		}
@@ -778,7 +774,13 @@ inline void Board::generateCaptures(MoveIterator& moves, const PieceColor side) 
 		attacks = getKnightAttacks(from) & otherPieces;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
-			moves.add(from,target,EMPTY);
+			MoveIterator::MoveType type = MoveIterator::EQUAL_CAPTURE;
+			if (pieceMaterialValues[getPieceBySquare(target)]>pieceMaterialValues[getPieceBySquare(from)]) {
+				type=MoveIterator::GOOD_CAPTURE;
+			} else if (pieceMaterialValues[getPieceBySquare(target)]<pieceMaterialValues[getPieceBySquare(from)]) {
+				type=MoveIterator::BAD_CAPTURE;
+			}
+			moves.add(from,target,EMPTY,type);
 			target = extractLSB(attacks);
 		}
 		from = extractLSB(pieces);
@@ -791,7 +793,13 @@ inline void Board::generateCaptures(MoveIterator& moves, const PieceColor side) 
 		attacks = getBishopAttacks(from) & otherPieces;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
-			moves.add(from,target,EMPTY);
+			MoveIterator::MoveType type = MoveIterator::EQUAL_CAPTURE;
+			if (pieceMaterialValues[getPieceBySquare(target)]>pieceMaterialValues[getPieceBySquare(from)]) {
+				type=MoveIterator::GOOD_CAPTURE;
+			} else if (pieceMaterialValues[getPieceBySquare(target)]<pieceMaterialValues[getPieceBySquare(from)]) {
+				type=MoveIterator::BAD_CAPTURE;
+			}
+			moves.add(from,target,EMPTY,type);
 			target = extractLSB(attacks);
 		}
 		from = extractLSB(pieces);
@@ -804,7 +812,13 @@ inline void Board::generateCaptures(MoveIterator& moves, const PieceColor side) 
 		attacks = getRookAttacks(from) & otherPieces;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
-			moves.add(from,target,EMPTY);
+			MoveIterator::MoveType type = MoveIterator::EQUAL_CAPTURE;
+			if (pieceMaterialValues[getPieceBySquare(target)]>pieceMaterialValues[getPieceBySquare(from)]) {
+				type=MoveIterator::GOOD_CAPTURE;
+			} else if (pieceMaterialValues[getPieceBySquare(target)]<pieceMaterialValues[getPieceBySquare(from)]) {
+				type=MoveIterator::BAD_CAPTURE;
+			}
+			moves.add(from,target,EMPTY,type);
 			target = extractLSB(attacks);
 		}
 		from = extractLSB(pieces);
@@ -817,7 +831,13 @@ inline void Board::generateCaptures(MoveIterator& moves, const PieceColor side) 
 		attacks = getQueenAttacks(from) & otherPieces;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
-			moves.add(from,target,EMPTY);
+			MoveIterator::MoveType type = MoveIterator::EQUAL_CAPTURE;
+			if (pieceMaterialValues[getPieceBySquare(target)]>pieceMaterialValues[getPieceBySquare(from)]) {
+				type=MoveIterator::GOOD_CAPTURE;
+			} else if (pieceMaterialValues[getPieceBySquare(target)]<pieceMaterialValues[getPieceBySquare(from)]) {
+				type=MoveIterator::BAD_CAPTURE;
+			}
+			moves.add(from,target,EMPTY,type);
 			target = extractLSB(attacks);
 		}
 		from = extractLSB(pieces);
@@ -830,7 +850,13 @@ inline void Board::generateCaptures(MoveIterator& moves, const PieceColor side) 
 		attacks = getKingAttacks(from) & otherPieces;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
-			moves.add(from,target,EMPTY);
+			MoveIterator::MoveType type = MoveIterator::EQUAL_CAPTURE;
+			if (pieceMaterialValues[getPieceBySquare(target)]>pieceMaterialValues[getPieceBySquare(from)]) {
+				type=MoveIterator::GOOD_CAPTURE;
+			} else if (pieceMaterialValues[getPieceBySquare(target)]<pieceMaterialValues[getPieceBySquare(from)]) {
+				type=MoveIterator::BAD_CAPTURE;
+			}
+			moves.add(from,target,EMPTY,type);
 			target = extractLSB(attacks);
 		}
 		from = extractLSB(pieces);
@@ -854,14 +880,15 @@ inline void Board::generateNonCaptures(MoveIterator& moves, const PieceColor sid
 		Square target = extractLSB(attacks);
 		bool promotion=((getSquareRank(from)==RANK_7&&side==WHITE) ||
 				(getSquareRank(from)==RANK_2&&side==BLACK));
+		MoveIterator::MoveType type = promotion ? MoveIterator::PROMO_NONCAPTURE : MoveIterator::NON_CAPTURE;
 		while ( target!=NONE ) {
 			if (promotion) {
-				moves.add(from,target,makePiece(side,QUEEN));
-				moves.add(from,target,makePiece(side,ROOK));
-				moves.add(from,target,makePiece(side,BISHOP));
-				moves.add(from,target,makePiece(side,KNIGHT));
+				moves.add(from,target,makePiece(side,QUEEN),type);
+				moves.add(from,target,makePiece(side,ROOK),type);
+				moves.add(from,target,makePiece(side,BISHOP),type);
+				moves.add(from,target,makePiece(side,KNIGHT),type);
 			} else {
-				moves.add(from,target,EMPTY);
+				moves.add(from,target,EMPTY,type);
 			}
 			target = extractLSB(attacks);
 		}
@@ -875,7 +902,7 @@ inline void Board::generateNonCaptures(MoveIterator& moves, const PieceColor sid
 		attacks = getKnightAttacks(from) & empty;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
-			moves.add(from,target,EMPTY);
+			moves.add(from,target,EMPTY,MoveIterator::NON_CAPTURE);
 			target = extractLSB(attacks);
 		}
 		from = extractLSB(pieces);
@@ -888,7 +915,7 @@ inline void Board::generateNonCaptures(MoveIterator& moves, const PieceColor sid
 		attacks = getBishopAttacks(from) & empty;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
-			moves.add(from,target,EMPTY);
+			moves.add(from,target,EMPTY,MoveIterator::NON_CAPTURE);
 			target = extractLSB(attacks);
 		}
 		from = extractLSB(pieces);
@@ -901,7 +928,7 @@ inline void Board::generateNonCaptures(MoveIterator& moves, const PieceColor sid
 		attacks = getRookAttacks(from) & empty;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
-			moves.add(from,target,EMPTY);
+			moves.add(from,target,EMPTY,MoveIterator::NON_CAPTURE);
 			target = extractLSB(attacks);
 		}
 		from = extractLSB(pieces);
@@ -914,7 +941,7 @@ inline void Board::generateNonCaptures(MoveIterator& moves, const PieceColor sid
 		attacks = getQueenAttacks(from) & empty;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
-			moves.add(from,target,EMPTY);
+			moves.add(from,target,EMPTY,MoveIterator::NON_CAPTURE);
 			target = extractLSB(attacks);
 		}
 		from = extractLSB(pieces);
@@ -927,7 +954,7 @@ inline void Board::generateNonCaptures(MoveIterator& moves, const PieceColor sid
 		attacks = getKingAttacks(from) & empty;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
-			moves.add(from,target,EMPTY);
+			moves.add(from,target,EMPTY,MoveIterator::NON_CAPTURE);
 			target = extractLSB(attacks);
 		}
 		from = extractLSB(pieces);
@@ -935,17 +962,17 @@ inline void Board::generateNonCaptures(MoveIterator& moves, const PieceColor sid
 
 	if (canCastle(side, KING_SIDE_CASTLE)) {
 		if (side==WHITE) {
-			moves.add(E1,G1,EMPTY);
+			moves.add(E1,G1,EMPTY,MoveIterator::NON_CAPTURE);
 		} else {
-			moves.add(E8,G8,EMPTY);
+			moves.add(E8,G8,EMPTY,MoveIterator::NON_CAPTURE);
 		}
 	}
 
 	if (canCastle(side, QUEEN_SIDE_CASTLE)) {
 		if (side==WHITE) {
-			moves.add(E1,C1,EMPTY);
+			moves.add(E1,C1,EMPTY,MoveIterator::NON_CAPTURE);
 		} else {
-			moves.add(E8,C8,EMPTY);
+			moves.add(E8,C8,EMPTY,MoveIterator::NON_CAPTURE);
 		}
 	}
 

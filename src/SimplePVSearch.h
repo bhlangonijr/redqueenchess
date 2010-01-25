@@ -62,10 +62,10 @@ public:
 			ttHits(0), ttLower(0), ttUpper(0), ttExact(0), nullMoveHits(0), pvChanges(0), searchTime(0), searchNodes(0), searchDepth(0) {}
 
 		SearchStats(const SearchStats& stats):
-					ttHits(stats.ttHits), ttLower(stats.ttLower),
-					ttUpper(stats.ttUpper), ttExact(stats.ttExact),
-					nullMoveHits(stats.nullMoveHits), pvChanges(stats.pvChanges),
-					searchTime(stats.searchTime), searchNodes(stats.searchNodes), searchDepth(stats.searchDepth) {}
+			ttHits(stats.ttHits), ttLower(stats.ttLower),
+			ttUpper(stats.ttUpper), ttExact(stats.ttExact),
+			nullMoveHits(stats.nullMoveHits), pvChanges(stats.pvChanges),
+			searchTime(stats.searchTime), searchNodes(stats.searchNodes), searchDepth(stats.searchDepth) {}
 		long ttHits;
 		long ttLower;
 		long ttUpper;
@@ -78,7 +78,7 @@ public:
 
 		std::string toString() {
 			std::string result =
-			"ttHits:      " + StringUtil::toStr(ttHits) + "\n" ;
+					"ttHits:      " + StringUtil::toStr(ttHits) + "\n" ;
 			result += "ttLower:     " + StringUtil::toStr(ttLower) + "\n";
 			result += "ttUpper:     " + StringUtil::toStr(ttUpper) + "\n";
 			result += "ttExact:     " + StringUtil::toStr(ttExact) + "\n";
@@ -184,9 +184,12 @@ private:
 	SearchStats stats;
 	int timeToStop;
 	bool moveFound;
+	MoveIterator rootMoves;
+	MoveIterator::Move killer[maxSearchDepth][2];
+	int history[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 
 	int idSearch(Board& board);
-	int sortMoves(Board& board, MoveIterator& moves, int alpha, int beta, int ply);
+	int sortMoves(Board& board, MoveIterator& moves, MoveIterator::Move ttMove, int alpha, int beta, int ply);
 	int sortQMoves(Board& board, MoveIterator& moves);
 	int pvSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv, const bool allowNullMove, const bool allowIid);
 	int qSearch(Board& board, int alpha, int beta, int depth, PvLine* pv);
@@ -194,6 +197,8 @@ private:
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
 	const bool stop(const bool searchInProgress);
 	const bool timeIsUp();
+	void clearHistory();
+	void updateHistory(Board& board, MoveIterator::Move& move, int depth, int ply);
 
 };
 
@@ -230,6 +235,118 @@ inline void SimplePVSearch::updatePv(PvLine* pv, PvLine& line, MoveIterator::Mov
 	pv->index = line.index + 1;
 }
 
+// sort search moves
+inline int SimplePVSearch::sortMoves(Board& board, MoveIterator& moves, MoveIterator::Move ttMove, int alpha, int beta, int ply) {
+
+	const int TT_MOVE_SCORE=1000;
+	const int KILLER1_SCORE=200;
+	const int KILLER2_SCORE=100;
+	const int PROMO_CAPTURE_SCORE=700;
+	const int PROMO_NON_CAPTURE_SCORE=650;
+	const int GOOD_CAPTURE_SCORE=600;
+	const int EQUAL_CAPTURE_SCORE=500;
+
+	PvLine line;
+	moves.first();
+	int moveCounter=0;
+
+	while (moves.hasNext()) {
+		MoveIterator::Move& move = moves.next();
+		MoveBackup backup;
+		board.doMove(move,backup);
+
+		if (board.isNotLegal()) {
+			board.undoMove(backup);
+			move.score=notLegal;
+			continue; // not legal
+		}
+
+		move.score = -evaluator.evalMaterial(board, board.getSideToMove());
+
+		if (ttMove.from!=NONE && ttMove==move) {
+			move.type = MoveIterator::TT_MOVE;
+			move.score+=TT_MOVE_SCORE;
+		} else if (move==killer[ply][0]) {
+			move.type = MoveIterator::KILLER1;
+			move.score+=KILLER1_SCORE;
+		} else if (move==killer[ply][1]) {
+			move.type = MoveIterator::KILLER2;
+			move.score+=KILLER2_SCORE;
+		}
+
+		if (move.type==MoveIterator::PROMO_CAPTURE) {
+			move.score+=PROMO_CAPTURE_SCORE;
+		} else if (move.type==MoveIterator::PROMO_NONCAPTURE) {
+			move.score+=PROMO_NON_CAPTURE_SCORE;
+		} else if (move.type==MoveIterator::GOOD_CAPTURE) {
+			move.score+=GOOD_CAPTURE_SCORE;
+		} else if (move.type==MoveIterator::EQUAL_CAPTURE) {
+			move.score+=EQUAL_CAPTURE_SCORE;
+		} else if (move.type==MoveIterator::NON_CAPTURE) {
+			move.score+=history[board.getPieceTypeBySquare(move.from)][move.to];
+		}
+
+		board.undoMove(backup);
+
+		moveCounter++;
+		moves.sortOne();
+
+	}
+
+	return moveCounter;
+
+}
+
+// sort moves of quiscence search
+inline int SimplePVSearch::sortQMoves(Board& board, MoveIterator& moves) {
+
+	moves.first();
+	int moveCounter=0;
+
+	while (moves.hasNext()) {
+
+		MoveIterator::Move& move = moves.next();
+		MoveBackup backup;
+		board.doMove(move,backup);
+
+		if (board.isNotLegal()) {
+			board.undoMove(backup);
+			move.score=notLegal;
+			continue; // not legal
+		}
+
+		move.score = -evaluator.evalMaterial(board, board.getSideToMove());
+
+		board.undoMove(backup);
+
+		moveCounter++;
+		moves.sortOne();
+	}
+
+	return moveCounter;
+
+}
+
+// clear history
+inline void SimplePVSearch::clearHistory() {
+	memset(history, 0, sizeof(int)*ALL_PIECE_TYPE_BY_COLOR*ALL_SQUARE);
+	memset(killer, 0, sizeof(MoveIterator::Move)*maxSearchDepth*2);
+}
 
 
+// update history
+inline void SimplePVSearch::updateHistory(Board& board, MoveIterator::Move& move, int depth, int ply) {
+
+	if (move.type!=MoveIterator::NON_CAPTURE) {
+		return;
+	}
+
+	if (move != killer[ply][0]) {
+		killer[ply][1] = killer[ply][0];
+		killer[ply][0] = move;
+	}
+
+	history[board.getPieceTypeBySquare(move.from)][move.to]+=depth;
+
+}
 #endif /* SIMPLEPVSEARCH_H_ */

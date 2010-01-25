@@ -42,7 +42,7 @@ const int defaultPieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 				5,  10, 10,-20,-20, 10, 10, 5,
 				5, -5,-10,  0,  0, -10, -5, 5,
 				0,  0,  0, 20, 20,  0,  0,  0,
-				5,  5, 10, 25, 25, 10,  5,  5,
+				5,  5, 10, 15, 	15, 10,  5,  5,
 				10, 10, 20, 30, 30, 20, 10, 10,
 				50, 50, 50, 50, 50, 50, 50, 50,
 				0,  0,  0,  0,  0,  0,  0,  0,
@@ -101,7 +101,7 @@ const int defaultPieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 				0,  0,  0,  0,  0,  0,  0,  0,
 				50, 50, 50, 50, 50, 50, 50, 50,
 				10, 10, 20, 30, 30, 20, 10, 10,
-				5,  5, 10, 25, 25, 10,  5,  5,
+				5,  5, 10, 15, 15, 10,  5,  5,
 				0,  0,  0, 20, 20,  0,  0,  0,
 				5, -5,-10,  0,  0,-10, -5,  5,
 				5, 10, 10,-20,-20, 10, 10,  5,
@@ -396,6 +396,7 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 	const int DONE_CASTLE_BONUS=       (board.getPiecesByType(board.makePiece(other,QUEEN))) ? 30 : 20;
 	const int CAN_CASTLE_BONUS=        5;
 	const int UNSTOPPABLE_PAWN_BONUS = 20;
+	const int CENTERED_PAWN_BONUS =    10;
 	const int DOUBLED_PAWN_PENALTY =  -10;
 	const int ISOLATED_PAWN_PENALTY = -15;
 	const int BACKWARD_PAWN_PENALTY = -15;
@@ -413,13 +414,18 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 
 	Bitboard pawns = board.getPiecesByType(board.makePiece(color,PAWN));
 	Bitboard enemyPawns = board.getPiecesByType(board.makePiece(other,PAWN));
+
 	//penalyze doubled & isolated pawns
 	if (pawns) {
 		Bitboard pieces=pawns;
 		Square from = extractLSB(pieces);
 		while ( from!=NONE ) {
 
-			if (fileAttacks[squareFile[from]]&(pawns)) {
+			if (squareToBitboard[from]&centerSquares) {
+				count += CENTERED_PAWN_BONUS;
+			}
+
+			if (fileAttacks[squareFile[from]]&pawns) {
 				count += DOUBLED_PAWN_PENALTY;
 			}
 
@@ -542,7 +548,7 @@ inline const int Evaluator::evalDevelopment(Board& board, PieceColor color) {
 // mobility eval function
 inline const int Evaluator::evalImbalances(Board& board, PieceColor color) {
 
-	const int bishopPairBonus = 50;
+	const int bishopPairBonus = 30;
 	int count=0;
 
 	Bitboard bishop = board.getPiecesByType(board.makePiece(color,BISHOP));
