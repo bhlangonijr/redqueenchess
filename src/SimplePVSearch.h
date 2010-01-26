@@ -37,11 +37,10 @@
 
 namespace SimplePVSearchTypes {
 
-static const int maxScore = 20000;
-static const int notLegal = -30000;
-static const int maxQuiescenceSearchDepth = 10;
-static const int maxSearchDepth = 40;
-static const int maxSearchPly = 30;
+const int maxScore = 20000;
+const int maxQuiescenceSearchDepth = 30;
+const int maxSearchDepth = 80;
+const int maxSearchPly = 30;
 
 }
 
@@ -183,17 +182,15 @@ private:
 	Evaluator evaluator;
 	SearchStats stats;
 	int timeToStop;
-	bool moveFound;
 	MoveIterator rootMoves;
 	MoveIterator::Move killer[maxSearchDepth][2];
 	int history[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 
 	int idSearch(Board& board);
-	int sortMoves(Board& board, MoveIterator& moves, MoveIterator::Move ttMove, int alpha, int beta, int ply);
-	int sortQMoves(Board& board, MoveIterator& moves);
-	int pvSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv, const bool allowNullMove, const bool allowIid);
+	int pvSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv, const bool allowNullMove);
 	int qSearch(Board& board, int alpha, int beta, int depth, PvLine* pv);
 	const std::string pvLineToString(const PvLine* pv);
+	void scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move ttMove, int alpha, int beta, int ply);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
 	const bool stop(const bool searchInProgress);
 	const bool timeIsUp();
@@ -210,9 +207,9 @@ inline const bool SimplePVSearch::stop(const bool searchInProgress) {
 
 inline const bool SimplePVSearch::timeIsUp() {
 
-	static const uint64_t checkNodes=0x7d0;
+	static const uint64_t checkNodes=0x3E8;
 
-	if ( _searchFixedDepth || _infinite || (_nodes & checkNodes)) {
+	if ( _searchFixedDepth || _infinite || ((_nodes & checkNodes)==checkNodes)) {
 		return false;
 	}
 
@@ -236,32 +233,25 @@ inline void SimplePVSearch::updatePv(PvLine* pv, PvLine& line, MoveIterator::Mov
 }
 
 // sort search moves
-inline int SimplePVSearch::sortMoves(Board& board, MoveIterator& moves, MoveIterator::Move ttMove, int alpha, int beta, int ply) {
+inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move ttMove, int alpha, int beta, int ply) {
 
-	const int TT_MOVE_SCORE=1000;
-	const int KILLER1_SCORE=200;
-	const int KILLER2_SCORE=100;
-	const int PROMO_CAPTURE_SCORE=700;
-	const int PROMO_NON_CAPTURE_SCORE=650;
-	const int GOOD_CAPTURE_SCORE=600;
-	const int EQUAL_CAPTURE_SCORE=500;
+	const int TT_MOVE_SCORE=10000;
+	const int PROMO_CAPTURE_SCORE=9000;
+	const int PROMO_NON_CAPTURE_SCORE=8000;
+	const int GOOD_CAPTURE_SCORE=7000;
+	const int EQUAL_CAPTURE_SCORE=6000;
+	const int KILLER1_SCORE=5000;
+	const int KILLER2_SCORE=4000;
+	const int NON_CAPTURE_SCORE=2000;
 
-	PvLine line;
 	moves.first();
-	int moveCounter=0;
 
 	while (moves.hasNext()) {
 		MoveIterator::Move& move = moves.next();
-		MoveBackup backup;
-		board.doMove(move,backup);
 
-		if (board.isNotLegal()) {
-			board.undoMove(backup);
-			move.score=notLegal;
-			continue; // not legal
+		if (board.getPieceBySquare(move.to) != EMPTY) {
+			move.score += (evaluator.getPieceMaterialValue(board.getPieceBySquare(move.from)) - evaluator.getPieceMaterialValue(board.getPieceBySquare(move.to)));
 		}
-
-		move.score = -evaluator.evalMaterial(board, board.getSideToMove());
 
 		if (ttMove.from!=NONE && ttMove==move) {
 			move.type = MoveIterator::TT_MOVE;
@@ -283,47 +273,12 @@ inline int SimplePVSearch::sortMoves(Board& board, MoveIterator& moves, MoveIter
 		} else if (move.type==MoveIterator::EQUAL_CAPTURE) {
 			move.score+=EQUAL_CAPTURE_SCORE;
 		} else if (move.type==MoveIterator::NON_CAPTURE) {
+			move.score+=NON_CAPTURE_SCORE;
 			move.score+=history[board.getPieceTypeBySquare(move.from)][move.to];
 		}
 
-		board.undoMove(backup);
-
-		moveCounter++;
-		moves.sortOne();
-
 	}
-
-	return moveCounter;
-
-}
-
-// sort moves of quiscence search
-inline int SimplePVSearch::sortQMoves(Board& board, MoveIterator& moves) {
-
-	moves.first();
-	int moveCounter=0;
-
-	while (moves.hasNext()) {
-
-		MoveIterator::Move& move = moves.next();
-		MoveBackup backup;
-		board.doMove(move,backup);
-
-		if (board.isNotLegal()) {
-			board.undoMove(backup);
-			move.score=notLegal;
-			continue; // not legal
-		}
-
-		move.score = -evaluator.evalMaterial(board, board.getSideToMove());
-
-		board.undoMove(backup);
-
-		moveCounter++;
-		moves.sortOne();
-	}
-
-	return moveCounter;
+	moves.sort();
 
 }
 
@@ -337,7 +292,9 @@ inline void SimplePVSearch::clearHistory() {
 // update history
 inline void SimplePVSearch::updateHistory(Board& board, MoveIterator::Move& move, int depth, int ply) {
 
-	if (move.type!=MoveIterator::NON_CAPTURE) {
+	if (!(move.type==MoveIterator::NON_CAPTURE ||
+			move.type==MoveIterator::KILLER1 ||
+			move.type==MoveIterator::KILLER2) ) {
 		return;
 	}
 

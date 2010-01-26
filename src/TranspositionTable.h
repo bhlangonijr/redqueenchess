@@ -116,7 +116,7 @@ inline void TranspositionTable<HashKeyType, HashValueType>::clearHash() {
 template<class HashKeyType, class HashValueType>
 inline bool TranspositionTable<HashKeyType, HashValueType>::hashPut(const HashKeyType key, const HashValueType value) {
 	HashEntry *entry;
-	entry = transTable + (key & _mask);
+	entry = transTable + int(key & _mask);
 	if (!entry) {
 		return false;
 	}
@@ -130,7 +130,7 @@ template<class HashKeyType, class HashValueType>
 inline bool TranspositionTable<HashKeyType, HashValueType>::hashGet(const HashKeyType key, HashValueType& value) {
 
 	HashEntry *entry;
-	entry = transTable + (key & _mask);
+	entry = transTable + int(key & _mask);
 	if (entry->key==key) {
 		value = entry->value;
 		return true;

@@ -61,22 +61,3 @@ void MoveIterator::sort() {
 	std::cout << "----- end " << std::endl;*/
 
 }
-
-// sort
-void MoveIterator::sortByType() {
-	bool flag=true;
-	for(int i = 0; i <(int)_data.size&&flag; i++){
-		flag=false;
-		for(int j = 0; j <(int) _data.size-1; j++)
-		{
-			if (_data.list[j+1].type < _data.list[j].type) {
-				Move tmp=_data.list[j];
-				_data.list[j]=_data.list[j+1];
-				_data.list[j+1]=tmp;
-				flag=true;
-			}
-
-		}
-	}
-
-}

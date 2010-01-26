@@ -111,8 +111,6 @@ public:
 
 	void sort();
 
-	void sortByType();
-
 	const Move& get(const size_t index);
 
 	const void bringToTop();
