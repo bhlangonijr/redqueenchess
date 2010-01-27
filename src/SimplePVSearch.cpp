@@ -246,7 +246,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 	moves.first();
 	int moveCounter=0;
 
-	const int prunningDepth=2;
+	const int prunningDepth=3;
 	const int prunningMoves=4;
 	const int uciOutputSecs=1500;
 
@@ -300,9 +300,11 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 				score = -pvSearch(board, -beta, -alpha, depth-reduction, ply+1, &line, allowNullMove);
 			}
 		}
-/*		if (!ply) {
-			std::cout << "Move: " << move.toString() << " - Order: " << move.score << " Score: " << score << " - MoveType: " << move.type << std::endl;
-		}*/
+
+//		if (!ply) {
+//			std::cout << "Move: " << move.toString() << " - Order: " << move.score << " Score: " << score << " - MoveType: " << move.type << std::endl;
+//		}
+
 		move.score=score;
 
 #endif

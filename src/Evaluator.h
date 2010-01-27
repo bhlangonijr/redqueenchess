@@ -359,7 +359,7 @@ inline const int Evaluator::evaluate(Board& board) {
 	pieces = evalPieces(board, side) - evalPieces(board, other);
 	imbalances = evalImbalances(board, side) - evalImbalances(board, other);
 
-/*
+	/*
 	std::cout << "material:    " << material << std::endl;
 	std::cout << "mobility:    " << mobility << std::endl;
 	std::cout << "development: " << development << std::endl;
@@ -396,8 +396,8 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 	const int DONE_CASTLE_BONUS=       (board.getPiecesByType(board.makePiece(other,QUEEN))) ? 30 : 20;
 	const int CAN_CASTLE_BONUS=        5;
 	const int UNSTOPPABLE_PAWN_BONUS = 20;
-	const int CENTERED_PAWN_BONUS =    10;
-	const int DOUBLED_PAWN_PENALTY =  -10;
+	const int CENTERED_PAWN_BONUS =    15;
+	const int DOUBLED_PAWN_PENALTY =  -15;
 	const int ISOLATED_PAWN_PENALTY = -15;
 	const int BACKWARD_PAWN_PENALTY = -15;
 
@@ -432,14 +432,14 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 			Bitboard neighbor =EMPTY_BB;
 
 			if (squareFile[from]!=FILE_H) {
-				neighbor |= fileBB[squareFile[from+1]]&pawns;
+				neighbor |= fileBB[squareFile[from+1]];
 			}
 
 			if (squareFile[from]!=FILE_A) {
-				neighbor |= fileBB[squareFile[from-1]]&pawns;
+				neighbor |= fileBB[squareFile[from-1]];
 			}
 
-			if (!neighbor) {
+			if (!(neighbor&pawns)) {
 				count += ISOLATED_PAWN_PENALTY;
 			} else {
 				if (!(adjacentSquares[from]&pawns)) {
@@ -447,49 +447,37 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 				}
 			}
 
+			neighbor |= fileAttacks[squareFile[from]];
 
-			if ((color==WHITE && squareRank[from]>=RANK_5) ||
-					(color==BLACK && squareRank[from]<=RANK_4)) {
+			Bitboard frontSquares = neighbor;
 
-				Bitboard enemyNeighbor =EMPTY_BB;
+			if (color==WHITE) {
+				frontSquares &= bitsBetween(frontSquares,from,board.makeSquare(RANK_8,squareFile[from]));
+			} else {
+				frontSquares &= bitsBetween(frontSquares,board.makeSquare(RANK_1,squareFile[from]),from);
+			}
 
-				if (enemyPawns) {
-
-					enemyNeighbor |= fileAttacks[squareFile[from]];
-
-					if (squareFile[from]!=FILE_H) {
-						enemyNeighbor |= fileBB[squareFile[from+1]];
-					}
-
-					if (squareFile[from]!=FILE_A) {
-						enemyNeighbor |= fileBB[squareFile[from-1]];
-					}
-
-					Rank rank1 = color==WHITE?RANK_6:RANK_2;
-					Rank rank2 = color==WHITE?RANK_7:RANK_3;
-					enemyNeighbor &= (rankBB[rank1] | rankBB[rank2]) & enemyPawns;
-
-				}
-
-				if (!enemyNeighbor) {
-					count += UNSTOPPABLE_PAWN_BONUS;
-				}
-
+			if (!(neighbor&enemyPawns)) {
+				count += UNSTOPPABLE_PAWN_BONUS;
 			}
 
 			from = extractLSB(pieces);
 		}
 
 	}
-	//TODO implement more piece evalutions
+
 	return count;
 }
 
 // mobility eval function
 inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
+	const int KING_ATTACK_BONUS=10;
+	const PieceColor other=board.flipSide(color);
+
 	Bitboard pieces = EMPTY_BB;
 	Bitboard moves = EMPTY_BB;
+	Bitboard attacks = EMPTY_BB;
 
 	Square from = NONE;
 	int count=0;
@@ -498,8 +486,8 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-
 		moves |= board.getBishopAttacks(from);
+		attacks |= moves;
 		from = extractLSB(pieces);
 	}
 	count+=_BitCount(moves);
@@ -510,6 +498,7 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	moves = EMPTY_BB;
 	while ( from!=NONE ) {
 		moves = board.getRookAttacks(from);
+		attacks |= moves;
 		count+=_BitCount(moves);
 		from = extractLSB(pieces);
 	}
@@ -519,9 +508,20 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
 	while ( from!=NONE ) {
 		moves = board.getQueenAttacks(from);
+		attacks |= moves;
 		count+=_BitCount(moves);
 		from = extractLSB(pieces);
 	}
+
+	Bitboard king = board.getPiecesByType(board.makePiece(other,KING));
+
+	Square kingSquare = extractLSB(king);
+
+	Bitboard nearKingSquares =king|adjacentSquares[kingSquare];
+
+	count += _BitCount(board.getPiecesByColor(other)&attacks);
+
+	count += _BitCount(nearKingSquares&attacks)*KING_ATTACK_BONUS;
 
 	return count;
 }
