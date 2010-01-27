@@ -36,17 +36,17 @@ class MoveIterator {
 public:
 
 	enum MoveType {
-		MOVE_NONE, TT_MOVE, GOOD_CAPTURE, PROMO_CAPTURE, PROMO_NONCAPTURE, EQUAL_CAPTURE, KILLER1, KILLER2, NON_CAPTURE, BAD_CAPTURE
+		PV_MOVE, TT_MOVE, GOOD_CAPTURE, PROMO_CAPTURE, PROMO_NONCAPTURE, EQUAL_CAPTURE, KILLER1, KILLER2, NON_CAPTURE, BAD_CAPTURE
 	};
 
 	// Move representation
 	struct Move {
 
-		Move() : from(NONE), to(NONE), score(DEFAULT_SCORE), type(MOVE_NONE)
+		Move() : from(NONE), to(NONE), score(DEFAULT_SCORE), type(PV_MOVE)
 		{}
 
 		Move(const Square fromSquare, const Square toSquare, const PieceTypeByColor piece) :
-			from(fromSquare), to(toSquare), promotionPiece(piece), score(DEFAULT_SCORE), type(MOVE_NONE)
+			from(fromSquare), to(toSquare), promotionPiece(piece), score(DEFAULT_SCORE), type(PV_MOVE)
 			{}
 
 		Move(const Square fromSquare, const Square toSquare, const PieceTypeByColor piece, const MoveType type) :

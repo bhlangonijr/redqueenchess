@@ -254,7 +254,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 	Key key1 = old.generateKey();
 #endif
 	int reduction=1;
-	int lateMoves=1;
 	while (moves.hasNext()) {
 
 		MoveIterator::Move& move = moves.next();
@@ -278,12 +277,11 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 		Board newBoard(board);
 #endif
 
-		if ((!isKingAttacked && ply > 1) &&
+		if ((!isKingAttacked && ply > 2) &&
 	   	   ((depth > prunningDepth) &&
 		   ((move.type == MoveIterator::NON_CAPTURE) &&
-		    (moveCounter >= prunningMoves)))) {
-			lateMoves++;
-			reduction=lateMoves;
+		    (moveCounter > prunningMoves)))) {
+			reduction=2;
 		} else {
 			reduction=1;
 		}
@@ -302,9 +300,9 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 				score = -pvSearch(board, -beta, -alpha, depth-reduction, ply+1, &line, allowNullMove);
 			}
 		}
-//		if (!ply) {
-//			std::cout << "Move: " << move.toString() << " - Order: " << move.score << " Score: " << score << " - MoveType: " << move.type << std::endl;
-//		}
+/*		if (!ply) {
+			std::cout << "Move: " << move.toString() << " - Order: " << move.score << " Score: " << score << " - MoveType: " << move.type << std::endl;
+		}*/
 		move.score=score;
 
 #endif
