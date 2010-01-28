@@ -103,7 +103,7 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		int time = getTickCount();
 
-		int score = -pvSearch(board, -maxScore, maxScore, depth, 0, &pv, true);
+		int score = -pvSearch(board, -maxScore, maxScore, depth, 0, &pv, true, true);
 
 		if (stop(agent->getSearchInProgress())) {
 			break;
@@ -150,7 +150,7 @@ int SimplePVSearch::idSearch(Board& board) {
 
 // principal variation search
 int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
-		int depth, int ply, PvLine* pv,	const bool allowNullMove) {
+		int depth, int ply, PvLine* pv,	const bool allowNullMove, const bool allowPvSearch) {
 
 	if	(board.isDraw() && ply) {
 		return 0;
@@ -215,7 +215,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 
 			MoveBackup backup;
 			board.doNullMove(backup);
-			score = -pvSearch(board, -beta, 1-beta, depth-reduction, ply+1, &line, false);
+			score = -pvSearch(board, -beta, 1-beta, depth-reduction, ply+1, &line, false, true);
 			board.undoNullMove(backup);
 
 			if (stop(agent->getSearchInProgress())) {
@@ -234,6 +234,16 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 		depth++;
 	}
 
+
+	const int PV_CANDIDATE_SEARCH_DEPTH = 2;
+	PvLine pvCandidate;
+
+	if (allowPvSearch && depth > 1) {
+
+		score = pvSearch(board,-beta,-alpha,PV_CANDIDATE_SEARCH_DEPTH,ply+1,&pvCandidate,true, false);
+
+	}
+
 	MoveIterator moves;
 	if (ply) {
 		board.generateAllMoves(moves, board.getSideToMove());
@@ -241,7 +251,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 		moves(rootMoves);
 	}
 
-	scoreMoves(board, moves, ttMove, alpha, beta, ply);
+	scoreMoves(board, moves, ttMove, pvCandidate.moves[0], alpha, beta, ply);
 
 	moves.first();
 	int moveCounter=0;
@@ -289,22 +299,22 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 #if PV_SEARCH
 		if ( bSearch ) {
 #endif
-			score = -pvSearch(board, -beta, -alpha, depth-reduction, ply+1, &line, allowNullMove);
+			score = -pvSearch(board, -beta, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowPvSearch);
 
 #if PV_SEARCH
 		} else {
 
-			score = -pvSearch(board, -alpha-1, -alpha, depth-reduction, ply+1, &line, allowNullMove);
+			score = -pvSearch(board, -alpha-1, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowPvSearch);
 
 			if ( (score > alpha) && (score < beta) && !stop(agent->getSearchInProgress())) {
-				score = -pvSearch(board, -beta, -alpha, depth-reduction, ply+1, &line, allowNullMove);
+				score = -pvSearch(board, -beta, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowPvSearch);
 			}
 		}
 
-//		if (!ply) {
-//			std::cout << "Move: " << move.toString() << " - Order: " << move.score << " Score: " << score << " - MoveType: " << move.type << std::endl;
-//		}
-
+	/*	if (!ply) {
+			std::cout << "Move: " << move.toString() << " - Order: " << move.score << " Score: " << score << " - MoveType: " << move.type << std::endl;
+		}
+*/
 		move.score=score;
 
 #endif
@@ -407,7 +417,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, PvLine
 
 	MoveIterator moves;
 	board.generateCaptures(moves, board.getSideToMove());
-	scoreMoves(board, moves, MoveIterator::Move(), alpha, beta, 0);
+	scoreMoves(board, moves, alpha, beta, 0);
 	moves.first();
 
 	while (moves.hasNext())  {

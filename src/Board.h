@@ -524,7 +524,7 @@ inline const bool Board::isNotLegal() {
 // verify draw by 50th move rule, 3 fold rep and insuficient material
 inline const bool Board::isDraw() {
 
-	const int RANGE_CHECK=10;
+	const int RANGE_CHECK=1;
 	if (getMoveCounter()>=RANGE_CHECK){
 		int repetition = 0;
 

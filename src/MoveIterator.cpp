@@ -39,6 +39,7 @@ MoveIterator::~MoveIterator() {
 
 // sort
 void MoveIterator::sort() {
+
 	bool flag=true;
 	for(int i = 0; i <(int)_data.size&&flag; i++){
 		flag=false;
@@ -54,7 +55,7 @@ void MoveIterator::sort() {
 		}
 	}
 
-/*	std::cout << "----- init " << std::endl;
+	/*	std::cout << "----- init " << std::endl;
 	for (int x=0;x<_data.size;x++) {
 		std::cout << _data.list[x].toString() << " - score: " << _data.list[x].score << std::endl;
 	}

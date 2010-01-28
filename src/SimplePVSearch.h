@@ -187,10 +187,11 @@ private:
 	int history[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 
 	int idSearch(Board& board);
-	int pvSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv, const bool allowNullMove);
+	int pvSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv, const bool allowNullMove, const bool allowPvSearch);
 	int qSearch(Board& board, int alpha, int beta, int depth, PvLine* pv);
 	const std::string pvLineToString(const PvLine* pv);
-	void scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move ttMove, int alpha, int beta, int ply);
+	void scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, MoveIterator::Move& pvCandidate, int alpha, int beta, int ply);
+	void scoreMoves(Board& board, MoveIterator& moves, int alpha, int beta, int ply);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
 	const bool stop(const bool searchInProgress);
 	const bool timeIsUp();
@@ -233,16 +234,20 @@ inline void SimplePVSearch::updatePv(PvLine* pv, PvLine& line, MoveIterator::Mov
 }
 
 // sort search moves
-inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move ttMove, int alpha, int beta, int ply) {
+inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, MoveIterator::Move& pvCandidate, int alpha, int beta, int ply) {
 
-	const int TT_MOVE_SCORE=10000;
-	const int PROMO_CAPTURE_SCORE=9000;
-	const int PROMO_NON_CAPTURE_SCORE=8000;
-	const int GOOD_CAPTURE_SCORE=7000;
-	const int EQUAL_CAPTURE_SCORE=6000;
-	const int KILLER1_SCORE=5000;
-	const int KILLER2_SCORE=4000;
-	const int NON_CAPTURE_SCORE=2000;
+	const int PV_CANDIDATE_SCORE=90000;
+	const int TT_MOVE_SCORE=80000;
+	const int PROMO_NON_CAPTURE_SCORE=60000;
+	const int PROMO_CAPTURE_SCORE=70000;
+	const int GOOD_CAPTURE_SCORE=55000;
+	const int EQUAL_CAPTURE_SCORE=50000;
+	const int KILLER1_SCORE=45000;
+	const int KILLER2_SCORE=40000;
+	const int NON_CAPTURE_SCORE=5000;
+	const int BAD_CAPTURE_SCORE=-9000;
+
+
 
 	moves.first();
 
@@ -250,10 +255,13 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, MoveIt
 		MoveIterator::Move& move = moves.next();
 
 		if (board.getPieceBySquare(move.to) != EMPTY) {
-			move.score += (evaluator.getPieceMaterialValue(board.getPieceBySquare(move.from)) - evaluator.getPieceMaterialValue(board.getPieceBySquare(move.to)));
+			move.score = (evaluator.getPieceMaterialValue(board.getPieceBySquare(move.from)) - evaluator.getPieceMaterialValue(board.getPieceBySquare(move.to)));
 		}
 
-		if (ttMove.from!=NONE && ttMove==move) {
+		if (pvCandidate.from!=NONE && pvCandidate==move) {
+			move.type = MoveIterator::PV_MOVE;
+			move.score+=PV_CANDIDATE_SCORE;
+		} else if (ttMove.from!=NONE && ttMove==move) {
 			move.type = MoveIterator::TT_MOVE;
 			move.score+=TT_MOVE_SCORE;
 		} else if (move==killer[ply][0]) {
@@ -272,6 +280,8 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, MoveIt
 			move.score+=GOOD_CAPTURE_SCORE;
 		} else if (move.type==MoveIterator::EQUAL_CAPTURE) {
 			move.score+=EQUAL_CAPTURE_SCORE;
+		} else if (move.type==MoveIterator::BAD_CAPTURE) {
+			move.score+=BAD_CAPTURE_SCORE;
 		} else if (move.type==MoveIterator::NON_CAPTURE) {
 			move.score+=NON_CAPTURE_SCORE;
 			move.score+=history[board.getPieceTypeBySquare(move.from)][move.to];
@@ -281,6 +291,40 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, MoveIt
 	moves.sort();
 
 }
+
+
+// sort search moves
+inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, int alpha, int beta, int ply) {
+
+	const int PROMO_CAPTURE_SCORE=70000;
+	const int GOOD_CAPTURE_SCORE=55000;
+	const int EQUAL_CAPTURE_SCORE=50000;
+	const int BAD_CAPTURE_SCORE=-9000;
+
+	moves.first();
+
+	while (moves.hasNext()) {
+		MoveIterator::Move& move = moves.next();
+
+		if (board.getPieceBySquare(move.to) != EMPTY) {
+			move.score = (evaluator.getPieceMaterialValue(board.getPieceBySquare(move.from)) - evaluator.getPieceMaterialValue(board.getPieceBySquare(move.to)));
+		}
+
+		if (move.type==MoveIterator::PROMO_CAPTURE) {
+			move.score+=PROMO_CAPTURE_SCORE;
+		} else if (move.type==MoveIterator::GOOD_CAPTURE) {
+			move.score+=GOOD_CAPTURE_SCORE;
+		} else if (move.type==MoveIterator::EQUAL_CAPTURE) {
+			move.score+=EQUAL_CAPTURE_SCORE;
+		} else if (move.type==MoveIterator::BAD_CAPTURE) {
+			move.score+=BAD_CAPTURE_SCORE;
+		}
+
+	}
+	moves.sort();
+
+}
+
 
 // clear history
 inline void SimplePVSearch::clearHistory() {
