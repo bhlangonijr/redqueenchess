@@ -287,34 +287,33 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 		Board newBoard(board);
 #endif
 
-		if ((!isKingAttacked && ply > 2) &&
-	   	   ((depth > prunningDepth) &&
-		   ((move.type == MoveIterator::NON_CAPTURE) &&
-		    (moveCounter > prunningMoves)))) {
-			reduction=2;
-		} else {
-			reduction=1;
+		if ((!isKingAttacked && ply) &&
+			((depth > prunningDepth) &&
+			((move.type == MoveIterator::NON_CAPTURE) &&
+			(moveCounter > prunningMoves)))) {
+			reduction++;
+
 		}
 
 #if PV_SEARCH
 		if ( bSearch ) {
 #endif
-			score = -pvSearch(board, -beta, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowPvSearch);
+			score = -pvSearch(board, -beta, -alpha, depth-1, ply+1, &line, allowNullMove, allowPvSearch);
 
 #if PV_SEARCH
 		} else {
 
-			score = -pvSearch(board, -alpha-1, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowPvSearch);
+			score = -pvSearch(board, -beta, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowPvSearch);
 
 			if ( (score > alpha) && (score < beta) && !stop(agent->getSearchInProgress())) {
-				score = -pvSearch(board, -beta, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowPvSearch);
+				score = -pvSearch(board, -beta, -alpha, depth-1, ply+1, &line, allowNullMove, allowPvSearch);
 			}
 		}
 
-	/*	if (!ply) {
+		/*	if (!ply) {
 			std::cout << "Move: " << move.toString() << " - Order: " << move.score << " Score: " << score << " - MoveType: " << move.type << std::endl;
 		}
-*/
+		 */
 		move.score=score;
 
 #endif
@@ -418,6 +417,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, PvLine
 	MoveIterator moves;
 	board.generateCaptures(moves, board.getSideToMove());
 	scoreMoves(board, moves, alpha, beta, 0);
+
 	moves.first();
 
 	while (moves.hasNext())  {

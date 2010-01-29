@@ -247,8 +247,6 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, MoveIt
 	const int NON_CAPTURE_SCORE=5000;
 	const int BAD_CAPTURE_SCORE=-9000;
 
-
-
 	moves.first();
 
 	while (moves.hasNext()) {

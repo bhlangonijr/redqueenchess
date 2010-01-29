@@ -374,8 +374,8 @@ inline const int Evaluator::evaluate(Board& board) {
 inline const int Evaluator::evalMaterial(Board& board, PieceColor color) {
 
 	int material = 0;
-	int first = board.makePiece(color,PAWN);
-	int last = board.makePiece(color,KING);
+	const int first = board.makePiece(color,PAWN);
+	const int last = board.makePiece(color,KING);
 
 	for(int pieceType = first; pieceType <= last; pieceType++) {
 		int count = board.getPieceCountByType(PieceTypeByColor(pieceType));
@@ -390,7 +390,7 @@ inline const int Evaluator::evalMaterial(Board& board, PieceColor color) {
 // king eval function
 inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 
-	PieceColor other = board.flipSide(color);
+	const PieceColor other = board.flipSide(color);
 	int count=0;
 
 	const int DONE_CASTLE_BONUS=       (board.getPiecesByType(board.makePiece(other,QUEEN))) ? 30 : 20;
@@ -457,7 +457,7 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 				frontSquares &= bitsBetween(frontSquares,board.makeSquare(RANK_1,squareFile[from]),from);
 			}
 
-			if (!(neighbor&enemyPawns)) {
+			if (!(frontSquares&enemyPawns)) {
 				count += UNSTOPPABLE_PAWN_BONUS;
 			}
 
@@ -530,8 +530,8 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 inline const int Evaluator::evalDevelopment(Board& board, PieceColor color) {
 
 	int bonus = 0;
-	int first = board.makePiece(color,PAWN);
-	int last = board.makePiece(color,KING);
+	const int first = board.makePiece(color,PAWN);
+	const int last = board.makePiece(color,KING);
 
 	for(int pieceType = first; pieceType <= last; pieceType++) {
 		Bitboard pieces = board.getPiecesByType(PieceTypeByColor(pieceType));
