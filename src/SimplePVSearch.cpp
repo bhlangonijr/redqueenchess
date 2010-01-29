@@ -152,6 +152,11 @@ int SimplePVSearch::idSearch(Board& board) {
 int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 		int depth, int ply, PvLine* pv,	const bool allowNullMove, const bool allowPvSearch) {
 
+
+	if (alpha > maxScore - ply - 1) {
+		return alpha;
+	}
+
 	if	(board.isDraw() && ply) {
 		return 0;
 	}
