@@ -190,7 +190,7 @@ private:
 	int pvSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv, const bool allowNullMove, const bool allowPvSearch);
 	int qSearch(Board& board, int alpha, int beta, int depth, PvLine* pv);
 	const std::string pvLineToString(const PvLine* pv);
-	void scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, MoveIterator::Move& pvCandidate, int alpha, int beta, int ply);
+	void scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, MoveIterator::Move& pvCandidate, int alpha, int beta, int ply, const bool rootMoves);
 	void scoreMoves(Board& board, MoveIterator& moves, int alpha, int beta, int ply);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
 	const bool stop(const bool searchInProgress);
@@ -234,7 +234,7 @@ inline void SimplePVSearch::updatePv(PvLine* pv, PvLine& line, MoveIterator::Mov
 }
 
 // sort search moves
-inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, MoveIterator::Move& pvCandidate, int alpha, int beta, int ply) {
+inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, MoveIterator::Move& pvCandidate, int alpha, int beta, int ply, const bool rootMoves) {
 
 	const int PV_CANDIDATE_SCORE=90000;
 	const int TT_MOVE_SCORE=80000;
@@ -253,7 +253,10 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, MoveIt
 		MoveIterator::Move& move = moves.next();
 
 		if (board.getPieceBySquare(move.to) != EMPTY) {
-			move.score = (evaluator.getPieceMaterialValue(board.getPieceBySquare(move.from)) - evaluator.getPieceMaterialValue(board.getPieceBySquare(move.to)));
+
+			int score = (evaluator.getPieceMaterialValue(board.getPieceBySquare(move.from)) - evaluator.getPieceMaterialValue(board.getPieceBySquare(move.to)));
+
+			move.score = rootMoves ? move.score + score : score;
 		}
 
 		if (pvCandidate.from!=NONE && pvCandidate==move) {
