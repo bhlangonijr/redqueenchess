@@ -45,8 +45,6 @@ namespace BoardTypes{
 //used for hashing
 typedef uint64_t Key;
 
-#define USE_CACHED_ATTACKS               false							// will use cached attacks table
-#define USE_CACHED_ATTACKS_MOVE_GEN      false							// will use cached attacks table
 #define ALL_CASTLE_RIGHT				 4								// all castle rights
 #define MAX_GAME_LENGTH					 512							// Max game lenght
 #define St2Sq(F,R)						 (((int)F-96)+((int)R-49)*8)-1	// encode String to Square enum
@@ -123,11 +121,6 @@ struct Node {
 		for(register int x=0;x<MAX_GAME_LENGTH;x++){
 			keyHistory[x]=node.keyHistory[x];
 		}
-		for(register int x=0;x<ALL_PIECE_TYPE_BY_COLOR;x++){
-			for(register int y=0;y<ALL_SQUARE;y++){
-				cachedAttacks[y][x]=node.cachedAttacks[y][x];
-			}
-		}
 		pieceColor[WHITE]=node.pieceColor[WHITE];
 		pieceColor[BLACK]=node.pieceColor[BLACK];
 		castleRight[WHITE]=node.castleRight[WHITE];
@@ -165,7 +158,6 @@ struct Node {
 	PieceColor sideToMove;
 	PieceTypeByColor square[ALL_SQUARE];
 	Bitboard pieceColor[ALL_PIECE_COLOR];
-	Bitboard cachedAttacks[ALL_SQUARE][ALL_PIECE_TYPE_BY_COLOR];
 
 	Key keyHistory[MAX_GAME_LENGTH];
 	int moveCounter;
@@ -185,12 +177,6 @@ struct Node {
 		}
 		for(register int x=0;x<MAX_GAME_LENGTH;x++){
 			keyHistory[x]=0x0ULL;
-		}
-
-		for(register int x=0;x<ALL_PIECE_TYPE_BY_COLOR;x++){
-			for(register int y=0;y<ALL_SQUARE;y++){
-				cachedAttacks[y][x]=0ULL;
-			}
 		}
 
 		pieceColor[WHITE]=0ULL;
@@ -292,14 +278,6 @@ public:
 	const Bitboard getPawnCaptures(const Square square, const Bitboard occupied);
 	const Bitboard getKingAttacks(const Square square);
 	const Bitboard getKingAttacks(const Square square, const Bitboard occupied);
-
-	const Bitboard getAllSliderAttacks(const Square square) const;
-
-	const Bitboard getCachedAttacks(const Square square, const PieceTypeByColor piece);
-	void updateCachedAttacks(const Square square, const PieceTypeByColor piece);
-	void updateCachedAttacks();
-
-	const bool isSquareAttacked(const Square to, const PieceColor attackingSide);
 
 	static void initializeZobrist();
 	const int getZobristCastleIndex();
@@ -496,11 +474,6 @@ inline const bool Board::isAttacked(const PieceColor color, const PieceType type
 	Square from = extractLSB(piece);
 
 	if ( from!=NONE ) {
-#if (USE_CACHED_ATTACKS)
-
-		return isSquareAttacked(from, other);
-
-#else
 		return 	(getBishopAttacks(from) & (getPiecesByType(makePiece(other,BISHOP)) |
 				getPiecesByType(makePiece(other,QUEEN)))) ||
 				(getRookAttacks(from) & (getPiecesByType(makePiece(other,ROOK)) |
@@ -508,8 +481,6 @@ inline const bool Board::isAttacked(const PieceColor color, const PieceType type
 						(getKnightAttacks(from) & getPiecesByType(makePiece(other,KNIGHT))) ||
 						(getPawnAttacks(from) & getPiecesByType(makePiece(other,PAWN))) ||
 						(getKingAttacks(from) & getPiecesByType(makePiece(other,KING)));
-#endif
-
 	}
 	return false;
 
@@ -523,13 +494,6 @@ inline const bool Board::isAttacked(const Bitboard occupation, const PieceColor 
 	Square from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-#if (USE_CACHED_ATTACKS)
-
-		if (isSquareAttacked(from, attackingSide)) {
-			return true;
-		}
-
-#else
 
 		bool result= (getBishopAttacks(from) & (getPiecesByType(makePiece(attackingSide,BISHOP)) |
 				getPiecesByType(makePiece(attackingSide,QUEEN)))) ||
@@ -542,37 +506,11 @@ inline const bool Board::isAttacked(const Bitboard occupation, const PieceColor 
 		if (result) {
 			return true;
 		}
-#endif
 		from = extractLSB(pieces);
 	}
 
 	return false;
 }
-
-// Verify if a given square is attacked
-inline const bool Board::isSquareAttacked(const Square to, const PieceColor attackingSide) {
-
-	const int first = makePiece(attackingSide,PAWN);
-	const int last = makePiece(attackingSide,KING);
-
-	for(int pieceType = first; pieceType <= last; pieceType++) {
-
-		Bitboard piece = getPiecesByType(PieceTypeByColor(pieceType));
-		Square from = extractLSB(piece);
-
-		while ( from!=NONE ) {
-			if (getCachedAttacks(from,PieceTypeByColor(pieceType)) & squareToBitboard[to]) {
-				return true;
-			}
-			from = extractLSB(piece);
-		}
-
-	}
-
-	return false;
-}
-
-
 
 // verify board legality
 inline const bool Board::isNotLegal() {
@@ -780,64 +718,6 @@ inline const Bitboard Board::getKingAttacks(const Square square, const Bitboard 
 	return adjacentSquares[square] & occupied;
 }
 
-// get all sliders attacks
-inline const Bitboard Board::getAllSliderAttacks(const Square square) const {
-	return allSliderAttacks[square];
-}
-
-// get cached attacks
-inline const Bitboard Board::getCachedAttacks(const Square square, const PieceTypeByColor piece) {
-	return currentBoard.cachedAttacks[square][piece];
-}
-
-// update cached attacks
-inline void Board::updateCachedAttacks(const Square square, const PieceTypeByColor piece) {
-
-	PieceType type = getPieceTypeBySquare(square);
-
-	switch (type) {
-	case PIECE_EMPTY:
-		break;
-	case PAWN:
-		currentBoard.cachedAttacks[square][piece] = getPawnAttacks(square);
-		break;
-	case KNIGHT:
-		currentBoard.cachedAttacks[square][piece] = getKnightAttacks(square);
-		break;
-	case BISHOP:
-		currentBoard.cachedAttacks[square][piece] = getBishopAttacks(square);
-		break;
-	case ROOK:
-		currentBoard.cachedAttacks[square][piece] = getRookAttacks(square);
-		break;
-	case QUEEN:
-		currentBoard.cachedAttacks[square][piece] = getQueenAttacks(square);
-		break;
-	case KING:
-		currentBoard.cachedAttacks[square][piece] = getKingAttacks(square);
-		break;
-	default:
-		break;
-	}
-
-}
-
-// update full board cached attacks
-inline void Board::updateCachedAttacks() {
-
-	for(int pieceType = WHITE_PAWN; pieceType <= BLACK_KING; pieceType++) {
-
-		Bitboard piece = getPiecesByType(PieceTypeByColor(pieceType));
-		Square from = extractLSB(piece);
-
-		while ( from!=NONE ) {
-			updateCachedAttacks(from,PieceTypeByColor(pieceType));
-			from = extractLSB(piece);
-		}
-
-	}
-}
-
 // generate only capture moves
 inline void Board::generateCaptures(MoveIterator& moves, const PieceColor side) {
 
@@ -901,12 +781,7 @@ inline void Board::generateCaptures(MoveIterator& moves, const PieceColor side) 
 
 	while ( from!=NONE ) {
 
-#if (USE_CACHED_ATTACKS_MOVE_GEN)
-		attacks = getCachedAttacks(from,makePiece(side,BISHOP)) & otherPieces;
-#else
 		attacks = getBishopAttacks(from) & otherPieces;
-#endif
-
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
 			MoveIterator::MoveType type = MoveIterator::EQUAL_CAPTURE;
@@ -925,11 +800,7 @@ inline void Board::generateCaptures(MoveIterator& moves, const PieceColor side) 
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-#if (USE_CACHED_ATTACKS_MOVE_GEN)
-		attacks = getCachedAttacks(from,makePiece(side,ROOK)) & otherPieces;
-#else
 		attacks = getRookAttacks(from) & otherPieces;
-#endif
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
 			MoveIterator::MoveType type = MoveIterator::EQUAL_CAPTURE;
@@ -948,12 +819,7 @@ inline void Board::generateCaptures(MoveIterator& moves, const PieceColor side) 
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-#if (USE_CACHED_ATTACKS_MOVE_GEN)
-		attacks = getCachedAttacks(from,makePiece(side,QUEEN)) & otherPieces;
-#else
 		attacks = getQueenAttacks(from) & otherPieces;
-#endif
-
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
 			MoveIterator::MoveType type = MoveIterator::EQUAL_CAPTURE;
@@ -1037,11 +903,7 @@ inline void Board::generateNonCaptures(MoveIterator& moves, const PieceColor sid
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-#if (USE_CACHED_ATTACKS_MOVE_GEN)
-		attacks = getCachedAttacks(from,makePiece(side,BISHOP)) & empty;
-#else
 		attacks = getBishopAttacks(from) & empty;
-#endif
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
 			moves.add(from,target,EMPTY,MoveIterator::NON_CAPTURE);
@@ -1054,12 +916,7 @@ inline void Board::generateNonCaptures(MoveIterator& moves, const PieceColor sid
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-#if (USE_CACHED_ATTACKS_MOVE_GEN)
-		attacks = getCachedAttacks(from,makePiece(side,ROOK)) & empty;
-#else
 		attacks = getRookAttacks(from) & empty;
-#endif
-
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
 			moves.add(from,target,EMPTY,MoveIterator::NON_CAPTURE);
@@ -1072,12 +929,7 @@ inline void Board::generateNonCaptures(MoveIterator& moves, const PieceColor sid
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-#if (USE_CACHED_ATTACKS_MOVE_GEN)
-		attacks = getCachedAttacks(from,makePiece(side,QUEEN)) & empty;
-#else
 		attacks = getQueenAttacks(from) & empty;
-#endif
-
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
 			moves.add(from,target,EMPTY,MoveIterator::NON_CAPTURE);

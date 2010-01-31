@@ -254,7 +254,7 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, MoveIt
 
 		if (board.getPieceBySquare(move.to) != EMPTY) {
 
-			int score = (evaluator.getPieceMaterialValue(board.getPieceBySquare(move.from)) - evaluator.getPieceMaterialValue(board.getPieceBySquare(move.to)));
+			int score = (evaluator.getPieceMaterialValue(board, board.getPieceBySquare(move.from)) - evaluator.getPieceMaterialValue(board, board.getPieceBySquare(move.to)));
 
 			move.score = rootMoves ? move.score + score : score;
 		}
@@ -308,7 +308,7 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, int al
 		MoveIterator::Move& move = moves.next();
 
 		if (board.getPieceBySquare(move.to) != EMPTY) {
-			move.score = (evaluator.getPieceMaterialValue(board.getPieceBySquare(move.from)) - evaluator.getPieceMaterialValue(board.getPieceBySquare(move.to)));
+			move.score = (evaluator.getPieceMaterialValue(board, board.getPieceBySquare(move.from)) - evaluator.getPieceMaterialValue(board, board.getPieceBySquare(move.to)));
 		}
 
 		if (move.type==MoveIterator::PROMO_CAPTURE) {

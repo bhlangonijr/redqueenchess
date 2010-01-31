@@ -52,7 +52,6 @@ void SimplePVSearch::search() {
 	errorCount=0;
 	_startTime = getTickCount();
 	timeToStop = clock() + ((((_timeToSearch)/1000)*CLOCKS_PER_SEC));
-	evaluator.setGameStage(evaluator.getGameStage(board));
 	_score = idSearch(board);
 	SearchAgent::getInstance()->setSearchInProgress(false);
 	_time = getTickCount() - _startTime;
@@ -224,7 +223,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 
 	bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 
-	if (!isKingAttacked && beta < maxScore && allowNullMove && depth > 1) {
+	if (!isKingAttacked && beta < maxScore && allowNullMove) {
 
 		Bitboard pawns = board.getPiecesByType(WHITE_PAWN) |
 				board.getPiecesByType(BLACK_PAWN);
@@ -281,7 +280,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 	int moveCounter=0;
 
 	const int prunningDepth=3;
-	const int prunningMoves=4;
+	const int prunningMoves=1;
 	const int uciOutputSecs=1500;
 
 #if CHECK_MOVE_GEN_ERRORS
@@ -291,6 +290,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 	int remainingMoves=0;
 	while (moves.hasNext()) {
 
+
 		MoveIterator::Move& move = moves.next();
 		MoveBackup backup;
 		board.doMove(move,backup);
@@ -298,9 +298,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 		if (board.isNotLegal()) {
 			board.undoMove(backup);
 			continue; // not legal
-		}
-		if (move.type == MoveIterator::NON_CAPTURE) {
-			remainingMoves++;
 		}
 		moveCounter++;
 
@@ -322,7 +319,15 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 #if PV_SEARCH
 		} else {
 
-			if (!allowNullMove &&
+			bool isPawnPush = (backup.movingPiece==WHITE_PAWN && squareRank[move.to] >= RANK_6) ||
+					          (backup.movingPiece==BLACK_PAWN && squareRank[move.to] <= RANK_3);
+
+			if ((!allowNullMove) &&
+				(!isPawnPush) &&
+				(!(backup.hasWhiteKingCastle ||
+			 	backup.hasBlackKingCastle ||
+				backup.hasWhiteQueenCastle ||
+				backup.hasBlackQueenCastle) ) &&
 				(!isKingAttacked && ply) &&
 				((depth > prunningDepth) &&
 				((move.type == MoveIterator::NON_CAPTURE) &&
@@ -330,6 +335,9 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 				reduction++;
 			} else {
 				reduction=1;
+			}
+			if (move.type == MoveIterator::NON_CAPTURE) {
+				remainingMoves++;
 			}
 
 			score = -pvSearch(board, -beta, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowPvSearch);

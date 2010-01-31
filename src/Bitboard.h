@@ -53,8 +53,6 @@ typedef uint64_t Bitboard;
 
 #define Sq2UM(X)				~(squareToBitboard[X]-1) 											// Encode Square to BB uppermask
 #define Sq2LM(X)				squareToBitboard[X]-1												// Encode Square to BB lowermask
-#define Sq2SL(X)				diagH1A8Attacks[X]|diagA1H8Attacks[X] | \
-								rankAttacks[X]|fileAttacks[X]										// Encode Square to All Slider Attacks
 
 #define FULL_BB					0xFFFFFFFFFFFFFFFFULL
 #define EMPTY_BB				0x0ULL
@@ -305,19 +303,9 @@ const Bitboard diagH1A8Attacks[ALL_SQUARE]={
 		Sq2H1(A7), Sq2H1(B7), Sq2H1(C7), Sq2H1(D7), Sq2H1(E7), Sq2H1(F7), Sq2H1(G7), Sq2H1(H7),
 		Sq2H1(A8), Sq2H1(B8), Sq2H1(C8), Sq2H1(D8), Sq2H1(E8), Sq2H1(F8), Sq2H1(G8), Sq2H1(H8) };
 
-// bitboard for all Slider Attacks
-const Bitboard allSliderAttacks[ALL_SQUARE]={
-		Sq2SL(A1), Sq2SL(B1), Sq2SL(C1), Sq2SL(D1), Sq2SL(E1), Sq2SL(F1), Sq2SL(G1), Sq2SL(H1),
-		Sq2SL(A2), Sq2SL(B2), Sq2SL(C2), Sq2SL(D2), Sq2SL(E2), Sq2SL(F2), Sq2SL(G2), Sq2SL(H2),
-		Sq2SL(A3), Sq2SL(B3), Sq2SL(C3), Sq2SL(D3), Sq2SL(E3), Sq2SL(F3), Sq2SL(G3), Sq2SL(H3),
-		Sq2SL(A4), Sq2SL(B4), Sq2SL(C4), Sq2SL(D4), Sq2SL(E4), Sq2SL(F4), Sq2SL(G4), Sq2SL(H4),
-		Sq2SL(A5), Sq2SL(B5), Sq2SL(C5), Sq2SL(D5), Sq2SL(E5), Sq2SL(F5), Sq2SL(G5), Sq2SL(H5),
-		Sq2SL(A6), Sq2SL(B6), Sq2SL(C6), Sq2SL(D6), Sq2SL(E6), Sq2SL(F6), Sq2SL(G6), Sq2SL(H6),
-		Sq2SL(A7), Sq2SL(B7), Sq2SL(C7), Sq2SL(D7), Sq2SL(E7), Sq2SL(F7), Sq2SL(G7), Sq2SL(H7),
-		Sq2SL(A8), Sq2SL(B8), Sq2SL(C8), Sq2SL(D8), Sq2SL(E8), Sq2SL(F8), Sq2SL(G8), Sq2SL(H8) };
-
 // center squares
 const Bitboard centerSquares = squareToBitboard[D4] | squareToBitboard[E4] | squareToBitboard[D5] | squareToBitboard[E5];
+
 // bitboard for all knight attacks
 const Bitboard knightAttacks[ALL_SQUARE]={
 		0x0000000000020400ULL,0x0000000000050800ULL,0x00000000000a1100ULL,0x0000000000142200ULL,0x0000000000284400ULL,0x0000000000508800ULL,0x0000000000a01000ULL,0x0000000000402000ULL,

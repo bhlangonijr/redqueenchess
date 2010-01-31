@@ -27,7 +27,7 @@
 #include "Evaluator.h"
 
 Evaluator::Evaluator() : gamePhase(OPENING) {
-	setGameStage(gamePhase);
+
 }
 
 Evaluator::~Evaluator() {
@@ -36,19 +36,15 @@ Evaluator::~Evaluator() {
 
 const void Evaluator::setGameStage(const GamePhase phase) {
 
-	if (phase==ENDGAME) {
-		memcpy(materialValues, endGameMaterialValues, ALL_PIECE_TYPE_BY_COLOR*sizeof(int));
-		memcpy(pieceSquareTable, endGamePieceSquareTable, ALL_SQUARE*ALL_PIECE_TYPE_BY_COLOR*sizeof(int));
-
-	} else {
-		memcpy(materialValues, defaultMaterialValues, ALL_PIECE_TYPE_BY_COLOR*sizeof(int));
-		memcpy(pieceSquareTable, defaultPieceSquareTable, ALL_SQUARE*ALL_PIECE_TYPE_BY_COLOR*sizeof(int));
-
-	}
-
+	this->gamePhase = phase;
 }
 
-const Evaluator::GamePhase Evaluator::getGameStage(Board& board) {
+const Evaluator::GamePhase Evaluator::getGameStage() {
+
+	return this->gamePhase;
+}
+
+const Evaluator::GamePhase Evaluator::predictGameStage(Board& board) {
 
 	// very simple game stage detection
 	const int openingMoves=16;

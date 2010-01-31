@@ -346,9 +346,9 @@ const Bitboard passedMask[ALL_PIECE_COLOR][ALL_SQUARE]= {
 				PASSEDMASK(BLACK,A8), PASSEDMASK(BLACK,B8), PASSEDMASK(BLACK,C8), PASSEDMASK(BLACK,D8), PASSEDMASK(BLACK,E8), PASSEDMASK(BLACK,F8), PASSEDMASK(BLACK,G8), PASSEDMASK(BLACK,H8)
 		},
 		{EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,
-		 EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,
-		 EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,
-		 EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB}
+				EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,
+				EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,
+				EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB}
 
 };
 
@@ -369,21 +369,41 @@ public:
 	const int evalDevelopment(Board& board, PieceColor color);
 	const int evalImbalances(Board& board, PieceColor color);
 	const void setGameStage(const GamePhase phase);
-	const GamePhase getGameStage(Board& board);
+	const GamePhase getGameStage();
+	const GamePhase predictGameStage(Board& board);
 
-	inline const int getPieceMaterialValue(const PieceTypeByColor piece) {
-		return materialValues[piece];
+	inline const int getPieceMaterialValue(Board& board, const PieceTypeByColor piece) {
+
+		const int defaultGameSize = 40;
+
+		int egValue = endGameMaterialValues[piece];
+		int mgValue = defaultMaterialValues[piece];
+		int mc = board.getMoveCounter();
+
+		if (gamePhase==ENDGAME || mc >= defaultGameSize) {
+			return egValue;
+		}
+
+		return int( (double)mgValue + (double)1/(double)mc * (double)(egValue-mgValue));
 	}
 
-	inline void setPieceMaterialValue(const PieceTypeByColor piece, const int value) {
-		materialValues[piece]=value;
-	}
+	inline const int getPieceSquareValue(Board& board, const PieceTypeByColor piece, const Square square) {
 
+		const int defaultGameSize = 40;
+
+		int egValue = endGamePieceSquareTable[piece][square];
+		int mgValue = defaultPieceSquareTable[piece][square];
+		int mc = board.getMoveCounter();
+
+		if (gamePhase==ENDGAME || mc >= defaultGameSize) {
+			return egValue;
+		}
+
+		return int( (double)mgValue + (double)1/(double)mc * (double)(egValue-mgValue));
+	}
 
 private:
 	GamePhase gamePhase;
-	int materialValues[ALL_PIECE_TYPE_BY_COLOR];
-	int pieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 
 };
 
@@ -395,6 +415,8 @@ inline const int Evaluator::evaluate(Board& board) {
 	int pieces = 0;
 	int development = 0;
 	int imbalances = 0;
+
+	setGameStage(predictGameStage(board));
 
 	PieceColor side = board.getSideToMove();
 	PieceColor other = board.flipSide(board.getSideToMove());
@@ -410,8 +432,8 @@ inline const int Evaluator::evaluate(Board& board) {
 	std::cout << "mobility:    " << mobility << std::endl;
 	std::cout << "development: " << development << std::endl;
 	std::cout << "pieces:      " << pieces << std::endl;
-	std::cout << "--------      " << pieces << std::endl;*/
-
+	std::cout << "--------      " << pieces << std::endl;
+	 */
 
 	return material+mobility+pieces+development+imbalances;
 }
@@ -426,7 +448,7 @@ inline const int Evaluator::evalMaterial(Board& board, PieceColor color) {
 	for(int pieceType = first; pieceType <= last; pieceType++) {
 		int count = board.getPieceCountByType(PieceTypeByColor(pieceType));
 		if (count > 0) {
-			material += count * materialValues[pieceType];
+			material += count * getPieceMaterialValue(board, PieceTypeByColor(pieceType));
 		}
 	}
 
@@ -565,7 +587,7 @@ inline const int Evaluator::evalDevelopment(Board& board, PieceColor color) {
 		Bitboard pieces = board.getPiecesByType(PieceTypeByColor(pieceType));
 		Square from = extractLSB(pieces);
 		while ( from!=NONE ) {
-			bonus += pieceSquareTable[pieceType][from];
+			bonus += getPieceSquareValue(board,PieceTypeByColor(pieceType),Square(from));
 			from = extractLSB(pieces);
 		}
 	}

@@ -291,10 +291,6 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 
 	setKey(getKey()^zobrist.sideToMove);
 	setSideToMove(otherSide);
-#if (USE_CACHED_ATTACKS)
-	updateCachedAttacks(move.to,fromPiece);
-#endif
-
 
 }
 
@@ -378,9 +374,6 @@ void Board::undoNullMove(MoveBackup& backup){
 void Board::setInitialPosition() {
 
 	this->loadFromFEN(startFENPosition);
-#if (USE_CACHED_ATTACKS)
-	this->updateCachedAttacks();
-#endif
 
 }
 // load an specific chess position ex.: d2d4 g8f6 c2c4 e7e6 g1f3 b7b6 b1c3 c8b7 ...
