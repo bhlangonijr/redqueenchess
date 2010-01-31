@@ -374,32 +374,32 @@ public:
 
 	inline const int getPieceMaterialValue(Board& board, const PieceTypeByColor piece) {
 
-		const int defaultGameSize = 40;
+		const int gameSize = 40;
 
 		int egValue = endGameMaterialValues[piece];
 		int mgValue = defaultMaterialValues[piece];
 		int mc = board.getMoveCounter();
 
-		if (gamePhase==ENDGAME) {
+		if (gamePhase==ENDGAME || mc >= gameSize) {
 			return egValue;
 		}
 
-		return int( (double)mgValue + (double)1/(double)mc * (double)(egValue-mgValue));
+		return int( (double)mgValue + (double)1/(double)(gameSize-mc) * (double)(egValue-mgValue));
 	}
 
 	inline const int getPieceSquareValue(Board& board, const PieceTypeByColor piece, const Square square) {
 
-		const int defaultGameSize = 40;
+		const int gameSize = 40;
 
 		int egValue = endGamePieceSquareTable[piece][square];
 		int mgValue = defaultPieceSquareTable[piece][square];
 		int mc = board.getMoveCounter();
 
-		if (gamePhase==ENDGAME) {
+		if (gamePhase==ENDGAME || mc >= gameSize) {
 			return egValue;
 		}
 
-		return int( (double)mgValue + (double)1/(double)mc * (double)(egValue-mgValue));
+		return int( (double)mgValue + (double)1/(double)(gameSize-mc) * (double)(egValue-mgValue));
 	}
 
 private:

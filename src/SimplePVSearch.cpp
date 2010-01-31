@@ -223,7 +223,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 
 	bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 
-	if (!isKingAttacked && beta < maxScore && allowNullMove) {
+	if (!isKingAttacked && beta < maxScore && allowNullMove && ply) {
 
 		Bitboard pawns = board.getPiecesByType(WHITE_PAWN) |
 				board.getPiecesByType(BLACK_PAWN);
