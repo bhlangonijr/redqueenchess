@@ -46,7 +46,7 @@ namespace BoardTypes{
 typedef uint64_t Key;
 
 #define ALL_CASTLE_RIGHT				 4								// all castle rights
-#define MAX_GAME_LENGTH					 512							// Max game lenght
+#define MAX_GAME_LENGTH					 1024							// Max game lenght
 #define St2Sq(F,R)						 (((int)F-96)+((int)R-49)*8)-1	// encode String to Square enum
 
 #define MAX(x,y)						 (x>y?x:y)

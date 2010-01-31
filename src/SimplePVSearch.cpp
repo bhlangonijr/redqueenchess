@@ -142,9 +142,20 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		if (isUpdateUci()) {
 
+			const int MATE_RANGE_SCORE = 300;
+			std::string scoreString = "cp " + StringUtil::toStr(bestMove.score);
+
+			if (abs(bestMove.score) > (maxScore-MATE_RANGE_SCORE)) {
+				if (bestMove.score>0) {
+					scoreString = "mate " +StringUtil::toStr((maxScore - bestMove.score+1)/2);
+				} else {
+					scoreString = "mate " +StringUtil::toStr(-(maxScore + bestMove.score)/2);
+				}
+			}
+
 			long nps = totalTime>1000 ?  ((_nodes)/(totalTime/1000)) : _nodes;
 			std::cout << "info depth "<< depth << std::endl;
-			std::cout << "info depth "<< depth << " score cp " << bestMove.score << " time " << totalTime << " nodes " << (_nodes) << " nps " << nps << " pv" << pvLineToString(&pv) << std::endl;
+			std::cout << "info depth "<< depth << " score " << scoreString << " time " << totalTime << " nodes " << (_nodes) << " nps " << nps << " pv" << pvLineToString(&pv) << std::endl;
 			std::cout << "info nodes " << (_nodes) << " time " << totalTime << " nps " << nps << " hashfull " << agent->hashFull() << std::endl;
 
 		}
