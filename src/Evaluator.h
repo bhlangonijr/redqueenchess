@@ -380,7 +380,7 @@ public:
 		int mgValue = defaultMaterialValues[piece];
 		int mc = board.getMoveCounter();
 
-		if (gamePhase==ENDGAME || mc >= defaultGameSize) {
+		if (gamePhase==ENDGAME) {
 			return egValue;
 		}
 
@@ -395,7 +395,7 @@ public:
 		int mgValue = defaultPieceSquareTable[piece][square];
 		int mc = board.getMoveCounter();
 
-		if (gamePhase==ENDGAME || mc >= defaultGameSize) {
+		if (gamePhase==ENDGAME) {
 			return egValue;
 		}
 
