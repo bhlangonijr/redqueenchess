@@ -229,7 +229,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 				board.getPiecesByType(BLACK_PAWN);
 		Bitboard kings = board.getPiecesByType(WHITE_KING) |
 				board.getPiecesByType(BLACK_KING);
-
 		bool okToNullMove = ((pawns|kings)^board.getAllPieces());
 
 		if (okToNullMove) {
@@ -257,14 +256,11 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 		depth++;
 	}
 
-
 	const int PV_CANDIDATE_SEARCH_DEPTH = depth-3;
 	PvLine pvCandidate;
 
 	if (allowPvSearch && depth > 1 && ttMove.from == NONE) {
-
 		score = pvSearch(board,-beta,-alpha,PV_CANDIDATE_SEARCH_DEPTH,ply+1,&pvCandidate,true, false);
-
 	}
 
 	MoveIterator moves;
@@ -273,8 +269,8 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 	} else {
 		moves(rootMoves);
 	}
-	scoreMoves(board, moves, ttMove, pvCandidate.moves[0], alpha, beta, ply, !ply);
 
+	scoreMoves(board, moves, ttMove, pvCandidate.moves[0], alpha, beta, ply, !ply);
 
 	moves.first();
 	int moveCounter=0;
@@ -310,40 +306,38 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 #if CHECK_MOVE_GEN_ERRORS
 		Board newBoard(board);
 #endif
+		bool isPawnPush = (backup.movingPiece==WHITE_PAWN && squareRank[move.to] >= RANK_6) ||
+				(backup.movingPiece==BLACK_PAWN && squareRank[move.to] <= RANK_3);
 
+		if ((!allowNullMove) &&
+				(!isPawnPush) &&
+				(!(backup.hasWhiteKingCastle ||
+						backup.hasBlackKingCastle ||
+						backup.hasWhiteQueenCastle ||
+						backup.hasBlackQueenCastle) ) &&
+						(!isKingAttacked && ply) &&
+						((depth > prunningDepth) &&
+								((move.type == MoveIterator::NON_CAPTURE) &&
+										(remainingMoves > prunningMoves)))) {
+			reduction++;
+		} else {
+			reduction=1;
+		}
+		if (move.type == MoveIterator::NON_CAPTURE) {
+			remainingMoves++;
+		}
 #if PV_SEARCH
 		if ( bSearch ) {
 #endif
-			score = -pvSearch(board, -beta, -alpha, depth-1, ply+1, &line, allowNullMove, allowPvSearch);
+			score = -pvSearch(board, -beta, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowPvSearch);
 
 #if PV_SEARCH
 		} else {
 
-			bool isPawnPush = (backup.movingPiece==WHITE_PAWN && squareRank[move.to] >= RANK_6) ||
-					          (backup.movingPiece==BLACK_PAWN && squareRank[move.to] <= RANK_3);
-
-			if ((!allowNullMove) &&
-				(!isPawnPush) &&
-				(!(backup.hasWhiteKingCastle ||
-			 	backup.hasBlackKingCastle ||
-				backup.hasWhiteQueenCastle ||
-				backup.hasBlackQueenCastle) ) &&
-				(!isKingAttacked && ply) &&
-				((depth > prunningDepth) &&
-				((move.type == MoveIterator::NON_CAPTURE) &&
-				(remainingMoves > prunningMoves)))) {
-				reduction++;
-			} else {
-				reduction=1;
-			}
-			if (move.type == MoveIterator::NON_CAPTURE) {
-				remainingMoves++;
-			}
-
-			score = -pvSearch(board, -beta, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowPvSearch);
+			score = -pvSearch(board, -alpha-1, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowPvSearch);
 
 			if ( (score > alpha) && (score < beta) && !stop(agent->getSearchInProgress())) {
-				score = -pvSearch(board, -beta, -alpha, depth-1, ply+1, &line, allowNullMove, allowPvSearch);
+				score = -pvSearch(board, -beta, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowPvSearch);
 			}
 
 		}
