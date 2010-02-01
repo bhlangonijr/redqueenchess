@@ -70,6 +70,7 @@ void SimplePVSearch::search() {
 
 	assert(oldKey==newKey);
 #endif
+	pthread_exit(NULL);
 
 }
 
@@ -244,7 +245,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 
 		if (okToNullMove) {
 
-			int reduction = depth >= 3 ? 3 : 2;
+			int reduction = 4;
 
 			MoveBackup backup;
 			board.doNullMove(backup);
@@ -287,7 +288,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 	int moveCounter=0;
 
 	const int prunningDepth=3;
-	const int prunningMoves=1;
+	const int prunningMoves=4;
 	const int uciOutputSecs=1500;
 
 #if CHECK_MOVE_GEN_ERRORS
@@ -320,16 +321,16 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 		bool isPawnPush = (backup.movingPiece==WHITE_PAWN && squareRank[move.to] >= RANK_6) ||
 				(backup.movingPiece==BLACK_PAWN && squareRank[move.to] <= RANK_3);
 
-		if ((!allowNullMove) &&
-				(!isPawnPush) &&
-				(!(backup.hasWhiteKingCastle ||
-						backup.hasBlackKingCastle ||
-						backup.hasWhiteQueenCastle ||
-						backup.hasBlackQueenCastle) ) &&
-						(!isKingAttacked && ply) &&
-						((depth > prunningDepth) &&
-								((move.type == MoveIterator::NON_CAPTURE) &&
-										(remainingMoves > prunningMoves)))) {
+		if ((allowNullMove) &&
+			(!isPawnPush) &&
+			(!(backup.hasWhiteKingCastle ||
+		  	backup.hasBlackKingCastle ||
+			backup.hasWhiteQueenCastle ||
+			backup.hasBlackQueenCastle) ) &&
+			(!isKingAttacked && ply) &&
+			((depth > prunningDepth) &&
+			((move.type == MoveIterator::NON_CAPTURE) &&
+			(remainingMoves > prunningMoves)))) {
 			reduction++;
 		} else {
 			reduction=1;
