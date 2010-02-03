@@ -152,19 +152,19 @@ const int SearchAgent::getTimeToSearch() {
 	} else {
 
 		if (time < 900000 && time >= 180000) { // 15-3 min
-			movesLeft=30;
+			movesLeft=35;
 		} else if (time < 180000 && time >= 60000) { // 3-1 min
-			movesLeft=20;
+			movesLeft=35;
 		} else if (time < 60000 && time >= 30000) { // 1 min-30 sec
-			movesLeft=15;
+			movesLeft=30;
 		} else if (time < 30000 && time >= 10000) { // 30-10 sec
-			movesLeft=5;
+			movesLeft=30;
 		} else if (time < 10000 && time >= 5000) { // 10-5 sec
-			movesLeft=5;
+			movesLeft=25;
 		} else if (time < 5000 && time >= 1000) { // 5-1 sec
-			movesLeft=3;
+			movesLeft=20;
 		} else if (time < 1000) { // 1 sec
-			movesLeft=3;
+			movesLeft=5;
 		}
 
 

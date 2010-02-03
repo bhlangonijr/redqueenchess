@@ -51,7 +51,7 @@ void SimplePVSearch::search() {
 	clearHistory();
 	errorCount=0;
 	_startTime = getTickCount();
-	timeToStop = clock() + ((((_timeToSearch)/1000)*CLOCKS_PER_SEC));
+	timeToStop = clock() + int((((double)(_timeToSearch)/(double)1000)*(double)CLOCKS_PER_SEC));
 	_score = idSearch(board);
 	SearchAgent::getInstance()->setSearchInProgress(false);
 	_time = getTickCount() - _startTime;
@@ -288,7 +288,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 	int moveCounter=0;
 
 	const int prunningDepth=3;
-	const int prunningMoves=4;
+	const int prunningMoves=3;
 	const int uciOutputSecs=1500;
 
 #if CHECK_MOVE_GEN_ERRORS
@@ -331,11 +331,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 			(depth > prunningDepth) &&
 			(!history[board.getPieceTypeBySquare(move.from)][move.to]) &&
 			(remainingMoves > prunningMoves)) {
-			if (!allowNullMove) {
-				reduction++;
-			} else {
-				reduction=2;
-			}
+			reduction=2;
 
 		} else {
 			reduction=1;
