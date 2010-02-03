@@ -124,7 +124,7 @@ int SimplePVSearch::idSearch(Board& board) {
 			break;
 		}
 
-		if (stop(agent->getSearchInProgress())) {
+		if (stop(agent->getSearchInProgress()) && depth > 1) {
 			break;
 		}
 
@@ -252,7 +252,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 			score = -pvSearch(board, -beta, 1-beta, depth-reduction, ply+1, &line, false, true);
 			board.undoNullMove(backup);
 
-			if (stop(agent->getSearchInProgress())) {
+			if (stop(agent->getSearchInProgress()) && ply) {
 				return 0;
 			}
 
@@ -298,7 +298,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 	int remainingMoves=0;
 	while (moves.hasNext()) {
 
-
 		MoveIterator::Move& move = moves.next();
 		MoveBackup backup;
 		board.doMove(move,backup);
@@ -307,6 +306,10 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 			board.undoMove(backup);
 			continue; // not legal
 		}
+#if CHECK_MOVE_GEN_ERRORS
+		Board newBoard(board);
+#endif
+
 		moveCounter++;
 
 		if (!ply && isUpdateUci()) {
@@ -315,23 +318,25 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 			}
 		}
 
-#if CHECK_MOVE_GEN_ERRORS
-		Board newBoard(board);
-#endif
 		bool isPawnPush = (backup.movingPiece==WHITE_PAWN && squareRank[move.to] >= RANK_6) ||
 				(backup.movingPiece==BLACK_PAWN && squareRank[move.to] <= RANK_3);
 
-		if ((allowNullMove) &&
+		if ((move.type == MoveIterator::NON_CAPTURE) &&
 			(!isPawnPush) &&
 			(!(backup.hasWhiteKingCastle ||
-		  	backup.hasBlackKingCastle ||
+			backup.hasBlackKingCastle ||
 			backup.hasWhiteQueenCastle ||
-			backup.hasBlackQueenCastle) ) &&
+			backup.hasBlackQueenCastle)) &&
 			(!isKingAttacked && ply) &&
-			((depth > prunningDepth) &&
-			((move.type == MoveIterator::NON_CAPTURE) &&
-			(remainingMoves > prunningMoves)))) {
-			reduction++;
+			(depth > prunningDepth) &&
+			(!history[board.getPieceTypeBySquare(move.from)][move.to]) &&
+			(remainingMoves > prunningMoves)) {
+			if (!allowNullMove) {
+				reduction++;
+			} else {
+				reduction=2;
+			}
+
 		} else {
 			reduction=1;
 		}
@@ -370,7 +375,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 
 		board.undoMove(backup);
 
-		if (stop(agent->getSearchInProgress())) {
+		if (stop(agent->getSearchInProgress()) && ply) {
 			return 0;
 		}
 

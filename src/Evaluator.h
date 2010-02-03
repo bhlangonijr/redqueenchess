@@ -352,6 +352,8 @@ const Bitboard passedMask[ALL_PIECE_COLOR][ALL_SQUARE]= {
 
 };
 
+const int gameSize=60;
+
 class Evaluator {
 public:
 
@@ -374,8 +376,6 @@ public:
 
 	inline const int getPieceMaterialValue(Board& board, const PieceTypeByColor piece) {
 
-		const int gameSize = 40;
-
 		int egValue = endGameMaterialValues[piece];
 		int mgValue = defaultMaterialValues[piece];
 		int mc = board.getMoveCounter();
@@ -388,8 +388,6 @@ public:
 	}
 
 	inline const int getPieceSquareValue(Board& board, const PieceTypeByColor piece, const Square square) {
-
-		const int gameSize = 40;
 
 		int egValue = endGamePieceSquareTable[piece][square];
 		int mgValue = defaultPieceSquareTable[piece][square];
@@ -410,6 +408,8 @@ private:
 // main eval function
 inline const int Evaluator::evaluate(Board& board) {
 
+	const int CHECK_MATERIAL = 300;
+
 	int material = 0;
 	int mobility = 0;
 	int pieces = 0;
@@ -422,10 +422,14 @@ inline const int Evaluator::evaluate(Board& board) {
 	PieceColor other = board.flipSide(board.getSideToMove());
 
 	material = evalMaterial(board, side) - evalMaterial(board, other);
-	mobility = evalMobility(board, side) - evalMobility(board, other);
 	development = evalDevelopment(board, side) - evalDevelopment(board, other);
 	pieces = evalPieces(board, side) - evalPieces(board, other);
-	imbalances = evalImbalances(board, side) - evalImbalances(board, other);
+
+	if ((gamePhase!=ENDGAME) || (material > -CHECK_MATERIAL && material < CHECK_MATERIAL )) {
+		mobility = evalMobility(board, side) - evalMobility(board, other);
+		imbalances = evalImbalances(board, side) - evalImbalances(board, other);
+
+	}
 
 	/*
 	std::cout << "material:    " << material << std::endl;

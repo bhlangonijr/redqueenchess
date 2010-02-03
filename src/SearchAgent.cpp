@@ -139,28 +139,40 @@ void SearchAgent::stopSearch() {
 
 const int SearchAgent::getTimeToSearch() {
 
-	static int gameSizeCheck=5;
-
 	if (this->getSearchMode()==SearchAgent::SEARCH_MOVETIME) {
 		return this->getMoveTime();
 	}
 
-	int time=board.getSideToMove()==WHITE ?  this->getWhiteTime()-10 : this->getBlackTime()-10;
+	int time=board.getSideToMove()==WHITE ?  this->getWhiteTime() : this->getBlackTime();
 	int incTime=board.getSideToMove()==WHITE ? this->getWhiteIncrement() : this->getBlackIncrement();
 
-	int movesLeft = defaultGameSize-board.getMoveCounter();
+	int movesLeft = defaultGameSize;
 	if (movesToGo>0) {
 		movesLeft = movesToGo;
 	} else {
-		int check = defaultGameSize / gameSizeCheck;
-		if (movesLeft <= check) {
-			movesLeft+=defaultGameSizeInc;
+
+		if (time < 900000 && time >= 180000) { // 15-3 min
+			movesLeft=30;
+		} else if (time < 180000 && time >= 60000) { // 3-1 min
+			movesLeft=20;
+		} else if (time < 60000 && time >= 30000) { // 1 min-30 sec
+			movesLeft=15;
+		} else if (time < 30000 && time >= 10000) { // 30-10 sec
+			movesLeft=5;
+		} else if (time < 10000 && time >= 5000) { // 10-5 sec
+			movesLeft=5;
+		} else if (time < 5000 && time >= 1000) { // 5-1 sec
+			movesLeft=3;
+		} else if (time < 1000) { // 1 sec
+			movesLeft=3;
 		}
+
+
 	}
 
 	time /= movesLeft + incTime;
 
-	//std::cout << "Think time: " << time << std::endl;
+	std::cout << "Think time: " << time << " - movesLeft: " <<  movesLeft <<  " moveCounter= " << board.getMoveCounter() << std::endl;
 	return time;
 
 }
