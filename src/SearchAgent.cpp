@@ -172,7 +172,7 @@ const int SearchAgent::getTimeToSearch() {
 
 	time /= movesLeft + incTime;
 
-	std::cout << "Think time: " << time << " - movesLeft: " <<  movesLeft <<  " moveCounter= " << board.getMoveCounter() << std::endl;
+	//std::cout << "Think time: " << time << " - movesLeft: " <<  movesLeft <<  " moveCounter= " << board.getMoveCounter() << std::endl;
 	return time;
 
 }
