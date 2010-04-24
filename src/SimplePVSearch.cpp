@@ -191,9 +191,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 		return 0;
 	}
 
-#if PV_SEARCH
-	bool bSearch = true;
-#endif
 	SearchAgent* agent = SearchAgent::getInstance();
 	PvLine line = PvLine();
 #if CHECK_MOVE_GEN_ERRORS
@@ -340,7 +337,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 			remainingMoves++;
 		}
 #if PV_SEARCH
-		if ( bSearch ) {
+		if ( moveCounter==1 ) {
 #endif
 			score = -pvSearch(board, -beta, -alpha, depth-reduction, ply+1, &line, allowNullMove, allowPvSearch);
 
@@ -404,9 +401,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 
 		if( score > alpha ) {
 			alpha = score;
-#if PV_SEARCH
-			bSearch = false;
-#endif
 			updatePv(pv, line, move);
 		}
 
