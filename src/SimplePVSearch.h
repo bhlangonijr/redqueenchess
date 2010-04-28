@@ -208,9 +208,9 @@ inline const bool SimplePVSearch::stop(const bool searchInProgress) {
 
 inline const bool SimplePVSearch::timeIsUp() {
 
-	static const uint64_t checkNodes=300;
+	static const uint64_t checkNodes=0x3E8;
 
-	if ( _searchFixedDepth || _infinite || ((_nodes % checkNodes)==0)) {
+	if ( _searchFixedDepth || _infinite || ((_nodes & checkNodes)==checkNodes)) {
 		return false;
 	}
 

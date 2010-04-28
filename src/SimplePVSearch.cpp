@@ -248,7 +248,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 	const int PV_CANDIDATE_SEARCH_DEPTH = depth-3;
 	PvLine pvCandidate;
 
-	if (allowPvSearch && depth > 3 && ttMove.from == NONE) {
+	if (allowPvSearch && depth > 1 && ttMove.from == NONE) {
 		score = pvSearch(board,-beta,-alpha,PV_CANDIDATE_SEARCH_DEPTH,ply+1,&pvCandidate,true, false);
 	}
 
