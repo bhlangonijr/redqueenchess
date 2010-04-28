@@ -127,8 +127,7 @@ void SearchAgent::startSearch() {
 
 	/*pthread_t executor2;
 	int ret2 = 0;
-	ret2 = pthread_create( &executor2, NULL, threadStartup, this);
-*/
+	ret2 = pthread_create( &executor2, NULL, threadStartup, this);*/
 
 }
 
@@ -166,7 +165,6 @@ const int SearchAgent::getTimeToSearch() {
 		} else if (time < 1000) { // 1 sec
 			movesLeft=5;
 		}
-
 
 	}
 

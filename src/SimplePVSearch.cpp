@@ -28,16 +28,8 @@
 #include "SimplePVSearch.h"
 // If set to true, will check move integrity - used for trace purposes
 #define CHECK_MOVE_GEN_ERRORS false
-// Exit the program if the count of errors in CHECK_MOVE_GEN_ERRORS exceed the threshold - used for trace purposes
-#define EXIT_PROGRAM_THRESHOLD 100
 // If true uses Principal Variation Search
 #define PV_SEARCH true
-// debug iterative d search
-#define DEBUG_ID false
-// debug alpha-beta search
-#define DEBUG_AB false
-// debug qs search
-#define DEBUG_QS false
 // show stats info
 #define SHOW_STATS false
 
@@ -90,11 +82,6 @@ int SimplePVSearch::idSearch(Board& board) {
 	int bestScore = -maxScore;
 	int iterationScore[maxSearchDepth];
 
-#if DEBUG_ID
-	board.printBoard();
-	std::cout << "Eval: " << evaluator.evaluate(board) << std::endl;
-#endif
-
 	board.generateAllMoves(rootMoves, board.getSideToMove());
 
 	for (int depth = 1; depth <= _depth; depth++) {
@@ -103,13 +90,9 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		PvLine pv = PvLine();
 		pv.index=0;
-
 		int time = getTickCount();
-
 		int score = -pvSearch(board, -maxScore, maxScore, depth, 0, &pv, true, true);
-
 		iterationScore[depth]=score;
-
 		int repetition=0;
 
 		for (int x=depth-1;x>=1;x--) {
@@ -193,9 +176,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 
 	SearchAgent* agent = SearchAgent::getInstance();
 	PvLine line = PvLine();
-#if CHECK_MOVE_GEN_ERRORS
-	Board old(board);
-#endif
 
 	if (depth<=0) {
 		int score = qSearch(board, alpha, beta, maxQuiescenceSearchDepth, &line);
@@ -268,7 +248,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 	const int PV_CANDIDATE_SEARCH_DEPTH = depth-3;
 	PvLine pvCandidate;
 
-	if (allowPvSearch && depth > 1 && ttMove.from == NONE) {
+	if (allowPvSearch && depth > 3 && ttMove.from == NONE) {
 		score = pvSearch(board,-beta,-alpha,PV_CANDIDATE_SEARCH_DEPTH,ply+1,&pvCandidate,true, false);
 	}
 
@@ -287,12 +267,9 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 	const int prunningDepth=3;
 	const int prunningMoves=3;
 	const int uciOutputSecs=1500;
-
-#if CHECK_MOVE_GEN_ERRORS
-	Key key1 = old.generateKey();
-#endif
 	int reduction=1;
 	int remainingMoves=0;
+
 	while (moves.hasNext()) {
 
 		MoveIterator::Move& move = moves.next();
@@ -303,9 +280,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 			board.undoMove(backup);
 			continue; // not legal
 		}
-#if CHECK_MOVE_GEN_ERRORS
-		Board newBoard(board);
-#endif
 
 		moveCounter++;
 
@@ -319,15 +293,15 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 				(backup.movingPiece==BLACK_PAWN && squareRank[move.to] <= RANK_3);
 
 		if ((move.type == MoveIterator::NON_CAPTURE) &&
-			(!isPawnPush) &&
-			(!(backup.hasWhiteKingCastle ||
-			backup.hasBlackKingCastle ||
-			backup.hasWhiteQueenCastle ||
-			backup.hasBlackQueenCastle)) &&
-			(!isKingAttacked && ply) &&
-			(depth > prunningDepth) &&
-			(!history[board.getPieceTypeBySquare(move.from)][move.to]) &&
-			(remainingMoves > prunningMoves)) {
+				(!isPawnPush) &&
+				(!(backup.hasWhiteKingCastle ||
+						backup.hasBlackKingCastle ||
+						backup.hasWhiteQueenCastle ||
+						backup.hasBlackQueenCastle)) &&
+						(!isKingAttacked && ply) &&
+						(depth > prunningDepth) &&
+						(!history[board.getPieceTypeBySquare(move.from)][move.to]) &&
+						(remainingMoves > prunningMoves)) {
 			reduction=2;
 
 		} else {
@@ -354,16 +328,10 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 
 		/*	if (!ply) {
 			std::cout << "Move: " << move.toString() << " - Order: " << move.score << " Score: " << score << " - MoveType: " << move.type << std::endl;
-		}
-		 */
+		}*/
+
 		move.score=score;
 
-#endif
-#if DEBUG_AB
-		std::cout << "(AB) score: " << score << " / move: " << move.toString() << " / depth " << depth << std::endl;
-		std::string pad=" ";
-		pad.append((20-depth)*4, ' ');
-		board.printBoard(pad);
 #endif
 
 		board.undoMove(backup);
@@ -372,26 +340,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 			return 0;
 		}
 
-#if CHECK_MOVE_GEN_ERRORS
-		Key key2 = board.generateKey();
-		if (key1!=key2) {
-			errorCount++;
-			std::cout << "CRITICAL - Error in undoMove: restored board differs from original " << std::endl;
-			std::cout << "Original board: " << std::endl;
-			old.printBoard();
-			std::cout << "position fen " << old.getFEN() << std::endl;
-			std::cout << "Board with move: " << std::endl;
-			newBoard.printBoard();
-			std::cout << "Board with undone move: " << std::endl;
-			board.printBoard();
-			std::cout << move.toString() << std::endl;
-			std::cout << "End - Error in undoMove " << std::endl;
-			if (errorCount>EXIT_PROGRAM_THRESHOLD) {
-				std::cout << "Error count exceed threshold: " << errorCount << std::endl;
-				exit(1);
-			}
-		}
-#endif
 		if( score >= beta) {
 			stats.ttLower++;
 			agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,move);
@@ -427,7 +375,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, PvLine* pv) {
 
 	SearchAgent* agent = SearchAgent::getInstance();
-
 	_nodes++;
 
 	if (stop(agent->getSearchInProgress())) {
@@ -437,12 +384,6 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, PvLine
 	int standPat = evaluator.evaluate(board);
 
 	if(standPat>=beta||depth==0) {
-#if DEBUG_QS
-		std::cout << "(QS) beta: " << beta << " / eval: " << standPat << " / depth " << depth << std::endl;
-		std::string pad=" ";
-		pad.append((maxQuiescenceSearchDepth-depth+_depth)*4, ' ');
-		board.printBoard(pad);
-#endif
 		pv->index=0;
 		return beta;
 	}
@@ -472,13 +413,6 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, PvLine
 		}
 
 		int score = -qSearch(board, -beta, -alpha, depth-1, &line);
-
-#if DEBUG_QS
-		std::cout << "(QS) score: " << alpha << " / move: " << move.toString() << " / depth " << depth << std::endl;
-		std::string pad=" ";
-		pad.append((depth)*4, ' ');
-		board.printBoard(pad);
-#endif
 
 		board.undoMove(backup);
 

@@ -346,9 +346,9 @@ const Bitboard passedMask[ALL_PIECE_COLOR][ALL_SQUARE]= {
 				PASSEDMASK(BLACK,A8), PASSEDMASK(BLACK,B8), PASSEDMASK(BLACK,C8), PASSEDMASK(BLACK,D8), PASSEDMASK(BLACK,E8), PASSEDMASK(BLACK,F8), PASSEDMASK(BLACK,G8), PASSEDMASK(BLACK,H8)
 		},
 		{EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,
-				EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,
-				EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,
-				EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB}
+		 EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,
+		 EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,
+		 EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB}
 
 };
 
@@ -356,7 +356,6 @@ const int gameSize=60;
 
 class Evaluator {
 public:
-
 
 	enum GamePhase {
 		OPENING, MIDDLEGAME, ENDGAME
@@ -376,28 +375,28 @@ public:
 
 	inline const int getPieceMaterialValue(Board& board, const PieceTypeByColor piece) {
 
-		int egValue = endGameMaterialValues[piece];
-		int mgValue = defaultMaterialValues[piece];
-		int mc = board.getMoveCounter();
+		const int egValue = endGameMaterialValues[piece];
+		const int mgValue = defaultMaterialValues[piece];
+		const int mc = board.getMoveCounter();
 
 		if (gamePhase==ENDGAME || mc >= gameSize) {
 			return egValue;
 		}
 
-		return int( (double)mgValue + (double)1/(double)(gameSize-mc) * (double)(egValue-mgValue));
+		return int((double)mgValue + (double)1/(double)(gameSize-mc) * (double)(egValue-mgValue));
 	}
 
 	inline const int getPieceSquareValue(Board& board, const PieceTypeByColor piece, const Square square) {
 
-		int egValue = endGamePieceSquareTable[piece][square];
-		int mgValue = defaultPieceSquareTable[piece][square];
-		int mc = board.getMoveCounter();
+		const int egValue = endGamePieceSquareTable[piece][square];
+		const int mgValue = defaultPieceSquareTable[piece][square];
+		const int mc = board.getMoveCounter();
 
 		if (gamePhase==ENDGAME || mc >= gameSize) {
 			return egValue;
 		}
 
-		return int( (double)mgValue + (double)1/(double)(gameSize-mc) * (double)(egValue-mgValue));
+		return int((double)mgValue + (double)1/(double)(gameSize-mc) * (double)(egValue-mgValue));
 	}
 
 private:
@@ -428,7 +427,6 @@ inline const int Evaluator::evaluate(Board& board) {
 	if ((gamePhase!=ENDGAME) || (material > -CHECK_MATERIAL && material < CHECK_MATERIAL )) {
 		mobility = evalMobility(board, side) - evalMobility(board, other);
 		imbalances = evalImbalances(board, side) - evalImbalances(board, other);
-
 	}
 
 	/*
@@ -566,14 +564,11 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	}
 
 	Bitboard king = board.getPiecesByType(board.makePiece(other,KING));
-
 	Square kingSquare = extractLSB(king);
-
 	Bitboard nearKingSquares =king|adjacentSquares[kingSquare];
 
 	if (attacks) {
 		count += _BitCount(board.getPiecesByColor(other)&attacks);
-
 		count += _BitCount(nearKingSquares&attacks)*KING_ATTACK_BONUS;
 	}
 
@@ -583,9 +578,9 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 // material eval function
 inline const int Evaluator::evalDevelopment(Board& board, PieceColor color) {
 
-	int bonus = 0;
 	const int first = board.makePiece(color,PAWN);
 	const int last = board.makePiece(color,KING);
+	int bonus = 0;
 
 	for(int pieceType = first; pieceType <= last; pieceType++) {
 		Bitboard pieces = board.getPiecesByType(PieceTypeByColor(pieceType));
@@ -610,6 +605,7 @@ inline const int Evaluator::evalImbalances(Board& board, PieceColor color) {
 	if ((bishop & WHITE_SQUARES) && (bishop & BLACK_SQUARES)) {
 		count += bishopPairBonus;
 	}
+
 	// TODO implement more imbalances
 	return count;
 }

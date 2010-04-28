@@ -533,20 +533,6 @@ inline const bool Board::isDraw() {
 		}
 	}
 
-	if (!(getPiecesByType(WHITE_PAWN)|getPiecesByType(BLACK_PAWN))) {
-
-		if (_BitCount(getAllPieces())<=3 &&
-				(getPiecesByType(WHITE_KING) &&
-						getPiecesByType(BLACK_KING)) &&
-						(getPiecesByType(WHITE_KNIGHT) ||
-								getPiecesByType(WHITE_BISHOP) ||
-								getPiecesByType(BLACK_KNIGHT) ||
-								getPiecesByType(BLACK_BISHOP))	) {
-			return true;
-		}
-
-	}
-
 	return getHalfMoveCounter()>=100;
 
 }
@@ -598,8 +584,8 @@ inline const Bitboard Board::getRookAttacks(const Square square) {
 // return a bitboard with attacked squares by the rook in the given square
 inline const Bitboard Board::getRookAttacks(const Square square, const Bitboard occupied) {
 
-	Bitboard file = getSliderAttacks(fileAttacks[square], occupied, square);
-	Bitboard rank = getSliderAttacks(rankAttacks[square], occupied, square);
+	const Bitboard file = getSliderAttacks(fileAttacks[square], occupied, square);
+	const Bitboard rank = getSliderAttacks(rankAttacks[square], occupied, square);
 
 	return file | rank;
 }
@@ -612,8 +598,8 @@ inline const Bitboard Board::getBishopAttacks(const Square square) {
 // return a bitboard with attacked squares by the bishop in the given square
 inline const Bitboard Board::getBishopAttacks(const Square square, const Bitboard occupied) {
 
-	Bitboard diagA1H8 = getSliderAttacks(diagA1H8Attacks[square], occupied, square);
-	Bitboard diagH1A8 = getSliderAttacks(diagH1A8Attacks[square], occupied, square);
+	const Bitboard diagA1H8 = getSliderAttacks(diagA1H8Attacks[square], occupied, square);
+	const Bitboard diagH1A8 = getSliderAttacks(diagH1A8Attacks[square], occupied, square);
 
 	return diagA1H8 | diagH1A8;
 }
@@ -648,36 +634,28 @@ inline const Bitboard Board::getPawnMoves(const Square square) {
 }
 // overload method - gets current occupied squares in the board
 inline const Bitboard Board::getPawnAttacks(const Square square) {
-	Bitboard captures;
-	Bitboard pawnAttacks;
 
-	pawnAttacks=getPieceColorBySquare(square)==WHITE?whitePawnAttacks[square]:blackPawnAttacks[square];
-	captures = (diagA1H8Attacks[square]|diagH1A8Attacks[square]) & pawnAttacks ;
+	const Bitboard pawnAttacks = getPieceColorBySquare(square)==WHITE?whitePawnAttacks[square]:blackPawnAttacks[square];
+	const Bitboard captures = (diagA1H8Attacks[square]|diagH1A8Attacks[square]) & pawnAttacks ;
+
 	return captures;
 }
 
 // return a bitboard with move squares by the pawn in the given square
 inline const Bitboard Board::getPawnAttacks(const Square square, const Bitboard occupied) {
 
-	Bitboard captures;
-	Bitboard pawnAttacks;
-	/*
-	if (getPieceBySquare(square)==EMPTY) {
-		return EMPTY_BB;
-	}
-	 */
-	pawnAttacks=getPieceColorBySquare(square)==WHITE?whitePawnAttacks[square]:blackPawnAttacks[square];
-	captures = (diagA1H8Attacks[square]|diagH1A8Attacks[square]) & pawnAttacks & occupied;
+	const Bitboard pawnAttacks = getPieceColorBySquare(square)==WHITE?whitePawnAttacks[square]:blackPawnAttacks[square];
+	const Bitboard captures = (diagA1H8Attacks[square]|diagH1A8Attacks[square]) & pawnAttacks & occupied;
+
 	return captures;
 }
 
 // return a bitboard with move squares by the pawn in the given square
 inline const Bitboard Board::getPawnMoves(const Square square, const Bitboard occupied) {
 
+	const PieceColor color = getPieceColorBySquare(square);
+	const Bitboard pawnAttacks = color==WHITE ? whitePawnAttacks[square] : blackPawnAttacks[square];
 	Bitboard occ = occupied;
-	PieceColor color = getPieceColorBySquare(square);
-
-	Bitboard pawnAttacks = color==WHITE ? whitePawnAttacks[square] : blackPawnAttacks[square];
 
 	if (squareRank[square]==RANK_2 || squareRank[square]==RANK_7) {
 		if (squareToBitboard[square+(color==WHITE?8:-8)]&occ) {
@@ -696,10 +674,9 @@ inline const Bitboard Board::getPawnCaptures(const Square square) {
 // return a bitboard with captures by the pawn in the given square
 inline const Bitboard Board::getPawnCaptures(const Square square, const Bitboard occupied) {
 
+	const PieceColor color = getPieceColorBySquare(square);
+	const Bitboard pawnAttacks = color==WHITE ? whitePawnAttacks[square] : blackPawnAttacks[square];
 	Bitboard occ = occupied;
-	PieceColor color = getPieceColorBySquare(square);
-
-	Bitboard pawnAttacks = color==WHITE ? whitePawnAttacks[square] : blackPawnAttacks[square];
 
 	if (getEnPassant()!=NONE) {
 		occ |= (squareToBitboard[Square(getEnPassant() + (color==WHITE?8:-8))]); // en passant
@@ -721,8 +698,8 @@ inline const Bitboard Board::getKingAttacks(const Square square, const Bitboard 
 // generate only capture moves
 inline void Board::generateCaptures(MoveIterator& moves, const PieceColor side) {
 
-	PieceColor otherSide = flipSide(side);
-	Bitboard otherPieces = getPiecesByColor(otherSide);
+	const PieceColor otherSide = flipSide(side);
+	const Bitboard otherPieces = getPiecesByColor(otherSide);
 	Bitboard pieces = EMPTY_BB;
 	Bitboard attacks = EMPTY_BB;
 	Square from = NONE;
@@ -1007,12 +984,9 @@ inline const int Board::getHalfMoveCounter() const {
 	return currentBoard.halfMoveCounter;
 }
 
-
 // update key history
 inline void Board::updateKeyHistory() {
 	currentBoard.keyHistory[getMoveCounter()]=getKey();
 }
-
-
 
 #endif /* BOARD_H_ */

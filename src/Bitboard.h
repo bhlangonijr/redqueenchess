@@ -384,9 +384,8 @@ inline Square bitboardToSquare(const Bitboard& bitboard) {
 		return Square(NONE);
 	}
 	unsigned int square = 0;
-	unsigned char ret = _BitScanForward(&square, bitboard);
 
-	if (!ret) {
+	if (!_BitScanForward(&square, bitboard)) {
 		return Square(NONE);
 	}
 
@@ -399,32 +398,22 @@ inline Bitboard getSliderAttacks(const Bitboard& attacks, const Bitboard& mask, 
 {
 	unsigned int minor=A1;
 	unsigned int major=H8;
-	unsigned char ret;
 
-	Bitboard occ= mask & attacks;
+	const Bitboard occ= mask & attacks;
 
-	if (!(occ&attacks)) {
+	if (!occ) {
 		return attacks;
 	}
 
-	Bitboard lowerMask= occ & lowerMaskBitboard[start];
-	Bitboard upperMask= occ & upperMaskBitboard[start];
+	const Bitboard lowerMask= occ & lowerMaskBitboard[start];
+	const Bitboard upperMask= occ & upperMaskBitboard[start];
 
-	if (lowerMask) {
-		ret = _BitScanReverse(&minor, lowerMask);
-		if (!ret) {
-			minor=A1;
-		}
-	}
-	if (upperMask) {
-		ret = _BitScanForward(&major, upperMask);
-		if (!ret) {
-			major=H8;
-		}
-	}
-
-	if (minor<0) {
+	if (lowerMask && !_BitScanReverse(&minor, lowerMask)) {
 		minor=A1;
+	}
+
+	if (upperMask && !_BitScanForward(&major, upperMask)) {
+		major=H8;
 	}
 
 	return bitsBetween(attacks, minor, major);

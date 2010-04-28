@@ -208,9 +208,9 @@ inline const bool SimplePVSearch::stop(const bool searchInProgress) {
 
 inline const bool SimplePVSearch::timeIsUp() {
 
-	static const uint64_t checkNodes=0x3E8;
+	static const uint64_t checkNodes=300;
 
-	if ( _searchFixedDepth || _infinite || ((_nodes & checkNodes)==checkNodes)) {
+	if ( _searchFixedDepth || _infinite || ((_nodes % checkNodes)==0)) {
 		return false;
 	}
 
@@ -338,8 +338,8 @@ inline void SimplePVSearch::clearHistory() {
 inline void SimplePVSearch::updateHistory(Board& board, MoveIterator::Move& move, int depth, int ply) {
 
 	if (!(move.type==MoveIterator::NON_CAPTURE ||
-			move.type==MoveIterator::KILLER1 ||
-			move.type==MoveIterator::KILLER2) ) {
+		  move.type==MoveIterator::KILLER1 ||
+		  move.type==MoveIterator::KILLER2) ) {
 		return;
 	}
 
