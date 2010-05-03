@@ -41,6 +41,8 @@ const int maxScore = 20000;
 const int maxQuiescenceSearchDepth = 30;
 const int maxSearchDepth = 80;
 const int maxSearchPly = 30;
+const bool allowIIDAtPV = true;
+const bool allowIIDAtNormal = false;
 
 }
 
@@ -119,6 +121,10 @@ public:
 		return ((clock() * 1000) / CLOCKS_PER_SEC);
 	}
 
+	inline const int toClock(const int time) {
+		return int((((double)(time)/(double)1000)*(double)CLOCKS_PER_SEC));
+	}
+
 	inline const bool isUpdateUci() const {
 		return _updateUci;
 	}
@@ -187,11 +193,16 @@ private:
 	int history[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 
 	int idSearch(Board& board);
-	int pvSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv, const bool allowNullMove, const bool allowPvSearch);
+	int rootSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);
+	int pvSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv, const bool allowPvSearch);
+	int normalSearch(Board& board, int alpha, int beta,	int depth, int ply, PvLine* pv,	const bool allowNullMove, const bool allowPvSearch);
 	int qSearch(Board& board, int alpha, int beta, int depth, PvLine* pv);
 	const std::string pvLineToString(const PvLine* pv);
-	void scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, MoveIterator::Move& pvCandidate, int alpha, int beta, int ply, const bool rootMoves);
+	void scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, int alpha, int beta, int ply, const bool rootMoves);
 	void scoreMoves(Board& board, MoveIterator& moves, int alpha, int beta, int ply);
+	bool okToReduce(Board& board, MoveIterator::Move& move, MoveBackup& backup,
+			int depth, int remainingMoves, bool isKingAttacked);
+	bool okToNullMove(Board& board);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
 	const bool stop(const bool searchInProgress);
 	const bool timeIsUp();
@@ -208,7 +219,7 @@ inline const bool SimplePVSearch::stop(const bool searchInProgress) {
 
 inline const bool SimplePVSearch::timeIsUp() {
 
-	static const uint64_t checkNodes=0x3E8;
+	const uint64_t checkNodes=0x3E8;
 
 	if ( _searchFixedDepth || _infinite || ((_nodes & checkNodes)==checkNodes)) {
 		return false;
@@ -234,9 +245,8 @@ inline void SimplePVSearch::updatePv(PvLine* pv, PvLine& line, MoveIterator::Mov
 }
 
 // sort search moves
-inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, MoveIterator::Move& pvCandidate, int alpha, int beta, int ply, const bool rootMoves) {
+inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, int alpha, int beta, int ply, const bool rootMoves) {
 
-	const int PV_CANDIDATE_SCORE=90000;
 	const int TT_MOVE_SCORE=80000;
 	const int PROMO_NON_CAPTURE_SCORE=60000;
 	const int PROMO_CAPTURE_SCORE=70000;
@@ -253,16 +263,11 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, MoveIt
 		MoveIterator::Move& move = moves.next();
 
 		if (board.getPieceBySquare(move.to) != EMPTY) {
-
 			int score = (evaluator.getPieceMaterialValue(board, board.getPieceBySquare(move.from)) - evaluator.getPieceMaterialValue(board, board.getPieceBySquare(move.to)));
-
-			move.score = rootMoves ? move.score + score : score;
+			move.score = rootMoves ? move.score /*+ score */: score;
 		}
 
-		if (pvCandidate.from!=NONE && pvCandidate==move) {
-			move.type = MoveIterator::PV_MOVE;
-			move.score+=PV_CANDIDATE_SCORE;
-		} else if (ttMove.from!=NONE && ttMove==move) {
+		if (ttMove.from!=NONE && ttMove==move) {
 			move.type = MoveIterator::TT_MOVE;
 			move.score+=TT_MOVE_SCORE;
 		} else if (move==killer[ply][0]) {
@@ -326,6 +331,47 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, int al
 
 }
 
+// Checks if search can be reduced for a given move
+inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move, MoveBackup& backup,
+		int depth, int remainingMoves, bool isKingAttacked) {
+
+	const int prunningDepth=3;
+	const int prunningMoves=3;
+
+	bool check = (
+			(remainingMoves > prunningMoves) &&
+			(move.type == MoveIterator::NON_CAPTURE) &&
+			(depth > prunningDepth) &&
+			(!isKingAttacked) &&
+			(!history[board.getPieceTypeBySquare(move.from)][move.to]));
+
+	if (!check) {
+		return false;
+	}
+
+	bool isPawnPush = (backup.movingPiece==WHITE_PAWN && squareRank[move.to] >= RANK_6) ||
+			(backup.movingPiece==BLACK_PAWN && squareRank[move.to] <= RANK_3);
+
+	bool isCastling = backup.hasWhiteKingCastle ||
+			backup.hasBlackKingCastle ||
+			backup.hasWhiteQueenCastle ||
+			backup.hasBlackQueenCastle;
+
+	return !(isPawnPush||isCastling);
+
+}
+
+// Ok to do null move?
+inline bool SimplePVSearch::okToNullMove(Board& board) {
+
+	const Bitboard pawns = board.getPiecesByType(WHITE_PAWN) |
+			board.getPiecesByType(BLACK_PAWN);
+	const Bitboard kings = board.getPiecesByType(WHITE_KING) |
+			board.getPiecesByType(BLACK_KING);
+
+	return ((pawns|kings)^board.getAllPieces());
+
+}
 
 // clear history
 inline void SimplePVSearch::clearHistory() {
@@ -333,13 +379,12 @@ inline void SimplePVSearch::clearHistory() {
 	memset(killer, 0, sizeof(MoveIterator::Move)*maxSearchDepth*2);
 }
 
-
 // update history
 inline void SimplePVSearch::updateHistory(Board& board, MoveIterator::Move& move, int depth, int ply) {
 
 	if (!(move.type==MoveIterator::NON_CAPTURE ||
-		  move.type==MoveIterator::KILLER1 ||
-		  move.type==MoveIterator::KILLER2) ) {
+			move.type==MoveIterator::KILLER1 ||
+			move.type==MoveIterator::KILLER2) ) {
 		return;
 	}
 
