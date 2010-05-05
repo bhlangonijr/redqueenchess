@@ -42,7 +42,7 @@ const int maxQuiescenceSearchDepth = 30;
 const int maxSearchDepth = 80;
 const int maxSearchPly = 30;
 const bool allowIIDAtPV = true;
-const bool allowIIDAtNormal = false;
+const bool allowIIDAtNormal = true;
 
 }
 

@@ -285,7 +285,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 	if (allowIIDAtPV && allowPvSearch && depth > 2 && ttMove.from == NONE) {
 		const int PV_CANDIDATE_SEARCH_DEPTH = depth-2;
 		PvLine pvCandidate;
-		score = -pvSearch(board,-beta,-alpha,PV_CANDIDATE_SEARCH_DEPTH,ply+1,&pvCandidate,false);
+		score = pvSearch(board,alpha,beta,PV_CANDIDATE_SEARCH_DEPTH,ply+1,&pvCandidate,false);
 		ttMove=pvCandidate.moves[0];
 	}
 
@@ -387,7 +387,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 	PvLine line = PvLine();
 
 	if (depth<=0) {
-		return qSearch(board, alpha, beta, maxQuiescenceSearchDepth, &line);
+		return qSearch(board, beta-1, beta, maxQuiescenceSearchDepth, &line);
 	}
 
 	_nodes++;
@@ -443,9 +443,9 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 	}
 
 	if (allowIIDAtNormal && allowPvSearch && depth > 2 && ttMove.from == NONE) {
-		const int PV_CANDIDATE_SEARCH_DEPTH = depth-2;
+		const int PV_CANDIDATE_SEARCH_DEPTH = depth/2;
 		PvLine pvCandidate;
-		score = normalSearch(board,-beta,-alpha,PV_CANDIDATE_SEARCH_DEPTH,ply+1,&pvCandidate,false, true);
+		score = normalSearch(board,alpha,beta,PV_CANDIDATE_SEARCH_DEPTH,ply+1,&pvCandidate,false, true);
 		ttMove=pvCandidate.moves[0];
 	}
 
