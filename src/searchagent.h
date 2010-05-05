@@ -36,10 +36,10 @@
 #include "transpositiontable.h"
 #include "stringutil.h"
 
-static const std::string mainHashName 		= "DefaultHashTable";
-static const size_t defaultDepth			= 5;
-static const size_t defaultHashSize			= 64;
-static const int defaultGameSize			= 40;
+const std::string mainHashName 		= "DefaultHashTable";
+const size_t defaultDepth			= 5;
+const size_t defaultHashSize		= 64;
+const int defaultGameSize			= 40;
 
 class SearchAgent {
 public:

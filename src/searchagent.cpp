@@ -101,7 +101,7 @@ void* SearchAgent::startThreadSearch() {
 		simplePV.setTimeToSearch(this->getTimeToSearch());
 	} else if (this->getSearchMode()==SearchAgent::SEARCH_INFINITE) {
 		simplePV.setInfinite(true);
-		simplePV.setDepth(SimplePVSearchTypes::maxSearchDepth);
+		simplePV.setDepth(maxSearchDepth);
 	} else {
 		simplePV.setSearchFixedDepth(true);
 		simplePV.setDepth(defaultDepth);

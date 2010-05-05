@@ -35,7 +35,7 @@
 #include "stringutil.h"
 #include "evaluator.h"
 
-namespace SimplePVSearchTypes {
+/*namespace SimplePVSearchTypes {*/
 
 const int maxScore = 20000;
 const int maxQuiescenceSearchDepth = 30;
@@ -43,10 +43,10 @@ const int maxSearchDepth = 80;
 const int maxSearchPly = 30;
 const bool allowIIDAtPV = true;
 const bool allowIIDAtNormal = true;
-
+/*
 }
 
-using namespace SimplePVSearchTypes;
+using namespace SimplePVSearchTypes;*/
 
 class SimplePVSearch {
 
@@ -196,7 +196,7 @@ private:
 	int rootSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);
 	int pvSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv, const bool allowPvSearch);
 	int normalSearch(Board& board, int alpha, int beta,	int depth, int ply, PvLine* pv,	const bool allowNullMove, const bool allowPvSearch);
-	int qSearch(Board& board, int alpha, int beta, int depth, PvLine* pv);
+	int qSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);
 	const std::string pvLineToString(const PvLine* pv);
 	void scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, int alpha, int beta, int ply, const bool rootMoves);
 	void scoreMoves(Board& board, MoveIterator& moves, int alpha, int beta, int ply);

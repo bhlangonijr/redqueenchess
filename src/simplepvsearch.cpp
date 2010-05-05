@@ -31,11 +31,12 @@
 // show stats info
 #define SHOW_STATS false
 
-using namespace SimplePVSearchTypes;
+SearchAgent* agent = 0;
 
 // root search
 void SimplePVSearch::search() {
 
+	agent = SearchAgent::getInstance();
 	Board board(_board);
 	stats.clear();
 	clearHistory();
@@ -72,7 +73,6 @@ int SimplePVSearch::getScore() {
 // iterative deepening
 int SimplePVSearch::idSearch(Board& board) {
 
-	SearchAgent* agent = SearchAgent::getInstance();
 	MoveIterator::Move bestMove = MoveIterator::Move(NONE,NONE,EMPTY);
 	bestMove.score = -maxScore;
 	_nodes = 0;
@@ -165,15 +165,13 @@ int SimplePVSearch::idSearch(Board& board) {
 // root search
 int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv) {
 
-	SearchAgent* agent = SearchAgent::getInstance();
 	PvLine line = PvLine();
-
-	_nodes++;
 	const int uciOutputSecs=1500;
 	int oldAlpha = alpha;
 	int score = 0;
 	MoveIterator::Move ttMove(NONE,NONE,EMPTY);
 
+	_nodes++;
 	bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 
 	MoveIterator moves;
@@ -249,11 +247,10 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 		return 0;
 	}
 
-	SearchAgent* agent = SearchAgent::getInstance();
 	PvLine line = PvLine();
 
 	if (depth<=0) {
-		return qSearch(board, alpha, beta, maxQuiescenceSearchDepth, &line);
+		return qSearch(board, alpha, beta, maxQuiescenceSearchDepth, ply, &line);
 	}
 
 	_nodes++;
@@ -282,10 +279,11 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 		extension++;
 	}
 
-	if (allowIIDAtPV && allowPvSearch && depth > 2 && ttMove.from == NONE) {
-		const int PV_CANDIDATE_SEARCH_DEPTH = depth-2;
+	if (allowIIDAtPV && allowPvSearch
+			&& depth > 2 && ttMove.from == NONE && !isKingAttacked) {
+		const int iidSearchDepth = depth-2;
 		PvLine pvCandidate;
-		score = pvSearch(board,alpha,beta,PV_CANDIDATE_SEARCH_DEPTH,ply+1,&pvCandidate,false);
+		score = pvSearch(board,alpha,beta,iidSearchDepth,ply+1,&pvCandidate,false);
 		ttMove=pvCandidate.moves[0];
 	}
 
@@ -328,7 +326,9 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 			score = -normalSearch(board, -beta, -alpha, depth-reduction+extension, ply+1, &line, true, allowPvSearch);
 
 			if (score > alpha && !stop(agent->getSearchInProgress())) {
+
 				score = -pvSearch(board, -beta, -alpha, depth-reduction+extension, ply+1, &line, allowPvSearch);
+
 			}
 
 		}
@@ -370,7 +370,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 
 }
 
-// normal search
+// normal search - non pv nodes
 int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		int depth, int ply, PvLine* pv,	const bool allowNullMove, const bool allowPvSearch) {
 
@@ -383,11 +383,10 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		return 0;
 	}
 
-	SearchAgent* agent = SearchAgent::getInstance();
 	PvLine line = PvLine();
 
 	if (depth<=0) {
-		return qSearch(board, beta-1, beta, maxQuiescenceSearchDepth, &line);
+		return qSearch(board, beta-1, beta, maxQuiescenceSearchDepth, ply+1, &line);
 	}
 
 	_nodes++;
@@ -396,7 +395,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 	int extension = 0;
 	MoveIterator::Move ttMove(NONE,NONE,EMPTY);
 	SearchAgent::HashData hashData;
-	if (ply && agent->hashGet(board.getKey(), hashData, ply, maxScore)) {
+	if (agent->hashGet(board.getKey(), hashData, ply, maxScore)) {
 		if (hashData.depth>=depth) {
 			if ((hashData.flag == SearchAgent::UPPER && hashData.value <= alpha) ||
 					(hashData.flag == SearchAgent::LOWER && hashData.value >= beta) ||
@@ -442,10 +441,11 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		extension++;
 	}
 
-	if (allowIIDAtNormal && allowPvSearch && depth > 2 && ttMove.from == NONE) {
-		const int PV_CANDIDATE_SEARCH_DEPTH = depth/2;
+	if (allowIIDAtNormal && allowPvSearch &&
+			depth > 2 && ttMove.from == NONE && !isKingAttacked) {
+		const int iidSearchDepth = depth/2;
 		PvLine pvCandidate;
-		score = normalSearch(board,alpha,beta,PV_CANDIDATE_SEARCH_DEPTH,ply+1,&pvCandidate,false, true);
+		score = normalSearch(board,alpha,beta,iidSearchDepth,ply+1,&pvCandidate,false, true);
 		ttMove=pvCandidate.moves[0];
 	}
 
@@ -519,13 +519,27 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 }
 
 //quiescence search
-int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, PvLine* pv) {
+int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv) {
 
-	SearchAgent* agent = SearchAgent::getInstance();
 	_nodes++;
 
 	if (stop(agent->getSearchInProgress())) {
 		return 0;
+	}
+
+	int oldAlpha = alpha;
+	MoveIterator::Move ttMove(NONE,NONE,EMPTY);
+	SearchAgent::HashData hashData;
+	if (agent->hashGet(board.getKey(), hashData, ply, maxScore)) {
+		if (hashData.depth>=depth) {
+			if (((hashData.flag == SearchAgent::UPPER && hashData.value <= alpha) ||
+					(hashData.flag == SearchAgent::LOWER && hashData.value >= beta) ||
+					(hashData.flag == SearchAgent::EXACT)) && (beta - alpha != 1)) {
+				stats.ttHits++;
+				return hashData.value;
+			}
+			ttMove=hashData.move;
+		}
 	}
 
 	int standPat = evaluator.evaluate(board);
@@ -559,7 +573,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, PvLine
 			continue; // not legal
 		}
 
-		int score = -qSearch(board, -beta, -alpha, depth-1, &line);
+		int score = -qSearch(board, -beta, -alpha, depth-1, ply+1, &line);
 
 		board.undoMove(backup);
 
@@ -568,6 +582,9 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, PvLine
 		}
 
 		if( score >= beta ) {
+			stats.ttLower++;
+			agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,move);
+			updateHistory(board,move,depth,ply);
 			return beta;
 		}
 
@@ -577,6 +594,15 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, PvLine
 		}
 
 	}
+
+	if (alpha>oldAlpha) {
+		updateHistory(board,pv->moves[0],depth,ply);
+		stats.ttExact++;
+	} else {
+		stats.ttUpper++;
+	}
+
+	agent->hashPut(board,alpha,depth,ply,maxScore,(alpha>oldAlpha ? SearchAgent::EXACT : SearchAgent::UPPER),pv->moves[0]);
 
 	return alpha;
 }
