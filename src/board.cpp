@@ -24,7 +24,7 @@
  *      Author: bhlangonijr
  */
 
-#include "Board.h"
+#include "board.h"
 
 using namespace BoardTypes;
 

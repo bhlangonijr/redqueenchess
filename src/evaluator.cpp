@@ -24,7 +24,7 @@
  *      Author: bhlangonijr
  */
 
-#include "Evaluator.h"
+#include "evaluator.h"
 
 Evaluator::Evaluator() : gamePhase(OPENING) {
 

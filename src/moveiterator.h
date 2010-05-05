@@ -27,7 +27,7 @@
 #ifndef MOVEITERATOR_H_
 #define MOVEITERATOR_H_
 
-#include "Bitboard.h"
+#include "bitboard.h"
 
 #define MOVE_LIST_MAX_SIZE 128
 #define DEFAULT_SCORE -32000

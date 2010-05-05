@@ -28,7 +28,7 @@
 #include <sstream>
 #include <algorithm>
 
-#include "StringUtil.h"
+#include "stringutil.h"
 
 namespace StringUtil {
 

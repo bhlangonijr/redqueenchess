@@ -30,7 +30,7 @@
 #include <inttypes.h>
 #include <iostream>
 
-#include "Inline.h"
+#include "inline.h"
 
 //Bitboard type - unsigned long int (8 bytes)
 typedef uint64_t Bitboard;

@@ -28,8 +28,8 @@
 #define EVALUATOR_H_
 
 #include <string.h>
-#include "Inline.h"
-#include "Board.h"
+#include "inline.h"
+#include "board.h"
 
 #define NFILE(X) ((squareFile[X]!=FILE_H ? fileBB[squareFile[X+1]] : EMPTY_BB) | \
 		(squareFile[X]!=FILE_A ? fileBB[squareFile[X-1]] : EMPTY_BB))

@@ -28,11 +28,11 @@
 #include <vector>
 #include <exception>
 
-#include "Uci.h"
-#include "StringUtil.h"
-#include "Constant.h"
-#include "SearchAgent.h"
-#include "Board.h"
+#include "uci.h"
+#include "stringutil.h"
+#include "constant.h"
+#include "searchagent.h"
+#include "board.h"
 
 using namespace StringUtil;
 

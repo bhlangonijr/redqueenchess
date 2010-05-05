@@ -24,7 +24,7 @@
  *      Author: bhlangonijr
  */
 
-#include "MoveIterator.h"
+#include "moveiterator.h"
 
 MoveIterator::MoveIterator(Data& data) : _data(data) {
 

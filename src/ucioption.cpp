@@ -26,8 +26,8 @@
 #include <string>
 #include <sstream>
 
-#include "StringUtil.h"
-#include "UciOption.h"
+#include "stringutil.h"
+#include "ucioption.h"
 
 
 

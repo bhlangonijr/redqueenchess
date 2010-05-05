@@ -29,7 +29,7 @@
 #define UCI_H_
 
 #include <vector>
-#include "UciOption.h"
+#include "ucioption.h"
 
 #define NU_COMMANDS 11
 

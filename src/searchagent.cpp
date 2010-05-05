@@ -24,7 +24,7 @@
  *      Author: bhlangonijr
  */
 
-#include "SearchAgent.h"
+#include "searchagent.h"
 
 extern "C" void *threadStartup(void *);
 

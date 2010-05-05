@@ -30,10 +30,10 @@
 #include <time.h>
 #include <iostream>
 
-#include "Uci.h"
-#include "SearchAgent.h"
-#include "StringUtil.h"
-#include "Evaluator.h"
+#include "uci.h"
+#include "searchagent.h"
+#include "stringutil.h"
+#include "evaluator.h"
 
 namespace SimplePVSearchTypes {
 

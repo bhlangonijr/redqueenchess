@@ -25,7 +25,7 @@
  */
 
 
-#include "SimplePVSearch.h"
+#include "simplepvsearch.h"
 // If set to true, will check move integrity - used for trace purposes
 #define CHECK_MOVE_GEN_ERRORS false
 // show stats info

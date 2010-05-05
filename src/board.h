@@ -33,10 +33,10 @@
 #include <time.h>
 #include <assert.h>
 
-#include "StringUtil.h"
+#include "stringutil.h"
 #include "mersenne.h"
-#include "Bitboard.h"
-#include "MoveIterator.h"
+#include "bitboard.h"
+#include "moveiterator.h"
 #include "magicmoves.h"
 
 //#include "Evaluator.h"

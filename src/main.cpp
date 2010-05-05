@@ -29,13 +29,13 @@
 #include <iostream>
 #include <stdio.h>
 
-#include "Uci.h"
-#include "Constant.h"
-#include "Board.h"
-#include "SearchAgent.h"
+#include "uci.h"
+#include "constant.h"
+#include "board.h"
+#include "searchagent.h"
 #include "mersenne.h"
-#include "Inline.h"
-#include "StringUtil.h"
+#include "inline.h"
+#include "stringutil.h"
 #include "magicmoves.h"
 
 int main() {
