@@ -557,8 +557,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 
 	MoveIterator moves;
 	board.generateCaptures(moves, board.getSideToMove());
-	scoreMoves(board, moves, alpha, beta, 0);
-
+	scoreMoves(board, moves, ttMove, alpha, beta, ply, false);
 	moves.first();
 
 	while (moves.hasNext())  {

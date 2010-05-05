@@ -199,7 +199,6 @@ private:
 	int qSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);
 	const std::string pvLineToString(const PvLine* pv);
 	void scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, int alpha, int beta, int ply, const bool rootMoves);
-	void scoreMoves(Board& board, MoveIterator& moves, int alpha, int beta, int ply);
 	bool okToReduce(Board& board, MoveIterator::Move& move, MoveBackup& backup,
 			int depth, int remainingMoves, bool isKingAttacked);
 	bool okToNullMove(Board& board);
@@ -291,39 +290,6 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, MoveIt
 		} else if (move.type==MoveIterator::NON_CAPTURE) {
 			move.score+=NON_CAPTURE_SCORE;
 			move.score+=history[board.getPieceTypeBySquare(move.from)][move.to];
-		}
-
-	}
-	moves.sort();
-
-}
-
-
-// sort search moves
-inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, int alpha, int beta, int ply) {
-
-	const int PROMO_CAPTURE_SCORE=70000;
-	const int GOOD_CAPTURE_SCORE=55000;
-	const int EQUAL_CAPTURE_SCORE=50000;
-	const int BAD_CAPTURE_SCORE=-9000;
-
-	moves.first();
-
-	while (moves.hasNext()) {
-		MoveIterator::Move& move = moves.next();
-
-		if (board.getPieceBySquare(move.to) != EMPTY) {
-			move.score = (evaluator.getPieceMaterialValue(board, board.getPieceBySquare(move.from)) - evaluator.getPieceMaterialValue(board, board.getPieceBySquare(move.to)));
-		}
-
-		if (move.type==MoveIterator::PROMO_CAPTURE) {
-			move.score+=PROMO_CAPTURE_SCORE;
-		} else if (move.type==MoveIterator::GOOD_CAPTURE) {
-			move.score+=GOOD_CAPTURE_SCORE;
-		} else if (move.type==MoveIterator::EQUAL_CAPTURE) {
-			move.score+=EQUAL_CAPTURE_SCORE;
-		} else if (move.type==MoveIterator::BAD_CAPTURE) {
-			move.score+=BAD_CAPTURE_SCORE;
 		}
 
 	}
