@@ -37,6 +37,8 @@
 #include "mersenne.h"
 #include "Bitboard.h"
 #include "MoveIterator.h"
+#include "magicmoves.h"
+
 //#include "Evaluator.h"
 
 namespace BoardTypes{
@@ -44,6 +46,8 @@ namespace BoardTypes{
 
 //used for hashing
 typedef uint64_t Key;
+
+#define USE_MAGIC_MOVES true
 
 #define ALL_CASTLE_RIGHT				 4								// all castle rights
 #define MAX_GAME_LENGTH					 1024							// Max game lenght
@@ -584,10 +588,17 @@ inline const Bitboard Board::getRookAttacks(const Square square) {
 // return a bitboard with attacked squares by the rook in the given square
 inline const Bitboard Board::getRookAttacks(const Square square, const Bitboard occupied) {
 
+#if defined(USE_MAGIC_MOVES)
+
+	return R_MAGIC(square, occupied);
+
+#else
 	const Bitboard file = getSliderAttacks(fileAttacks[square], occupied, square);
 	const Bitboard rank = getSliderAttacks(rankAttacks[square], occupied, square);
 
 	return file | rank;
+#endif
+
 }
 
 // overload method - gets current occupied squares in the board
@@ -597,11 +608,17 @@ inline const Bitboard Board::getBishopAttacks(const Square square) {
 
 // return a bitboard with attacked squares by the bishop in the given square
 inline const Bitboard Board::getBishopAttacks(const Square square, const Bitboard occupied) {
+#if defined(USE_MAGIC_MOVES)
+
+	return B_MAGIC(square, occupied);
+
+#else
 
 	const Bitboard diagA1H8 = getSliderAttacks(diagA1H8Attacks[square], occupied, square);
 	const Bitboard diagH1A8 = getSliderAttacks(diagH1A8Attacks[square], occupied, square);
 
 	return diagA1H8 | diagH1A8;
+#endif
 }
 
 // overload method - gets current occupied squares in the board

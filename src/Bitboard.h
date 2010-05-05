@@ -393,7 +393,7 @@ inline Square bitboardToSquare(const Bitboard& bitboard) {
 
 }
 
-// lookup and set the nearest bits given a starting square index in the bitboard - downside and upside
+// get slider attacks based on the attacks mask and occupance
 inline Bitboard getSliderAttacks(const Bitboard& attacks, const Bitboard& mask, const Square start)
 {
 	unsigned int minor=A1;

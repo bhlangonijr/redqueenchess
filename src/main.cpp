@@ -24,7 +24,7 @@
  *
  * 	Main source
  * 	Author: Ben-Hur Carlos Vieira Langoni Junior
- * 	e-mail: bhlangonijr@yahoo.com.br
+ * 	e-mail: bhlangonijr@gmail.com.br
  */
 #include <iostream>
 #include <stdio.h>
@@ -36,6 +36,7 @@
 #include "mersenne.h"
 #include "Inline.h"
 #include "StringUtil.h"
+#include "magicmoves.h"
 
 int main() {
 
@@ -45,6 +46,7 @@ int main() {
 	std::cin.rdbuf()->pubsetbuf(NULL, 0);
 
 	// initialization methods
+	initmagicmoves();
 	init_mersenne();
 	Board::initializeZobrist();
 	SearchAgent::getInstance();
