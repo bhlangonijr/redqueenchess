@@ -1,6 +1,6 @@
 /*
 	Redqueen Chess Engine
-    Copyright (C) 2008-2009 Ben-Hur Carlos Vieira Langoni Junior
+    Copyright (C) 2008-2010 Ben-Hur Carlos Vieira Langoni Junior
 
     This file is part of Redqueen Chess Engine.
 
@@ -311,12 +311,12 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 
 		moveCounter++;
 
-		if (okToReduce(board, move, backup, depth, remainingMoves, isKingAttacked)) {
-			reduction++;
-		}
-
 		if (move.type == MoveIterator::NON_CAPTURE) {
 			remainingMoves++;
+		}
+
+		if (okToReduce(board, move, backup, depth, remainingMoves, isKingAttacked)) {
+			reduction++;
 		}
 
 		if ( moveCounter==1 ) {
@@ -471,12 +471,12 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 
 		moveCounter++;
 
-		if (okToReduce(board, move, backup, depth, remainingMoves, isKingAttacked)) {
-			reduction++;
-		}
-
 		if (move.type == MoveIterator::NON_CAPTURE) {
 			remainingMoves++;
+		}
+
+		if (okToReduce(board, move, backup, depth, remainingMoves, isKingAttacked)) {
+			reduction++;
 		}
 
 		score = -normalSearch(board, -beta, -(beta-1), depth-reduction+extension, ply+1, &line, allowNullMove, allowPvSearch);
