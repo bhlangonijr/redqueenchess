@@ -549,7 +549,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 	MoveIterator::Move ttMove(NONE,NONE,EMPTY);
 	SearchAgent::HashData hashData;
 	if (agent->hashGet(board.getKey(), hashData, ply, maxScore)) {
-		if (hashData.depth<=depth) {
+		if (hashData.depth>=depth) {
 
 			const bool okToUseTT = (((hashData.flag == SearchAgent::UPPER && hashData.value <= alpha) ||
 					(hashData.flag == SearchAgent::LOWER && hashData.value >= beta) ||
@@ -580,7 +580,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 	board.generateCaptures(moves, board.getSideToMove());
 	scoreMoves(board, moves, ttMove, alpha, beta, ply, false);
 	moves.first();
-	int newDepth = depth;//depth==0?depth:-1;//TODO test it
+	int newDepth = depth==0?depth:-1;
 
 	while (moves.hasNext())  {
 
