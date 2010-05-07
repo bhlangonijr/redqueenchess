@@ -36,17 +36,17 @@ class MoveIterator {
 public:
 
 	enum MoveType {
-		PV_MOVE, TT_MOVE, GOOD_CAPTURE, PROMO_CAPTURE, PROMO_NONCAPTURE, EQUAL_CAPTURE, KILLER1, KILLER2, NON_CAPTURE, BAD_CAPTURE
+		UNKNOW, TT_MOVE, GOOD_CAPTURE, PROMO_CAPTURE, PROMO_NONCAPTURE, EQUAL_CAPTURE, KILLER1, KILLER2, NON_CAPTURE, BAD_CAPTURE
 	};
 
 	// Move representation
 	struct Move {
 
-		Move() : from(NONE), to(NONE), score(DEFAULT_SCORE), type(PV_MOVE)
+		Move() : from(NONE), to(NONE), score(DEFAULT_SCORE), type(UNKNOW)
 		{}
 
 		Move(const Square fromSquare, const Square toSquare, const PieceTypeByColor piece) :
-			from(fromSquare), to(toSquare), promotionPiece(piece), score(DEFAULT_SCORE), type(PV_MOVE)
+			from(fromSquare), to(toSquare), promotionPiece(piece), score(DEFAULT_SCORE), type(UNKNOW)
 			{}
 
 		Move(const Square fromSquare, const Square toSquare, const PieceTypeByColor piece, const MoveType type) :
@@ -113,10 +113,6 @@ public:
 
 	const Move& get(const size_t index);
 
-	const void bringToTop();
-
-	const void sortOne();
-
 	void operator()(Data& data) {
 		_data=data;
 	}
@@ -179,43 +175,5 @@ inline const size_t MoveIterator::size() {
 inline const MoveIterator::Move& MoveIterator::get(const size_t index) {
 	return _data.list[index];
 }
-
-inline const void MoveIterator::bringToTop() {
-
-	if (_data.idx==0) {
-		return;
-	}
-
-	Move tmp=_data.list[0];
-	_data.list[0]=_data.list[1];
-	_data.list[1]=tmp;
-
-	if (_data.idx>1) {
-		const size_t index = _data.idx-1;
-		tmp=_data.list[0];
-		_data.list[0]=_data.list[index];
-		_data.list[index]=tmp;
-	};
-
-}
-
-inline const void MoveIterator::sortOne() {
-
-	const size_t index = _data.idx-1;
-	for(size_t x=0;x<_data.idx;x++) {
-
-		if (_data.list[index].score > _data.list[x].score) {
-			Move tmp=_data.list[x];
-			_data.list[x]=_data.list[index];
-			_data.list[index]=tmp;
-			break;
-
-		}
-
-	}
-
-}
-
-
 
 #endif /* MOVEITERATOR_H_ */

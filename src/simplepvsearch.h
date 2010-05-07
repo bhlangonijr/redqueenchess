@@ -29,13 +29,8 @@
 
 #include <time.h>
 #include <iostream>
-
-#include "uci.h"
-#include "searchagent.h"
-#include "stringutil.h"
+#include <string.h>
 #include "evaluator.h"
-
-/*namespace SimplePVSearchTypes {*/
 
 const int maxScore = 20000;
 const int maxQuiescenceSearchDepth = 30;
@@ -43,10 +38,7 @@ const int maxSearchDepth = 80;
 const int maxSearchPly = 30;
 const bool allowIIDAtPV = true;
 const bool allowIIDAtNormal = true;
-/*
-}
-
-using namespace SimplePVSearchTypes;*/
+const int scoreTable[10]={0,80000,60000,70000,65000,50000,45000,40000,5000,-9000};
 
 class SimplePVSearch {
 
@@ -246,53 +238,31 @@ inline void SimplePVSearch::updatePv(PvLine* pv, PvLine& line, MoveIterator::Mov
 // sort search moves
 inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, int alpha, int beta, int ply, const bool rootMoves) {
 
-	const int TT_MOVE_SCORE=80000;
-	const int PROMO_NON_CAPTURE_SCORE=60000;
-	const int PROMO_CAPTURE_SCORE=70000;
-	const int GOOD_CAPTURE_SCORE=55000;
-	const int EQUAL_CAPTURE_SCORE=50000;
-	const int KILLER1_SCORE=45000;
-	const int KILLER2_SCORE=40000;
-	const int NON_CAPTURE_SCORE=5000;
-	const int BAD_CAPTURE_SCORE=-9000;
-
 	moves.first();
 
 	while (moves.hasNext()) {
 		MoveIterator::Move& move = moves.next();
 
-		if (board.getPieceBySquare(move.to) != EMPTY) {
-			int score = (evaluator.getPieceMaterialValue(board, board.getPieceBySquare(move.from)) - evaluator.getPieceMaterialValue(board, board.getPieceBySquare(move.to)));
-			move.score = rootMoves ? move.score /*+ score */: score;
+		if (board.getPieceBySquare(move.to) != EMPTY && !rootMoves) {
+			move.score = pieceMaterialValues[board.getPieceBySquare(move.from)] - pieceMaterialValues[board.getPieceBySquare(move.to)];
 		}
 
 		if (ttMove.from!=NONE && ttMove==move) {
 			move.type = MoveIterator::TT_MOVE;
-			move.score+=TT_MOVE_SCORE;
 		} else if (move==killer[ply][0]) {
 			move.type = MoveIterator::KILLER1;
-			move.score+=KILLER1_SCORE;
 		} else if (move==killer[ply][1]) {
 			move.type = MoveIterator::KILLER2;
-			move.score+=KILLER2_SCORE;
 		}
 
-		if (move.type==MoveIterator::PROMO_CAPTURE) {
-			move.score+=PROMO_CAPTURE_SCORE;
-		} else if (move.type==MoveIterator::PROMO_NONCAPTURE) {
-			move.score+=PROMO_NON_CAPTURE_SCORE;
-		} else if (move.type==MoveIterator::GOOD_CAPTURE) {
-			move.score+=GOOD_CAPTURE_SCORE;
-		} else if (move.type==MoveIterator::EQUAL_CAPTURE) {
-			move.score+=EQUAL_CAPTURE_SCORE;
-		} else if (move.type==MoveIterator::BAD_CAPTURE) {
-			move.score+=BAD_CAPTURE_SCORE;
-		} else if (move.type==MoveIterator::NON_CAPTURE) {
-			move.score+=NON_CAPTURE_SCORE;
+		if (move.type==MoveIterator::NON_CAPTURE) {
 			move.score+=history[board.getPieceTypeBySquare(move.from)][move.to];
 		}
 
+		move.score+=scoreTable[move.type];
+
 	}
+
 	moves.sort();
 
 }

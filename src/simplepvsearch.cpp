@@ -26,6 +26,8 @@
 
 
 #include "simplepvsearch.h"
+#include "searchagent.h"
+
 // If set to true, will check move integrity - used for trace purposes
 #define CHECK_MOVE_GEN_ERRORS false
 // show stats info
@@ -327,7 +329,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 
 			if (score > alpha && !stop(agent->getSearchInProgress())) {
 
-				score = -pvSearch(board, -beta, -alpha, depth-reduction+extension, ply+1, &line, allowPvSearch);
+				score = -pvSearch(board, -beta, -alpha, depth-1+extension, ply+1, &line, allowPvSearch);
 
 			}
 
@@ -395,6 +397,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 	int extension = 0;
 	MoveIterator::Move ttMove(NONE,NONE,EMPTY);
 	SearchAgent::HashData hashData;
+
 	if (agent->hashGet(board.getKey(), hashData, ply, maxScore)) {
 		if (hashData.depth>=depth) {
 			if ((hashData.flag == SearchAgent::UPPER && hashData.value <= alpha) ||
