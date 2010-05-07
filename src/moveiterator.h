@@ -39,6 +39,10 @@ public:
 		UNKNOW, TT_MOVE, GOOD_CAPTURE, PROMO_CAPTURE, PROMO_NONCAPTURE, EQUAL_CAPTURE, KILLER1, KILLER2, NON_CAPTURE, BAD_CAPTURE
 	};
 
+	enum IteratorStage {
+		BEGIN, CAPTURE_MOVES, OTHERS, QUIET_MOVES, END
+	};
+
 	// Move representation
 	struct Move {
 
@@ -85,11 +89,12 @@ public:
 
 	struct Data {
 
-		Data(): size(0), idx(0) {};
-		Data(Data& data) : list(data.list), size(data.size), idx(data.idx){};
+		Data(): size(0), idx(0), stage(BEGIN) {};
+		Data(Data& data) : list(data.list), size(data.size), idx(data.idx), stage(BEGIN){};
 		Move list[MOVE_LIST_MAX_SIZE];
 		size_t size;
 		size_t idx;
+		IteratorStage stage;
 
 	};
 

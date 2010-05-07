@@ -669,26 +669,30 @@ bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move, MoveBack
 	const int prunningDepth=3;
 	const int prunningMoves=3;
 
-	bool check = (
+	bool verify = (
 			(remainingMoves > prunningMoves) &&
 			(move.type == MoveIterator::NON_CAPTURE) &&
 			(depth > prunningDepth) &&
 			(!isKingAttacked) &&
 			(!history[board.getPieceTypeBySquare(move.from)][move.to]));
 
-	if (!check) {
+	if (!verify) {
 		return false;
 	}
 
 	bool isPawnPush = (backup.movingPiece==WHITE_PAWN && squareRank[move.to] >= RANK_6) ||
 			(backup.movingPiece==BLACK_PAWN && squareRank[move.to] <= RANK_3);
 
+	if (isPawnPush) {
+		return false;
+	}
+
 	bool isCastling = backup.hasWhiteKingCastle ||
 			backup.hasBlackKingCastle ||
 			backup.hasWhiteQueenCastle ||
 			backup.hasBlackQueenCastle;
 
-	return !(isPawnPush||isCastling);
+	return !(isCastling);
 
 }
 

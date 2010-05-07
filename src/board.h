@@ -47,7 +47,7 @@ namespace BoardTypes{
 //used for hashing
 typedef uint64_t Key;
 
-#define USE_MAGIC_MOVES true
+#define USE_MAGIC_MOVES true			  								// set to true to use magic moves
 
 #define ALL_CASTLE_RIGHT				 4								// all castle rights
 #define MAX_GAME_LENGTH					 1024							// Max game lenght
