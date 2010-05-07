@@ -30,11 +30,11 @@
 #include <iostream>
 #include <assert.h>
 #include <pthread.h>
-#include "uci.h"
+
 #include "board.h"
 #include "simplepvsearch.h"
 #include "transpositiontable.h"
-#include "stringutil.h"
+#include "uci.h"
 
 const std::string mainHashName 		= "DefaultHashTable";
 const size_t defaultDepth			= 5;

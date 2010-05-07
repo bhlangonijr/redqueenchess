@@ -30,7 +30,8 @@
 #include <time.h>
 #include <iostream>
 #include <string.h>
-#include "evaluator.h"
+
+#include "searchagent.h"
 
 const int maxScore = 20000;
 const int maxQuiescenceSearchDepth = 30;
@@ -177,7 +178,6 @@ private:
 	long _time;
 	bool _searchFixedDepth;
 	bool _infinite;
-	Evaluator evaluator;
 	SearchStats stats;
 	int timeToStop;
 	MoveIterator rootMoves;
@@ -191,6 +191,7 @@ private:
 	int qSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);
 	const std::string pvLineToString(const PvLine* pv);
 	void scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, int alpha, int beta, int ply, const bool rootMoves);
+	//bool okToUseTT(SearchAgent::HashData& hashData, int alpha, int beta);
 	bool okToReduce(Board& board, MoveIterator::Move& move, MoveBackup& backup,
 			int depth, int remainingMoves, bool isKingAttacked);
 	bool okToNullMove(Board& board);
@@ -233,80 +234,6 @@ inline void SimplePVSearch::updatePv(PvLine* pv, PvLine& line, MoveIterator::Mov
 	pv->moves[0] = move;
 	memcpy(pv->moves + 1, line.moves, line.index * sizeof(MoveIterator::Move));
 	pv->index = line.index + 1;
-}
-
-// sort search moves
-inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, int alpha, int beta, int ply, const bool rootMoves) {
-
-	moves.first();
-
-	while (moves.hasNext()) {
-		MoveIterator::Move& move = moves.next();
-
-		if (board.getPieceBySquare(move.to) != EMPTY && !rootMoves) {
-			move.score = pieceMaterialValues[board.getPieceBySquare(move.from)] - pieceMaterialValues[board.getPieceBySquare(move.to)];
-		}
-
-		if (ttMove.from!=NONE && ttMove==move) {
-			move.type = MoveIterator::TT_MOVE;
-		} else if (move==killer[ply][0]) {
-			move.type = MoveIterator::KILLER1;
-		} else if (move==killer[ply][1]) {
-			move.type = MoveIterator::KILLER2;
-		}
-
-		if (move.type==MoveIterator::NON_CAPTURE) {
-			move.score+=history[board.getPieceTypeBySquare(move.from)][move.to];
-		}
-
-		move.score+=scoreTable[move.type];
-
-	}
-
-	moves.sort();
-
-}
-
-// Checks if search can be reduced for a given move
-inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move, MoveBackup& backup,
-		int depth, int remainingMoves, bool isKingAttacked) {
-
-	const int prunningDepth=3;
-	const int prunningMoves=3;
-
-	bool check = (
-			(remainingMoves > prunningMoves) &&
-			(move.type == MoveIterator::NON_CAPTURE) &&
-			(depth > prunningDepth) &&
-			(!isKingAttacked) &&
-			(!history[board.getPieceTypeBySquare(move.from)][move.to]));
-
-	if (!check) {
-		return false;
-	}
-
-	bool isPawnPush = (backup.movingPiece==WHITE_PAWN && squareRank[move.to] >= RANK_6) ||
-			(backup.movingPiece==BLACK_PAWN && squareRank[move.to] <= RANK_3);
-
-	bool isCastling = backup.hasWhiteKingCastle ||
-			backup.hasBlackKingCastle ||
-			backup.hasWhiteQueenCastle ||
-			backup.hasBlackQueenCastle;
-
-	return !(isPawnPush||isCastling);
-
-}
-
-// Ok to do null move?
-inline bool SimplePVSearch::okToNullMove(Board& board) {
-
-	const Bitboard pawns = board.getPiecesByType(WHITE_PAWN) |
-			board.getPiecesByType(BLACK_PAWN);
-	const Bitboard kings = board.getPiecesByType(WHITE_KING) |
-			board.getPiecesByType(BLACK_KING);
-
-	return ((pawns|kings)^board.getAllPieces());
-
 }
 
 // clear history

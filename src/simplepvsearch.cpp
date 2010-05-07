@@ -26,7 +26,7 @@
 
 
 #include "simplepvsearch.h"
-#include "searchagent.h"
+#include "evaluator.h"
 
 // If set to true, will check move integrity - used for trace purposes
 #define CHECK_MOVE_GEN_ERRORS false
@@ -34,6 +34,7 @@
 #define SHOW_STATS false
 
 SearchAgent* agent = 0;
+Evaluator evaluator;
 
 // root search
 void SimplePVSearch::search() {
@@ -366,7 +367,17 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,
 		stats.ttUpper++;
 	}
 
-	agent->hashPut(board,alpha,depth,ply,maxScore,(alpha>oldAlpha ? SearchAgent::EXACT : SearchAgent::UPPER),pv->moves[0]);
+	SearchAgent::NodeFlag nodeFlag = SearchAgent::EXACT;
+
+	if (alpha>oldAlpha) {
+		updateHistory(board,pv->moves[0],depth,ply);
+		stats.ttExact++;
+	} else {
+		nodeFlag =SearchAgent::UPPER;
+		stats.ttUpper++;
+	}
+
+	agent->hashPut(board,alpha,depth,ply,maxScore,nodeFlag,pv->moves[0]);
 
 	return alpha;
 
@@ -400,9 +411,11 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 
 	if (agent->hashGet(board.getKey(), hashData, ply, maxScore)) {
 		if (hashData.depth>=depth) {
-			if ((hashData.flag == SearchAgent::UPPER && hashData.value <= alpha) ||
+			const bool okToUseTT = (((hashData.flag == SearchAgent::UPPER && hashData.value <= alpha) ||
 					(hashData.flag == SearchAgent::LOWER && hashData.value >= beta) ||
-					(hashData.flag == SearchAgent::EXACT)) {
+					(hashData.flag == SearchAgent::EXACT)));
+
+			if (okToUseTT) {
 				stats.ttHits++;
 				return hashData.value;
 			}
@@ -508,17 +521,19 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		return isKingAttacked ? -maxScore+ply : 0;
 	}
 
+	SearchAgent::NodeFlag nodeFlag = SearchAgent::EXACT;
+
 	if (alpha>oldAlpha) {
 		updateHistory(board,pv->moves[0],depth,ply);
 		stats.ttExact++;
 	} else {
+		nodeFlag =SearchAgent::UPPER;
 		stats.ttUpper++;
 	}
 
-	agent->hashPut(board,alpha,depth,ply,maxScore,(alpha>oldAlpha ? SearchAgent::EXACT : SearchAgent::UPPER),pv->moves[0]);
+	agent->hashPut(board,alpha,depth,ply,maxScore,nodeFlag,pv->moves[0]);
 
 	return alpha;
-
 }
 
 //quiescence search
@@ -535,9 +550,12 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 	SearchAgent::HashData hashData;
 	if (agent->hashGet(board.getKey(), hashData, ply, maxScore)) {
 		if (hashData.depth<=depth) {
-			if (((hashData.flag == SearchAgent::UPPER && hashData.value <= alpha) ||
+
+			const bool okToUseTT = (((hashData.flag == SearchAgent::UPPER && hashData.value <= alpha) ||
 					(hashData.flag == SearchAgent::LOWER && hashData.value >= beta) ||
-					(hashData.flag == SearchAgent::EXACT)) && (beta - alpha != 1)) {
+					(hashData.flag == SearchAgent::EXACT)) && (beta - alpha != 1));
+
+			if (okToUseTT)  {
 				stats.ttHits++;
 				return hashData.value;
 			}
@@ -562,6 +580,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 	board.generateCaptures(moves, board.getSideToMove());
 	scoreMoves(board, moves, ttMove, alpha, beta, ply, false);
 	moves.first();
+	int newDepth = depth;//depth==0?depth:-1;//TODO test it
 
 	while (moves.hasNext())  {
 
@@ -585,7 +604,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 
 		if( score >= beta ) {
 			stats.ttLower++;
-			agent->hashPut(board,score,depth==0?depth:-1,ply,maxScore,SearchAgent::LOWER,move);
+			agent->hashPut(board,score,newDepth,ply,maxScore,SearchAgent::LOWER,move);
 			updateHistory(board,move,depth,ply);
 			return beta;
 		}
@@ -597,15 +616,90 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 
 	}
 
+	SearchAgent::NodeFlag nodeFlag = SearchAgent::EXACT;
 	if (alpha>oldAlpha) {
 		updateHistory(board,pv->moves[0],depth,ply);
 		stats.ttExact++;
 	} else {
+		nodeFlag =SearchAgent::UPPER;
 		stats.ttUpper++;
 	}
 
-	agent->hashPut(board,alpha,depth==0?depth:-1,ply,maxScore,(alpha>oldAlpha ? SearchAgent::EXACT : SearchAgent::UPPER),pv->moves[0]);
+	agent->hashPut(board,alpha,newDepth,ply,maxScore,nodeFlag,pv->moves[0]);
 
 	return alpha;
 }
 
+// sort search moves
+void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, int alpha, int beta, int ply, const bool rootMoves) {
+
+	moves.first();
+
+	while (moves.hasNext()) {
+		MoveIterator::Move& move = moves.next();
+
+		if (board.getPieceBySquare(move.to) != EMPTY && !rootMoves) {
+			move.score = pieceMaterialValues[board.getPieceBySquare(move.from)] - pieceMaterialValues[board.getPieceBySquare(move.to)];
+		}
+
+		if (ttMove.from!=NONE && ttMove==move) {
+			move.type = MoveIterator::TT_MOVE;
+		} else if (move==killer[ply][0]) {
+			move.type = MoveIterator::KILLER1;
+		} else if (move==killer[ply][1]) {
+			move.type = MoveIterator::KILLER2;
+		}
+
+		if (move.type==MoveIterator::NON_CAPTURE) {
+			move.score+=history[board.getPieceTypeBySquare(move.from)][move.to];
+		}
+
+		move.score+=scoreTable[move.type];
+
+	}
+
+	moves.sort();
+
+}
+
+// Checks if search can be reduced for a given move
+bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move, MoveBackup& backup,
+		int depth, int remainingMoves, bool isKingAttacked) {
+
+	const int prunningDepth=3;
+	const int prunningMoves=3;
+
+	bool check = (
+			(remainingMoves > prunningMoves) &&
+			(move.type == MoveIterator::NON_CAPTURE) &&
+			(depth > prunningDepth) &&
+			(!isKingAttacked) &&
+			(!history[board.getPieceTypeBySquare(move.from)][move.to]));
+
+	if (!check) {
+		return false;
+	}
+
+	bool isPawnPush = (backup.movingPiece==WHITE_PAWN && squareRank[move.to] >= RANK_6) ||
+			(backup.movingPiece==BLACK_PAWN && squareRank[move.to] <= RANK_3);
+
+	bool isCastling = backup.hasWhiteKingCastle ||
+			backup.hasBlackKingCastle ||
+			backup.hasWhiteQueenCastle ||
+			backup.hasBlackQueenCastle;
+
+	return !(isPawnPush||isCastling);
+
+}
+
+// Ok to do null move?
+bool SimplePVSearch::okToNullMove(Board& board) {
+
+	const Bitboard pawns = board.getPiecesByType(WHITE_PAWN) |
+			board.getPiecesByType(BLACK_PAWN);
+	const Bitboard kings = board.getPiecesByType(WHITE_KING) |
+			board.getPiecesByType(BLACK_KING);
+
+	return ((pawns|kings)^board.getAllPieces());
+
+}
