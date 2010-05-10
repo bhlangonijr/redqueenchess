@@ -116,8 +116,8 @@ struct Node {
 	{}
 
 	Node (const Node& node) : key(node.key), piece( node.piece ), enPassant( node.enPassant ),
-	sideToMove( node.sideToMove ), moveCounter(node.moveCounter),
-	halfMoveCounter(node.halfMoveCounter)
+			sideToMove( node.sideToMove ), moveCounter(node.moveCounter),
+			halfMoveCounter(node.halfMoveCounter)
 	{
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=node.square[x];
@@ -252,6 +252,8 @@ public:
 	const bool isAttacked(const PieceColor color, const PieceType type);
 	const bool isAttacked(const Bitboard occupation, const PieceColor attackingSide);
 	const bool isNotLegal();
+	const bool isMoveLegal(MoveIterator::Move& move);
+	const Bitboard getAttacksFrom(MoveIterator::Move& move);
 	const bool isDraw();
 	const bool isCastleDone(const PieceColor color);
 
@@ -522,6 +524,77 @@ inline const bool Board::isNotLegal() {
 	return isAttacked(flipSide(getSideToMove()),KING);
 
 }
+
+// verify board legality
+inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
+
+	PieceTypeByColor fromPiece=this->getPieceBySquare(move.from);
+	PieceTypeByColor toPiece=this->getPieceBySquare(move.to);
+
+	if (fromPiece==EMPTY) {
+		return false;
+	}
+
+	if (toPiece != EMPTY &&
+			this->getPieceColorBySquare(move.from) == this->getPieceColorBySquare(move.to)) {
+		return false;
+	}
+
+	if (!(getAttacksFrom(move) & squareToBitboard[move.to])) {
+		return false;
+	}
+
+	if (getPieceType(fromPiece) == PAWN &&
+		getSquareFile(move.from)!=	getSquareFile(move.to) &&
+		toPiece == EMPTY &&
+		getSquareFile(getEnPassant()) != getSquareFile(move.to)
+		) {
+		return false;
+	}
+
+	if ((getPieceType(fromPiece) == KING) ||
+			(move.from==E1 && move.to==G1) ||
+			(move.from==E1 && move.to==C1) ||
+			(move.from==E8 && move.to==G8) ||
+			(move.from==E8 && move.to==C8)) {
+		const CastleRight castleRight = (move.to==C1 || move.to==C8) ? QUEEN_SIDE_CASTLE : KING_SIDE_CASTLE;
+
+		if (!canCastle(getSideToMove(), castleRight)) {
+			return false;
+		}
+	}
+
+	return true;
+
+}
+
+// Get attacks from a given square
+inline const Bitboard Board::getAttacksFrom(MoveIterator::Move& move) {
+
+	const PieceTypeByColor fromPiece = getPieceBySquare(move.from);
+	const PieceType pieceType = getPieceType(fromPiece);
+
+	Bitboard attacks = EMPTY_BB;
+
+	if (pieceType==PAWN) {
+		attacks = this->getPawnMoves(move.from);
+	} else if (pieceType==KNIGHT) {
+		attacks = this->getKnightAttacks(move.from);
+	} else if (pieceType==BISHOP) {
+		attacks = this->getBishopAttacks(move.from);
+	} else if (pieceType==ROOK) {
+		attacks = this->getRookAttacks(move.from);
+	} else if (pieceType==QUEEN) {
+		attacks = this->getQueenAttacks(move.from);
+	} else if (pieceType==KING) {
+		attacks = this->getKingAttacks(move.from);
+	}
+
+	return attacks;
+
+}
+
+
 
 // verify draw by 50th move rule, 3 fold rep and insuficient material
 inline const bool Board::isDraw() {

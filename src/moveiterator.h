@@ -36,11 +36,13 @@ class MoveIterator {
 public:
 
 	enum MoveType {
-		UNKNOW, TT_MOVE, GOOD_CAPTURE, PROMO_CAPTURE, PROMO_NONCAPTURE, EQUAL_CAPTURE, KILLER1, KILLER2, NON_CAPTURE, BAD_CAPTURE
+		UNKNOW, TT_MOVE, GOOD_CAPTURE, PROMO_CAPTURE, PROMO_NONCAPTURE,
+		EQUAL_CAPTURE, KILLER1, KILLER2, NON_CAPTURE, BAD_CAPTURE
 	};
 
 	enum IteratorStage {
-		BEGIN, CAPTURE_MOVES, OTHERS, QUIET_MOVES, END
+		BEGIN_STAGE, TT_STAGE, INIT_CAPTURE_STAGE, ON_CAPTURE_STAGE,
+		KILLER1_STAGE, KILLER2_STAGE, INIT_QUIET_STAGE, ON_QUIET_STAGE, END_STAGE
 	};
 
 	// Move representation
@@ -51,15 +53,15 @@ public:
 
 		Move(const Square fromSquare, const Square toSquare, const PieceTypeByColor piece) :
 			from(fromSquare), to(toSquare), promotionPiece(piece), score(DEFAULT_SCORE), type(UNKNOW)
-			{}
+		{}
 
 		Move(const Square fromSquare, const Square toSquare, const PieceTypeByColor piece, const MoveType type) :
 			from(fromSquare), to(toSquare), promotionPiece(piece), score(DEFAULT_SCORE), type(type)
-			{}
+		{}
 
 		Move(const Move& move) :
 			from(move.from), to(move.to), promotionPiece(move.promotionPiece), score(move.score), type(move.type)
-			{}
+		{}
 
 		inline bool operator == (const Move &move) const {
 			return ( from==move.from && to==move.to && promotionPiece==move.promotionPiece);
@@ -89,11 +91,12 @@ public:
 
 	struct Data {
 
-		Data(): size(0), idx(0), stage(BEGIN) {};
-		Data(Data& data) : list(data.list), size(data.size), idx(data.idx), stage(BEGIN){};
+		Data(): size(0), idx(0), saveIdx(0), stage(BEGIN_STAGE) {};
+		Data(Data& data) : list(data.list), size(data.size), idx(data.idx), saveIdx(data.saveIdx), stage(BEGIN_STAGE){};
 		Move list[MOVE_LIST_MAX_SIZE];
 		size_t size;
 		size_t idx;
+		size_t saveIdx;
 		IteratorStage stage;
 
 	};
@@ -106,15 +109,43 @@ public:
 
 	const void remove(const size_t index);
 
+	const void clear();
+
 	const bool hasNext();
 
+	const void bookmark();
+
+	const int goToBookmark();
+
+	const bool end();
+
 	Move& next();
+
+	Move& selectBest();
 
 	const void first();
 
 	const size_t size();
 
 	void sort();
+
+	void sort(const int after);
+
+	const IteratorStage getStage() {
+		return _data.stage;
+	}
+
+	const void setStage(IteratorStage stage) {
+		_data.stage=stage;
+	}
+
+	bool goNextStage() {
+		if (_data.stage<END_STAGE) {
+			_data.stage = IteratorStage(int(_data.stage) + 1 );
+			return true;
+		}
+		return false;
+	}
 
 	const Move& get(const size_t index);
 
@@ -126,15 +157,22 @@ public:
 		_data=moves.getData();
 	}
 
-	MoveIterator(Data& data);
-
-	MoveIterator();
-
 	inline Data& getData() {
 		return _data;
 	}
 
+	MoveIterator();
+
+	MoveIterator(Data& data);
+
+	MoveIterator(const MoveIterator&);
+
 	virtual ~MoveIterator();
+
+protected:
+
+	MoveIterator& operator= (const MoveIterator&);
+
 private:
 
 	Data& _data;
@@ -161,12 +199,47 @@ inline const void MoveIterator::remove(const size_t index) {
 	_data.size--;
 }
 
+inline const void MoveIterator::clear() {
+	_data.size=0;
+	_data.idx=0;
+}
+
+inline const void MoveIterator::bookmark() {
+	_data.saveIdx = _data.idx;
+}
+
+inline const int MoveIterator::goToBookmark() {
+	_data.idx = _data.saveIdx;
+	return _data.idx;
+}
+
 inline const bool MoveIterator::hasNext() {
 	return _data.idx<_data.size;
 }
 
+inline const bool MoveIterator::end() {
+	return _data.stage==END_STAGE;
+}
+
 inline MoveIterator::Move& MoveIterator::next() {
 	return _data.list[_data.idx++];
+}
+
+inline MoveIterator::Move& MoveIterator::selectBest() {
+
+	/*size_t idxMax = _data.idx;
+	for (size_t x=_data.idx+1;x<_data.size;x++) {
+		if (_data.list[x].score > _data.list[idxMax].score) {
+			idxMax = x;
+		}
+	}
+	if (idxMax != _data.idx) {
+		const Move tmp=_data.list[_data.idx];
+		_data.list[_data.idx]=_data.list[idxMax];
+		_data.list[idxMax]=tmp;
+	}*/
+
+	return next();
 }
 
 inline const void MoveIterator::first() {

@@ -32,8 +32,7 @@ SearchAgent* SearchAgent::searchAgent = 0;
 
 SearchAgent* SearchAgent::getInstance ()
 {
-	if (searchAgent == 0)
-	{
+	if (searchAgent == 0) {
 		searchAgent = new SearchAgent();
 	}
 	return searchAgent;
@@ -63,7 +62,6 @@ void SearchAgent::newGame() {
 	this->setMoveTime(0);
 	this->setInfinite(false);
 	this->setSearchInProgress(false);
-
 
 }
 

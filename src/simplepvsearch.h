@@ -34,11 +34,10 @@
 #include "searchagent.h"
 
 const int maxScore = 20000;
-const int maxQuiescenceSearchDepth = 30;
 const int maxSearchDepth = 80;
 const int maxSearchPly = 30;
-const bool allowIIDAtPV = true;
-const bool allowIIDAtNormal = true;
+const int allowIIDAtPV = 2;
+const int allowIIDAtNormal = 30;
 const int scoreTable[10]={0,80000,60000,70000,65000,50000,45000,40000,5000,-9000};
 
 class SimplePVSearch {
@@ -186,12 +185,14 @@ private:
 
 	int idSearch(Board& board);
 	int rootSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);
-	int pvSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv, const bool allowPvSearch);
-	int normalSearch(Board& board, int alpha, int beta,	int depth, int ply, PvLine* pv,	const bool allowNullMove, const bool allowPvSearch);
+	int pvSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);
+	int normalSearch(Board& board, int alpha, int beta,	int depth, int ply, PvLine* pv,	const bool allowNullMove);
 	int qSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);
 	const std::string pvLineToString(const PvLine* pv);
-	void scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, int alpha, int beta, int ply, const bool rootMoves);
-	//bool okToUseTT(SearchAgent::HashData& hashData, int alpha, int beta);
+	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, int alpha, int beta, int ply);
+	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, int alpha, int beta, int ply);
+	void scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, int alpha, int beta, int ply);
+	void scoreMoves(Board& board, MoveIterator& moves, int alpha, int beta, int ply);
 	bool okToReduce(Board& board, MoveIterator::Move& move, MoveBackup& backup,
 			int depth, int remainingMoves, bool isKingAttacked);
 	bool okToNullMove(Board& board);

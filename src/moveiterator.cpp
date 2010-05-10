@@ -55,10 +55,24 @@ void MoveIterator::sort() {
 		}
 	}
 
-	/*	std::cout << "----- init " << std::endl;
-	for (int x=0;x<_data.size;x++) {
-		std::cout << _data.list[x].toString() << " - score: " << _data.list[x].score << std::endl;
+}
+
+// sort after an index
+void MoveIterator::sort(const int after) {
+
+	bool flag=true;
+	for(int i = after; i <(int)_data.size&&flag; i++){
+		flag=false;
+		for(int j = after; j <(int) _data.size-1; j++)
+		{
+			if (_data.list[j+1].score > _data.list[j].score) {
+				Move tmp=_data.list[j];
+				_data.list[j]=_data.list[j+1];
+				_data.list[j+1]=tmp;
+				flag=true;
+			}
+
+		}
 	}
-	std::cout << "----- end " << std::endl;*/
 
 }
