@@ -278,7 +278,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 		extension++;
 	}
 
-	if (depth > allowIIDAtPV && ttMove.from == NONE) {
+	if (depth > allowIIDAtPV && ttMove.from == NONE && !isKingAttacked) {
 		const int iidSearchDepth = depth-2;
 		PvLine pvCandidate;
 		score = pvSearch(board,alpha,beta,iidSearchDepth,ply+1,&pvCandidate);
@@ -351,7 +351,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 
 	if (alpha>oldAlpha) {
 		agent->hashPut(board,alpha,depth,ply,maxScore,SearchAgent::EXACT,pv->moves[0]);
-		updateHistory(board,pv->moves[0],depth*2,ply);
+		updateHistory(board,pv->moves[0],depth,ply);
 		stats.ttExact++;
 	} else {
 		agent->hashPut(board,alpha,depth,ply,maxScore,SearchAgent::UPPER,blankMove);
@@ -390,10 +390,10 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 
 	if (agent->hashGet(board.getKey(), hashData, ply, maxScore)) {
 		if (hashData.depth>=depth) {
-			const bool okToUseTT =
-					(((hashData.flag == SearchAgent::UPPER && hashData.value <= alpha) ||
-							(hashData.flag == SearchAgent::LOWER && hashData.value >= beta) ||
-							(hashData.flag == SearchAgent::EXACT)));
+			const bool okToUseTT = ((
+					(hashData.flag == SearchAgent::UPPER && hashData.value <= alpha) ||
+					(hashData.flag == SearchAgent::LOWER && hashData.value >= beta) ||
+					(hashData.flag == SearchAgent::EXACT)));
 
 			if (okToUseTT) {
 				stats.ttHits++;
@@ -414,9 +414,9 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 
 	bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 
-	if ((!isKingAttacked) && beta < maxScore && allowNullMove && okToNullMove(board)) {
+	if (!isKingAttacked && beta < maxScore && allowNullMove && okToNullMove(board)) {
 
-		const int reduction = 4;
+		const int reduction = 3 + (depth > 4 ? depth/4 : 0);
 		MoveBackup backup;
 		board.doNullMove(backup);
 		score = -normalSearch(board, -beta, -(beta-1), depth-reduction, ply+1, &line, false);
@@ -437,7 +437,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		extension++;
 	}
 
-	if (depth > allowIIDAtNormal && ttMove.from == NONE) {
+	if (depth > allowIIDAtNormal &&	ttMove.from == NONE && !isKingAttacked) {
 		const int iidSearchDepth = depth/2;
 		PvLine pvCandidate;
 		score = normalSearch(board,alpha,beta,iidSearchDepth,ply+1,&pvCandidate,false);
@@ -475,6 +475,10 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 
 		score = -normalSearch(board, -beta, -(beta-1), depth-reduction+extension, ply+1, &line, allowNullMove);
 
+		if (score >= beta && !stop(agent->getSearchInProgress())) {
+			score = -normalSearch(board, -beta, -(beta-1), depth-1+extension, ply+1, &line, allowNullMove);
+		}
+
 		board.undoMove(backup);
 
 		if (stop(agent->getSearchInProgress())) {
@@ -501,7 +505,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 
 	if (alpha>oldAlpha) {
 		agent->hashPut(board,alpha,depth,ply,maxScore,SearchAgent::EXACT,pv->moves[0]);
-		updateHistory(board,pv->moves[0],depth*2,ply);
+		updateHistory(board,pv->moves[0],depth,ply);
 		stats.ttExact++;
 	} else {
 		agent->hashPut(board,alpha,depth,ply,maxScore,SearchAgent::UPPER,blankMove);
@@ -535,7 +539,6 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 	}
 
 	PvLine line = PvLine();
-
 	MoveIterator moves = MoveIterator();
 
 	while (true)  {
@@ -611,7 +614,6 @@ MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves
 		moves.goNextStage();
 	}
 
-
 	if (moves.getStage()==MoveIterator::KILLER1_STAGE) {
 
 		moves.goNextStage();
@@ -633,7 +635,6 @@ MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves
 			killer[ply][1].type = MoveIterator::UNKNOW;
 		}
 	}
-
 
 	if (moves.getStage()==MoveIterator::INIT_QUIET_STAGE) {
 
@@ -694,7 +695,7 @@ void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, int alpha, in
 
 	while (moves.hasNext()) {
 		MoveIterator::Move& move = moves.next();
-
+		move.score=0;
 		if (board.getPieceBySquare(move.to) != EMPTY) {
 			move.score = pieceMaterialValues[board.getPieceBySquare(move.from)] - pieceMaterialValues[board.getPieceBySquare(move.to)];
 		}
