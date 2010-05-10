@@ -531,7 +531,7 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 	PieceTypeByColor fromPiece=this->getPieceBySquare(move.from);
 	PieceTypeByColor toPiece=this->getPieceBySquare(move.to);
 
-	if (fromPiece==EMPTY) {
+	if (move.from==NONE || fromPiece==EMPTY) {
 		return false;
 	}
 
@@ -577,7 +577,7 @@ inline const Bitboard Board::getAttacksFrom(MoveIterator::Move& move) {
 	Bitboard attacks = EMPTY_BB;
 
 	if (pieceType==PAWN) {
-		attacks = this->getPawnMoves(move.from);
+		attacks = this->getPawnAttacks(move.from);
 	} else if (pieceType==KNIGHT) {
 		attacks = this->getKnightAttacks(move.from);
 	} else if (pieceType==BISHOP) {

@@ -191,7 +191,6 @@ private:
 	const std::string pvLineToString(const PvLine* pv);
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, int alpha, int beta, int ply);
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, int alpha, int beta, int ply);
-	void scoreMoves(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, int alpha, int beta, int ply);
 	void scoreMoves(Board& board, MoveIterator& moves, int alpha, int beta, int ply);
 	bool okToReduce(Board& board, MoveIterator::Move& move, MoveBackup& backup,
 			int depth, int remainingMoves, bool isKingAttacked);
@@ -246,9 +245,7 @@ inline void SimplePVSearch::clearHistory() {
 // update history
 inline void SimplePVSearch::updateHistory(Board& board, MoveIterator::Move& move, int depth, int ply) {
 
-	if (!(move.type==MoveIterator::NON_CAPTURE ||
-			move.type==MoveIterator::KILLER1 ||
-			move.type==MoveIterator::KILLER2) ) {
+	if (!(move.type==MoveIterator::NON_CAPTURE) ) {
 		return;
 	}
 
