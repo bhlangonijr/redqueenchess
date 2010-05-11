@@ -475,10 +475,6 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 
 		score = -normalSearch(board, -beta, -(beta-1), depth-reduction+extension, ply+1, &line, allowNullMove);
 
-		if (score >= beta && !stop(agent->getSearchInProgress())) {
-			score = -normalSearch(board, -beta, -(beta-1), depth-1+extension, ply+1, &line, allowNullMove);
-		}
-
 		board.undoMove(backup);
 
 		if (stop(agent->getSearchInProgress())) {
