@@ -202,6 +202,184 @@ private:
 	void updateHistory(Board& board, MoveIterator::Move& move, int depth, int ply);
 
 };
+// select a move
+inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, int alpha, int beta, int ply) {
+
+	if (moves.getStage()==MoveIterator::BEGIN_STAGE) {
+
+		moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
+		if (board.isMoveLegal(ttMove)) {
+			ttMove.type = MoveIterator::TT_MOVE;
+			return ttMove;
+		} else {
+			ttMove.type = MoveIterator::UNKNOW;
+		}
+
+	}
+
+	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
+
+		board.generateCaptures(moves, board.getSideToMove());
+		scoreMoves(board, moves, alpha, beta, ply);
+		moves.goNextStage();
+
+	}
+
+	if (moves.getStage()==MoveIterator::ON_CAPTURE_STAGE) {
+
+		while (moves.hasNext()) {
+			MoveIterator::Move& move=moves.selectBest();
+			if (move==ttMove && ttMove.type==MoveIterator::TT_MOVE) {
+				continue;
+			}
+			return move;
+		}
+		moves.goNextStage();
+	}
+
+	if (moves.getStage()==MoveIterator::KILLER1_STAGE) {
+
+		moves.goNextStage();
+		if (killer[ply][0] != ttMove &&	board.isMoveLegal(killer[ply][0])) {
+			killer[ply][0].type = MoveIterator::KILLER1;
+			return killer[ply][0];
+		} else {
+			killer[ply][0].type = MoveIterator::UNKNOW;
+		}
+	}
+
+	if (moves.getStage()==MoveIterator::KILLER2_STAGE) {
+
+		moves.goNextStage();
+		if (killer[ply][1] != ttMove && board.isMoveLegal(killer[ply][1])) {
+			killer[ply][1].type = MoveIterator::KILLER2;
+			return killer[ply][1];
+		} else {
+			killer[ply][1].type = MoveIterator::UNKNOW;
+		}
+	}
+
+	if (moves.getStage()==MoveIterator::INIT_QUIET_STAGE) {
+
+		board.generateNonCaptures(moves, board.getSideToMove());
+		scoreMoves(board, moves, alpha, beta, ply);
+		moves.goNextStage();
+
+	}
+
+	if (moves.getStage()==MoveIterator::ON_QUIET_STAGE) {
+
+		while (moves.hasNext()) {
+			MoveIterator::Move& move=moves.selectBest();
+			if ((move==ttMove && ttMove.type==MoveIterator::TT_MOVE) ||
+					(move==killer[ply][0] && killer[ply][0].type==MoveIterator::KILLER1) ||
+					(move==killer[ply][1] && killer[ply][1].type==MoveIterator::KILLER2)) {
+				continue;
+			}
+			return move;
+		}
+		moves.goNextStage();
+
+	}
+
+	return moves.next();
+
+}
+
+// select a move
+inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves, int alpha, int beta, int ply) {
+
+	if (moves.getStage()==MoveIterator::BEGIN_STAGE) {
+		moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
+	}
+
+	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
+		board.generateCaptures(moves, board.getSideToMove());
+		scoreMoves(board, moves, alpha, beta, ply);
+		moves.goNextStage();
+	}
+
+	if (moves.getStage()==MoveIterator::ON_CAPTURE_STAGE) {
+
+		if (moves.hasNext()) {
+			return moves.selectBest();
+		}
+		moves.setStage(MoveIterator::END_STAGE);
+	}
+
+	return moves.next();
+
+}
+
+// score all moves
+inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, int alpha, int beta, int ply) {
+
+	moves.bookmark();
+
+	while (moves.hasNext()) {
+		MoveIterator::Move& move = moves.next();
+		move.score=0;
+		if (board.getPieceBySquare(move.to) != EMPTY) {
+			move.score = pieceMaterialValues[board.getPieceBySquare(move.from)] - pieceMaterialValues[board.getPieceBySquare(move.to)];
+		}
+
+		if (move.type==MoveIterator::NON_CAPTURE) {
+			move.score+=history[board.getPieceTypeBySquare(move.from)][move.to];
+		}
+
+		move.score+=scoreTable[move.type];
+
+	}
+
+	moves.goToBookmark();
+
+}
+
+// Checks if search can be reduced for a given move
+inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move, MoveBackup& backup,
+		int depth, int remainingMoves, bool isKingAttacked) {
+
+	const int prunningDepth=3;
+	const int prunningMoves=3;
+
+	bool verify = (
+			(remainingMoves > prunningMoves) &&
+			(move.type == MoveIterator::NON_CAPTURE) &&
+			(depth > prunningDepth) &&
+			(!isKingAttacked) &&
+			(!history[board.getPieceTypeBySquare(move.from)][move.to]));
+
+	if (!verify) {
+		return false;
+	}
+
+	bool isPawnPush = (backup.movingPiece==WHITE_PAWN && squareRank[move.to] >= RANK_6) ||
+			(backup.movingPiece==BLACK_PAWN && squareRank[move.to] <= RANK_3);
+
+	if (isPawnPush) {
+		return false;
+	}
+
+	bool isCastling = backup.hasWhiteKingCastle ||
+			backup.hasBlackKingCastle ||
+			backup.hasWhiteQueenCastle ||
+			backup.hasBlackQueenCastle;
+
+	return !(isCastling);
+
+}
+
+// Ok to do null move?
+inline bool SimplePVSearch::okToNullMove(Board& board) {
+
+	const Bitboard pawns = board.getPiecesByType(WHITE_PAWN) |
+			board.getPiecesByType(BLACK_PAWN);
+	const Bitboard kings = board.getPiecesByType(WHITE_KING) |
+			board.getPiecesByType(BLACK_KING);
+
+	return ((pawns|kings)^board.getAllPieces());
+
+}
 
 inline const bool SimplePVSearch::stop(const bool searchInProgress) {
 
