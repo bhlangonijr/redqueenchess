@@ -83,18 +83,44 @@ int SimplePVSearch::idSearch(Board& board) {
 	int totalTime = 0;
 	int bestScore = -maxScore;
 	int iterationScore[maxSearchDepth];
+	int alpha = -maxScore;
+	int beta = maxScore;
 
 	board.generateAllMoves(rootMoves, board.getSideToMove());
 
 	for (int depth = 1; depth <= _depth; depth++) {
 
 		const int MATE_RANGE_CHECK = 10;
+		const int MATE_RANGE_SCORE = 300;
 
 		PvLine pv = PvLine();
 		pv.index=0;
 		int time = getTickCount();
-		int score = -rootSearch(board, -maxScore, maxScore, depth, 0, &pv);
+		int score = 0;
+
+		score = rootSearch(board, alpha, beta, depth, 0, &pv);
+
+		if(score <= alpha || score >= beta) {
+			score = rootSearch(board, -maxScore, maxScore, depth, 0, &pv);
+		}
+
 		iterationScore[depth]=score;
+
+		if (depth >= 5)
+		{
+
+			int delta1 = iterationScore[depth - 0] - iterationScore[depth - 1];
+			int delta2 = iterationScore[depth - 1] - iterationScore[depth - 2];
+
+			int aspirationDelta = MAX(abs(delta1) + abs(delta2) / 2, 16);
+			aspirationDelta = (aspirationDelta + 7) / 8 * 8;
+
+			alpha = MAX(iterationScore[depth] - aspirationDelta, -maxScore);
+			beta  = MAX(iterationScore[depth] + aspirationDelta,  maxScore);
+
+		}
+
+
 		int repetition=0;
 
 		for (int x=depth-1;x>=1;x--) {
@@ -130,7 +156,6 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		if (isUpdateUci()) {
 
-			const int MATE_RANGE_SCORE = 300;
 			std::string scoreString = "cp " + StringUtil::toStr(bestMove.score);
 
 			if (abs(bestMove.score) > (maxScore-MATE_RANGE_SCORE)) {
@@ -317,11 +342,11 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 		}
 
 		if (okToReduce(board, move, backup, depth, remainingMoves, isKingAttacked)) {
-			reduction+=2;
+			reduction++;
 		}
 
 		if ( moveCounter==1 ) {
-			score = -pvSearch(board, -beta, -alpha, depth-reduction+extension, ply+1, &line);
+			score = -pvSearch(board, -beta, -alpha, depth-1+extension, ply+1, &line);
 		} else {
 			score = -normalSearch(board, -beta, -alpha, depth-reduction+extension, ply+1, &line, true);
 
@@ -479,7 +504,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		}
 
 		if (okToReduce(board, move, backup, depth, remainingMoves, isKingAttacked)) {
-			reduction+=3;
+			reduction++;
 		}
 
 		score = -normalSearch(board, -beta, -(beta-1), depth-reduction+extension, ply+1, &line, allowNullMove);

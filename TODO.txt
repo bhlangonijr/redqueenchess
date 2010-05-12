@@ -10,3 +10,6 @@ Ben-Hur Langoni Junior
 5) Apply generation in TT
 6) Improve Evaluator class with more imbalances & piece evaluation
 7) Create SEE to move ordering
+8) Implement aspiration window
+
+
