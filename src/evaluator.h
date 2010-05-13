@@ -31,11 +31,14 @@
 #include "inline.h"
 #include "board.h"
 
-#define NFILE(X) ((squareFile[X]!=FILE_H ? fileBB[squareFile[X+1]] : EMPTY_BB) | \
-		(squareFile[X]!=FILE_A ? fileBB[squareFile[X-1]] : EMPTY_BB))
+#define NFILE(X) ((squareFile[X]!=FILE_H ? fileBB[squareFile[X]+1] : EMPTY_BB) | \
+		(squareFile[X]!=FILE_A ? fileBB[squareFile[X]-1] : EMPTY_BB))
+
+#define BYSIDEBB(X) ((squareFile[X]!=FILE_H ? squareToBitboard[X+1] : EMPTY_BB) | \
+		(squareFile[X]!=FILE_A ? squareToBitboard[X-1] : EMPTY_BB))
 
 #define FSQUARE(COLOR, BB, X) (COLOR==WHITE ?  bitsBetween(BB,X,encodeSquare[RANK_8][squareFile[X]]) : \
-		bitsBetween(BB,encodeSquare[RANK_1][squareFile[X]],X))
+		bitsBetween(BB,encodeSquare[RANK_1][squareFile[X]],X))^BYSIDEBB(X)
 
 #define PASSEDMASK(COLOR, X) (FSQUARE(COLOR, (fileAttacks[squareFile[X]] | NFILE(X)), X))
 
@@ -346,9 +349,9 @@ const Bitboard passedMask[ALL_PIECE_COLOR][ALL_SQUARE]= {
 				PASSEDMASK(BLACK,A8), PASSEDMASK(BLACK,B8), PASSEDMASK(BLACK,C8), PASSEDMASK(BLACK,D8), PASSEDMASK(BLACK,E8), PASSEDMASK(BLACK,F8), PASSEDMASK(BLACK,G8), PASSEDMASK(BLACK,H8)
 		},
 		{EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,
-		 EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,
-		 EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,
-		 EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB}
+				EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,
+				EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,
+				EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB,EMPTY_BB}
 
 };
 
@@ -423,10 +426,10 @@ inline const int Evaluator::evaluate(Board& board) {
 	material = evalMaterial(board, side) - evalMaterial(board, other);
 	development = evalDevelopment(board, side) - evalDevelopment(board, other);
 	pieces = evalPieces(board, side) - evalPieces(board, other);
+	imbalances = evalImbalances(board, side) - evalImbalances(board, other);
 
-	if ((gamePhase!=ENDGAME) || (material > -CHECK_MATERIAL && material < CHECK_MATERIAL )) {
+	if ((gamePhase!=ENDGAME) && (material > -CHECK_MATERIAL && material < CHECK_MATERIAL )) {
 		mobility = evalMobility(board, side) - evalMobility(board, other);
-		imbalances = evalImbalances(board, side) - evalImbalances(board, other);
 	}
 
 	return material+mobility+pieces+development+imbalances;
@@ -455,14 +458,17 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 	const PieceColor other = board.flipSide(color);
 	int count=0;
 
-	const int DONE_CASTLE_BONUS=       (board.getPiecesByType(board.makePiece(other,QUEEN))) ? 30 : 20;
-	const int CAN_CASTLE_BONUS=        5;
-	const int UNSTOPPABLE_PAWN_BONUS = 20;
-	const int CENTERED_PAWN_BONUS =    15;
-	const int DOUBLED_PAWN_PENALTY =  -15;
-	const int ISOLATED_PAWN_PENALTY = -15;
-	const int BACKWARD_PAWN_PENALTY = -15;
+	const int DONE_CASTLE_BONUS=       +(board.getPiecesByType(board.makePiece(other,QUEEN))) ? 30 : 20;
+	const int CAN_CASTLE_BONUS=        +5;
+	const int UNSTOPPABLE_PAWN_BONUS = +2;
+	const int CENTERED_PAWN_BONUS =    +20;
+	const int ROOK_ON_7TH_2TH =        +15;
+	const int DOUBLED_ROOKS =          +10;
+	const int DOUBLED_PAWN_PENALTY =   -15;
+	const int ISOLATED_PAWN_PENALTY =  -15;
+	const int BACKWARD_PAWN_PENALTY =  -10;
 
+	// king
 	if (gamePhase!=ENDGAME) {
 		// king castle bonus
 		if (board.isCastleDone(color)) {
@@ -477,7 +483,7 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 	Bitboard pawns = board.getPiecesByType(board.makePiece(color,PAWN));
 	Bitboard enemyPawns = board.getPiecesByType(board.makePiece(other,PAWN));
 
-	//penalyze doubled & isolated pawns
+	//pawns - penalyze doubled & isolated pawns
 	if (pawns) {
 		Bitboard pieces=pawns;
 		Square from = extractLSB(pieces);
@@ -487,7 +493,7 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 				count += CENTERED_PAWN_BONUS;
 			}
 
-			if (fileAttacks[squareFile[from]]&pawns) {
+			if (fileAttacks[squareFile[from]]&pieces) {
 				count += DOUBLED_PAWN_PENALTY;
 			}
 
@@ -500,13 +506,31 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 			}
 
 			if (!(passedMask[color][from]&enemyPawns)) {
-				count += UNSTOPPABLE_PAWN_BONUS;
+				count += UNSTOPPABLE_PAWN_BONUS * endGamePieceSquareTable[board.makePiece(color,PAWN)][from];
 			}
 
 			from = extractLSB(pieces);
 		}
 
 	}
+
+	Bitboard rooks = board.getPiecesByType(board.makePiece(color,ROOK));
+	Square from = extractLSB(rooks);
+
+	while ( from!=NONE ) {
+
+		if ((color==WHITE && squareRank[from]==RANK_7) ||
+				(color==BLACK && squareRank[from]==RANK_2)	) {
+			count += ROOK_ON_7TH_2TH;
+		}
+
+		if (fileAttacks[squareFile[from]]&rooks) {
+			count += DOUBLED_ROOKS;
+		}
+
+		from = extractLSB(rooks);
+	}
+
 
 	return count;
 }
@@ -531,8 +555,6 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
 	pieces = board.getPiecesByType(board.makePiece(color,ROOK));
 	from = extractLSB(pieces);
-
-	moves = EMPTY_BB;
 	while ( from!=NONE ) {
 		moves = board.getRookAttacks(from);
 		count+=_BitCount(moves);
@@ -541,7 +563,6 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
 	pieces = board.getPiecesByType(board.makePiece(color,QUEEN));
 	from = extractLSB(pieces);
-	moves = EMPTY_BB;
 	while ( from!=NONE ) {
 		moves = board.getQueenAttacks(from);
 		count+=_BitCount(moves);
@@ -573,7 +594,7 @@ inline const int Evaluator::evalDevelopment(Board& board, PieceColor color) {
 // mobility eval function
 inline const int Evaluator::evalImbalances(Board& board, PieceColor color) {
 
-	const int bishopPairBonus = 30;
+	const int bishopPairBonus = 20;
 	int count=0;
 
 	Bitboard bishop = board.getPiecesByType(board.makePiece(color,BISHOP));
