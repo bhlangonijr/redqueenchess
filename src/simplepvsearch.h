@@ -347,7 +347,8 @@ inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move, M
 			(move.type == MoveIterator::NON_CAPTURE) &&
 			(depth > prunningDepth) &&
 			(!isKingAttacked) &&
-			(!history[board.getPieceTypeBySquare(move.from)][move.to]));
+			(!history[board.getPieceTypeBySquare(move.from)][move.to]
+			));
 
 	if (!verify) {
 		return false;

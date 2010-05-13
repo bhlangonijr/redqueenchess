@@ -148,27 +148,17 @@ const int SearchAgent::getTimeToSearch() {
 		movesLeft = movesToGo;
 	} else {
 
-		if (time < 900000 && time >= 180000) { // 15-3 min
-			movesLeft=35;
-		} else if (time < 180000 && time >= 60000) { // 3-1 min
-			movesLeft=35;
-		} else if (time < 60000 && time >= 30000) { // 1 min-30 sec
-			movesLeft=30;
-		} else if (time < 30000 && time >= 10000) { // 30-10 sec
-			movesLeft=30;
-		} else if (time < 10000 && time >= 5000) { // 10-5 sec
-			movesLeft=25;
-		} else if (time < 5000 && time >= 1000) { // 5-1 sec
-			movesLeft=20;
-		} else if (time < 1000) { // 1 sec
-			movesLeft=5;
+		for (int x=0;x<timeTableSize;x++) {
+			if (time<timeTable[x][1] && time >= timeTable[x][2]) {
+				movesLeft=timeTable[x][0];
+				break;
+			}
 		}
 
 	}
 
 	time /= movesLeft + incTime;
 
-	//std::cout << "Think time: " << time << " - movesLeft: " <<  movesLeft <<  " moveCounter= " << board.getMoveCounter() << std::endl;
 	return time;
 
 }

@@ -39,7 +39,17 @@
 const std::string mainHashName 		= "DefaultHashTable";
 const size_t defaultDepth			= 5;
 const size_t defaultHashSize		= 64;
-const int defaultGameSize			= 40;
+const int defaultGameSize			= 30;
+const int timeTableSize=7;
+
+const int timeTable [7][3] = {
+		{23, 900000, 180000},
+		{25, 180000, 60000},
+		{25, 30000, 10000},
+		{23, 10000, 5000},
+		{19, 5000, 1000},
+		{17, 1000, 0}
+};
 
 class SearchAgent {
 public:
