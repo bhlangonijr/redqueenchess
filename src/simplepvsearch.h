@@ -35,9 +35,9 @@
 
 const int maxScore = 20000;
 const int maxSearchDepth = 80;
-const int maxSearchPly = 30;
-const int allowIIDAtPV = 2;
-const int allowIIDAtNormal = 3;
+const int maxSearchPly = 64;
+const int allowIIDAtPV = 5;
+const int allowIIDAtNormal = 7;
 const int scoreTable[10]={0,8000,6000,7000,6500,5000,4500,4000,500,-900};
 
 class SimplePVSearch {
@@ -390,9 +390,9 @@ inline const bool SimplePVSearch::stop(const bool searchInProgress) {
 
 inline const bool SimplePVSearch::timeIsUp() {
 
-	const uint64_t checkNodes=0x3E8;
+	const uint64_t checkNodes=0x1FFF;
 
-	if ( _searchFixedDepth || _infinite || ((_nodes & checkNodes)==checkNodes)) {
+	if ( _searchFixedDepth || _infinite || (!_nodes & checkNodes)) {
 		return false;
 	}
 

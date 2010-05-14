@@ -362,7 +362,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 			reduction++;
 		}
 
-		if ( moveCounter==1 ) {
+		if ( moveCounter==1) {
 			score = -pvSearch(board, -beta, -alpha, depth-1+extension, ply+1, &line);
 		} else {
 			score = -normalSearch(board, -beta, -alpha, depth-reduction+extension, ply+1, &line, true);
@@ -452,8 +452,8 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 				stats.ttHits++;
 				return hashData.value;
 			}
-			ttMove=hashData.move;
 		}
+		ttMove=hashData.move;
 	}
 
 	if (alpha>=beta) {
@@ -484,6 +484,10 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 			agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,blankMove);
 			stats.nullMoveHits++;
 			return beta;
+		}
+
+		if (score < -maxScore+maxSearchPly) {
+			extension++;
 		}
 	}
 
@@ -593,6 +597,8 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 		alpha = standPat;
 	}
 
+	bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
+	int delta = alpha - pieceMaterialValues[WHITE_PAWN] - standPat;
 	PvLine line = PvLine();
 	MoveIterator moves = MoveIterator();
 
@@ -601,6 +607,12 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 		MoveIterator::Move& move = selectMove(board, moves, alpha, beta, ply);
 		if (moves.end()) {
 			break;
+		}
+
+		if (!isKingAttacked &&
+			 move.type!=MoveIterator::PROMO_CAPTURE &&
+			 move.score < delta) {
+			continue;
 		}
 
 		MoveBackup backup;
