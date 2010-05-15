@@ -36,8 +36,8 @@
 const int maxScore = 20000;
 const int maxSearchDepth = 80;
 const int maxSearchPly = 64;
-const int allowIIDAtPV = 5;
-const int allowIIDAtNormal = 7;
+const int allowIIDAtPV = 3;
+const int allowIIDAtNormal = 5;
 const int scoreTable[10]={0,8000,6000,7000,6500,5000,4500,4000,500,-900};
 
 class SimplePVSearch {

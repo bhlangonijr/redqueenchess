@@ -302,7 +302,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 	int oldAlpha = alpha;
 	int score = 0;
 	int extension=0;
-	bool isPV = ((beta - alpha) > 1);
 	MoveIterator::Move ttMove = MoveIterator::Move();
 	SearchAgent::HashData hashData = SearchAgent::HashData();
 
@@ -326,10 +325,13 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 	}
 
 	if (depth > allowIIDAtPV &&
-			ttMove.from == NONE &&	!isKingAttacked && isPV ) {
+			ttMove.from == NONE &&	!isKingAttacked ) {
 		const int iidSearchDepth = depth-2;
 		PvLine pvCandidate;
 		score = pvSearch(board,alpha,beta,iidSearchDepth,ply+1,&pvCandidate);
+		if (score > alpha) {
+			score = pvSearch(board,-maxScore,beta,iidSearchDepth,ply+1,&pvCandidate);
+		}
 		ttMove=pvCandidate.moves[0];
 	}
 
@@ -437,7 +439,6 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 	int oldAlpha = alpha;
 	int score = 0;
 	int extension = 0;
-	const bool isPV = ((beta - alpha) > 1);
 	MoveIterator::Move ttMove = MoveIterator::Move();
 	SearchAgent::HashData hashData = SearchAgent::HashData();
 
@@ -496,10 +497,13 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 	}
 
 	if (depth > allowIIDAtNormal &&
-			ttMove.from == NONE &&	!isKingAttacked && isPV ) {
+			ttMove.from == NONE &&	!isKingAttacked ) {
 		const int iidSearchDepth = depth/2;
 		PvLine pvCandidate;
 		score = normalSearch(board,alpha,beta,iidSearchDepth,ply+1,&pvCandidate,false);
+		if (score > alpha) {
+			score = normalSearch(board,-maxScore,beta,iidSearchDepth,ply+1,&pvCandidate,false);
+		}
 		ttMove=pvCandidate.moves[0];
 	}
 
