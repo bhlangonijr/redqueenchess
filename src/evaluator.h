@@ -411,22 +411,16 @@ private:
 inline const int Evaluator::evaluate(Board& board) {
 
 	const int CHECK_MATERIAL = 300;
+	const PieceColor side = board.getSideToMove();
+	const PieceColor other = board.flipSide(board.getSideToMove());
 
-	int material = 0;
+	int material = evalMaterial(board, side) - evalMaterial(board, other);
+	int pieces = evalPieces(board, side) - evalPieces(board, other);
+	int development = evalDevelopment(board, side) - evalDevelopment(board, other);
+	int imbalances = evalImbalances(board, side) - evalImbalances(board, other);
 	int mobility = 0;
-	int pieces = 0;
-	int development = 0;
-	int imbalances = 0;
 
 	setGameStage(predictGameStage(board));
-
-	PieceColor side = board.getSideToMove();
-	PieceColor other = board.flipSide(board.getSideToMove());
-
-	material = evalMaterial(board, side) - evalMaterial(board, other);
-	development = evalDevelopment(board, side) - evalDevelopment(board, other);
-	pieces = evalPieces(board, side) - evalPieces(board, other);
-	imbalances = evalImbalances(board, side) - evalImbalances(board, other);
 
 	if ((gamePhase!=ENDGAME) && (material > -CHECK_MATERIAL && material < CHECK_MATERIAL )) {
 		mobility = evalMobility(board, side) - evalMobility(board, other);
@@ -438,9 +432,9 @@ inline const int Evaluator::evaluate(Board& board) {
 // material eval function
 inline const int Evaluator::evalMaterial(Board& board, PieceColor color) {
 
-	int material = 0;
 	const int first = board.makePiece(color,PAWN);
 	const int last = board.makePiece(color,KING);
+	int material = 0;
 
 	for(int pieceType = first; pieceType <= last; pieceType++) {
 		int count = board.getPieceCountByType(PieceTypeByColor(pieceType));
@@ -456,8 +450,6 @@ inline const int Evaluator::evalMaterial(Board& board, PieceColor color) {
 inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 
 	const PieceColor other = board.flipSide(color);
-	int count=0;
-
 	const int DONE_CASTLE_BONUS=       +(board.getPiecesByType(board.makePiece(other,QUEEN))) ? 20 : 10;
 	const int CAN_CASTLE_BONUS=        +2;
 	const int UNSTOPPABLE_PAWN_BONUS = +2;
@@ -467,6 +459,7 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 	const int DOUBLED_PAWN_PENALTY =   -15;
 	const int ISOLATED_PAWN_PENALTY =  -15;
 	const int BACKWARD_PAWN_PENALTY =  -10;
+	int count=0;
 
 	// king
 	if (gamePhase!=ENDGAME) {
@@ -488,15 +481,12 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 		Bitboard pieces=pawns;
 		Square from = extractLSB(pieces);
 		while ( from!=NONE ) {
-
 			if (squareToBitboard[from]&centerSquares) {
 				count += CENTERED_PAWN_BONUS;
 			}
-
 			if (fileAttacks[squareFile[from]]&pieces) {
 				count += DOUBLED_PAWN_PENALTY;
 			}
-
 			if (!(neighborFiles[from]&pawns)) {
 				count += ISOLATED_PAWN_PENALTY;
 			} else {
@@ -504,30 +494,24 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 					count += BACKWARD_PAWN_PENALTY;
 				}
 			}
-
 			if (!(passedMask[color][from]&enemyPawns)) {
 				count += UNSTOPPABLE_PAWN_BONUS * endGamePieceSquareTable[board.makePiece(color,PAWN)][from];
 			}
-
 			from = extractLSB(pieces);
 		}
-
 	}
 
 	Bitboard rooks = board.getPiecesByType(board.makePiece(color,ROOK));
 	Square from = extractLSB(rooks);
 
 	while ( from!=NONE ) {
-
 		if ((color==WHITE && squareRank[from]==RANK_7) ||
 				(color==BLACK && squareRank[from]==RANK_2)	) {
 			count += ROOK_ON_7TH_2TH;
 		}
-
 		if (fileAttacks[squareFile[from]]&rooks) {
 			count += DOUBLED_ROOKS;
 		}
-
 		from = extractLSB(rooks);
 	}
 

@@ -241,7 +241,7 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 															<< " currmovenumber " << moveCounter << std::endl;
 		}
 
-		if (score > alpha ) {
+		if (moveCounter == 1 || score > alpha) {
 			score = -pvSearch(board, -beta, -alpha, depth-1, ply+1, &line);
 		} else {
 			score = -normalSearch(board, -beta, -alpha, depth-reduction+extension, ply+1, &line, true);

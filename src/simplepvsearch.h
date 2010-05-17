@@ -207,32 +207,26 @@ private:
 inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, bool isKingAttacked, int ply) {
 
 	if (moves.getStage()==MoveIterator::BEGIN_STAGE) {
-
 		if (!isKingAttacked) {
 			moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
 		} else {
 			moves.setStage(MoveIterator::INIT_EVASION_STAGE);
 		}
-
 		if (board.isMoveLegal(ttMove)) {
 			ttMove.type = MoveIterator::TT_MOVE;
 			return ttMove;
 		} else {
 			ttMove.type = MoveIterator::UNKNOW;
 		}
-
 	}
 
 	if (moves.getStage()==MoveIterator::INIT_EVASION_STAGE) {
-
 		board.generateEvasions(moves, board.getSideToMove());
 		scoreMoves(board, moves);
 		moves.goNextStage();
-
 	}
 
 	if (moves.getStage()==MoveIterator::ON_EVASION_STAGE) {
-
 		while (moves.hasNext()) {
 			return moves.selectBest();
 		}
@@ -241,23 +235,20 @@ inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator&
 	}
 
 	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
-
 		board.generateCaptures(moves, board.getSideToMove());
 		scoreMoves(board, moves);
 		moves.goNextStage();
-
 	}
 
 	if (moves.getStage()==MoveIterator::ON_CAPTURE_STAGE) {
-
 		while (moves.hasNext()) {
 			MoveIterator::Move& move=moves.selectBest();
+			if (move==ttMove && ttMove.type==MoveIterator::TT_MOVE) {
+				continue;
+			}
 			if (move.type==MoveIterator::BAD_CAPTURE) {
 				moves.prior();
 				break; // it will keep the bad captures after non captures
-			}
-			if (move==ttMove && ttMove.type==MoveIterator::TT_MOVE) {
-				continue;
 			}
 			return move;
 		}
@@ -265,7 +256,6 @@ inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator&
 	}
 
 	if (moves.getStage()==MoveIterator::KILLER1_STAGE) {
-
 		moves.goNextStage();
 		if (killer[ply][0] != ttMove &&	board.isMoveLegal(killer[ply][0])) {
 			killer[ply][0].type = MoveIterator::KILLER1;
@@ -276,7 +266,6 @@ inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator&
 	}
 
 	if (moves.getStage()==MoveIterator::KILLER2_STAGE) {
-
 		moves.goNextStage();
 		if (killer[ply][1] != ttMove && board.isMoveLegal(killer[ply][1])) {
 			killer[ply][1].type = MoveIterator::KILLER2;
@@ -290,11 +279,9 @@ inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator&
 		board.generateNonCaptures(moves, board.getSideToMove());
 		scoreMoves(board, moves);
 		moves.goNextStage();
-
 	}
 
 	if (moves.getStage()==MoveIterator::ON_QUIET_STAGE) {
-
 		while (moves.hasNext()) {
 			MoveIterator::Move& move=moves.selectBest();
 			if ((move==ttMove && ttMove.type==MoveIterator::TT_MOVE) ||
@@ -305,7 +292,6 @@ inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator&
 			return move;
 		}
 		moves.goNextStage();
-
 	}
 
 	return MoveIterator::Move();
@@ -316,25 +302,20 @@ inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator&
 inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator& moves, bool isKingAttacked) {
 
 	if (moves.getStage()==MoveIterator::BEGIN_STAGE) {
-
 		if (!isKingAttacked) {
 			moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
 		} else {
 			moves.setStage(MoveIterator::INIT_EVASION_STAGE);
 		}
-
 	}
 
 	if (moves.getStage()==MoveIterator::INIT_EVASION_STAGE) {
-
 		board.generateEvasions(moves, board.getSideToMove());
 		scoreMoves(board, moves);
 		moves.goNextStage();
-
 	}
 
 	if (moves.getStage()==MoveIterator::ON_EVASION_STAGE) {
-
 		while (moves.hasNext()) {
 			return moves.selectBest();
 		}
@@ -349,7 +330,6 @@ inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator&
 	}
 
 	if (moves.getStage()==MoveIterator::ON_CAPTURE_STAGE) {
-
 		if (moves.hasNext()) {
 			return moves.selectBest();
 		}
@@ -371,13 +351,10 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 		if (board.getPieceBySquare(move.to) != EMPTY) {
 			move.score = pieceMaterialValues[board.getPieceBySquare(move.from)] - pieceMaterialValues[board.getPieceBySquare(move.to)];
 		}
-
 		if (move.type==MoveIterator::NON_CAPTURE) {
 			move.score+=history[board.getPieceTypeBySquare(move.from)][move.to];
 		}
-
 		move.score+=scoreTable[move.type];
-
 	}
 	moves.goToBookmark();
 
