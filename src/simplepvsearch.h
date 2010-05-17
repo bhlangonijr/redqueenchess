@@ -189,12 +189,13 @@ private:
 	int normalSearch(Board& board, int alpha, int beta,	int depth, int ply, PvLine* pv,	const bool allowNullMove);
 	int qSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);
 	const std::string pvLineToString(const PvLine* pv);
-	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, int alpha, int beta, int ply);
-	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, int alpha, int beta, int ply);
-	void scoreMoves(Board& board, MoveIterator& moves, int alpha, int beta, int ply);
+	MoveIterator::Move selectMove(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, bool isKingAttacked, int ply);
+	MoveIterator::Move selectMove(Board& board, MoveIterator& moves, bool isKingAttacked);
+	void scoreMoves(Board& board, MoveIterator& moves);
 	bool okToReduce(Board& board, MoveIterator::Move& move, MoveBackup& backup,
 			int depth, int remainingMoves, bool isKingAttacked);
 	bool okToNullMove(Board& board);
+	bool isPawnFinal(Board& board);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
 	const bool stop(const bool searchInProgress);
 	const bool timeIsUp();
@@ -203,11 +204,16 @@ private:
 
 };
 // select a move
-inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, int alpha, int beta, int ply) {
+inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, bool isKingAttacked, int ply) {
 
 	if (moves.getStage()==MoveIterator::BEGIN_STAGE) {
 
-		moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
+		if (!isKingAttacked) {
+			moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
+		} else {
+			moves.setStage(MoveIterator::INIT_EVASION_STAGE);
+		}
+
 		if (board.isMoveLegal(ttMove)) {
 			ttMove.type = MoveIterator::TT_MOVE;
 			return ttMove;
@@ -217,10 +223,27 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	}
 
+	if (moves.getStage()==MoveIterator::INIT_EVASION_STAGE) {
+
+		board.generateEvasions(moves, board.getSideToMove());
+		scoreMoves(board, moves);
+		moves.goNextStage();
+
+	}
+
+	if (moves.getStage()==MoveIterator::ON_EVASION_STAGE) {
+
+		while (moves.hasNext()) {
+			return moves.selectBest();
+		}
+		moves.setStage(MoveIterator::END_STAGE);
+		return MoveIterator::Move();
+	}
+
 	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
 
 		board.generateCaptures(moves, board.getSideToMove());
-		scoreMoves(board, moves, alpha, beta, ply);
+		scoreMoves(board, moves);
 		moves.goNextStage();
 
 	}
@@ -262,7 +285,8 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 	if (moves.getStage()==MoveIterator::INIT_QUIET_STAGE) {
 
 		board.generateNonCaptures(moves, board.getSideToMove());
-		scoreMoves(board, moves, alpha, beta, ply);
+		scoreMoves(board, moves);
+		moves.first();
 		moves.goNextStage();
 
 	}
@@ -282,20 +306,43 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	}
 
-	return moves.next();
+	return MoveIterator::Move();
 
 }
 
 // select a move
-inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves, int alpha, int beta, int ply) {
+inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator& moves, bool isKingAttacked) {
 
 	if (moves.getStage()==MoveIterator::BEGIN_STAGE) {
-		moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
+
+		if (!isKingAttacked) {
+			moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
+		} else {
+			moves.setStage(MoveIterator::INIT_EVASION_STAGE);
+		}
+
+	}
+
+	if (moves.getStage()==MoveIterator::INIT_EVASION_STAGE) {
+
+		board.generateEvasions(moves, board.getSideToMove());
+		scoreMoves(board, moves);
+		moves.goNextStage();
+
+	}
+
+	if (moves.getStage()==MoveIterator::ON_EVASION_STAGE) {
+
+		while (moves.hasNext()) {
+			return moves.selectBest();
+		}
+		moves.setStage(MoveIterator::END_STAGE);
+		return MoveIterator::Move();
 	}
 
 	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
 		board.generateCaptures(moves, board.getSideToMove());
-		scoreMoves(board, moves, alpha, beta, ply);
+		scoreMoves(board, moves);
 		moves.goNextStage();
 	}
 
@@ -307,14 +354,14 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 		moves.setStage(MoveIterator::END_STAGE);
 	}
 
-	return moves.next();
+	return MoveIterator::Move();
 
 }
 
 // score all moves
-inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, int alpha, int beta, int ply) {
+inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 
-	moves.bookmark();
+	moves.first();
 
 	while (moves.hasNext()) {
 		MoveIterator::Move& move = moves.next();
@@ -330,8 +377,7 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, int al
 		move.score+=scoreTable[move.type];
 
 	}
-
-	moves.goToBookmark();
+	moves.first();
 
 }
 
@@ -345,6 +391,8 @@ inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move, M
 	bool verify = (
 			(remainingMoves > prunningMoves) &&
 			(move.type == MoveIterator::NON_CAPTURE) &&
+			(move.type!=MoveIterator::PROMO_CAPTURE) &&
+			(move.type!=MoveIterator::PROMO_NONCAPTURE) &&
 			(depth > prunningDepth) &&
 			(!isKingAttacked) &&
 			(!history[board.getPieceTypeBySquare(move.from)][move.to]
@@ -361,6 +409,10 @@ inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move, M
 		return false;
 	}
 
+	if (isPawnFinal(board)) {
+		return false;
+	}
+
 	bool isCastling = backup.hasWhiteKingCastle ||
 			backup.hasBlackKingCastle ||
 			backup.hasWhiteQueenCastle ||
@@ -373,12 +425,19 @@ inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move, M
 // Ok to do null move?
 inline bool SimplePVSearch::okToNullMove(Board& board) {
 
+	return !isPawnFinal(board);
+
+}
+
+// remains pawns & kings only?
+inline bool SimplePVSearch::isPawnFinal(Board& board) {
+
 	const Bitboard pawns = board.getPiecesByType(WHITE_PAWN) |
 			board.getPiecesByType(BLACK_PAWN);
 	const Bitboard kings = board.getPiecesByType(WHITE_KING) |
 			board.getPiecesByType(BLACK_KING);
 
-	return ((pawns|kings)^board.getAllPieces());
+	return !((pawns|kings)^board.getAllPieces());
 
 }
 

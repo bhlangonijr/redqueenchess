@@ -458,9 +458,9 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 	const PieceColor other = board.flipSide(color);
 	int count=0;
 
-	const int DONE_CASTLE_BONUS=       +(board.getPiecesByType(board.makePiece(other,QUEEN))) ? 30 : 20;
-	const int CAN_CASTLE_BONUS=        +5;
-	const int UNSTOPPABLE_PAWN_BONUS = +4;
+	const int DONE_CASTLE_BONUS=       +(board.getPiecesByType(board.makePiece(other,QUEEN))) ? 20 : 10;
+	const int CAN_CASTLE_BONUS=        +2;
+	const int UNSTOPPABLE_PAWN_BONUS = +2;
 	const int CENTERED_PAWN_BONUS =    +20;
 	const int ROOK_ON_7TH_2TH =        +15;
 	const int DOUBLED_ROOKS =          +10;

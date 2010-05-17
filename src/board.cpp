@@ -337,15 +337,19 @@ void Board::undoMove(MoveBackup& backup){
 	if (backup.hasWhiteKingCastle) {
 		removePiece(WHITE_ROOK,F1);
 		putPiece(WHITE_ROOK,H1);
+		currentBoard.castleDone[WHITE]=false;
 	} else if (backup.hasWhiteQueenCastle) {
 		removePiece(WHITE_ROOK,D1);
 		putPiece(WHITE_ROOK,A1);
+		currentBoard.castleDone[WHITE]=false;
 	} else if (backup.hasBlackKingCastle) {
 		removePiece(BLACK_ROOK,F8);
 		putPiece(BLACK_ROOK,H8);
+		currentBoard.castleDone[BLACK]=false;
 	} else if (backup.hasBlackQueenCastle) {
 		removePiece(BLACK_ROOK,D8);
 		putPiece(BLACK_ROOK,A8);
+		currentBoard.castleDone[BLACK]=false;
 	}
 
 	setCastleRights(WHITE, backup.whiteCastleRight);

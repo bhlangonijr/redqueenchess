@@ -3,13 +3,14 @@ REDQUEEN CHESS ENGINE TODO LIST:
 Ben-Hur Langoni Junior
 
 
-1) Improve nps
+1) Improve nps - Ok
 2) Finish SimplePVSearch + Futility prunning + Improve ordering moves + Improve search
 3) Implement Monte Carlo & Boltzmann in search
 4) Improve time management in search - Use search_stats to increase or decrease search time
 5) Apply generation in TT
 6) Improve Evaluator class with more imbalances & piece evaluation
 7) Create SEE to move ordering
-8) Implement aspiration window
+8) Implement aspiration window - Ok
+9) Create method to generate check evasions
 
 
