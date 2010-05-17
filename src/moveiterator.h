@@ -93,13 +93,13 @@ public:
 
 		Data(): size(0), idx(0), saveIdx(0), stage(BEGIN_STAGE) {};
 		Data(Data& data) : list(data.list), size(data.size), idx(data.idx), saveIdx(data.saveIdx), stage(BEGIN_STAGE){};
-		Move list[MOVE_LIST_MAX_SIZE];
+		Move list[MOVE_LIST_MAX_SIZE] __attribute__ ((aligned(64)));
 		size_t size;
 		size_t idx;
 		size_t saveIdx;
 		IteratorStage stage;
 
-	};
+	} __attribute__ ((aligned(64))) ;
 
 	const void add(const Move& move) ;
 
@@ -120,6 +120,8 @@ public:
 	const bool end();
 
 	Move& next();
+
+	Move& prior();
 
 	Move& selectBest();
 
@@ -223,6 +225,10 @@ inline const bool MoveIterator::end() {
 
 inline MoveIterator::Move& MoveIterator::next() {
 	return _data.list[_data.idx++];
+}
+
+inline MoveIterator::Move& MoveIterator::prior() {
+	return _data.list[--_data.idx];
 }
 
 inline MoveIterator::Move& MoveIterator::selectBest() {

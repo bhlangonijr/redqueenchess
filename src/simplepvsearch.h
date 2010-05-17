@@ -252,6 +252,10 @@ inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator&
 
 		while (moves.hasNext()) {
 			MoveIterator::Move& move=moves.selectBest();
+			if (move.type==MoveIterator::BAD_CAPTURE) {
+				moves.prior();
+				break; // it will keep the bad captures after non captures
+			}
 			if (move==ttMove && ttMove.type==MoveIterator::TT_MOVE) {
 				continue;
 			}
@@ -283,10 +287,8 @@ inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator&
 	}
 
 	if (moves.getStage()==MoveIterator::INIT_QUIET_STAGE) {
-
 		board.generateNonCaptures(moves, board.getSideToMove());
 		scoreMoves(board, moves);
-		moves.first();
 		moves.goNextStage();
 
 	}
@@ -361,7 +363,7 @@ inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator&
 // score all moves
 inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 
-	moves.first();
+	moves.bookmark();
 
 	while (moves.hasNext()) {
 		MoveIterator::Move& move = moves.next();
@@ -377,7 +379,7 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 		move.score+=scoreTable[move.type];
 
 	}
-	moves.first();
+	moves.goToBookmark();
 
 }
 
