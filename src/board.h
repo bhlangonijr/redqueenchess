@@ -1031,7 +1031,7 @@ inline void Board::generateNonCaptures(MoveIterator& moves, const PieceColor sid
 }
 
 // generate check evasions
-// Note: this method do not guarantee generation of only legal moves, although it might minimize the number of moves
+// Note: this method do not guarantee generation of only legal moves, although it might reduce the number of moves
 // it will be necessary to use doMove() and verify if king remains in check to validate legality
 // FIXME generate only legal moves
 inline void Board::generateEvasions(MoveIterator& moves, const PieceColor side) {
@@ -1041,12 +1041,6 @@ inline void Board::generateEvasions(MoveIterator& moves, const PieceColor side) 
 	const Bitboard kingBB = getPiecesByType(makePiece(side,KING));
 	const Square kingSquare = bitboardToSquare(kingBB);
 
-	const Bitboard bishopAttacks = getBishopAttacks(kingSquare);
-	const Bitboard rookAttacks = getRookAttacks(kingSquare);
-	const Bitboard knightAttacks = getKnightAttacks(kingSquare);
-	const Bitboard pawnAttacks = getPawnAttacks(kingSquare);
-	const Bitboard kingAttacks =  getKingAttacks(kingSquare);
-
 	const Bitboard bishop = getPiecesByType(makePiece(otherSide,BISHOP));
 	const Bitboard rook = getPiecesByType(makePiece(otherSide,ROOK));
 	const Bitboard queen = getPiecesByType(makePiece(otherSide,QUEEN));
@@ -1054,8 +1048,14 @@ inline void Board::generateEvasions(MoveIterator& moves, const PieceColor side) 
 	const Bitboard pawn = getPiecesByType(makePiece(otherSide,PAWN));
 	const Bitboard king =  getPiecesByType(makePiece(otherSide,KING));
 
-	const Bitboard bishopAndQueen = bishop | queen;
-	const Bitboard rookAndQueen = rook | queen;
+	const Bitboard bishopAndQueen = (bishop | queen);
+	const Bitboard rookAndQueen = (rook | queen);
+
+	const Bitboard bishopAttacks = bishopAndQueen ? getBishopAttacks(kingSquare) : EMPTY_BB;
+	const Bitboard rookAttacks = rookAndQueen ? getRookAttacks(kingSquare) : EMPTY_BB;
+	const Bitboard knightAttacks = getKnightAttacks(kingSquare);
+	const Bitboard pawnAttacks = getPawnAttacks(kingSquare);
+	const Bitboard kingAttacks =  getKingAttacks(kingSquare);
 
 	Bitboard kingAttackers = EMPTY_BB;
 	Bitboard pieces = EMPTY_BB;
