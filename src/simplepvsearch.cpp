@@ -35,7 +35,6 @@
 
 SearchAgent* agent = 0;
 Evaluator evaluator;
-MoveIterator::Move blankMove = MoveIterator::Move();
 
 // root search
 void SimplePVSearch::search() {
@@ -413,7 +412,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 		updateHistory(board,pv->moves[0],depth,ply);
 		stats.ttExact++;
 	} else {
-		agent->hashPut(board,alpha,depth,ply,maxScore,SearchAgent::UPPER,blankMove);
+		agent->hashPut(board,alpha,depth,ply,maxScore,SearchAgent::UPPER,MoveIterator::Move());
 		stats.ttUpper++;
 	}
 
@@ -487,7 +486,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		}
 
 		if (score >= beta) {
-			agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,blankMove);
+			agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,MoveIterator::Move());
 			stats.nullMoveHits++;
 			return score;
 		}
@@ -578,7 +577,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		updateHistory(board,pv->moves[0],depth,ply);
 		stats.ttExact++;
 	} else {
-		agent->hashPut(board,alpha,depth,ply,maxScore,SearchAgent::UPPER,blankMove);
+		agent->hashPut(board,alpha,depth,ply,maxScore,SearchAgent::UPPER,MoveIterator::Move());
 		stats.ttUpper++;
 	}
 
