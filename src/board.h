@@ -113,12 +113,12 @@ struct MoveBackup {
 struct Node {
 
 	Node () : key(0ULL), piece(), moveCounter(0), halfMoveCounter(0)
-	{}
+			{}
 
 	Node (const Node& node) : key(node.key), piece( node.piece ), enPassant( node.enPassant ),
 			sideToMove( node.sideToMove ), moveCounter(node.moveCounter),
 			halfMoveCounter(node.halfMoveCounter)
-	{
+			{
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=node.square[x];
 		}
@@ -132,7 +132,7 @@ struct Node {
 		castleDone[WHITE]=node.castleDone[WHITE];
 		castleDone[BLACK]=node.castleDone[BLACK];
 
-	}
+			}
 
 	Key key;
 
@@ -275,6 +275,7 @@ public:
 	void generateRookMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask);
 	void generateQueenMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask);
 	void generateKingMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask);
+	void generateCastleMoves(MoveIterator& moves, const PieceColor side);
 
 	const Bitboard getRookAttacks(const Square square);
 	const Bitboard getRookAttacks(const Square square, const Bitboard occupied);
@@ -365,9 +366,9 @@ inline const PieceTypeByColor Board::encodePieceChar(char piece) {
 
 // get castle rights
 inline const CastleRight Board::getCastleRights(PieceColor color) const
-{
+		{
 	return currentBoard.castleRight[color];
-}
+		}
 
 // remove castle rights passed as params
 inline void Board::removeCastleRights(const PieceColor color, const CastleRight castle)
@@ -412,9 +413,9 @@ inline bool Board::canCastle(const PieceColor color, const CastleRight castleRig
 
 // get
 inline const PieceColor Board::getSideToMove() const
-{
+		{
 	return currentBoard.sideToMove;
-}
+		}
 
 // set
 inline void Board::setSideToMove(const PieceColor color)
@@ -424,9 +425,9 @@ inline void Board::setSideToMove(const PieceColor color)
 
 // get en passant
 inline const Square Board::getEnPassant() const
-{
+		{
 	return currentBoard.enPassant;
-}
+		}
 
 // set en passant
 inline void Board::setEnPassant(const Square square)
@@ -817,6 +818,7 @@ inline void Board::generateNonCaptures(MoveIterator& moves, const PieceColor sid
 	generateRookMoves(moves, side, empty);
 	generateQueenMoves(moves, side, empty);
 	generateKingMoves(moves, side, empty);
+	generateCastleMoves(moves, side);
 
 }
 
@@ -900,6 +902,7 @@ inline void Board::generateAllMoves(MoveIterator& moves, const PieceColor side) 
 	generateRookMoves(moves, side, mask);
 	generateQueenMoves(moves, side, mask);
 	generateKingMoves(moves, side, mask);
+	generateCastleMoves(moves, side);
 
 }
 
@@ -1099,6 +1102,27 @@ inline void Board::generateKingMoves(MoveIterator& moves, const PieceColor side,
 			target = extractLSB(attacks);
 		}
 		from = extractLSB(pieces);
+	}
+
+}
+
+// generate castle moves
+inline void Board::generateCastleMoves(MoveIterator& moves, const PieceColor side) {
+
+	if (canCastle(side, KING_SIDE_CASTLE)) {
+		if (side==WHITE) {
+			moves.add(E1,G1,EMPTY,MoveIterator::NON_CAPTURE);
+		} else {
+			moves.add(E8,G8,EMPTY,MoveIterator::NON_CAPTURE);
+		}
+	}
+
+	if (canCastle(side, QUEEN_SIDE_CASTLE)) {
+		if (side==WHITE) {
+			moves.add(E1,C1,EMPTY,MoveIterator::NON_CAPTURE);
+		} else {
+			moves.add(E8,C8,EMPTY,MoveIterator::NON_CAPTURE);
+		}
 	}
 
 }
