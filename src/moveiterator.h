@@ -30,7 +30,7 @@
 #include "bitboard.h"
 
 #define MOVE_LIST_MAX_SIZE 128
-#define DEFAULT_SCORE -32000
+#define DEFAULT_SCORE 0
 
 class MoveIterator {
 public:
