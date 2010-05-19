@@ -893,6 +893,7 @@ inline void Board::generateAllMoves(MoveIterator& moves, const PieceColor side) 
 	const PieceColor otherSide = flipSide(side);
 	const Bitboard mask = getEmptySquares() | getPiecesByColor(otherSide);
 
+	generatePawnCaptures(moves, side, mask);
 	generatePawnMoves(moves, side, mask);
 	generateKnightMoves(moves, side, mask);
 	generateBishopMoves(moves, side, mask);
