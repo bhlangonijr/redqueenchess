@@ -911,13 +911,14 @@ inline void Board::generatePawnCaptures(MoveIterator& moves, const PieceColor si
 
 	Bitboard pieces = getPiecesByType(makePiece(side,PAWN));
 	Bitboard attacks = EMPTY_BB;
+	const Rank promoRank = side == WHITE?RANK_7:RANK_2;
 	Square from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
 		attacks = getPawnCaptures(from,mask) ;
 		Square target = extractLSB(attacks);
-		bool promotion=((getSquareRank(from)==RANK_7&&side==WHITE) ||
-				(getSquareRank(from)==RANK_2&&side==BLACK));
+
+		bool promotion= squareToBitboard[from] & rankBB[promoRank];
 
 		MoveIterator::MoveType type = promotion ? MoveIterator::PROMO_CAPTURE : MoveIterator::EQUAL_CAPTURE;
 
@@ -947,14 +948,17 @@ inline void Board::generatePawnMoves(MoveIterator& moves, const PieceColor side,
 
 	Bitboard pieces = getPiecesByType(makePiece(side,PAWN));
 	Bitboard attacks = EMPTY_BB;
+	const Rank promoRank = side == WHITE?RANK_7:RANK_2;
 	Square from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
 		attacks = getPawnMoves(from) & mask;
 		Square target = extractLSB(attacks);
-		bool promotion=((getSquareRank(from)==RANK_7&&side==WHITE) ||
-				(getSquareRank(from)==RANK_2&&side==BLACK));
+
+		bool promotion= squareToBitboard[from] & rankBB[promoRank];
+
 		MoveIterator::MoveType type = promotion ? MoveIterator::PROMO_NONCAPTURE : MoveIterator::NON_CAPTURE;
+
 		while ( target!=NONE ) {
 			if (promotion) {
 				moves.add(from,target,makePiece(side,QUEEN),type);
