@@ -986,16 +986,7 @@ inline void Board::generateKnightMoves(MoveIterator& moves, const PieceColor sid
 		attacks = getKnightAttacks(from) & mask;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
-			MoveIterator::MoveType type = MoveIterator::NON_CAPTURE;
-			if (getPieceBySquare(target)!=EMPTY) {
-				type = MoveIterator::EQUAL_CAPTURE;
-				if (pieceMaterialValues[getPieceBySquare(target)]>pieceMaterialValues[getPieceBySquare(from)]) {
-					type=MoveIterator::GOOD_CAPTURE;
-				} else if (pieceMaterialValues[getPieceBySquare(target)]<pieceMaterialValues[getPieceBySquare(from)]) {
-					type=MoveIterator::BAD_CAPTURE;
-				}
-			}
-			moves.add(from,target,EMPTY,type);
+			moves.add(from,target,EMPTY);
 			target = extractLSB(attacks);
 		}
 		from = extractLSB(pieces);
@@ -1014,16 +1005,7 @@ inline void Board::generateBishopMoves(MoveIterator& moves, const PieceColor sid
 		attacks = getBishopAttacks(from) & mask;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
-			MoveIterator::MoveType type = MoveIterator::NON_CAPTURE;
-			if (getPieceBySquare(target)!=EMPTY) {
-				type = MoveIterator::EQUAL_CAPTURE;
-				if (pieceMaterialValues[getPieceBySquare(target)]>pieceMaterialValues[getPieceBySquare(from)]) {
-					type=MoveIterator::GOOD_CAPTURE;
-				} else if (pieceMaterialValues[getPieceBySquare(target)]<pieceMaterialValues[getPieceBySquare(from)]) {
-					type=MoveIterator::BAD_CAPTURE;
-				}
-			}
-			moves.add(from,target,EMPTY,type);
+			moves.add(from,target,EMPTY);
 			target = extractLSB(attacks);
 		}
 		from = extractLSB(pieces);
@@ -1042,16 +1024,7 @@ inline void Board::generateRookMoves(MoveIterator& moves, const PieceColor side,
 		attacks = getRookAttacks(from) & mask;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
-			MoveIterator::MoveType type = MoveIterator::NON_CAPTURE;
-			if (getPieceBySquare(target)!=EMPTY) {
-				type = MoveIterator::EQUAL_CAPTURE;
-				if (pieceMaterialValues[getPieceBySquare(target)]>pieceMaterialValues[getPieceBySquare(from)]) {
-					type=MoveIterator::GOOD_CAPTURE;
-				} else if (pieceMaterialValues[getPieceBySquare(target)]<pieceMaterialValues[getPieceBySquare(from)]) {
-					type=MoveIterator::BAD_CAPTURE;
-				}
-			}
-			moves.add(from,target,EMPTY,type);
+			moves.add(from,target,EMPTY);
 			target = extractLSB(attacks);
 		}
 		from = extractLSB(pieces);
@@ -1070,16 +1043,7 @@ inline void Board::generateQueenMoves(MoveIterator& moves, const PieceColor side
 		attacks = getQueenAttacks(from) & mask;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
-			MoveIterator::MoveType type = MoveIterator::NON_CAPTURE;
-			if (getPieceBySquare(target)!=EMPTY) {
-				type = MoveIterator::EQUAL_CAPTURE;
-				if (pieceMaterialValues[getPieceBySquare(target)]>pieceMaterialValues[getPieceBySquare(from)]) {
-					type=MoveIterator::GOOD_CAPTURE;
-				} else if (pieceMaterialValues[getPieceBySquare(target)]<pieceMaterialValues[getPieceBySquare(from)]) {
-					type=MoveIterator::BAD_CAPTURE;
-				}
-			}
-			moves.add(from,target,EMPTY,type);
+			moves.add(from,target,EMPTY);
 			target = extractLSB(attacks);
 		}
 		from = extractLSB(pieces);
@@ -1098,11 +1062,7 @@ inline void Board::generateKingMoves(MoveIterator& moves, const PieceColor side,
 		attacks = getKingAttacks(from) & mask ;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
-			MoveIterator::MoveType type = MoveIterator::BAD_CAPTURE;
-			if (getPieceBySquare(target)==EMPTY) {
-				type = MoveIterator::NON_CAPTURE;
-			}
-			moves.add(from,target,EMPTY,type);
+			moves.add(from,target,EMPTY);
 			target = extractLSB(attacks);
 		}
 		from = extractLSB(pieces);
