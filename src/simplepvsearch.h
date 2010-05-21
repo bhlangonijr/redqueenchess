@@ -189,8 +189,8 @@ private:
 	int normalSearch(Board& board, int alpha, int beta,	int depth, int ply, PvLine* pv,	const bool allowNullMove);
 	int qSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);
 	const std::string pvLineToString(const PvLine* pv);
-	MoveIterator::Move selectMove(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, bool isKingAttacked, int ply);
-	MoveIterator::Move selectMove(Board& board, MoveIterator& moves, bool isKingAttacked);
+	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, bool isKingAttacked, int ply);
+	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, bool isKingAttacked);
 	void scoreMoves(Board& board, MoveIterator& moves);
 	bool okToReduce(Board& board, MoveIterator::Move& move, MoveBackup& backup,
 			int depth, int remainingMoves, bool isKingAttacked);
@@ -204,14 +204,17 @@ private:
 
 };
 // select a move
-inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, bool isKingAttacked, int ply) {
+inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, bool isKingAttacked, int ply) {
 
 	if (moves.getStage()==MoveIterator::BEGIN_STAGE) {
 		if (!isKingAttacked) {
 			moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
+
 		} else {
 			moves.setStage(MoveIterator::INIT_EVASION_STAGE);
 		}
+
+
 		if (board.isMoveLegal(ttMove)) {
 			ttMove.type = MoveIterator::TT_MOVE;
 			return ttMove;
@@ -231,7 +234,7 @@ inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator&
 			return moves.selectBest();
 		}
 		moves.setStage(MoveIterator::END_STAGE);
-		return MoveIterator::Move();
+		return moves.next();
 	}
 
 	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
@@ -294,19 +297,21 @@ inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator&
 		moves.goNextStage();
 	}
 
-	return MoveIterator::Move();
+	return moves.next();
 
 }
 
 // select a move
-inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator& moves, bool isKingAttacked) {
+inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves, bool isKingAttacked) {
 
 	if (moves.getStage()==MoveIterator::BEGIN_STAGE) {
 		if (!isKingAttacked) {
 			moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
+
 		} else {
 			moves.setStage(MoveIterator::INIT_EVASION_STAGE);
 		}
+
 	}
 
 	if (moves.getStage()==MoveIterator::INIT_EVASION_STAGE) {
@@ -320,7 +325,7 @@ inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator&
 			return moves.selectBest();
 		}
 		moves.setStage(MoveIterator::END_STAGE);
-		return MoveIterator::Move();
+		return moves.next();
 	}
 
 	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
@@ -336,7 +341,7 @@ inline MoveIterator::Move SimplePVSearch::selectMove(Board& board, MoveIterator&
 		moves.setStage(MoveIterator::END_STAGE);
 	}
 
-	return MoveIterator::Move();
+	return moves.next();
 
 }
 
@@ -349,10 +354,29 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 		MoveIterator::Move& move = moves.next();
 		move.score=0;
 		if (board.getPieceBySquare(move.to) != EMPTY) {
-			move.score = pieceMaterialValues[board.getPieceBySquare(move.from)] - pieceMaterialValues[board.getPieceBySquare(move.to)];
-		}
-		if (move.type==MoveIterator::NON_CAPTURE) {
-			move.score+=history[board.getPieceTypeBySquare(move.from)][move.to];
+			move.score = pieceMaterialValues[board.getPieceBySquare(move.to)] - pieceMaterialValues[board.getPieceBySquare(move.from)];
+
+			if (move.type==MoveIterator::UNKNOW) {
+
+				if (move.type > 0) {
+					move.type=MoveIterator::GOOD_CAPTURE;
+				} else if (move.type < 0) {
+					move.type=MoveIterator::BAD_CAPTURE;
+				} else {
+					move.type=MoveIterator::EQUAL_CAPTURE;
+				}
+			}
+
+		} else {
+
+			if (move.type==MoveIterator::UNKNOW) {
+				move.type=MoveIterator::NON_CAPTURE;
+			}
+
+			if (move.type==MoveIterator::NON_CAPTURE) {
+				move.score+=history[board.getPieceTypeBySquare(move.from)][move.to];
+			}
+
 		}
 		move.score+=scoreTable[move.type];
 	}

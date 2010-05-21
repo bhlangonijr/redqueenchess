@@ -522,13 +522,13 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 // mobility eval function
 inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
-	const int NEAR_KING_ATTACK_BONUS=5;
+	/*const int NEAR_KING_ATTACK_BONUS=5;
 	const int KING_ATTACK_BONUS=15;
 	const PieceColor other=board.flipSide(color);
-
+*/
 	Bitboard pieces = EMPTY_BB;
 	Bitboard moves = EMPTY_BB;
-	Bitboard attacks = EMPTY_BB;
+	//Bitboard attacks = EMPTY_BB;
 
 	Square from = NONE;
 	int count=0;
@@ -538,7 +538,7 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
 	while ( from!=NONE ) {
 		moves |= board.getBishopAttacks(from);
-		attacks |= moves;
+		//attacks |= moves;
 		from = extractLSB(pieces);
 	}
 	count+=_BitCount(moves);
@@ -548,7 +548,7 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
 	while ( from!=NONE ) {
 		moves = board.getRookAttacks(from);
-		attacks |= moves;
+		//attacks |= moves;
 		count+=_BitCount(moves);
 		from = extractLSB(pieces);
 	}
@@ -558,11 +558,11 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
 	while ( from!=NONE ) {
 		moves = board.getQueenAttacks(from);
-		attacks |= moves;
+		//attacks |= moves;
 		count+=_BitCount(moves);
 		from = extractLSB(pieces);
 	}
-
+/*
 	Bitboard king = board.getPiecesByType(board.makePiece(other,KING));
 	Square kingSquare = extractLSB(king);
 	Bitboard nearKingSquares =king|adjacentSquares[kingSquare];
@@ -573,7 +573,7 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 		if (attacks&board.getPiecesByType(board.makePiece(other,KING))) {
 			count += KING_ATTACK_BONUS;
 		}
-	}
+	}*/
 
 	return count;
 }

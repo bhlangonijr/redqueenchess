@@ -113,7 +113,7 @@ struct MoveBackup {
 struct Node {
 
 	Node () : key(0ULL), piece(), moveCounter(0), halfMoveCounter(0)
-			{}
+					{}
 
 	Node (const Node& node) : key(node.key), piece( node.piece ), enPassant( node.enPassant ),
 			sideToMove( node.sideToMove ), moveCounter(node.moveCounter),
@@ -920,21 +920,14 @@ inline void Board::generatePawnCaptures(MoveIterator& moves, const PieceColor si
 
 		bool promotion= squareToBitboard[from] & rankBB[promoRank];
 
-		MoveIterator::MoveType type = promotion ? MoveIterator::PROMO_CAPTURE : MoveIterator::EQUAL_CAPTURE;
-
 		while ( target!=NONE ) {
 			if (promotion) {
-				moves.add(from,target,makePiece(side,QUEEN), type);
-				moves.add(from,target,makePiece(side,ROOK), type);
-				moves.add(from,target,makePiece(side,BISHOP), type);
-				moves.add(from,target,makePiece(side,KNIGHT), type);
+				moves.add(from,target,makePiece(side,QUEEN), MoveIterator::PROMO_CAPTURE);
+				moves.add(from,target,makePiece(side,ROOK), MoveIterator::PROMO_CAPTURE);
+				moves.add(from,target,makePiece(side,BISHOP), MoveIterator::PROMO_CAPTURE);
+				moves.add(from,target,makePiece(side,KNIGHT), MoveIterator::PROMO_CAPTURE);
 			} else {
-				if (pieceMaterialValues[getPieceBySquare(target)]>pieceMaterialValues[getPieceBySquare(from)]) {
-					type=MoveIterator::GOOD_CAPTURE;
-				} else if (pieceMaterialValues[getPieceBySquare(target)]<pieceMaterialValues[getPieceBySquare(from)]) {
-					type=MoveIterator::BAD_CAPTURE;
-				}
-				moves.add(from,target,EMPTY,type);
+				moves.add(from,target,EMPTY);
 			}
 			target = extractLSB(attacks);
 		}
@@ -957,16 +950,14 @@ inline void Board::generatePawnMoves(MoveIterator& moves, const PieceColor side,
 
 		bool promotion= squareToBitboard[from] & rankBB[promoRank];
 
-		MoveIterator::MoveType type = promotion ? MoveIterator::PROMO_NONCAPTURE : MoveIterator::NON_CAPTURE;
-
 		while ( target!=NONE ) {
 			if (promotion) {
-				moves.add(from,target,makePiece(side,QUEEN),type);
-				moves.add(from,target,makePiece(side,ROOK),type);
-				moves.add(from,target,makePiece(side,BISHOP),type);
-				moves.add(from,target,makePiece(side,KNIGHT),type);
+				moves.add(from,target,makePiece(side,QUEEN),MoveIterator::PROMO_NONCAPTURE);
+				moves.add(from,target,makePiece(side,ROOK),MoveIterator::PROMO_NONCAPTURE);
+				moves.add(from,target,makePiece(side,BISHOP),MoveIterator::PROMO_NONCAPTURE);
+				moves.add(from,target,makePiece(side,KNIGHT),MoveIterator::PROMO_NONCAPTURE);
 			} else {
-				moves.add(from,target,EMPTY,type);
+				moves.add(from,target,EMPTY,MoveIterator::NON_CAPTURE);
 			}
 			target = extractLSB(attacks);
 		}
