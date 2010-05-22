@@ -113,12 +113,12 @@ struct MoveBackup {
 struct Node {
 
 	Node () : key(0ULL), piece(), moveCounter(0), halfMoveCounter(0)
-					{}
+	{}
 
 	Node (const Node& node) : key(node.key), piece( node.piece ), enPassant( node.enPassant ),
 			sideToMove( node.sideToMove ), moveCounter(node.moveCounter),
 			halfMoveCounter(node.halfMoveCounter)
-			{
+	{
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=node.square[x];
 		}
@@ -132,7 +132,7 @@ struct Node {
 		castleDone[WHITE]=node.castleDone[WHITE];
 		castleDone[BLACK]=node.castleDone[BLACK];
 
-			}
+	}
 
 	Key key;
 
@@ -253,7 +253,7 @@ public:
 	const bool isAttacked(const Bitboard occupation, const PieceColor attackingSide);
 	const bool isNotLegal();
 	const bool isMoveLegal(MoveIterator::Move& move);
-	const Bitboard getAttacksFrom(const Square from);
+	const bool isAttackedBy(const Square from, const Square to);
 	const bool isDraw();
 	const bool isCastleDone(const PieceColor color);
 
@@ -366,9 +366,9 @@ inline const PieceTypeByColor Board::encodePieceChar(char piece) {
 
 // get castle rights
 inline const CastleRight Board::getCastleRights(PieceColor color) const
-		{
+{
 	return currentBoard.castleRight[color];
-		}
+}
 
 // remove castle rights passed as params
 inline void Board::removeCastleRights(const PieceColor color, const CastleRight castle)
@@ -413,9 +413,9 @@ inline bool Board::canCastle(const PieceColor color, const CastleRight castleRig
 
 // get
 inline const PieceColor Board::getSideToMove() const
-		{
+{
 	return currentBoard.sideToMove;
-		}
+}
 
 // set
 inline void Board::setSideToMove(const PieceColor color)
@@ -425,9 +425,9 @@ inline void Board::setSideToMove(const PieceColor color)
 
 // get en passant
 inline const Square Board::getEnPassant() const
-		{
+{
 	return currentBoard.enPassant;
-		}
+}
 
 // set en passant
 inline void Board::setEnPassant(const Square square)
@@ -546,7 +546,7 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 		return false;
 	}
 
-	if (!(getAttacksFrom(move.from) & squareToBitboard[move.to])) {
+	if (!isAttackedBy(move.from, move.to)) {
 		return false;
 	}
 
@@ -575,15 +575,19 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 }
 
 // Get attacks from a given square
-inline const Bitboard Board::getAttacksFrom(const Square from) {
+inline const bool Board::isAttackedBy(const Square from, const Square to) {
 
 	const PieceTypeByColor fromPiece = getPieceBySquare(from);
 	const PieceType pieceType = getPieceType(fromPiece);
-
+	const Bitboard attacked = squareToBitboard[to];
 	Bitboard attacks = EMPTY_BB;
 
 	if (pieceType==PAWN) {
-		attacks = this->getPawnAttacks(from);
+		if (getPieceBySquare(to) != EMPTY) {
+			attacks = this->getPawnCaptures(from);
+		} else {
+			attacks = this->getPawnMoves(from);
+		}
 	} else if (pieceType==KNIGHT) {
 		attacks = this->getKnightAttacks(from);
 	} else if (pieceType==BISHOP) {
@@ -596,11 +600,9 @@ inline const Bitboard Board::getAttacksFrom(const Square from) {
 		attacks = this->getKingAttacks(from);
 	}
 
-	return attacks;
+	return attacks & attacked;
 
 }
-
-
 
 // verify draw by 50th move rule, 3 fold rep and insuficient material
 inline const bool Board::isDraw() {
@@ -732,7 +734,7 @@ inline const Bitboard Board::getPawnMoves(const Square square) {
 inline const Bitboard Board::getPawnAttacks(const Square square) {
 
 	const Bitboard pawnAttacks = getPieceColorBySquare(square)==WHITE?whitePawnAttacks[square]:blackPawnAttacks[square];
-	const Bitboard captures = (diagA1H8Attacks[square]|diagH1A8Attacks[square]) & pawnAttacks ;
+	const Bitboard captures = pawnAttacks & ~fileAttacks[square] ;
 
 	return captures;
 }
@@ -741,7 +743,7 @@ inline const Bitboard Board::getPawnAttacks(const Square square) {
 inline const Bitboard Board::getPawnAttacks(const Square square, const Bitboard occupied) {
 
 	const Bitboard pawnAttacks = getPieceColorBySquare(square)==WHITE?whitePawnAttacks[square]:blackPawnAttacks[square];
-	const Bitboard captures = (diagA1H8Attacks[square]|diagH1A8Attacks[square]) & pawnAttacks & occupied;
+	const Bitboard captures = (pawnAttacks & occupied) & ~fileAttacks[square];
 
 	return captures;
 }
@@ -753,9 +755,13 @@ inline const Bitboard Board::getPawnMoves(const Square square, const Bitboard oc
 	const Bitboard pawnAttacks = color==WHITE ? whitePawnAttacks[square] : blackPawnAttacks[square];
 	Bitboard occ = occupied;
 
-	if (squareRank[square]==RANK_2 || squareRank[square]==RANK_7) {
-		if (squareToBitboard[square+(color==WHITE?8:-8)]&occ) {
-			occ |= squareToBitboard[square+(color==WHITE?16:-16)]; // double move
+	if (squareRank[square]==RANK_2 && color==WHITE) {
+		if (squareToBitboard[square+8]&occ) {
+			occ |= squareToBitboard[square+16]; // double move
+		}
+	} else if (squareRank[square]==RANK_7 && color==BLACK) {
+		if (squareToBitboard[square-8]&occ) {
+			occ |= squareToBitboard[square-16]; // double move
 		}
 	}
 
@@ -778,7 +784,7 @@ inline const Bitboard Board::getPawnCaptures(const Square square, const Bitboard
 		occ |= (squareToBitboard[Square(getEnPassant() + (color==WHITE?8:-8))]); // en passant
 	}
 
-	return (diagA1H8Attacks[square]|diagH1A8Attacks[square]) & pawnAttacks & occ ;
+	return (pawnAttacks & occ) & ~fileAttacks[square]  ;
 }
 
 // overload method - gets current occupied squares in the board

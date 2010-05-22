@@ -77,15 +77,12 @@ int SimplePVSearch::getScore() {
 // iterative deepening
 int SimplePVSearch::idSearch(Board& board) {
 
-	MoveIterator::Move bestMove = MoveIterator::Move();
-	bestMove.score = -maxScore;
 	_nodes = 0;
-	int totalTime = 0;
 	int bestScore = -maxScore;
 	int iterationScore[maxSearchDepth];
 	int alpha = -maxScore;
 	int beta = maxScore;
-	bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
+	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 
 	if (!isKingAttacked) {
 		board.generateAllMoves(rootMoves, board.getSideToMove());
@@ -97,12 +94,8 @@ int SimplePVSearch::idSearch(Board& board) {
 
 	for (int depth = 1; depth <= _depth; depth++) {
 
-		const int MATE_RANGE_CHECK = 10;
-		const int MATE_RANGE_SCORE = 300;
-
 		PvLine pv = PvLine();
 		pv.index=0;
-		int time = getTickCount();
 		int score = 0;
 
 		score = rootSearch(board, alpha, beta, depth, 0, &pv);
@@ -113,15 +106,13 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		iterationScore[depth]=score;
 
-		if (depth >= 6)
-		{
+		if (depth >= 6)	{
 			int delta1 = iterationScore[depth - 0] - iterationScore[depth - 1];
 			int delta2 = iterationScore[depth - 1] - iterationScore[depth - 2];
 			int aspirationDelta = MAX(abs(delta1) + abs(delta2) / 2, 16);
 			aspirationDelta = (aspirationDelta + 7) / 8 * 8;
 			alpha = MAX(iterationScore[depth] - aspirationDelta, -maxScore);
 			beta  = MAX(iterationScore[depth] + aspirationDelta,  maxScore);
-
 		}
 
 		int repetition=0;
@@ -144,39 +135,17 @@ int SimplePVSearch::idSearch(Board& board) {
 			break;
 		}
 
-		bestMove = pv.moves[0];
-
 		if (score > bestScore) {
 			bestScore = score;
 			stats.pvChanges++;
 		}
 
+		stats.bestMove=pv.moves[0];
 		stats.searchDepth=depth;
-		time = getTickCount()-time;
-		totalTime += time;
-		stats.searchTime=totalTime;
+		stats.searchTime=getTickCount()-_startTime;
 		stats.searchNodes=_nodes;
 
-		if (isUpdateUci()) {
-
-			std::string scoreString = "cp " + StringUtil::toStr(bestMove.score);
-
-			if (abs(bestMove.score) > (maxScore-MATE_RANGE_SCORE)) {
-				if (bestMove.score>0) {
-					scoreString = "mate " +StringUtil::toStr((maxScore - bestMove.score+1)/2);
-				} else {
-					scoreString = "mate " +StringUtil::toStr(-(maxScore + bestMove.score)/2);
-				}
-			}
-
-			long nps = totalTime>1000 ?  ((_nodes)/(totalTime/1000)) : _nodes;
-			std::cout << "info depth "<< depth << std::endl;
-			std::cout << "info depth "<< depth << " score " << scoreString << " time " << totalTime
-					<< " nodes " << (_nodes) << " nps " << nps << " pv" << pvLineToString(&pv) << std::endl;
-			std::cout << "info nodes " << (_nodes) << " time " << totalTime << " nps " << nps
-					<< " hashfull " << agent->hashFull() << std::endl;
-
-		}
+		uciOutput(&pv, stats.bestMove, stats.searchTime, agent->hashFull(), depth);
 
 #if SHOW_STATS
 		std::cout << "Search stats: " << std::endl;
@@ -184,15 +153,9 @@ int SimplePVSearch::idSearch(Board& board) {
 #endif
 	}
 
-	if (bestMove.from!=NONE) {
-		if (isUpdateUci()) {
-			std::cout << "bestmove " << bestMove.toString() << std::endl;
-		}
-	} else {
-		std::cout << "bestmove (none)" << std::endl;
-	}
+	uciOutput(stats.bestMove);
 
-	return bestMove.score;
+	return stats.bestMove.score;
 }
 
 
@@ -200,11 +163,11 @@ int SimplePVSearch::idSearch(Board& board) {
 int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv) {
 
 	PvLine line = PvLine();
-	const int uciOutputSecs=1500;
-	int oldAlpha = alpha;
+	const int oldAlpha = alpha;
 	int score = -maxScore;
 	int extension=0;
-	bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
+	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
+	const int uciOutputSeconds = 2000;
 
 	if (isKingAttacked) {
 		extension++;
@@ -215,6 +178,7 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 	rootMoves.first();
 	int moveCounter=0;
 	int remainingMoves=0;
+	long time=getTickCount();
 
 	while (rootMoves.hasNext()) {
 
@@ -225,6 +189,12 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 		if (board.isNotLegal()) {
 			board.undoMove(backup);
 			continue; // not legal
+		}
+
+		stats.searchTime=getTickCount()-_startTime;
+		if (getTickCount()-time > uciOutputSeconds) {
+			uciOutput(pv, stats.bestMove, getTickCount()-_startTime, agent->hashFull(), depth);
+			time = getTickCount();
 		}
 
 		moveCounter++;
@@ -238,10 +208,7 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 			reduction++;
 		}
 
-		if (isUpdateUci() && (_startTime+uciOutputSecs < getTickCount())) {
-			std::cout << "info currmove " << move.toString()
-															<< " currmovenumber " << moveCounter << std::endl;
-		}
+		uciOutput(move, moveCounter);
 
 		if (score > alpha) {
 			score = -pvSearch(board, -beta, -alpha, depth-1, ply+1, &line);
@@ -306,7 +273,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 	}
 
 	_nodes++;
-	int oldAlpha = alpha;
+	const int oldAlpha = alpha;
 	int score = 0;
 	int extension=0;
 	MoveIterator::Move ttMove;
@@ -443,7 +410,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 	}
 
 	_nodes++;
-	int oldAlpha = alpha;
+	const int oldAlpha = alpha;
 	int score = 0;
 	int extension = 0;
 	MoveIterator::Move ttMove;
@@ -608,8 +575,8 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 		alpha = standPat;
 	}
 
-	bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
-	int delta = alpha - pieceMaterialValues[WHITE_PAWN] - standPat;
+	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
+	const int delta = alpha - pieceMaterialValues[WHITE_PAWN] - standPat;
 	PvLine line = PvLine();
 	MoveIterator moves = MoveIterator();
 
@@ -621,8 +588,8 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 		}
 
 		if (!isKingAttacked &&
-			 move.type!=MoveIterator::PROMO_CAPTURE &&
-			 move.score < delta) {
+				move.type!=MoveIterator::PROMO_CAPTURE &&
+				move.score < delta) {
 			continue;
 		}
 

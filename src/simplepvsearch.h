@@ -33,6 +33,8 @@
 
 #include "searchagent.h"
 
+const int MATE_RANGE_CHECK = 10;
+const int MATE_RANGE_SCORE = 300;
 const int maxScore = 20000;
 const int maxSearchDepth = 80;
 const int maxSearchPly = 64;
@@ -52,13 +54,15 @@ public:
 	typedef struct SearchStats {
 
 		SearchStats():
-			ttHits(0), ttLower(0), ttUpper(0), ttExact(0), nullMoveHits(0), pvChanges(0), searchTime(0), searchNodes(0), searchDepth(0) {}
+			ttHits(0), ttLower(0), ttUpper(0), ttExact(0), nullMoveHits(0),
+			pvChanges(0), searchTime(0), searchNodes(0), searchDepth(0), bestMove(MoveIterator::Move()) {}
 
 		SearchStats(const SearchStats& stats):
 			ttHits(stats.ttHits), ttLower(stats.ttLower),
 			ttUpper(stats.ttUpper), ttExact(stats.ttExact),
 			nullMoveHits(stats.nullMoveHits), pvChanges(stats.pvChanges),
-			searchTime(stats.searchTime), searchNodes(stats.searchNodes), searchDepth(stats.searchDepth) {}
+			searchTime(stats.searchTime), searchNodes(stats.searchNodes),
+			searchDepth(stats.searchDepth), bestMove(stats.bestMove) {}
 		long ttHits;
 		long ttLower;
 		long ttUpper;
@@ -68,6 +72,7 @@ public:
 		int searchTime;
 		uint64_t searchNodes;
 		int searchDepth;
+		MoveIterator::Move bestMove;
 
 		std::string toString() {
 			std::string result =
@@ -80,6 +85,7 @@ public:
 			result += "searchTime:  " + StringUtil::toStr(searchTime) + "\n";
 			result += "searchNodes: " + StringUtil::toStr(searchNodes) + "\n";
 			result += "searchDepth: " + StringUtil::toStr(searchDepth) + "\n";
+			result += "bestMove:    " + bestMove.toString() + "\n";
 			return result;
 		}
 		void clear() {
@@ -92,6 +98,7 @@ public:
 			searchTime=0;
 			searchNodes=0;
 			searchDepth=0;
+			bestMove=MoveIterator::Move();
 		}
 
 	} SearchStats;
@@ -188,6 +195,9 @@ private:
 	int pvSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);
 	int normalSearch(Board& board, int alpha, int beta,	int depth, int ply, PvLine* pv,	const bool allowNullMove);
 	int qSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);
+	void uciOutput(PvLine* pv, MoveIterator::Move& bestMove, const int totalTime, const int hashFull, const int depth);
+	void uciOutput(MoveIterator::Move& bestMove);
+	void uciOutput(MoveIterator::Move& move, const int moveCounter);
 	const std::string pvLineToString(const PvLine* pv);
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, bool isKingAttacked, int ply);
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, bool isKingAttacked);
@@ -532,6 +542,55 @@ inline const bool SimplePVSearch::timeIsUp() {
 
 }
 
+inline void SimplePVSearch::uciOutput(PvLine* pv, MoveIterator::Move& bestMove,
+		const int totalTime, const int hashFull, const int depth) {
+
+	if (isUpdateUci() && bestMove.from != NONE && pv->moves[0].from != NONE) {
+
+		std::string scoreString = "cp " + StringUtil::toStr(bestMove.score);
+
+		if (abs(bestMove.score) > (maxScore-MATE_RANGE_SCORE)) {
+			if (bestMove.score>0) {
+				scoreString = "mate " +StringUtil::toStr((maxScore - bestMove.score+1)/2);
+			} else {
+				scoreString = "mate " +StringUtil::toStr(-(maxScore + bestMove.score)/2);
+			}
+		}
+
+		long nps = totalTime>1000 ?  ((_nodes)/(totalTime/1000)) : _nodes;
+		std::cout << "info depth "<< depth << std::endl;
+		std::cout << "info depth "<< depth << " score " << scoreString << " time " << totalTime
+				<< " nodes " << (_nodes) << " nps " << nps << " pv" << pvLineToString(pv) << std::endl;
+		std::cout << "info nodes " << (_nodes) << " time " << totalTime << " nps " << nps
+				<< " hashfull " << hashFull << std::endl;
+
+	}
+}
+
+inline void SimplePVSearch::uciOutput(MoveIterator::Move& bestMove) {
+
+	if (isUpdateUci()) {
+		if (bestMove.from!=NONE) {
+			if (isUpdateUci()) {
+				std::cout << "bestmove " << bestMove.toString() << std::endl;
+			}
+		} else {
+			std::cout << "bestmove (none)" << std::endl;
+		}
+	}
+}
+
+inline void SimplePVSearch::uciOutput(MoveIterator::Move& move, const int moveCounter) {
+
+	const int uciOutputSecs=1500;
+
+	if (isUpdateUci()) {
+		if (_startTime+uciOutputSecs < getTickCount()) {
+			std::cout << "info currmove " << move.toString()
+					<< " currmovenumber " << moveCounter << std::endl;
+		}
+	}
+}
 inline const std::string SimplePVSearch::pvLineToString(const PvLine* pv) {
 	std::string result="";
 	for(int x=0;x<pv->index;x++) {
@@ -568,4 +627,5 @@ inline void SimplePVSearch::updateHistory(Board& board, MoveIterator::Move& move
 	history[board.getPieceTypeBySquare(move.from)][move.to]+=depth;
 
 }
+
 #endif /* SIMPLEPVSEARCH_H_ */
