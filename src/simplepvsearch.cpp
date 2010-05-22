@@ -93,6 +93,8 @@ int SimplePVSearch::idSearch(Board& board) {
 		board.generateEvasions(rootMoves, board.getSideToMove());
 	}
 
+	scoreRootMoves(board,rootMoves);
+
 	for (int depth = 1; depth <= _depth; depth++) {
 
 		const int MATE_RANGE_CHECK = 10;
@@ -111,7 +113,7 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		iterationScore[depth]=score;
 
-		if (depth >= 5)
+		if (depth >= 6)
 		{
 			int delta1 = iterationScore[depth - 0] - iterationScore[depth - 1];
 			int delta2 = iterationScore[depth - 1] - iterationScore[depth - 2];

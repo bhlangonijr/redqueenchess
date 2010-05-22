@@ -542,8 +542,7 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 		return false;
 	}
 
-	if (toPiece != EMPTY &&
-			this->getPieceColorBySquare(move.from) == this->getPieceColorBySquare(move.to)) {
+	if (this->getPieceColorBySquare(move.from) == this->getPieceColorBySquare(move.to)) {
 		return false;
 	}
 

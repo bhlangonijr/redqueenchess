@@ -52,9 +52,9 @@ const int defaultPieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 				0,  0,  0,  0,  0,  0,  0,  0,
 				5,  10, 10,-20,-20, 10, 10, 5,
 				5, -5,-10,  0,  0, -10, -5, 5,
-				0,  0,  0, 20, 20,  0,  0,  0,
-				5,  5, 10, 15, 	15, 10,  5,  5,
-				10, 10, 20, 30, 30, 20, 10, 10,
+				0,  -5,-10, 20, 20, -10,-5,  0,
+				0,  0, 0, 5, 	5, 0,  0,  0,
+				0,  0,  0,  0,  0,  0,  0,  0,
 				50, 50, 50, 50, 50, 50, 50, 50,
 				0,  0,  0,  0,  0,  0,  0,  0,
 		},
@@ -111,9 +111,9 @@ const int defaultPieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 		{//black pawn
 				0,  0,  0,  0,  0,  0,  0,  0,
 				50, 50, 50, 50, 50, 50, 50, 50,
-				10, 10, 20, 30, 30, 20, 10, 10,
-				5,  5, 10, 15, 15, 10,  5,  5,
-				0,  0,  0, 20, 20,  0,  0,  0,
+				0,  0,  0,  0,  0,  0,  0,  0,
+				0,  0, 0,  5,  5, 0,  0,  0,
+				0, -5,-10, 20, 20, -10, -5,  0,
 				5, -5,-10,  0,  0,-10, -5,  5,
 				5, 10, 10,-20,-20, 10, 10,  5,
 				0,  0,  0,  0,  0,  0,  0,  0,
@@ -450,11 +450,10 @@ inline const int Evaluator::evalMaterial(Board& board, PieceColor color) {
 inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 
 	const PieceColor other = board.flipSide(color);
-	const int DONE_CASTLE_BONUS=       +(board.getPiecesByType(board.makePiece(other,QUEEN))) ? 20 : 10;
+	const int DONE_CASTLE_BONUS=       +(board.getPiecesByType(board.makePiece(other,QUEEN))) ? 15 : 5;
 	const int CAN_CASTLE_BONUS=        +2;
 	const int UNSTOPPABLE_PAWN_BONUS = +2;
 	const int CENTERED_PAWN_BONUS =    +20;
-	const int ROOK_ON_7TH_2TH =        +15;
 	const int DOUBLED_ROOKS =          +10;
 	const int DOUBLED_PAWN_PENALTY =   -15;
 	const int ISOLATED_PAWN_PENALTY =  -15;
@@ -505,11 +504,8 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 	Square from = extractLSB(rooks);
 
 	while ( from!=NONE ) {
-		if ((color==WHITE && squareRank[from]==RANK_7) ||
-				(color==BLACK && squareRank[from]==RANK_2)	) {
-			count += ROOK_ON_7TH_2TH;
-		}
-		if (fileAttacks[squareFile[from]]&rooks) {
+
+		if ((fileAttacks[squareFile[from]]|rankAttacks[squareFile[from]])&rooks) {
 			count += DOUBLED_ROOKS;
 		}
 		from = extractLSB(rooks);
