@@ -38,8 +38,8 @@ const int MATE_RANGE_SCORE = 300;
 const int maxScore = 20000;
 const int maxSearchDepth = 80;
 const int maxSearchPly = 64;
-const int allowIIDAtPV = 3;
-const int allowIIDAtNormal = 5;
+const int allowIIDAtPV = 5;
+const int allowIIDAtNormal = 7;
 const int scoreTable[10]={1,80,70,950,900,50,45,40,5,-9};
 
 class SimplePVSearch {
@@ -352,7 +352,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 // score evasion moves
 inline void SimplePVSearch::scoreEvasions(Board& board, MoveIterator& moves) {
-	const int historyBonus=3;
+	const int historyBonus=10;
 	moves.bookmark();
 
 	while (moves.hasNext()) {
@@ -493,7 +493,7 @@ inline int SimplePVSearch::extendDepth(const bool isKingAttacked,
 // depth reduction
 inline int SimplePVSearch::reduceDepth(Board& board, MoveIterator::Move& move, MoveBackup& backup,
 		int depth, int remainingMoves, bool isKingAttacked, int ply, bool isPV) {
-
+	//TODO verify this
 	return okToReduce(board, move, backup,	depth, remainingMoves, isKingAttacked, ply) ? (isPV?2:3) : 1;
 }
 

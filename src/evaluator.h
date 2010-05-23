@@ -436,7 +436,7 @@ inline const int Evaluator::evalMaterial(Board& board, PieceColor color) {
 	const int last = board.makePiece(color,KING);
 	int material = 0;
 
-	for(int pieceType = first; pieceType <= last; pieceType++) {
+	for(register int pieceType = first; pieceType <= last; pieceType++) {
 		int count = board.getPieceCountByType(PieceTypeByColor(pieceType));
 		if (count > 0) {
 			material += count * getPieceMaterialValue(board, PieceTypeByColor(pieceType));
@@ -451,12 +451,10 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 
 	const PieceColor other = board.flipSide(color);
 	const int DONE_CASTLE_BONUS=       +(board.getPiecesByType(board.makePiece(other,QUEEN))) ? 15 : 5;
-	const int CAN_CASTLE_BONUS=        +2;
-	const int UNSTOPPABLE_PAWN_BONUS = +2;
-	const int CENTERED_PAWN_BONUS =    +5;
+	const int UNSTOPPABLE_PAWN_BONUS = +20;
 	const int DOUBLED_ROOKS =          +10;
-	const int DOUBLED_PAWN_PENALTY =   -15;
-	const int ISOLATED_PAWN_PENALTY =  -15;
+	const int DOUBLED_PAWN_PENALTY =   -10;
+	const int ISOLATED_PAWN_PENALTY =  -10;
 	const int BACKWARD_PAWN_PENALTY =  -10;
 	int count=0;
 
@@ -465,10 +463,6 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 		// king castle bonus
 		if (board.isCastleDone(color)) {
 			count= DONE_CASTLE_BONUS;
-		} else if (board.getCastleRights(color)==BOTH_SIDE_CASTLE) {
-			count= CAN_CASTLE_BONUS;
-		} else if (board.getCastleRights(color)==NO_CASTLE) {
-			count= -DONE_CASTLE_BONUS;
 		}
 	}
 
@@ -480,21 +474,21 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 		Bitboard pieces=pawns;
 		Square from = extractLSB(pieces);
 		while ( from!=NONE ) {
-			if (squareToBitboard[from]&centerSquares) {
-				count += CENTERED_PAWN_BONUS;
-			}
-			if (fileAttacks[squareFile[from]]&pieces) {
+			const Bitboard pawn = squareToBitboard[from];
+			const Bitboard allButThePawn =(pawns^pawn);
+
+			if (fileAttacks[squareFile[from]]&allButThePawn) {
 				count += DOUBLED_PAWN_PENALTY;
+			} else if (!(passedMask[color][from]&enemyPawns)) {
+				count += UNSTOPPABLE_PAWN_BONUS;
 			}
-			if (!(neighborFiles[from]&pawns)) {
+
+			if (!(neighborFiles[from]&allButThePawn)) {
 				count += ISOLATED_PAWN_PENALTY;
 			} else {
-				if (!(adjacentSquares[from]&pawns)) {
+				if (!(adjacentSquares[from]&allButThePawn)) {
 					count += BACKWARD_PAWN_PENALTY;
 				}
-			}
-			if (!(passedMask[color][from]&enemyPawns)) {
-				count += UNSTOPPABLE_PAWN_BONUS * endGamePieceSquareTable[board.makePiece(color,PAWN)][from];
 			}
 			from = extractLSB(pieces);
 		}
@@ -504,7 +498,6 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 	Square from = extractLSB(rooks);
 
 	while ( from!=NONE ) {
-
 		if ((fileAttacks[squareFile[from]]|rankAttacks[squareFile[from]])&rooks) {
 			count += DOUBLED_ROOKS;
 		}
@@ -518,38 +511,40 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 // mobility eval function
 inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
-	const int NEAR_KING_ATTACK_BONUS=5;
-	const int KING_ATTACK_BONUS=15;
-	const PieceColor other=board.flipSide(color);
-
-	Bitboard king = board.getPiecesByType(board.makePiece(other,KING));
-	const Square kingSquare = extractLSB(king);
-	const Bitboard nearKingSquares =king|adjacentSquares[kingSquare];
+	const int KNIGHT_MOBILITY_BONUS = 2;
+	const int BISHOP_MOBILITY_BONUS = 3;
+	const int ROOK_MOBILITY_BONUS = 2;
 
 	Bitboard pieces = EMPTY_BB;
 	Bitboard moves = EMPTY_BB;
-	Bitboard attacks = EMPTY_BB;
 
 	Square from = NONE;
 	int count=0;
+
+	pieces = board.getPiecesByType(board.makePiece(color,KNIGHT));
+	from = extractLSB(pieces);
+
+	while ( from!=NONE ) {
+		moves = board.getKnightAttacks(from);
+		count+=_BitCount(moves)*KNIGHT_MOBILITY_BONUS;
+		from = extractLSB(pieces);
+	}
 
 	pieces = board.getPiecesByType(board.makePiece(color,BISHOP));
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
 		moves |= board.getBishopAttacks(from);
-		attacks |= moves;
 		from = extractLSB(pieces);
 	}
-	count+=_BitCount(moves);
+	count+=_BitCount(moves)*BISHOP_MOBILITY_BONUS;
 
 	pieces = board.getPiecesByType(board.makePiece(color,ROOK));
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
 		moves = board.getRookAttacks(from);
-		attacks |= moves;
-		count+=_BitCount(moves);
+		count+=_BitCount(moves)*ROOK_MOBILITY_BONUS;
 		from = extractLSB(pieces);
 	}
 
@@ -558,24 +553,8 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
 	while ( from!=NONE ) {
 		moves = board.getQueenAttacks(from);
-		attacks |= moves;
 		count+=_BitCount(moves);
 		from = extractLSB(pieces);
-	}
-
-	if (attacks) {
-		const Bitboard otherAttacks = board.getPiecesByColor(other)&attacks;
-		if (otherAttacks) {
-			count += _BitCount(otherAttacks);
-		}
-		const Bitboard nearKingAttacks=nearKingSquares&attacks;
-		if (nearKingAttacks) {
-			count += _BitCount(nearKingAttacks) * NEAR_KING_ATTACK_BONUS;
-		}
-		const Bitboard kingAttacks = attacks&board.getPiecesByType(board.makePiece(other,KING));
-		if (kingAttacks) {
-			count += _BitCount(kingAttacks)*KING_ATTACK_BONUS;
-		}
 	}
 
 	return count;
@@ -588,7 +567,7 @@ inline const int Evaluator::evalDevelopment(Board& board, PieceColor color) {
 	const int last = board.makePiece(color,KING);
 	int bonus = 0;
 
-	for(int pieceType = first; pieceType <= last; pieceType++) {
+	for(register int pieceType = first; pieceType <= last; pieceType++) {
 		Bitboard pieces = board.getPiecesByType(PieceTypeByColor(pieceType));
 		Square from = extractLSB(pieces);
 		while ( from!=NONE ) {

@@ -57,6 +57,7 @@ inline unsigned int _BitScanForward(unsigned int* const index, const uint64_t ma
 // return the index of MSB
 inline unsigned int _BitScanReverse(unsigned int* const index, const uint64_t mask)
 {
+
 #if defined(__LP64__)
 	uint64_t ret;
 	asm ("bsrq %[mask], %[ret]" :[ret] "=r" (ret) :[mask] "mr" (mask));
@@ -80,6 +81,9 @@ inline unsigned int _BitScanReverse(unsigned int* const index, const uint64_t ma
 
 inline uint32_t _BitCount(const uint64_t data)
 {
+   if (!data) {
+	   return 0;
+   }
    #if defined(__LP64__)
       return __builtin_popcountll( data );
    #else

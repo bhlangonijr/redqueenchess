@@ -50,7 +50,7 @@ void SimplePVSearch::search() {
 	_score = idSearch(board);
 	SearchAgent::getInstance()->setSearchInProgress(false);
 	_time = getTickCount() - _startTime;
-
+	//std::cout << board.getFEN();
 #if CHECK_MOVE_GEN_ERRORS
 	// checks for data corruption
 	Key oldKey = _board.generateKey();
@@ -89,8 +89,6 @@ int SimplePVSearch::idSearch(Board& board) {
 	} else {
 		board.generateEvasions(rootMoves, board.getSideToMove());
 	}
-
-	//scoreRootMoves(board,rootMoves);
 
 	for (int depth = 1; depth <= _depth; depth++) {
 
@@ -429,10 +427,10 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 
 	bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 
-	if (!isKingAttacked && beta < maxScore &&
+	if (!isKingAttacked && beta < (maxScore-maxSearchPly) &&
 			allowNullMove && okToNullMove(board)) {
 
-		const int reduction = 3 + (depth > 4 ? depth/4 : 0);
+		const int reduction = 3 + (depth > 4 ? depth/6 : 0);
 		MoveBackup backup;
 		board.doNullMove(backup);
 		score = -normalSearch(board, -beta, -(beta-1), depth-reduction, ply+1, &line, false);

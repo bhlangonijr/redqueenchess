@@ -827,13 +827,13 @@ inline void Board::generateEvasions(MoveIterator& moves, const PieceColor side) 
 	const Bitboard empty = getEmptySquares();
 	const Bitboard kingBB = getPiecesByType(makePiece(side,KING));
 	const Square kingSquare = bitboardToSquare(kingBB);
+	const Bitboard otherPieces = getPiecesByColor(otherSide);
 
 	const Bitboard bishop = getPiecesByType(makePiece(otherSide,BISHOP));
 	const Bitboard rook = getPiecesByType(makePiece(otherSide,ROOK));
 	const Bitboard queen = getPiecesByType(makePiece(otherSide,QUEEN));
 	const Bitboard knight = getPiecesByType(makePiece(otherSide,KNIGHT));
 	const Bitboard pawn = getPiecesByType(makePiece(otherSide,PAWN));
-	const Bitboard king =  getPiecesByType(makePiece(otherSide,KING));
 
 	const Bitboard bishopAndQueen = (bishop | queen);
 	const Bitboard rookAndQueen = (rook | queen);
@@ -842,7 +842,6 @@ inline void Board::generateEvasions(MoveIterator& moves, const PieceColor side) 
 	const Bitboard rookAttacks = rookAndQueen ? getRookAttacks(kingSquare) : EMPTY_BB;
 	const Bitboard knightAttacks = getKnightAttacks(kingSquare);
 	const Bitboard pawnAttacks = getPawnAttacks(kingSquare);
-	const Bitboard kingAttacks =  getKingAttacks(kingSquare);
 
 	Bitboard kingAttackers = EMPTY_BB;
 
@@ -870,17 +869,16 @@ inline void Board::generateEvasions(MoveIterator& moves, const PieceColor side) 
 
 	kingAttackers |= knightAttacks & knight;
 	kingAttackers |= pawnAttacks & pawn;
-	kingAttackers |= kingAttacks & king;
 
-	const Bitboard attackersAndEmpty = (getPiecesByColor(otherSide) | empty) & kingAttackers;
+	const Bitboard attackersAndEmpty = (otherPieces | empty) & kingAttackers;
 
-	generatePawnCaptures(moves, side, getPiecesByColor(otherSide) & kingAttackers);
+	generatePawnCaptures(moves, side, otherPieces);
 	generatePawnMoves(moves, side, empty & kingAttackers);
 	generateKnightMoves(moves, side, attackersAndEmpty);
 	generateBishopMoves(moves, side, attackersAndEmpty);
 	generateRookMoves(moves, side, attackersAndEmpty);
 	generateQueenMoves(moves, side, attackersAndEmpty);
-	generateKingMoves(moves, side, getPiecesByColor(otherSide) | empty);
+	generateKingMoves(moves, side, otherPieces | empty);
 
 }
 
