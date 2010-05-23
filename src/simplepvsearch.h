@@ -40,7 +40,7 @@ const int maxSearchDepth = 80;
 const int maxSearchPly = 64;
 const int allowIIDAtPV = 3;
 const int allowIIDAtNormal = 5;
-const int scoreTable[10]={0,80000,60000,70000,65000,50000,45000,40000,5000,-9000};
+const int scoreTable[10]={1,80,70,950,900,50,45,40,5,-9};
 
 class SimplePVSearch {
 
@@ -201,7 +201,6 @@ private:
 	const std::string pvLineToString(const PvLine* pv);
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, bool isKingAttacked, int ply);
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, bool isKingAttacked);
-	void scoreRootMoves(Board& board, MoveIterator& moves);
 	void scoreEvasions(Board& board, MoveIterator& moves);
 	void scoreCaptures(Board& board, MoveIterator& moves);
 	void scoreQuiet(Board& board, MoveIterator& moves);
@@ -219,6 +218,9 @@ private:
 // select a move
 inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, bool isKingAttacked, int ply) {
 
+	MoveIterator::Move& killer1 = killer[ply][0];
+	MoveIterator::Move& killer2 = killer[ply][1];
+
 	if (moves.getStage()==MoveIterator::BEGIN_STAGE) {
 		if (!isKingAttacked) {
 			moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
@@ -226,10 +228,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			moves.setStage(MoveIterator::INIT_EVASION_STAGE);
 		}
 		if (board.isMoveLegal(ttMove)) {
-			ttMove.type = MoveIterator::TT_MOVE;
 			return ttMove;
-		} else {
-			ttMove.type = MoveIterator::UNKNOW;
 		}
 	}
 
@@ -256,11 +255,10 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 	if (moves.getStage()==MoveIterator::ON_CAPTURE_STAGE) {
 		while (moves.hasNext()) {
 			MoveIterator::Move& move=moves.selectBest();
-			if (move==ttMove && ttMove.type==MoveIterator::TT_MOVE) {
+			if (move==ttMove) {
 				continue;
 			}
-
-			if (move.type==MoveIterator::BAD_CAPTURE) {
+			if (move.score < 0) {
 				moves.prior();
 				break; // it will keep the bad captures after non captures
 			}
@@ -271,21 +269,15 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::KILLER1_STAGE) {
 		moves.goNextStage();
-		if (killer[ply][0] != ttMove &&	board.isMoveLegal(killer[ply][0])) {
-			killer[ply][0].type = MoveIterator::KILLER1;
-			return killer[ply][0];
-		} else {
-			killer[ply][0].type = MoveIterator::UNKNOW;
+		if (killer1 != ttMove && board.isMoveLegal(killer1)) {
+			return killer1;
 		}
 	}
 
 	if (moves.getStage()==MoveIterator::KILLER2_STAGE) {
 		moves.goNextStage();
-		if (killer[ply][1] != ttMove && board.isMoveLegal(killer[ply][1])) {
-			killer[ply][1].type = MoveIterator::KILLER2;
-			return killer[ply][1];
-		} else {
-			killer[ply][1].type = MoveIterator::UNKNOW;
+		if (killer2 != ttMove && board.isMoveLegal(killer2)) {
+			return killer2;
 		}
 	}
 
@@ -298,9 +290,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 	if (moves.getStage()==MoveIterator::ON_QUIET_STAGE) {
 		while (moves.hasNext()) {
 			MoveIterator::Move& move=moves.selectBest();
-			if ((move==ttMove && ttMove.type==MoveIterator::TT_MOVE) ||
-					(move==killer[ply][0] && killer[ply][0].type==MoveIterator::KILLER1) ||
-					(move==killer[ply][1] && killer[ply][1].type==MoveIterator::KILLER2)) {
+			if (move==ttMove || move==killer1 || move==killer2) {
 				continue;
 			}
 			return move;
@@ -322,7 +312,6 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 		} else {
 			moves.setStage(MoveIterator::INIT_EVASION_STAGE);
 		}
-
 	}
 
 	if (moves.getStage()==MoveIterator::INIT_EVASION_STAGE) {
@@ -356,65 +345,29 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 }
 
-// score all moves
-inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
-
+// score evasion moves
+inline void SimplePVSearch::scoreEvasions(Board& board, MoveIterator& moves) {
+	const int historyBonus=3;
 	moves.bookmark();
 
 	while (moves.hasNext()) {
 		MoveIterator::Move& move = moves.next();
 
 		if (board.getPieceBySquare(move.to) != EMPTY) {
-			move.score+= pieceMaterialValues[board.getPieceBySquare(move.to)] - pieceMaterialValues[board.getPieceBySquare(move.from)];
+			move.score= pieceMaterialValues[board.getPieceBySquare(move.to)] -
+					pieceMaterialValues[board.getPieceBySquare(move.from)];
 
-			if (move.type==MoveIterator::UNKNOW) {
-				if (move.type > 0) {
-					move.type=MoveIterator::GOOD_CAPTURE;
-				} else if (move.type < 0) {
-					move.type=MoveIterator::BAD_CAPTURE;
-				} else {
-					move.type=MoveIterator::EQUAL_CAPTURE;
-				}
+			if (move.type==MoveIterator::PROMO_CAPTURE) {
+				move.score+=scoreTable[MoveIterator::PROMO_CAPTURE];
 			}
 
 		} else {
-
+			move.score=history[board.getPieceTypeBySquare(move.from)][move.to]*historyBonus;
 			if (move.type==MoveIterator::UNKNOW) {
 				move.type=MoveIterator::NON_CAPTURE;
+			} else if (move.type==MoveIterator::PROMO_NONCAPTURE) {
+				move.score+=scoreTable[MoveIterator::PROMO_NONCAPTURE];
 			}
-
-			if (move.type==MoveIterator::NON_CAPTURE) {
-				move.score+=history[board.getPieceTypeBySquare(move.from)][move.to];
-			}
-
-		}
-		move.score+=scoreTable[move.type];
-	}
-	moves.goToBookmark();
-
-}
-
-// score evasion moves
-inline void SimplePVSearch::scoreEvasions(Board& board, MoveIterator& moves) {
-
-	moves.bookmark();
-
-	while (moves.hasNext()) {
-		MoveIterator::Move& move = moves.next();
-
-		if (board.getPieceBySquare(move.to) != EMPTY) {
-			move.score= pieceMaterialValues[board.getPieceBySquare(move.to)] - pieceMaterialValues[board.getPieceBySquare(move.from)];
-
-			if (move.type==MoveIterator::UNKNOW) {
-				if (move.type > 0) {
-					move.type=MoveIterator::GOOD_CAPTURE;
-				} else if (move.type < 0) {
-					move.type=MoveIterator::BAD_CAPTURE;
-				} else {
-					move.type=MoveIterator::EQUAL_CAPTURE;
-				}
-			}
-
 		}
 	}
 	moves.goToBookmark();
@@ -427,19 +380,11 @@ inline void SimplePVSearch::scoreCaptures(Board& board, MoveIterator& moves) {
 
 	while (moves.hasNext()) {
 		MoveIterator::Move& move = moves.next();
-		move.score = pieceMaterialValues[board.getPieceBySquare(move.to)] - pieceMaterialValues[board.getPieceBySquare(move.from)];
-
-		if (move.type==MoveIterator::UNKNOW) {
-			if (move.type > 0) {
-				move.type=MoveIterator::GOOD_CAPTURE;
-			} else if (move.type < 0) {
-				move.type=MoveIterator::BAD_CAPTURE;
-			} else {
-				move.type=MoveIterator::EQUAL_CAPTURE;
-			}
+		move.score = pieceMaterialValues[board.getPieceBySquare(move.to)] -
+				pieceMaterialValues[board.getPieceBySquare(move.from)];
+		if (move.type==MoveIterator::PROMO_CAPTURE) {
+			move.score+=scoreTable[MoveIterator::PROMO_CAPTURE];
 		}
-
-		move.score+=scoreTable[move.type];
 	}
 	moves.goToBookmark();
 
@@ -448,23 +393,19 @@ inline void SimplePVSearch::scoreCaptures(Board& board, MoveIterator& moves) {
 // score all moves
 inline void SimplePVSearch::scoreQuiet(Board& board, MoveIterator& moves) {
 
-	const int historyBonus=500;
-
+	const int historyBonus=10;
 	moves.bookmark();
 
 	while (moves.hasNext()) {
 		MoveIterator::Move& move = moves.next();
-		move.score=0;
-
+		move.score=history[board.getPieceTypeBySquare(move.from)][move.to]*historyBonus;
 		if (move.type==MoveIterator::UNKNOW) {
 			move.type=MoveIterator::NON_CAPTURE;
 		}
-
-		if (move.type==MoveIterator::NON_CAPTURE) {
-			move.score+=history[board.getPieceTypeBySquare(move.from)][move.to]*historyBonus;
+		if (move.type==MoveIterator::PROMO_NONCAPTURE) {
+			move.score+=scoreTable[MoveIterator::PROMO_NONCAPTURE];
 		}
 
-		move.score+=scoreTable[move.type];
 	}
 	moves.goToBookmark();
 
@@ -587,7 +528,7 @@ inline void SimplePVSearch::uciOutput(MoveIterator::Move& move, const int moveCo
 	if (isUpdateUci()) {
 		if (_startTime+uciOutputSecs < getTickCount()) {
 			std::cout << "info currmove " << move.toString()
-					<< " currmovenumber " << moveCounter << std::endl;
+									<< " currmovenumber " << moveCounter << std::endl;
 		}
 	}
 }
@@ -615,7 +556,9 @@ inline void SimplePVSearch::clearHistory() {
 // update history
 inline void SimplePVSearch::updateHistory(Board& board, MoveIterator::Move& move, int depth, int ply) {
 
-	if (!(move.type==MoveIterator::NON_CAPTURE) ) {
+	if (board.getPieceBySquare(move.to)!=EMPTY ||
+			move.type == MoveIterator::PROMO_NONCAPTURE ||
+			move.from ==NONE) {
 		return;
 	}
 

@@ -535,8 +535,7 @@ inline const bool Board::isNotLegal() {
 // verify board legality
 inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 
-	PieceTypeByColor fromPiece=this->getPieceBySquare(move.from);
-	PieceTypeByColor toPiece=this->getPieceBySquare(move.to);
+	const PieceTypeByColor fromPiece=getPieceBySquare(move.from);
 
 	if (move.from==NONE || fromPiece==EMPTY) {
 		return false;
@@ -550,19 +549,11 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 		return false;
 	}
 
-	if (getPieceType(fromPiece) == PAWN &&
-			getSquareFile(move.from)!=	getSquareFile(move.to) &&
-			toPiece == EMPTY &&
-			getSquareFile(getEnPassant()) != getSquareFile(move.to)
-	) {
-		return false;
-	}
-
-	if ((getPieceType(fromPiece) == KING) ||
-			(move.from==E1 && move.to==G1) ||
+	if ((getPieceType(fromPiece) == KING) &&
+			((move.from==E1 && move.to==G1) ||
 			(move.from==E1 && move.to==C1) ||
 			(move.from==E8 && move.to==G8) ||
-			(move.from==E8 && move.to==C8)) {
+			(move.from==E8 && move.to==C8))) {
 		const CastleRight castleRight = (move.to==C1 || move.to==C8) ? QUEEN_SIDE_CASTLE : KING_SIDE_CASTLE;
 
 		if (!canCastle(getSideToMove(), castleRight)) {
@@ -583,11 +574,10 @@ inline const bool Board::isAttackedBy(const Square from, const Square to) {
 	Bitboard attacks = EMPTY_BB;
 
 	if (pieceType==PAWN) {
-		if (getPieceBySquare(to) != EMPTY) {
-			attacks = this->getPawnCaptures(from);
-		} else {
-			attacks = this->getPawnMoves(from);
+		if (getPawnCaptures(from) & attacked) {
+			return true;
 		}
+		attacks = this->getPawnMoves(from);
 	} else if (pieceType==KNIGHT) {
 		attacks = this->getKnightAttacks(from);
 	} else if (pieceType==BISHOP) {

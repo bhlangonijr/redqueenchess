@@ -453,7 +453,7 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 	const int DONE_CASTLE_BONUS=       +(board.getPiecesByType(board.makePiece(other,QUEEN))) ? 15 : 5;
 	const int CAN_CASTLE_BONUS=        +2;
 	const int UNSTOPPABLE_PAWN_BONUS = +2;
-	const int CENTERED_PAWN_BONUS =    +20;
+	const int CENTERED_PAWN_BONUS =    +5;
 	const int DOUBLED_ROOKS =          +10;
 	const int DOUBLED_PAWN_PENALTY =   -15;
 	const int ISOLATED_PAWN_PENALTY =  -15;
@@ -518,13 +518,17 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 // mobility eval function
 inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
-	/*const int NEAR_KING_ATTACK_BONUS=5;
+	const int NEAR_KING_ATTACK_BONUS=5;
 	const int KING_ATTACK_BONUS=15;
 	const PieceColor other=board.flipSide(color);
-*/
+
+	Bitboard king = board.getPiecesByType(board.makePiece(other,KING));
+	const Square kingSquare = extractLSB(king);
+	const Bitboard nearKingSquares =king|adjacentSquares[kingSquare];
+
 	Bitboard pieces = EMPTY_BB;
 	Bitboard moves = EMPTY_BB;
-	//Bitboard attacks = EMPTY_BB;
+	Bitboard attacks = EMPTY_BB;
 
 	Square from = NONE;
 	int count=0;
@@ -534,7 +538,7 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
 	while ( from!=NONE ) {
 		moves |= board.getBishopAttacks(from);
-		//attacks |= moves;
+		attacks |= moves;
 		from = extractLSB(pieces);
 	}
 	count+=_BitCount(moves);
@@ -544,7 +548,7 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
 	while ( from!=NONE ) {
 		moves = board.getRookAttacks(from);
-		//attacks |= moves;
+		attacks |= moves;
 		count+=_BitCount(moves);
 		from = extractLSB(pieces);
 	}
@@ -554,22 +558,25 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
 	while ( from!=NONE ) {
 		moves = board.getQueenAttacks(from);
-		//attacks |= moves;
+		attacks |= moves;
 		count+=_BitCount(moves);
 		from = extractLSB(pieces);
 	}
-/*
-	Bitboard king = board.getPiecesByType(board.makePiece(other,KING));
-	Square kingSquare = extractLSB(king);
-	Bitboard nearKingSquares =king|adjacentSquares[kingSquare];
 
 	if (attacks) {
-		count += _BitCount(board.getPiecesByColor(other)&attacks);
-		count += _BitCount(nearKingSquares&attacks) * NEAR_KING_ATTACK_BONUS;
-		if (attacks&board.getPiecesByType(board.makePiece(other,KING))) {
-			count += KING_ATTACK_BONUS;
+		const Bitboard otherAttacks = board.getPiecesByColor(other)&attacks;
+		if (otherAttacks) {
+			count += _BitCount(otherAttacks);
 		}
-	}*/
+		const Bitboard nearKingAttacks=nearKingSquares&attacks;
+		if (nearKingAttacks) {
+			count += _BitCount(nearKingAttacks) * NEAR_KING_ATTACK_BONUS;
+		}
+		const Bitboard kingAttacks = attacks&board.getPiecesByType(board.makePiece(other,KING));
+		if (kingAttacks) {
+			count += _BitCount(kingAttacks)*KING_ATTACK_BONUS;
+		}
+	}
 
 	return count;
 }

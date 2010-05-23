@@ -90,7 +90,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		board.generateEvasions(rootMoves, board.getSideToMove());
 	}
 
-	scoreRootMoves(board,rootMoves);
+	//scoreRootMoves(board,rootMoves);
 
 	for (int depth = 1; depth <= _depth; depth++) {
 
@@ -179,6 +179,7 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 	int moveCounter=0;
 	int remainingMoves=0;
 	long time=getTickCount();
+	MoveIterator::Move bestMove;
 
 	while (rootMoves.hasNext()) {
 
@@ -192,7 +193,7 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 		}
 
 		stats.searchTime=getTickCount()-_startTime;
-		if (getTickCount()-time > uciOutputSeconds) {
+		if (getTickCount()-time > uciOutputSeconds && !stop(agent->getSearchInProgress())) {
 			uciOutput(pv, stats.bestMove, getTickCount()-_startTime, agent->hashFull(), depth);
 			time = getTickCount();
 		}
@@ -236,6 +237,11 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 		if( score > alpha ) {
 			alpha = score;
 			updatePv(pv, line, move);
+			bestMove=move;
+			if (!stop(agent->getSearchInProgress())) {
+				uciOutput(pv, stats.bestMove, getTickCount()-_startTime, agent->hashFull(), depth);
+				time = getTickCount();
+			}
 		}
 
 	}
@@ -245,7 +251,7 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 	}
 
 	if (alpha>oldAlpha) {
-		updateHistory(board,pv->moves[0],depth,ply);
+		updateHistory(board,bestMove,depth,ply);
 		stats.ttExact++;
 	} else {
 		stats.ttUpper++;
@@ -310,6 +316,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 	}
 
 	MoveIterator moves = MoveIterator();
+	MoveIterator::Move bestMove;
 	int moveCounter=0;
 	int remainingMoves=0;
 
@@ -360,8 +367,8 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 		}
 
 		if( score >= beta) {
-			agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,move);
 			updateHistory(board,move,depth,ply);
+			agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,move);
 			stats.ttLower++;
 			return beta;
 		}
@@ -369,6 +376,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 		if( score > alpha ) {
 			alpha = score;
 			updatePv(pv, line, move);
+			bestMove=move;
 		}
 
 	}
@@ -378,8 +386,8 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 	}
 
 	if (alpha>oldAlpha) {
-		agent->hashPut(board,alpha,depth,ply,maxScore,SearchAgent::EXACT,pv->moves[0]);
-		updateHistory(board,pv->moves[0],depth,ply);
+		updateHistory(board,bestMove,depth,ply);
+		agent->hashPut(board,alpha,depth,ply,maxScore,SearchAgent::EXACT,bestMove);
 		stats.ttExact++;
 	} else {
 		agent->hashPut(board,alpha,depth,ply,maxScore,SearchAgent::UPPER,emptyMove);
@@ -482,6 +490,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 	}
 
 	MoveIterator moves = MoveIterator();
+	MoveIterator::Move bestMove;
 	int moveCounter=0;
 	int remainingMoves=0;
 
@@ -525,8 +534,8 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		}
 
 		if( score >= beta) {
-			agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,move);
 			updateHistory(board,move,depth,ply);
+			agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,move);
 			stats.ttLower++;
 			return beta;
 		}
@@ -534,6 +543,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		if( score > alpha ) {
 			alpha = score;
 			updatePv(pv, line, move);
+			bestMove=move;
 		}
 
 	}
@@ -543,8 +553,8 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 	}
 
 	if (alpha>oldAlpha) {
-		agent->hashPut(board,alpha,depth,ply,maxScore,SearchAgent::EXACT,pv->moves[0]);
-		updateHistory(board,pv->moves[0],depth,ply);
+		updateHistory(board,bestMove,depth,ply);
+		agent->hashPut(board,alpha,depth,ply,maxScore,SearchAgent::EXACT,bestMove);
 		stats.ttExact++;
 	} else {
 		agent->hashPut(board,alpha,depth,ply,maxScore,SearchAgent::UPPER,emptyMove);
