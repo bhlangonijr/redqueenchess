@@ -11,6 +11,6 @@ Ben-Hur Langoni Junior
 6) Improve Evaluator class with more imbalances & piece evaluation
 7) Create SEE to move ordering
 8) Implement aspiration window - Ok
-9) Create method to generate check evasions
+9) Create method to generate check evasions +/- Ok
 
 

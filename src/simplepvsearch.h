@@ -209,7 +209,7 @@ private:
 	bool okToNullMove(Board& board);
 	bool isPawnFinal(Board& board);
 	bool isPawnPush(MoveIterator::Move& move, MoveBackup& backup);
-	int extendDepth(const bool isKingAttacked, const bool nullMoveMateScore, const bool pawnFinal);
+	int extendDepth(const bool isKingAttacked, const bool nullMoveMateScore, const bool pawnPush);
 	int reduceDepth(Board& board, MoveIterator::Move& move, MoveBackup& backup,
 			int depth, int remainingMoves, bool isKingAttacked, int ply, bool isPV);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
@@ -485,9 +485,9 @@ inline bool SimplePVSearch::isPawnPush(MoveIterator::Move& move, MoveBackup& bac
 
 // depth extension
 inline int SimplePVSearch::extendDepth(const bool isKingAttacked,
-		const bool nullMoveMateScore, const bool pawnFinal) {
+		const bool nullMoveMateScore, const bool pawnPush) {
 
-	return isKingAttacked || nullMoveMateScore || pawnFinal ? 1 : 0;
+	return isKingAttacked || nullMoveMateScore || pawnPush ? 1 : 0;
 
 }
 // depth reduction

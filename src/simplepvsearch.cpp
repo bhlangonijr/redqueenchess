@@ -200,7 +200,7 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 		}
 
 		int reduction=reduceDepth(board, move, backup, depth, remainingMoves, isKingAttacked,ply,true);
-		int extension=extendDepth(isKingAttacked,false,isPawnFinal(board));
+		int extension=extendDepth(isKingAttacked,false,isPawnPush(move,backup));
 
 		uciOutput(move, moveCounter);
 
@@ -322,7 +322,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 		}
 
 		int reduction=reduceDepth(board, move, backup, depth, remainingMoves, isKingAttacked,ply,true);
-		int extension=extendDepth(isKingAttacked,false,isPawnFinal(board));
+		int extension=extendDepth(isKingAttacked,false,isPawnPush(move,backup));
 
 		if ( moveCounter==1) {
 			score = -pvSearch(board, -beta, -alpha, depth-1+extension, ply+1, &line);
@@ -490,7 +490,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		}
 
 		int reduction=reduceDepth(board, move, backup, depth, remainingMoves, isKingAttacked,ply,false);
-		int extension=extendDepth(isKingAttacked,nullMoveMateScore,isPawnFinal(board));
+		int extension=extendDepth(isKingAttacked,nullMoveMateScore,isPawnPush(move,backup));
 
 		score = -normalSearch(board, -beta, -(beta-1), depth-reduction+extension, ply+1, &line, allowNullMove);
 
