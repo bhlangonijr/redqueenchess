@@ -377,12 +377,13 @@ public:
 	const GamePhase getGameStage();
 	const GamePhase predictGameStage(Board& board);
 	const int kingDistance(Board& board, const Square from, const PieceColor color);
+	const int see(Board& board, MoveIterator::Move& move);
 
 	inline const int interpolate(const int first, const int second, const int position) {
 
 		if (gamePhase==OPENING) {
 			return first;
-		} else if (gamePhase==ENDGAME || position >= gameSize) {
+		} else if (gamePhase==ENDGAME || position > gameSize) {
 			return second;
 		}
 
@@ -409,6 +410,8 @@ public:
 	}
 
 private:
+	Bitboard getLeastValuablePiece(Board& board, Bitboard attackers, PieceColor& color, PieceTypeByColor& piece);
+
 	GamePhase gamePhase;
 
 };
@@ -460,7 +463,7 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 	const int DOUBLED_ROOKS =          +10;
 	const int DOUBLED_PAWN_PENALTY =   -15;
 	const int ISOLATED_PAWN_PENALTY =  -20;
-	const int BACKWARD_PAWN_PENALTY =  -10;
+	const int BACKWARD_PAWN_PENALTY =  -20;
 	int count=0;
 
 	// king
@@ -610,6 +613,115 @@ inline const int Evaluator::kingDistance(Board& board, const Square from, const 
 	return (abs(squareRank[kingSq]-squareRank[from])+
 			abs(squareFile[kingSq]-squareFile[from]))/2;*/
 	return 0;
+}
+
+// static exchange evaluation
+inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
+
+	const int gainTableSize=32;
+	PieceColor side = board.getPieceColorBySquare(move.from);
+	PieceColor other = board.flipSide(side);
+	PieceTypeByColor firstPiece = board.getPieceBySquare(move.from);
+	PieceTypeByColor secondPiece = board.getPieceBySquare(move.to);
+
+	if (secondPiece==EMPTY) {
+		return 0;
+	}
+
+	const Bitboard sidePawn =  board.getPiecesByType(board.makePiece(side,PAWN));
+	const Bitboard sideKnight =  board.getPiecesByType(board.makePiece(side,KNIGHT));
+	const Bitboard sideBishop =  board.getPiecesByType(board.makePiece(side,BISHOP));
+	const Bitboard sideRook =  board.getPiecesByType(board.makePiece(side,ROOK));
+	const Bitboard sideQueen =  board.getPiecesByType(board.makePiece(side,QUEEN));
+	const Bitboard sideKing =  board.getPiecesByType(board.makePiece(side,KING));
+
+	const Bitboard otherPawn =  board.getPiecesByType(board.makePiece(other,PAWN));
+	const Bitboard otherKnight =  board.getPiecesByType(board.makePiece(other,KNIGHT));
+	const Bitboard otherBishop =  board.getPiecesByType(board.makePiece(other,BISHOP));
+	const Bitboard otherRook =  board.getPiecesByType(board.makePiece(other,ROOK));
+	const Bitboard otherQueen =  board.getPiecesByType(board.makePiece(other,QUEEN));
+	const Bitboard otherKing =  board.getPiecesByType(board.makePiece(other,KING));
+
+	const Bitboard bishopAttacks =  board.getBishopAttacks(move.to);
+	const Bitboard rookAttacks =  board.getRookAttacks(move.to);
+	const Bitboard knightAttacks =  board.getKnightAttacks(move.to);
+	const Bitboard pawnAttacks =  board.getPawnAttacks(move.to);
+	const Bitboard kingAttacks =  board.getKingAttacks(move.to);
+
+	const Bitboard rooks = sideRook | otherRook;
+	const Bitboard bishops = sideBishop | otherBishop;
+	const Bitboard queens = sideQueen | otherQueen;
+
+	const Bitboard bishopAndQueen =  rooks | queens;
+	const Bitboard rookAndQueen =  bishops | queens;
+
+	Bitboard occupied = board.getAllPieces();
+
+	Bitboard attackers =
+			(bishopAttacks & bishopAndQueen) |
+			(rookAttacks & rookAndQueen) |
+			(knightAttacks & (sideKnight | otherKnight)) |
+			(pawnAttacks & (sidePawn | otherPawn)) |
+			(kingAttacks & (sideKing | otherKing));
+
+
+	int idx = 0;
+	int gain[gainTableSize];
+	Bitboard fromPiece = squareToBitboard[move.from];
+	PieceColor sideToMove = side;
+	Bitboard allAttackers = EMPTY_BB;
+
+	gain[idx] = defaultMaterialValues[secondPiece];
+
+	while (true) {
+
+		allAttackers |= attackers;
+		idx++;
+		gain[idx]  = defaultMaterialValues[firstPiece] - gain[idx-1];
+		attackers ^= fromPiece;
+		occupied  ^= fromPiece;
+		Bitboard moreAttackers = (bishopAndQueen | rookAndQueen) & (~allAttackers);
+
+		if (moreAttackers) {
+			Bitboard findMoreAttackers =
+					(board.getBishopAttacks(move.to,occupied) |
+							board.getRookAttacks(move.to,occupied));
+			findMoreAttackers &= moreAttackers;
+
+			if (findMoreAttackers) {
+				attackers |= findMoreAttackers;
+			}
+		}
+
+		sideToMove=board.flipSide(sideToMove);
+		fromPiece  = getLeastValuablePiece (board, attackers, sideToMove, firstPiece);
+
+		if (!fromPiece) {
+			break;
+		}
+	}
+
+	while (--idx) {
+		gain[idx-1]= -MAX(-gain[idx-1], gain[idx]);
+	}
+
+	return gain[0];
+}
+
+inline Bitboard Evaluator::getLeastValuablePiece(Board& board, Bitboard attackers, PieceColor& color, PieceTypeByColor& piece) {
+
+	const int first = board.makePiece(color,PAWN);
+	const int last = board.makePiece(color,KING);
+
+	for(register int pieceType = first; pieceType <= last; pieceType++) {
+		Bitboard pieces = board.getPiecesByType(PieceTypeByColor(pieceType)) & attackers;
+		if (pieces) {
+			piece = PieceTypeByColor(pieceType);
+			return pieces & -pieces;
+		}
+	}
+
+	return EMPTY_BB;
 }
 
 #endif /* EVALUATOR_H_ */

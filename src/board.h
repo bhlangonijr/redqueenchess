@@ -326,18 +326,15 @@ private:
 	static NodeZobrist nodeZobrist;
 };
 // get the board structure
-inline Node& Board::getBoard()
-{
+inline Node& Board::getBoard() {
 	return currentBoard;
 }
 
-inline void Board::clearBoard()
-{
+inline void Board::clearBoard() {
 	currentBoard.clear();
 }
 // put a piece in the board and store piece info
-inline bool Board::putPiece(const PieceTypeByColor piece, const Square square)
-{
+inline bool Board::putPiece(const PieceTypeByColor piece, const Square square) {
 	currentBoard.piece.array[piece] |= squareToBitboard[square];
 	currentBoard.pieceColor[pieceColor[piece]] |= squareToBitboard[square];
 	currentBoard.square[square] = piece;
@@ -345,8 +342,7 @@ inline bool Board::putPiece(const PieceTypeByColor piece, const Square square)
 	return true;
 }
 // remove a piece from the board and erase piece info
-inline bool Board::removePiece(const PieceTypeByColor piece, const Square square)
-{
+inline bool Board::removePiece(const PieceTypeByColor piece, const Square square) {
 	currentBoard.piece.array[piece] ^= squareToBitboard[square];
 	currentBoard.pieceColor[pieceColor[piece]] ^= squareToBitboard[square];
 	currentBoard.square[square] = EMPTY;
@@ -365,21 +361,17 @@ inline const PieceTypeByColor Board::encodePieceChar(char piece) {
 }
 
 // get castle rights
-inline const CastleRight Board::getCastleRights(PieceColor color) const
-{
+inline const CastleRight Board::getCastleRights(PieceColor color) const {
 	return currentBoard.castleRight[color];
 }
 
 // remove castle rights passed as params
-inline void Board::removeCastleRights(const PieceColor color, const CastleRight castle)
-{
+inline void Board::removeCastleRights(const PieceColor color, const CastleRight castle) {
 	currentBoard.castleRight[color]=CastleRight((int)currentBoard.castleRight[color]&(~(int)castle));
-
 }
 
 // set castle rights
-inline void Board::setCastleRights(const PieceColor color, const CastleRight castle)
-{
+inline void Board::setCastleRights(const PieceColor color, const CastleRight castle) {
 	currentBoard.castleRight[color]=castle;
 }
 
@@ -412,26 +404,22 @@ inline bool Board::canCastle(const PieceColor color, const CastleRight castleRig
 }
 
 // get
-inline const PieceColor Board::getSideToMove() const
-{
+inline const PieceColor Board::getSideToMove() const {
 	return currentBoard.sideToMove;
 }
 
 // set
-inline void Board::setSideToMove(const PieceColor color)
-{
+inline void Board::setSideToMove(const PieceColor color) {
 	currentBoard.sideToMove=color;
 }
 
 // get en passant
-inline const Square Board::getEnPassant() const
-{
+inline const Square Board::getEnPassant() const {
 	return currentBoard.enPassant;
 }
 
 // set en passant
-inline void Board::setEnPassant(const Square square)
-{
+inline void Board::setEnPassant(const Square square) {
 	currentBoard.enPassant=square;
 }
 

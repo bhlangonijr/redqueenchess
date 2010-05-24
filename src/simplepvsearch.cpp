@@ -26,7 +26,6 @@
 
 
 #include "simplepvsearch.h"
-#include "evaluator.h"
 
 // If set to true, will check move integrity - used for trace purposes
 #define CHECK_MOVE_GEN_ERRORS false
@@ -34,7 +33,6 @@
 #define SHOW_STATS false
 
 SearchAgent* agent = 0;
-Evaluator evaluator;
 MoveIterator::Move emptyMove;
 
 // root search
@@ -430,7 +428,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 	if (!isKingAttacked && beta < (maxScore-maxSearchPly) &&
 			allowNullMove && okToNullMove(board)) {
 
-		const int reduction = 3 + (depth > 4 ? depth/6 : 0);
+		const int reduction = 3 + (depth > 4 ? depth/4 : 0);
 		MoveBackup backup;
 		board.doNullMove(backup);
 		score = -normalSearch(board, -beta, -(beta-1), depth-reduction, ply+1, &line, false);
@@ -441,9 +439,9 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		}
 
 		if (score >= beta) {
-			agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,emptyMove);
+			agent->hashPut(board,beta,depth,ply,maxScore,SearchAgent::LOWER,emptyMove);
 			stats.nullMoveHits++;
-			return score;
+			return beta;
 		}
 
 		if (score < -maxScore+maxSearchPly) {
@@ -451,8 +449,8 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		}
 	}
 
-	if (depth > allowIIDAtNormal &&
-			ttMove.from == NONE &&	!isKingAttacked ) {
+	if (depth > allowIIDAtNormal && ttMove.from == NONE &&
+			!isKingAttacked ) {
 		const int iidSearchDepth = depth/2;
 		PvLine pvCandidate;
 		score = normalSearch(board,alpha,beta,iidSearchDepth,ply+1,&pvCandidate,false);

@@ -550,19 +550,19 @@ const std::string Board::getFEN() {
 	std::string castleRights = "";
 
 	if (this->getCastleRights(BLACK)==BOTH_SIDE_CASTLE) {
-		castleRights+="KQ";
+		castleRights+="kq";
 	} else if (this->getCastleRights(BLACK)==KING_SIDE_CASTLE) {
-		castleRights+="K";
+		castleRights+="k";
 	} if (this->getCastleRights(BLACK)==QUEEN_SIDE_CASTLE) {
-		castleRights+="Q";
+		castleRights+="q";
 	}
 
 	if (this->getCastleRights(WHITE)==BOTH_SIDE_CASTLE) {
-		castleRights+="kq";
+		castleRights+="KQ";
 	} else if (this->getCastleRights(WHITE)==KING_SIDE_CASTLE) {
-		castleRights+="k";
+		castleRights+="K";
 	} if (this->getCastleRights(WHITE)==QUEEN_SIDE_CASTLE) {
-		castleRights+="q";
+		castleRights+="Q";
 	}
 
 	castleRights = castleRights.length()==0?"-":castleRights;
