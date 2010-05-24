@@ -316,6 +316,7 @@ const int endGamePieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 
 };
 
+
 const Bitboard neighborFiles[ALL_SQUARE]={
 		NFILE(A1), NFILE(B1), NFILE(C1), NFILE(D1), NFILE(E1), NFILE(F1), NFILE(G1), NFILE(H1),
 		NFILE(A2), NFILE(B2), NFILE(C2), NFILE(D2), NFILE(E2), NFILE(F2), NFILE(G2), NFILE(H2),
@@ -355,7 +356,7 @@ const Bitboard passedMask[ALL_PIECE_COLOR][ALL_SQUARE]= {
 
 };
 
-const int gameSize=60;
+const int gameSize=50;
 
 class Evaluator {
 public:
@@ -375,6 +376,19 @@ public:
 	const void setGameStage(const GamePhase phase);
 	const GamePhase getGameStage();
 	const GamePhase predictGameStage(Board& board);
+	const int kingDistance(Board& board, const Square from, const PieceColor color);
+
+	inline const int interpolate(const int first, const int second, const int position) {
+
+		if (gamePhase==OPENING) {
+			return first;
+		} else if (gamePhase==ENDGAME || position >= gameSize) {
+			return second;
+		}
+
+		return (first*position)/gameSize+(second*(gameSize-position)/gameSize);
+
+	}
 
 	inline const int getPieceMaterialValue(Board& board, const PieceTypeByColor piece) {
 
@@ -382,11 +396,7 @@ public:
 		const int mgValue = defaultMaterialValues[piece];
 		const int mc = board.getMoveCounter();
 
-		if (gamePhase==ENDGAME || mc >= gameSize) {
-			return egValue;
-		}
-
-		return int((double)mgValue + (double)1/(double)(gameSize-mc) * (double)(egValue-mgValue));
+		return interpolate(mgValue,egValue,mc);
 	}
 
 	inline const int getPieceSquareValue(Board& board, const PieceTypeByColor piece, const Square square) {
@@ -395,11 +405,7 @@ public:
 		const int mgValue = defaultPieceSquareTable[piece][square];
 		const int mc = board.getMoveCounter();
 
-		if (gamePhase==ENDGAME || mc >= gameSize) {
-			return egValue;
-		}
-
-		return int((double)mgValue + (double)1/(double)(gameSize-mc) * (double)(egValue-mgValue));
+		return interpolate(mgValue,egValue,mc);
 	}
 
 private:
@@ -450,20 +456,16 @@ inline const int Evaluator::evalMaterial(Board& board, PieceColor color) {
 inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 
 	const PieceColor other = board.flipSide(color);
-	const int DONE_CASTLE_BONUS=       +(board.getPiecesByType(board.makePiece(other,QUEEN))) ? 15 : 5;
-	const int UNSTOPPABLE_PAWN_BONUS = +20;
+	const int DONE_CASTLE_BONUS=       +(board.getPiecesByType(board.makePiece(other,QUEEN))) ? 20 : 10;
 	const int DOUBLED_ROOKS =          +10;
-	const int DOUBLED_PAWN_PENALTY =   -10;
-	const int ISOLATED_PAWN_PENALTY =  -10;
+	const int DOUBLED_PAWN_PENALTY =   -15;
+	const int ISOLATED_PAWN_PENALTY =  -20;
 	const int BACKWARD_PAWN_PENALTY =  -10;
 	int count=0;
 
 	// king
-	if (gamePhase!=ENDGAME) {
-		// king castle bonus
-		if (board.isCastleDone(color)) {
-			count= DONE_CASTLE_BONUS;
-		}
+	if (gamePhase!=ENDGAME && board.isCastleDone(color)) {
+		count= DONE_CASTLE_BONUS;
 	}
 
 	Bitboard pawns = board.getPiecesByType(board.makePiece(color,PAWN));
@@ -480,7 +482,7 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 			if (fileAttacks[squareFile[from]]&allButThePawn) {
 				count += DOUBLED_PAWN_PENALTY;
 			} else if (!(passedMask[color][from]&enemyPawns)) {
-				count += UNSTOPPABLE_PAWN_BONUS;
+				count += endGamePieceSquareTable[board.makePiece(color,PAWN)][from];
 			}
 
 			if (!(neighborFiles[from]&allButThePawn)) {
@@ -593,6 +595,21 @@ inline const int Evaluator::evalImbalances(Board& board, PieceColor color) {
 
 	// TODO implement more imbalances
 	return count;
+}
+
+// piece distance
+inline const int Evaluator::kingDistance(Board& board, const Square from, const PieceColor color) {
+
+	/*const Bitboard kingBB = board.getPiecesByType(board.makePiece(color,KING));
+	const Square KingSq = bitboardToSquare(kingBB);
+
+	if (KingSq==NONE) {
+		return 8;
+	}
+
+	return (abs(squareRank[kingSq]-squareRank[from])+
+			abs(squareFile[kingSq]-squareFile[from]))/2;*/
+	return 0;
 }
 
 #endif /* EVALUATOR_H_ */

@@ -494,7 +494,7 @@ inline int SimplePVSearch::extendDepth(const bool isKingAttacked,
 inline int SimplePVSearch::reduceDepth(Board& board, MoveIterator::Move& move, MoveBackup& backup,
 		int depth, int remainingMoves, bool isKingAttacked, int ply, bool isPV) {
 	//TODO verify this
-	return okToReduce(board, move, backup,	depth, remainingMoves, isKingAttacked, ply) ? (isPV?2:3) : 1;
+	return okToReduce(board, move, backup,	depth, remainingMoves, isKingAttacked, ply) ? (isPV?2:2) : 1;
 }
 
 inline const bool SimplePVSearch::stop(const bool searchInProgress) {
