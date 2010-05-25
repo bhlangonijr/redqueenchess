@@ -43,7 +43,7 @@ const int allowIIDAtPV = 5;
 const int allowIIDAtNormal = 7;
 const int prunningDepth=4;
 const int prunningMoves=4;
-const int scoreTable[10]={1,8000,7000,9500,9000,50,45,400,500,-900};
+const int scoreTable[10]={1,900,100,9500,9000,50,45,40,50,-90};
 
 class SimplePVSearch {
 
@@ -257,7 +257,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
 		board.generateCaptures(moves, board.getSideToMove());
-		scoreCaptures(board, moves,false);
+		scoreCaptures(board, moves,true);
 		moves.goNextStage();
 	}
 
@@ -267,7 +267,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			if (move==ttMove) {
 				continue;
 			}
-			move.score = evaluator.see(board,move);
+			//move.score = evaluator.see(board,move);
 			if (move.score < 0) {
 				moves.prior();
 				break; // it will keep the bad captures after non captures
@@ -357,7 +357,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 // score evasion moves
 inline void SimplePVSearch::scoreEvasions(Board& board, MoveIterator& moves) {
-	const int historyBonus=10;
+	const int historyBonus=20;
 	moves.bookmark();
 
 	while (moves.hasNext()) {
@@ -405,7 +405,7 @@ inline void SimplePVSearch::scoreCaptures(Board& board, MoveIterator& moves, con
 // score all moves
 inline void SimplePVSearch::scoreQuiet(Board& board, MoveIterator& moves) {
 
-	const int historyBonus=10;
+	const int historyBonus=10000;
 	moves.bookmark();
 
 	while (moves.hasNext()) {
@@ -495,7 +495,12 @@ inline int SimplePVSearch::extendDepth(const bool isKingAttacked,
 inline int SimplePVSearch::reduceDepth(Board& board, MoveIterator::Move& move, MoveBackup& backup,
 		int depth, int remainingMoves, bool isKingAttacked, int ply, bool isPV) {
 	//TODO verify this
-	return okToReduce(board, move, backup,	depth, remainingMoves, isKingAttacked, ply) ? (isPV?2:2) : 1;
+
+	if (!okToReduce(board, move, backup, depth, remainingMoves, isKingAttacked, ply)) {
+		return 1;
+	}
+
+	return isPV?2:3;
 }
 
 inline const bool SimplePVSearch::stop(const bool searchInProgress) {

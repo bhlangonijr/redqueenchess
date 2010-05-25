@@ -226,7 +226,6 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 			alpha = score;
 			updatePv(pv, line, move);
 			bestMove=move;
-			updateHistory(board,move,depth);
 			if (!stop(agent->getSearchInProgress())) {
 				uciOutput(pv, stats.bestMove, getTickCount()-_startTime, agent->hashFull(), depth);
 				time = getTickCount();
@@ -293,7 +292,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 	}
 
 	MoveIterator moves = MoveIterator();
-	MoveIterator::Move bestMove;
+	MoveIterator::Move bestMove = ttMove;
 	int moveCounter=0;
 	int remainingMoves=0;
 
@@ -317,8 +316,8 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 			remainingMoves++;
 		}
 
-		int reduction=reduceDepth(board, move, backup, depth, remainingMoves, isKingAttacked,ply,true);
-		int extension=extendDepth(isKingAttacked,false,isPawnPush(move,backup));
+		const int reduction=reduceDepth(board, move, backup, depth, remainingMoves, isKingAttacked,ply,true);
+		const int extension=extendDepth(isKingAttacked,false,isPawnPush(move,backup));
 
 		if ( moveCounter==1) {
 			score = -pvSearch(board, -beta, -alpha, depth-1+extension, ply+1, &line);
@@ -450,7 +449,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 	}
 
 	if (depth > allowIIDAtNormal && ttMove.from == NONE &&
-			!isKingAttacked ) {
+			!isKingAttacked && !nullMoveMateScore) {
 		const int iidSearchDepth = depth/2;
 		PvLine pvCandidate;
 		score = normalSearch(board,alpha,beta,iidSearchDepth,ply+1,&pvCandidate,false);
@@ -461,7 +460,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 	}
 
 	MoveIterator moves = MoveIterator();
-	MoveIterator::Move bestMove;
+	MoveIterator::Move bestMove=ttMove;
 	int moveCounter=0;
 	int remainingMoves=0;
 
@@ -485,8 +484,8 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 			remainingMoves++;
 		}
 
-		int reduction=reduceDepth(board, move, backup, depth, remainingMoves, isKingAttacked,ply,false);
-		int extension=extendDepth(isKingAttacked,nullMoveMateScore,isPawnPush(move,backup));
+		const int reduction=reduceDepth(board, move, backup, depth, remainingMoves, isKingAttacked,ply,false);
+		const int extension=extendDepth(isKingAttacked,nullMoveMateScore,isPawnPush(move,backup));
 
 		score = -normalSearch(board, -beta, -(beta-1), depth-reduction+extension, ply+1, &line, allowNullMove);
 
@@ -511,9 +510,9 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 
 		if( score > alpha ) {
 			alpha = score;
+			updateHistory(board,move,depth);
 			updatePv(pv, line, move);
 			bestMove=move;
-			updateHistory(board,move,depth);
 		}
 
 	}
@@ -542,7 +541,6 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 		return 0;
 	}
 
-	MoveIterator::Move ttMove = MoveIterator::Move();
 	int standPat = evaluator.evaluate(board);
 
 	if(standPat>=beta) {
