@@ -612,15 +612,15 @@ long SimplePVSearch::perft(Board& board, int depth, int ply) {
 		time=getTickCount();
 	}
 	getTickCount();
-	int nodes=0;
+	long nodes=0;
 	MoveIterator moves = MoveIterator();
-	//const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
+	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 
-	//if (!isKingAttacked) {
+	if (!isKingAttacked) {
 		board.generateAllMoves(moves, board.getSideToMove());
-	/*} else {
+	} else {
 		board.generateEvasions(moves, board.getSideToMove());
-	}*/
+	}
 
 	while (moves.hasNext())  {
 
@@ -642,7 +642,11 @@ long SimplePVSearch::perft(Board& board, int depth, int ply) {
 
 	if (ply==1 && isUpdateUci()) {
 		std::cout << "Node count: " << nodes << std::endl;
-		std::cout << "time: " << (getTickCount()-time) << std::endl;
+		std::cout << "Time: " << (getTickCount()-time) << std::endl;
+
+		/*long nps=(nodes/(time/MAX(1000,1)));
+		std::cout << "NPS: " << nps << std::endl;*/
+
 	}
 
 	return nodes;

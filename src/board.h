@@ -120,12 +120,12 @@ struct MoveBackup {
 struct Node {
 
 	Node () : key(0ULL), piece(), moveCounter(0), halfMoveCounter(0)
-	{}
+									{}
 
 	Node (const Node& node) : key(node.key), piece( node.piece ), enPassant( node.enPassant ),
 			sideToMove( node.sideToMove ), moveCounter(node.moveCounter),
 			halfMoveCounter(node.halfMoveCounter)
-	{
+			{
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=node.square[x];
 		}
@@ -139,7 +139,7 @@ struct Node {
 		castleDone[WHITE]=node.castleDone[WHITE];
 		castleDone[BLACK]=node.castleDone[BLACK];
 
-	}
+			}
 
 	Key key;
 
@@ -257,6 +257,7 @@ public:
 	const Rank getSquareRank(const Square square) const;
 	const File getSquareFile(const Square square) const;
 	const bool isAttacked(const PieceColor color, const PieceType type);
+	const bool isAttacked(const PieceColor color, const Square from);
 	const bool isAnyAttacked(const Bitboard occupation, const PieceColor attackingSide);
 	const bool isNotLegal();
 	const bool isMoveLegal(MoveIterator::Move& move);
@@ -293,7 +294,7 @@ public:
 	const Bitboard getKnightAttacks(const Square square);
 	const Bitboard getKnightAttacks(const Square square, const Bitboard occupied);
 	const Bitboard getPawnAttacks(const Square square);
-	const Bitboard getPawnAttacks(const Square square, const Bitboard occupied);
+	const Bitboard getPawnAttacks(const Square square,  const PieceColor color);
 	const Bitboard getPawnMoves(const Square square);
 	const Bitboard getPawnMoves(const Square square, const Bitboard occupied);
 	const Bitboard getPawnCaptures(const Square square);
@@ -391,14 +392,17 @@ inline bool Board::canCastle(const PieceColor color) {
 // can castle specific?
 inline bool Board::canCastle(const PieceColor color, const CastleRight castleRight) {
 
-	if (currentBoard.castleRight[color] == NO_CASTLE) { // lost the right to castle?
+	// lost the right to castle?
+
+	if (this->isCastleDone(color)) {
 		return false;
 	} else if (currentBoard.castleRight[color]!=BOTH_SIDE_CASTLE &&
 			currentBoard.castleRight[color]!=castleRight) {
 		return false;
 	}
 
-	if (castleSquare[color][castleRight]&getAllPieces()) { // pieces interposing king & rooks?
+	// pieces interposing king & rooks?
+	if (castleSquare[color][castleRight]&getAllPieces()) {
 		return false;
 	}
 
@@ -406,8 +410,30 @@ inline bool Board::canCastle(const PieceColor color, const CastleRight castleRig
 		return false;
 	}
 
-	if (isAnyAttacked(castleLegalSquare[color][castleRight],flipSide(color))) { // squares through castle & king destination attacked?
-		return false;
+
+	// squares through castle & king destination attacked?
+	if (castleRight==BOTH_SIDE_CASTLE || castleRight==KING_SIDE_CASTLE) {
+		if (color==WHITE) {
+			if (isAttacked(color,F1) || isAttacked(color,G1)) {
+				return false;
+			}
+		} else {
+			if (isAttacked(color,F8) || isAttacked(color,G8)) {
+				return false;
+			}
+		}
+	}
+
+	if (castleRight==BOTH_SIDE_CASTLE || castleRight==QUEEN_SIDE_CASTLE) {
+		if (color==WHITE) {
+			if (isAttacked(color,D1) || isAttacked(color,C1)) {
+				return false;
+			}
+		} else {
+			if (isAttacked(color,D8) || isAttacked(color,C8)) {
+				return false;
+			}
+		}
 	}
 
 	return true;
@@ -491,10 +517,25 @@ inline const bool Board::isAttacked(const PieceColor color, const PieceType type
 				(getRookAttacks(from) & (getPiecesByType(makePiece(other,ROOK)) |
 						getPiecesByType(makePiece(other,QUEEN)))) ||
 						(getKnightAttacks(from) & getPiecesByType(makePiece(other,KNIGHT))) ||
-						(getPawnAttacks(from) & getPiecesByType(makePiece(other,PAWN))) ||
+						(getPawnAttacks(from,color) & getPiecesByType(makePiece(other,PAWN))) ||
 						(getKingAttacks(from) & getPiecesByType(makePiece(other,KING)));
 	}
 	return false;
+
+}
+
+
+inline const bool Board::isAttacked(const PieceColor color, const Square from) {
+
+	PieceColor other = flipSide(color);
+
+	return 	(getBishopAttacks(from) & (getPiecesByType(makePiece(other,BISHOP)) |
+			getPiecesByType(makePiece(other,QUEEN)))) ||
+			(getRookAttacks(from) & (getPiecesByType(makePiece(other,ROOK)) |
+					getPiecesByType(makePiece(other,QUEEN)))) ||
+					(getKnightAttacks(from) & getPiecesByType(makePiece(other,KNIGHT))) ||
+					(getPawnAttacks(from,color) & getPiecesByType(makePiece(other,PAWN))) ||
+					(getKingAttacks(from) & getPiecesByType(makePiece(other,KING)));
 
 }
 
@@ -511,7 +552,7 @@ inline const bool Board::isAnyAttacked(const Bitboard occupation, const PieceCol
 				(getRookAttacks(from) & (getPiecesByType(makePiece(attackingSide,ROOK)) |
 						getPiecesByType(makePiece(attackingSide,QUEEN)))) ||
 						(getKnightAttacks(from) & getPiecesByType(makePiece(attackingSide,KNIGHT))) ||
-						(getPawnAttacks(from) & getPiecesByType(makePiece(attackingSide,PAWN))) ||
+						(getPawnAttacks(from,attackingSide) & getPiecesByType(makePiece(attackingSide,PAWN))) ||
 						(getKingAttacks(from) & getPiecesByType(makePiece(attackingSide,KING)));
 
 		if (result) {
@@ -549,9 +590,9 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 
 	if ((getPieceType(fromPiece) == KING) &&
 			((move.from==E1 && move.to==G1) ||
-			(move.from==E1 && move.to==C1) ||
-			(move.from==E8 && move.to==G8) ||
-			(move.from==E8 && move.to==C8))) {
+					(move.from==E1 && move.to==C1) ||
+					(move.from==E8 && move.to==G8) ||
+					(move.from==E8 && move.to==C8))) {
 		const CastleRight castleRight = (move.to==C1 || move.to==C8) ? QUEEN_SIDE_CASTLE : KING_SIDE_CASTLE;
 
 		if (!canCastle(getSideToMove(), castleRight)) {
@@ -724,10 +765,10 @@ inline const Bitboard Board::getPawnAttacks(const Square square) {
 }
 
 // return a bitboard with move squares by the pawn in the given square
-inline const Bitboard Board::getPawnAttacks(const Square square, const Bitboard occupied) {
+inline const Bitboard Board::getPawnAttacks(const Square square, const PieceColor color) {
 
-	const Bitboard pawnAttacks = getPieceColorBySquare(square)==WHITE?whitePawnAttacks[square]:blackPawnAttacks[square];
-	const Bitboard captures = (pawnAttacks & occupied) & ~fileAttacks[square];
+	const Bitboard pawnAttacks = color==WHITE?whitePawnAttacks[square]:blackPawnAttacks[square];
+	const Bitboard captures = (pawnAttacks) & ~fileAttacks[square];
 
 	return captures;
 }
@@ -866,7 +907,7 @@ inline void Board::generateEvasions(MoveIterator& moves, const PieceColor side) 
 
 	const Bitboard attackersAndEmpty = (otherPieces | empty) & kingAttackers;
 
-	generatePawnCaptures(moves, side, otherPieces);
+	generatePawnCaptures(moves, side, otherPieces & kingAttackers);
 	generatePawnMoves(moves, side, empty & kingAttackers);
 	generateKnightMoves(moves, side, attackersAndEmpty);
 	generateBishopMoves(moves, side, attackersAndEmpty);
