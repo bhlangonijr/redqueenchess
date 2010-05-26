@@ -601,3 +601,49 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 	return alpha;
 }
 
+
+//perft
+long SimplePVSearch::perft(Board& board, int depth, int ply) {
+
+	if (depth == 0) return 1;
+
+	long time=0;
+	if (ply==1) {
+		time=getTickCount();
+	}
+	getTickCount();
+	int nodes=0;
+	MoveIterator moves = MoveIterator();
+	//const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
+
+	//if (!isKingAttacked) {
+		board.generateAllMoves(moves, board.getSideToMove());
+	/*} else {
+		board.generateEvasions(moves, board.getSideToMove());
+	}*/
+
+	while (moves.hasNext())  {
+
+		MoveIterator::Move& move = moves.next();
+		MoveBackup backup;
+
+		board.doMove(move,backup);
+
+		if (board.isNotLegal()) {
+			board.undoMove(backup);
+			continue; // not legal
+		}
+
+		nodes += perft(board, depth-1, ply+1);
+
+		board.undoMove(backup);
+
+	}
+
+	if (ply==1 && isUpdateUci()) {
+		std::cout << "Node count: " << nodes << std::endl;
+		std::cout << "time: " << (getTickCount()-time) << std::endl;
+	}
+
+	return nodes;
+}

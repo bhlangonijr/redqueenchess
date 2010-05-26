@@ -16,7 +16,7 @@
 
     You should have received a copy of the GNU General Public License
     along with Redqueen.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 /**
  * Uci.cpp
  *
@@ -107,6 +107,9 @@ bool Uci::execute()
 	case QUIT:
 	case STOP:
 		executeStop();
+		break;
+	case PERFT:
+		executePerft();
 		break;
 	case TEST :
 		executeTest();
@@ -285,6 +288,18 @@ void Uci::executeStop() {
 	searchAgent->stopSearch();
 }
 
+// execute perft
+void Uci::executePerft() {
+	SearchAgent *searchAgent = SearchAgent::getInstance();
+
+	if (containsString(this->rawInput, "perft")) {
+		searchAgent->setSearchMode(SearchAgent::SEARCH_DEPTH);
+		searchAgent->setDepth(toInt(getMiddleString(this->rawInput,"perft ")));
+	}
+
+	searchAgent->doPerft();
+}
+
 // execute Test
 void Uci::executeTest() {
 	//test
@@ -325,7 +340,7 @@ void Uci::executeTest() {
 
 	//delete board;
 	//delete board2;
-//	delete board3;
+	//	delete board3;
 
 }
 // uci info

@@ -39,8 +39,8 @@ const int MATE_RANGE_SCORE = 300;
 const int maxScore = 20000;
 const int maxSearchDepth = 80;
 const int maxSearchPly = 64;
-const int allowIIDAtPV = 5;
-const int allowIIDAtNormal = 7;
+const int allowIIDAtPV = 3;
+const int allowIIDAtNormal = 13;
 const int prunningDepth=4;
 const int prunningMoves=4;
 const int scoreTable[10]={1,900,100,9500,9000,50,45,40,50,-90};
@@ -117,6 +117,7 @@ public:
 
 	virtual ~SimplePVSearch() {}
 	virtual void search();
+	virtual long perft(Board& board, int depth, int ply);
 	virtual int getScore();
 
 	inline const int getTickCount() {
@@ -500,7 +501,7 @@ inline int SimplePVSearch::reduceDepth(Board& board, MoveIterator::Move& move, M
 		return 1;
 	}
 
-	return isPV?2:3;
+	return isPV ? 2 : 3;
 }
 
 inline const bool SimplePVSearch::stop(const bool searchInProgress) {

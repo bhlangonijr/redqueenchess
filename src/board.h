@@ -63,8 +63,15 @@ enum CastleRight {
 
 // castle squares
 const Bitboard castleSquare[ALL_PIECE_COLOR][ALL_CASTLE_RIGHT]={
-		/*WHITE*/{EMPTY_BB, Sq2Bb(F1)|Sq2Bb(G1), Sq2Bb(D1)|Sq2Bb(C1)|Sq2Bb(B1), Sq2Bb(F1)|Sq2Bb(G1)|Sq2Bb(D1)|Sq2Bb(C1)||Sq2Bb(B1)},
+		/*WHITE*/{EMPTY_BB, Sq2Bb(F1)|Sq2Bb(G1), Sq2Bb(D1)|Sq2Bb(C1)|Sq2Bb(B1), Sq2Bb(F1)|Sq2Bb(G1)|Sq2Bb(D1)|Sq2Bb(C1)|Sq2Bb(B1)},
 		/*BLACK*/{EMPTY_BB, Sq2Bb(F8)|Sq2Bb(G8), Sq2Bb(D8)|Sq2Bb(C8)|Sq2Bb(B8), Sq2Bb(F8)|Sq2Bb(G8)|Sq2Bb(D8)|Sq2Bb(C8)|Sq2Bb(B8)},
+		/*NONE */{EMPTY_BB, EMPTY_BB, EMPTY_BB, EMPTY_BB }
+};
+
+// castle legal squares
+const Bitboard castleLegalSquare[ALL_PIECE_COLOR][ALL_CASTLE_RIGHT]={
+		/*WHITE*/{EMPTY_BB, Sq2Bb(F1)|Sq2Bb(G1), Sq2Bb(D1)|Sq2Bb(C1), Sq2Bb(F1)|Sq2Bb(G1)|Sq2Bb(D1)|Sq2Bb(C1)},
+		/*BLACK*/{EMPTY_BB, Sq2Bb(F8)|Sq2Bb(G8), Sq2Bb(D8)|Sq2Bb(C8), Sq2Bb(F8)|Sq2Bb(G8)|Sq2Bb(D8)|Sq2Bb(C8)},
 		/*NONE */{EMPTY_BB, EMPTY_BB, EMPTY_BB, EMPTY_BB }
 };
 
@@ -250,7 +257,7 @@ public:
 	const Rank getSquareRank(const Square square) const;
 	const File getSquareFile(const Square square) const;
 	const bool isAttacked(const PieceColor color, const PieceType type);
-	const bool isAttacked(const Bitboard occupation, const PieceColor attackingSide);
+	const bool isAnyAttacked(const Bitboard occupation, const PieceColor attackingSide);
 	const bool isNotLegal();
 	const bool isMoveLegal(MoveIterator::Move& move);
 	const bool isAttackedBy(const Square from, const Square to);
@@ -395,11 +402,14 @@ inline bool Board::canCastle(const PieceColor color, const CastleRight castleRig
 		return false;
 	}
 
-	Bitboard castle=getPiecesByType(makePiece(color,KING))|(castleSquare[color][castleRight]);
-
-	if (isAttacked(castle,flipSide(color))) { // squares through castle & king destination attacked?
+	if (isAttacked(color,KING)) {
 		return false;
 	}
+
+	if (isAnyAttacked(castleLegalSquare[color][castleRight],flipSide(color))) { // squares through castle & king destination attacked?
+		return false;
+	}
+
 	return true;
 }
 
@@ -489,7 +499,7 @@ inline const bool Board::isAttacked(const PieceColor color, const PieceType type
 }
 
 // verify if the given bitboard occupation is attacked
-inline const bool Board::isAttacked(const Bitboard occupation, const PieceColor attackingSide) {
+inline const bool Board::isAnyAttacked(const Bitboard occupation, const PieceColor attackingSide) {
 
 	Bitboard pieces = occupation;
 	Square from = extractLSB(pieces);
@@ -687,15 +697,11 @@ inline const Bitboard Board::getQueenAttacks(const Square square) {
 
 // return a bitboard with attacked squares by the queen in the given square
 inline const Bitboard Board::getQueenAttacks(const Square square, const Bitboard occupied) {
-
 	return getBishopAttacks(square, occupied) | getRookAttacks(square, occupied);
 }
 
 // overload method - gets current occupied squares in the board
 inline const Bitboard Board::getKnightAttacks(const Square square) {
-	if (getPieceBySquare(square)==EMPTY) {
-		return EMPTY_BB;
-	}
 	return knightAttacks[square];
 }
 

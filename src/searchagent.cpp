@@ -108,6 +108,7 @@ void* SearchAgent::startThreadSearch() {
 	simplePV.search();
 	return 0;
 }
+
 // start search
 void SearchAgent::startSearch() {
 
@@ -126,6 +127,21 @@ void SearchAgent::startSearch() {
 	/*pthread_t executor2;
 	int ret2 = 0;
 	ret2 = pthread_create( &executor2, NULL, threadStartup, this);*/
+
+}
+
+// start perft
+void SearchAgent::doPerft() {
+
+	if (getSearchInProgress()) {
+		Uci::getInstance()->text("Search in progress...");
+		return;
+	}
+
+	std::cout << "info Executing perft..." << std::endl;
+	SimplePVSearch simplePV(board);
+	long nodes = simplePV.perft(board,this->getDepth(),1);
+	std::cout << "info Finished perft: " << nodes << std::endl;
 
 }
 

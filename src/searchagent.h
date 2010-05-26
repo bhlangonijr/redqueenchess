@@ -96,6 +96,7 @@ public:
 	void setPositionFromFEN(std::string fenMoves);
 
 	void startSearch();
+	void doPerft();
 	void stopSearch();
 
 	inline const size_t getHashSize() const {
