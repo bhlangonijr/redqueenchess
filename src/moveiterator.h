@@ -234,13 +234,13 @@ inline MoveIterator::Move& MoveIterator::prior() {
 inline MoveIterator::Move& MoveIterator::selectBest() {
 
 	size_t idxMax = _data.idx;
-	for (size_t x=_data.idx;x<_data.size;x++) {
+	for (size_t x=_data.idx+1;x<_data.size;x++) {
 		if (_data.list[x].score > _data.list[idxMax].score) {
 			idxMax = x;
 		}
 	}
 	if (idxMax != _data.idx) {
-		const Move tmp=_data.list[_data.idx];
+		Move tmp=_data.list[_data.idx];
 		_data.list[_data.idx]=_data.list[idxMax];
 		_data.list[idxMax]=tmp;
 	}

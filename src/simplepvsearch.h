@@ -40,10 +40,12 @@ const int MATE_RANGE_SCORE = 300;
 const int maxScore = 20000;
 const int maxSearchDepth = 80;
 const int maxSearchPly = 64;
-const int allowIIDAtPV = 3;
-const int allowIIDAtNormal = 13;
-const int prunningDepth=4;
-const int prunningMoves=4;
+const int allowIIDAtPV = 5;
+const int allowIIDAtNormal = 7;
+const int prunningDepth=3;
+const int prunningMoves=3;
+const int pvReduction=2;
+const int nonPvReduction=3;
 const int scoreTable[10]={1,900,100,9500,9000,50,45,40,50,-90};
 
 class SimplePVSearch {
@@ -320,7 +322,6 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 	if (moves.getStage()==MoveIterator::BEGIN_STAGE) {
 		if (!isKingAttacked) {
 			moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
-
 		} else {
 			moves.setStage(MoveIterator::INIT_EVASION_STAGE);
 		}
@@ -329,11 +330,12 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 	if (moves.getStage()==MoveIterator::INIT_EVASION_STAGE) {
 		board.generateEvasions(moves, board.getSideToMove());
 		scoreEvasions(board, moves);
+		moves.first();
 		moves.goNextStage();
 	}
 
 	if (moves.getStage()==MoveIterator::ON_EVASION_STAGE) {
-		while (moves.hasNext()) {
+		if (moves.hasNext()) {
 			return moves.selectBest();
 		}
 		moves.setStage(MoveIterator::END_STAGE);
@@ -343,11 +345,12 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
 		board.generateCaptures(moves, board.getSideToMove());
 		scoreCaptures(board, moves, true);
+		moves.first();
 		moves.goNextStage();
 	}
 
 	if (moves.getStage()==MoveIterator::ON_CAPTURE_STAGE) {
-		while (moves.hasNext()) {
+		if (moves.hasNext()) {
 			return moves.selectBest();
 		}
 		moves.setStage(MoveIterator::END_STAGE);
@@ -359,7 +362,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 // score evasion moves
 inline void SimplePVSearch::scoreEvasions(Board& board, MoveIterator& moves) {
-	const int historyBonus=20;
+	//const int historyBonus=20;
 	moves.bookmark();
 
 	while (moves.hasNext()) {
@@ -372,7 +375,7 @@ inline void SimplePVSearch::scoreEvasions(Board& board, MoveIterator& moves) {
 			}
 
 		} else {
-			move.score=history[board.getPieceTypeBySquare(move.from)][move.to]*historyBonus;
+			//move.score=history[board.getPieceTypeBySquare(move.from)][move.to]*historyBonus;
 			if (move.type==MoveIterator::UNKNOW) {
 				move.type=MoveIterator::NON_CAPTURE;
 			} else if (move.type==MoveIterator::PROMO_NONCAPTURE) {
@@ -496,13 +499,12 @@ inline int SimplePVSearch::extendDepth(const bool isKingAttacked,
 // depth reduction
 inline int SimplePVSearch::reduceDepth(Board& board, MoveIterator::Move& move, MoveBackup& backup,
 		int depth, int remainingMoves, bool isKingAttacked, int ply, bool isPV) {
-	//TODO verify this
 
 	if (!okToReduce(board, move, backup, depth, remainingMoves, isKingAttacked, ply)) {
 		return 1;
 	}
 
-	return isPV ? 2 : 3;
+	return isPV ? pvReduction : nonPvReduction;
 }
 
 inline const bool SimplePVSearch::stop(const bool searchInProgress) {
@@ -563,8 +565,7 @@ inline void SimplePVSearch::uciOutput(MoveIterator::Move& move, const int moveCo
 
 	if (isUpdateUci()) {
 		if (_startTime+uciOutputSecs < getTickCount()) {
-			std::cout << "info currmove " << move.toString()
-																	<< " currmovenumber " << moveCounter << std::endl;
+			std::cout << "info currmove " << move.toString() << " currmovenumber " << moveCounter << std::endl;
 		}
 	}
 }

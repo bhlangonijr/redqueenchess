@@ -554,6 +554,8 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 	const int delta = alpha - pieceMaterialValues[WHITE_PAWN] - standPat;
+	int moveCounter=0;
+	bool pvNode = (beta - alpha != 1);
 	PvLine line = PvLine();
 	MoveIterator moves = MoveIterator();
 
@@ -564,7 +566,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 			break;
 		}
 
-		if (!isKingAttacked &&
+		if (!isKingAttacked && !pvNode &&
 				move.type!=MoveIterator::PROMO_CAPTURE &&
 				move.score < delta) {
 			continue;
@@ -578,6 +580,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 			board.undoMove(backup);
 			continue; // not legal
 		}
+		moveCounter++;
 
 		int score = -qSearch(board, -beta, -alpha, depth-1, ply+1, &line);
 
@@ -596,6 +599,10 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 			updatePv(pv, line, move);
 		}
 
+	}
+
+	if (!moveCounter && isKingAttacked) {
+		return -maxScore+ply;
 	}
 
 	return alpha;
