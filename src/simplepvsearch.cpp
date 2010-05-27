@@ -31,6 +31,8 @@
 #define CHECK_MOVE_GEN_ERRORS false
 // show stats info
 #define SHOW_STATS false
+// executes a minimalist search
+#define DO_MINISEARCH false
 
 SearchAgent* agent = 0;
 MoveIterator::Move emptyMove;
@@ -45,7 +47,11 @@ void SimplePVSearch::search() {
 	errorCount=0;
 	_startTime = getTickCount();
 	timeToStop = clock() + toClock(_timeToSearch);
+#if DO_MINISEARCH
+	_score = miniSearch(board, -maxScore, +maxScore, _depth, 0);
+#else
 	_score = idSearch(board);
+#endif
 	SearchAgent::getInstance()->setSearchInProgress(false);
 	_time = getTickCount() - _startTime;
 
@@ -264,7 +270,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 	SearchAgent::HashData hashData;
 
 	if (agent->hashGet(board.getKey(), hashData, ply, maxScore)) {
-	  ttMove=hashData.move;
+		ttMove=hashData.move;
 	}
 
 	if (alpha>=beta) {
@@ -290,7 +296,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 	}
 
 	MoveIterator moves = MoveIterator();
-	MoveIterator::Move bestMove = ttMove;
+	MoveIterator::Move bestMove;
 	int moveCounter=0;
 	int remainingMoves=0;
 
@@ -435,9 +441,9 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		}
 
 		if (score >= beta) {
-			agent->hashPut(board,beta,depth,ply,maxScore,SearchAgent::LOWER,emptyMove);
+			agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,emptyMove);
 			stats.nullMoveHits++;
-			return beta;
+			return score;
 		}
 
 		if (score < -maxScore+maxSearchPly) {
@@ -457,7 +463,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 	}
 
 	MoveIterator moves = MoveIterator();
-	MoveIterator::Move bestMove=ttMove;
+	MoveIterator::Move bestMove;
 	int moveCounter=0;
 	int remainingMoves=0;
 
@@ -486,7 +492,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 
 		score = -normalSearch(board, -beta, -(beta-1), depth-reduction+extension, ply+1, &line, allowNullMove);
 
-		if (score > alpha && !stop(agent->getSearchInProgress())) {
+		if (score >= beta && !stop(agent->getSearchInProgress())) {
 			score = -normalSearch(board, -beta, -(beta-1), depth-1+extension, ply+1, &line, allowNullMove);
 		}
 
@@ -537,7 +543,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 	}
 
 	int standPat = evaluator.evaluate(board);
-
+	//if (true) return standPat;
 	if(standPat>=beta) {
 		pv->index=0;
 		return beta;
@@ -623,7 +629,7 @@ long SimplePVSearch::perft(Board& board, int depth, int ply) {
 	if (ply==1) {
 		time=getTickCount();
 	}
-	getTickCount();
+
 	long nodes=0;
 	MoveIterator moves = MoveIterator();
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
@@ -655,11 +661,74 @@ long SimplePVSearch::perft(Board& board, int depth, int ply) {
 	if (ply==1 && isUpdateUci()) {
 		std::cout << "Node count: " << nodes << std::endl;
 		std::cout << "Time: " << (getTickCount()-time) << std::endl;
-
-		/*long nps=(nodes/(time/MAX(1000,1)));
-		std::cout << "NPS: " << nps << std::endl;*/
-
 	}
 
 	return nodes;
+}
+
+//mini search
+int SimplePVSearch::miniSearch(Board& board, int alpha, int beta, int depth, int ply) {
+
+	//if (depth == 0) return evaluator.evaluate(board);
+
+	PvLine line;
+	if (depth<=0) return qSearch(board, alpha, beta, 0, ply+1, &line);
+
+	long time=0;
+	if (ply==1) {
+		time=getTickCount();
+	}
+
+	int score=0;
+	MoveIterator::Move bestMove = MoveIterator::Move();
+	MoveIterator moves = MoveIterator();
+	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
+
+	if (!isKingAttacked) {
+		board.generateAllMoves(moves, board.getSideToMove());
+	} else {
+		board.generateEvasions(moves, board.getSideToMove());
+	}
+
+	while (moves.hasNext())  {
+
+		MoveIterator::Move& move = moves.next();
+		MoveBackup backup;
+
+		board.doMove(move,backup);
+
+		if (board.isNotLegal()) {
+			board.undoMove(backup);
+			continue; // not legal
+		}
+
+		score = miniSearch(board, -beta, -alpha, depth-1, ply+1);
+		if (!ply) {
+			std::cout << "info Searching: " << move.toString() << " - Score: " << score << std::endl;
+		}
+
+		if (stop(agent->getSearchInProgress())) {
+			return 0;
+		}
+
+		board.undoMove(backup);
+
+		if( score >= beta ) {
+			return beta;
+		}
+
+		if( score > alpha ) {
+			bestMove=move;
+			alpha = score;
+		}
+
+	}
+
+	if (!ply && isUpdateUci()) {
+		std::cout << "Time: " << (getTickCount()-time) << std::endl;
+		std::cout << "bestmove " << bestMove.toString() << std::endl;
+		std::cout << "Score: " << alpha << std::endl;
+	}
+
+	return alpha;
 }

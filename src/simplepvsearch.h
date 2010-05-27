@@ -45,7 +45,7 @@ const int allowIIDAtNormal = 7;
 const int prunningDepth=3;
 const int prunningMoves=3;
 const int pvReduction=2;
-const int nonPvReduction=3;
+const int nonPvReduction=2;
 const int aspirationDepth=6;
 const int scoreTable[10]={1,900,100,9500,9000,50,45,40,50,-90};
 
@@ -204,6 +204,7 @@ private:
 	int pvSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);
 	int normalSearch(Board& board, int alpha, int beta,	int depth, int ply, PvLine* pv,	const bool allowNullMove);
 	int qSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);
+	int miniSearch(Board& board, int alpha, int beta, int depth, int ply);
 	void uciOutput(PvLine* pv, MoveIterator::Move& bestMove, const int totalTime, const int hashFull, const int depth);
 	void uciOutput(MoveIterator::Move& bestMove);
 	void uciOutput(MoveIterator::Move& move, const int moveCounter);
@@ -254,7 +255,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 	}
 
 	if (moves.getStage()==MoveIterator::ON_EVASION_STAGE) {
-		while (moves.hasNext()) {
+		if (moves.hasNext()) {
 			return moves.selectBest();
 		}
 		moves.setStage(MoveIterator::END_STAGE);
