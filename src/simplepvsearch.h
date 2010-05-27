@@ -38,15 +38,15 @@
 const int MATE_RANGE_CHECK = 10;
 const int MATE_RANGE_SCORE = 300;
 const int maxScore = 20000;
-const int maxSearchDepth = 100;
-const int maxSearchPly = 100;
+const int maxSearchDepth = 64;
+const int maxSearchPly = 64;
 const int allowIIDAtPV = 5;
 const int allowIIDAtNormal = 7;
-const int prunningDepth=4;
+const int prunningDepth=3;
 const int prunningMoves=3;
 const int pvReduction=2;
 const int nonPvReduction=3;
-const int aspirationDepth=70;
+const int aspirationDepth=6;
 const int scoreTable[10]={1,900,100,9500,9000,50,45,40,50,-90};
 
 class SimplePVSearch {
@@ -364,7 +364,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 // score evasion moves
 inline void SimplePVSearch::scoreEvasions(Board& board, MoveIterator& moves) {
-    const int historyBonus=20;
+	const int historyBonus=20;
 	moves.bookmark();
 
 	while (moves.hasNext()) {
@@ -375,7 +375,6 @@ inline void SimplePVSearch::scoreEvasions(Board& board, MoveIterator& moves) {
 			if (move.type==MoveIterator::PROMO_CAPTURE) {
 				move.score+=scoreTable[MoveIterator::PROMO_CAPTURE];
 			}
-
 		} else {
 			move.score=history[board.getPieceTypeBySquare(move.from)][move.to]*historyBonus;
 			if (move.type==MoveIterator::UNKNOW) {
@@ -453,7 +452,9 @@ inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move, M
 		return false;
 	}
 
-	if (isPawnPush(move,backup) || isPawnFinal(board) || isPawnPromoting(board)) {
+	if (isPawnPush(move,backup) ||
+			isPawnFinal(board) ||
+			isPawnPromoting(board)) {
 		return false;
 	}
 
@@ -480,7 +481,6 @@ inline bool SimplePVSearch::isPawnFinal(Board& board) {
 			board.getPiecesByType(BLACK_KING);
 
 	return !((pawns|kings)^board.getAllPieces());
-
 }
 
 // pawn push
@@ -494,7 +494,8 @@ inline bool SimplePVSearch::isPawnPush(MoveIterator::Move& move, MoveBackup& bac
 // pawn promoting
 inline bool SimplePVSearch::isPawnPromoting(const Board& board) {
 
-	return board.getPieceType(WHITE_PAWN) & rankBB[RANK_7] || board.getPieceType(BLACK_PAWN) & rankBB[RANK_2];
+	return board.getPieceType(WHITE_PAWN) & rankBB[RANK_7] ||
+			board.getPieceType(BLACK_PAWN) & rankBB[RANK_2];
 
 }
 
