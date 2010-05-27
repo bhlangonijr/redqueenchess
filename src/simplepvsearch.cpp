@@ -102,7 +102,7 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		iterationScore[depth]=score;
 
-		if (depth >= 6)	{
+		if (depth >= aspirationDepth)	{
 			int delta1 = iterationScore[depth - 0] - iterationScore[depth - 1];
 			int delta2 = iterationScore[depth - 1] - iterationScore[depth - 2];
 			int aspirationDelta = MAX(abs(delta1) + abs(delta2) / 2, 16);
@@ -170,7 +170,7 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 	int moveCounter=0;
 	int remainingMoves=0;
 	long time=getTickCount();
-	MoveIterator::Move bestMove;
+	MoveIterator::Move bestMove = pv->moves[0];
 
 	while (rootMoves.hasNext()) {
 
@@ -200,18 +200,16 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 
 		uciOutput(move, moveCounter);
 
+
 		if (score > alpha) {
 			score = -pvSearch(board, -beta, -alpha, depth-1, ply+1, &line);
 		} else {
 			score = -normalSearch(board, -beta, -alpha, depth-reduction+extension, ply+1, &line, true);
-
 			if (score > alpha && !stop(agent->getSearchInProgress())) {
 				score = -normalSearch(board, -beta, -alpha, depth-1+extension, ply+1, &line, true);
-
 				if (score > alpha && score < beta && !stop(agent->getSearchInProgress())) {
 					score = -pvSearch(board, -beta, -alpha, depth-1+extension, ply+1, &line);
 				}
-
 			}
 		}
 
@@ -227,7 +225,7 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 			updatePv(pv, line, move);
 			bestMove=move;
 			if (!stop(agent->getSearchInProgress())) {
-				uciOutput(pv, stats.bestMove, getTickCount()-_startTime, agent->hashFull(), depth);
+				uciOutput(pv, bestMove, getTickCount()-_startTime, agent->hashFull(), depth);
 				time = getTickCount();
 			}
 		}
@@ -266,7 +264,9 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 	SearchAgent::HashData hashData;
 
 	if (agent->hashGet(board.getKey(), hashData, ply, maxScore)) {
-		ttMove=hashData.move;
+		if (hashData.depth>=depth) {
+			ttMove=hashData.move;
+		}
 	}
 
 	if (alpha>=beta) {
@@ -323,14 +323,11 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 			score = -pvSearch(board, -beta, -alpha, depth-1+extension, ply+1, &line);
 		} else {
 			score = -normalSearch(board, -beta, -alpha, depth-reduction+extension, ply+1, &line, true);
-
 			if (score > alpha && !stop(agent->getSearchInProgress())) {
 				score = -normalSearch(board, -beta, -alpha, depth-1+extension, ply+1, &line, true);
-
 				if (score > alpha && score < beta && !stop(agent->getSearchInProgress())) {
 					score = -pvSearch(board, -beta, -alpha, depth-1+extension, ply+1, &line);
 				}
-
 			}
 		}
 
@@ -409,13 +406,15 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 				stats.ttHits++;
 				return hashData.value;
 			}
+			ttMove=hashData.move;
 		}
-		ttMove=hashData.move;
 	}
+
 
 	if (alpha>=beta) {
 		return alpha;
 	}
+
 
 	if (ply >= maxSearchPly) {
 		pv->index=0;
@@ -548,14 +547,22 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 		return beta;
 	}
 
+	const int queenValue = pieceMaterialValues[WHITE_QUEEN];
+	const int bigDelta =  queenValue + (isPawnPromoting(board) ? queenValue : 0);
+
+	if (standPat < alpha - bigDelta) {
+		return alpha;
+	}
+
 	if( alpha < standPat ) {
 		alpha = standPat;
 	}
 
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
-	const int delta = alpha - pieceMaterialValues[WHITE_PAWN] - standPat;
+	const int delta = beta - bigDelta - standPat;
+
 	int moveCounter=0;
-	bool pvNode = (beta - alpha != 1);
+	bool pvNode = (beta - alpha > 1);
 	PvLine line = PvLine();
 	MoveIterator moves = MoveIterator();
 
@@ -566,9 +573,11 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 			break;
 		}
 
-		if (!isKingAttacked && !pvNode &&
+		if (!isKingAttacked && !pvNode && depth < 0 &&
 				move.type!=MoveIterator::PROMO_CAPTURE &&
+				!isPawnPromoting(board) &&
 				move.score < delta) {
+			//std::cout << " move score/delta: " << move.score << "-"<< delta<< std::endl;
 			continue;
 		}
 
@@ -591,6 +600,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 		}
 
 		if( score >= beta ) {
+			updateKillers(board,move,ply);
 			return beta;
 		}
 

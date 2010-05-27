@@ -38,14 +38,15 @@
 const int MATE_RANGE_CHECK = 10;
 const int MATE_RANGE_SCORE = 300;
 const int maxScore = 20000;
-const int maxSearchDepth = 80;
-const int maxSearchPly = 64;
+const int maxSearchDepth = 100;
+const int maxSearchPly = 100;
 const int allowIIDAtPV = 5;
 const int allowIIDAtNormal = 7;
-const int prunningDepth=3;
+const int prunningDepth=4;
 const int prunningMoves=3;
 const int pvReduction=2;
 const int nonPvReduction=3;
+const int aspirationDepth=70;
 const int scoreTable[10]={1,900,100,9500,9000,50,45,40,50,-90};
 
 class SimplePVSearch {
@@ -217,6 +218,7 @@ private:
 	bool okToNullMove(Board& board);
 	bool isPawnFinal(Board& board);
 	bool isPawnPush(MoveIterator::Move& move, MoveBackup& backup);
+	bool isPawnPromoting(const Board& board);
 	int extendDepth(const bool isKingAttacked, const bool nullMoveMateScore, const bool pawnPush);
 	int reduceDepth(Board& board, MoveIterator::Move& move, MoveBackup& backup,
 			int depth, int remainingMoves, bool isKingAttacked, int ply, bool isPV);
@@ -362,7 +364,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 // score evasion moves
 inline void SimplePVSearch::scoreEvasions(Board& board, MoveIterator& moves) {
-	//const int historyBonus=20;
+    const int historyBonus=20;
 	moves.bookmark();
 
 	while (moves.hasNext()) {
@@ -375,7 +377,7 @@ inline void SimplePVSearch::scoreEvasions(Board& board, MoveIterator& moves) {
 			}
 
 		} else {
-			//move.score=history[board.getPieceTypeBySquare(move.from)][move.to]*historyBonus;
+			move.score=history[board.getPieceTypeBySquare(move.from)][move.to]*historyBonus;
 			if (move.type==MoveIterator::UNKNOW) {
 				move.type=MoveIterator::NON_CAPTURE;
 			} else if (move.type==MoveIterator::PROMO_NONCAPTURE) {
@@ -451,7 +453,7 @@ inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move, M
 		return false;
 	}
 
-	if (isPawnPush(move,backup) || isPawnFinal(board)) {
+	if (isPawnPush(move,backup) || isPawnFinal(board) || isPawnPromoting(board)) {
 		return false;
 	}
 
@@ -486,6 +488,13 @@ inline bool SimplePVSearch::isPawnPush(MoveIterator::Move& move, MoveBackup& bac
 
 	return (backup.movingPiece==WHITE_PAWN && squareRank[move.to] >= RANK_6) ||
 			(backup.movingPiece==BLACK_PAWN && squareRank[move.to] <= RANK_3);
+
+}
+
+// pawn promoting
+inline bool SimplePVSearch::isPawnPromoting(const Board& board) {
+
+	return board.getPieceType(WHITE_PAWN) & rankBB[RANK_7] || board.getPieceType(BLACK_PAWN) & rankBB[RANK_2];
 
 }
 
