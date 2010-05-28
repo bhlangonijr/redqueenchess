@@ -387,8 +387,26 @@ public:
 			return second;
 		}
 
+		//return int((double)first + (double)1/(double)(gameSize-position) * (double)(second-first));
 		return (first*position)/gameSize+(second*(gameSize-position)/gameSize);
 
+	}
+	inline const int getPieceMaterialValue(Board& board, const PieceTypeByColor piece) {
+
+		const int egValue = endGameMaterialValues[piece];
+		const int mgValue = defaultMaterialValues[piece];
+		const int mc = board.getMoveCounter();
+
+		return interpolate(mgValue,egValue,mc);
+	}
+
+	inline const int getPieceSquareValue(Board& board, const PieceTypeByColor piece, const Square square) {
+
+		const int egValue = endGamePieceSquareTable[piece][square];
+		const int mgValue = defaultPieceSquareTable[piece][square];
+		const int mc = board.getMoveCounter();
+
+		return interpolate(mgValue,egValue,mc);
 	}
 
 private:
@@ -425,20 +443,18 @@ inline const int Evaluator::evalMaterial(Board& board, PieceColor color) {
 
 	const int first = board.makePiece(color,PAWN);
 	const int last = board.makePiece(color,KING);
-	const int mc = board.getMoveCounter();
-	int egValue = 0;
-	int mgValue = 0;
+	int material = 0;
 
-	for(register int pieceType = first; pieceType <= last; pieceType++) {
+	for(int pieceType = first; pieceType <= last; pieceType++) {
 		int count = board.getPieceCountByType(PieceTypeByColor(pieceType));
 		if (count > 0) {
-			egValue += count * endGameMaterialValues[pieceType];
-			mgValue += count * defaultMaterialValues[pieceType];
+			material += count * getPieceMaterialValue(board, PieceTypeByColor(pieceType));
 		}
 	}
 
-	return interpolate(mgValue,egValue,mc);
+	return material;
 }
+
 
 // king eval function
 inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
@@ -501,8 +517,7 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 // mobility eval function
 inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
-	const int KNIGHT_MOBILITY_BONUS = 2;
-	const int BISHOP_MOBILITY_BONUS = 3;
+	const int BISHOP_MOBILITY_BONUS = 4;
 	const int ROOK_MOBILITY_BONUS = 2;
 
 	Bitboard pieces = EMPTY_BB;
@@ -510,15 +525,6 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
 	Square from = NONE;
 	int count=0;
-
-	pieces = board.getPiecesByType(board.makePiece(color,KNIGHT));
-	from = extractLSB(pieces);
-
-	while ( from!=NONE ) {
-		moves = board.getKnightAttacks(from);
-		count+=_BitCount(moves)*KNIGHT_MOBILITY_BONUS;
-		from = extractLSB(pieces);
-	}
 
 	pieces = board.getPiecesByType(board.makePiece(color,BISHOP));
 	from = extractLSB(pieces);
@@ -550,26 +556,23 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	return count;
 }
 
-// material eval function
+// piece-square eval function
 inline const int Evaluator::evalDevelopment(Board& board, PieceColor color) {
 
 	const int first = board.makePiece(color,PAWN);
 	const int last = board.makePiece(color,KING);
-	const int mc = board.getMoveCounter();
-	int egValue = 0;
-	int mgValue = 0;
+	int bonus = 0;
 
-	for(register int pieceType = first; pieceType <= last; pieceType++) {
+	for(int pieceType = first; pieceType <= last; pieceType++) {
 		Bitboard pieces = board.getPiecesByType(PieceTypeByColor(pieceType));
 		Square from = extractLSB(pieces);
 		while ( from!=NONE ) {
-			egValue += endGamePieceSquareTable[pieceType][from];
-			mgValue += defaultPieceSquareTable[pieceType][from];
+			bonus += getPieceSquareValue(board,PieceTypeByColor(pieceType),Square(from));
 			from = extractLSB(pieces);
 		}
 	}
 
-	return interpolate(mgValue,egValue,mc);
+	return bonus;
 }
 
 // mobility eval function
@@ -713,3 +716,4 @@ inline Bitboard Evaluator::getLeastValuablePiece(Board& board, Bitboard attacker
 }
 
 #endif /* EVALUATOR_H_ */
+
