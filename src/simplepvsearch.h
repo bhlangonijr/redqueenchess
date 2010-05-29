@@ -38,15 +38,15 @@
 const int MATE_RANGE_CHECK = 10;
 const int MATE_RANGE_SCORE = 300;
 const int maxScore = 20000;
-const int maxSearchDepth = 164;
-const int maxSearchPly = 180;
+const int maxSearchDepth = 64;
+const int maxSearchPly = 80;
 const int allowIIDAtPV = 3;
 const int allowIIDAtNormal = 5;
 const int prunningDepth=3;
 const int prunningMoves=3;
 const int pvReduction=2;
 const int nonPvReduction=3;
-const int aspirationDepth=4;
+const int aspirationDepth=5;
 const int scoreTable[10]={1,900,100,9500,9000,50,45,40,50,-90};
 
 class SimplePVSearch {
@@ -116,7 +116,7 @@ public:
 
 	SimplePVSearch(Board& board) :   _board(board), _depth(maxSearchDepth), _updateUci(true), errorCount(0), _startTime(0), _searchFixedDepth(true), _infinite(false) {}
 	SimplePVSearch(Board& board, int depth ) : _board(board), _depth(depth), _updateUci(true), errorCount(0), _timeToSearch(0), _startTime(0), _searchFixedDepth(true), _infinite(false) {}
-	SimplePVSearch(Board& board, int timeToSearch, int depth) : _board(board), _depth(depth), _updateUci(true), errorCount(0), _timeToSearch(timeToSearch), _startTime(0), _searchFixedDepth(false), _infinite(false) {}
+	SimplePVSearch(Board& board, long timeToSearch, int depth) : _board(board), _depth(depth), _updateUci(true), errorCount(0), _timeToSearch(timeToSearch), _startTime(0), _searchFixedDepth(false), _infinite(false) {}
 	SimplePVSearch(Board& board, bool infinite ) : _board(board), _depth(maxSearchDepth), _updateUci(true), errorCount(0), _timeToSearch(0), _startTime(0), _searchFixedDepth(true), _infinite(true) {}
 
 	virtual ~SimplePVSearch() {}
@@ -124,11 +124,11 @@ public:
 	virtual long perft(Board& board, int depth, int ply);
 	virtual int getScore();
 
-	inline const int getTickCount() {
+	inline const long getTickCount() {
 		return ((clock() * 1000) / CLOCKS_PER_SEC);
 	}
 
-	inline const int toClock(const int time) {
+	inline const long toClock(const int time) {
 		return int((((double)(time)/(double)1000)*(double)CLOCKS_PER_SEC));
 	}
 
@@ -164,19 +164,19 @@ public:
 		return _depth;
 	}
 
-	inline const void setTimeToSearch(const int timeToSearch) {
+	inline const void setTimeToSearch(const long timeToSearch) {
 		_timeToSearch = timeToSearch;
 	}
 
-	inline const int getTimeToSearch() const {
+	inline const long getTimeToSearch() const {
 		return _timeToSearch;
 	}
 
-	inline const void setStartTime(const int startTime) {
+	inline const void setStartTime(const long startTime) {
 		_startTime = startTime;
 	}
 
-	inline const int getStartTime() const {
+	inline const long getStartTime() const {
 		return _startTime;
 	}
 
@@ -193,7 +193,7 @@ private:
 	bool _searchFixedDepth;
 	bool _infinite;
 	SearchStats stats;
-	int timeToStop;
+	long timeToStop;
 	MoveIterator rootMoves;
 	MoveIterator::Move killer[maxSearchDepth][2];
 	int history[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
@@ -495,7 +495,7 @@ inline const bool SimplePVSearch::timeIsUp() {
 	if ( _searchFixedDepth || _infinite || (!_nodes & checkNodes)) {
 		return false;
 	}
-	return (int)clock() >= timeToStop;
+	return clock() >= timeToStop;
 
 }
 
@@ -539,7 +539,7 @@ inline void SimplePVSearch::uciOutput(MoveIterator::Move& bestMove) {
 
 inline void SimplePVSearch::uciOutput(MoveIterator::Move& move, const int moveCounter) {
 
-	const int uciOutputSecs=1500;
+	const long uciOutputSecs=1500;
 
 	if (isUpdateUci()) {
 		if (_startTime+uciOutputSecs < getTickCount()) {

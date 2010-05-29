@@ -150,14 +150,14 @@ void SearchAgent::stopSearch() {
 	setSearchInProgress(false);
 }
 
-const int SearchAgent::getTimeToSearch() {
+const long SearchAgent::getTimeToSearch() {
 
 	if (this->getSearchMode()==SearchAgent::SEARCH_MOVETIME) {
 		return this->getMoveTime();
 	}
 
-	int time=board.getSideToMove()==WHITE ?  this->getWhiteTime() : this->getBlackTime();
-	int incTime=board.getSideToMove()==WHITE ? this->getWhiteIncrement() : this->getBlackIncrement();
+	long time=board.getSideToMove()==WHITE ?  this->getWhiteTime() : this->getBlackTime();
+	long incTime=board.getSideToMove()==WHITE ? this->getWhiteIncrement() : this->getBlackIncrement();
 
 	int movesLeft = defaultGameSize;
 	if (movesToGo>0) {
@@ -172,10 +172,17 @@ const int SearchAgent::getTimeToSearch() {
 		}
 
 	}
+	//if (time / (movesLeft + incTime) < 1000) {
 
-	time /= movesLeft + incTime;
+	//}
+	if (time / (movesLeft + incTime) < 1000) {
+		std::cout << " info broke movesLeft: " << movesLeft << " time: " << time << std::endl;
+	} else {
+		std::cout << " info movesLeft: " << movesLeft << " time: " << time << std::endl;
+	}
 
-	return time;
+
+	return time / (movesLeft + incTime);
 
 }
 

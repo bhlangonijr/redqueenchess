@@ -167,8 +167,6 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 	PvLine line = PvLine();
 	int score = -maxScore;
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
-	const int uciOutputSeconds = 2000;
-
 	_nodes++;
 
 	rootMoves.sort();
@@ -190,11 +188,6 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 		}
 
 		stats.searchTime=getTickCount()-_startTime;
-		if (getTickCount()-time > uciOutputSeconds && !stop(agent->getSearchInProgress())) {
-			uciOutput(pv, stats.bestMove, getTickCount()-_startTime, agent->hashFull(), depth);
-			time = getTickCount();
-		}
-
 		moveCounter++;
 
 		if (move.type == MoveIterator::NON_CAPTURE) {
@@ -222,9 +215,9 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 		//std::cout << " move/score: " << move.toString() << "  " << move.score << std::endl;
 		board.undoMove(backup);
 
-		if( score >= beta) {
+		/*if( score >= beta) {
 			return beta;
-		}
+		}*/
 
 		if( score > alpha ) {
 			alpha = score;

@@ -46,6 +46,11 @@ const int toInt(const std::string value) {
 	return atoi(value.c_str());
 };
 
+// str to long
+const long toLong(const std::string value) {
+	return atol(value.c_str());
+};
+
 // str to int
 const int toInt(const char value) {
 	return (int)(value-48);

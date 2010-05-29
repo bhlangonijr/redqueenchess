@@ -280,10 +280,10 @@ private:
 
 	size_t hashSize;
 	int threadNumber;
-	int whiteTime;
-	int whiteIncrement;
-	int blackTime;
-	int blackIncrement;
+	long whiteTime;
+	long whiteIncrement;
+	long blackTime;
+	long blackIncrement;
 	int depth;
 	int movesToGo;
 	int moveTime;
@@ -292,7 +292,7 @@ private:
 	size_t activeHash;
 	std::vector<TranspositionTable<Key,HashData>*> transTable;
 
-	const int getTimeToSearch();
+	const long getTimeToSearch();
 
 };
 

@@ -222,10 +222,10 @@ void Uci::executeGo() {
 	if (containsString(this->rawInput, "wtime")) {
 
 		searchAgent->setSearchMode(SearchAgent::SEARCH_TIME);
-		searchAgent->setWhiteTime(toInt(getMiddleString(this->rawInput,"wtime "," ")));
-		searchAgent->setWhiteIncrement(toInt(getMiddleString(this->rawInput,"winc "," ")));
-		searchAgent->setBlackTime(toInt(getMiddleString(this->rawInput,"btime "," ")));
-		searchAgent->setBlackIncrement(toInt(getMiddleString(this->rawInput,"binc ")));
+		searchAgent->setWhiteTime(toLong(getMiddleString(this->rawInput,"wtime "," ")));
+		searchAgent->setWhiteIncrement(toLong(getMiddleString(this->rawInput,"winc "," ")));
+		searchAgent->setBlackTime(toLong(getMiddleString(this->rawInput,"btime "," ")));
+		searchAgent->setBlackIncrement(toLong(getMiddleString(this->rawInput,"binc ")));
 		searchAgent->setMovesToGo(toInt(getMiddleString(this->rawInput,"movestogo ")));
 
 	} else if (containsString(this->rawInput, "go depth")) {
