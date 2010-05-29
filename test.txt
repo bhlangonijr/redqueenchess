@@ -1,0 +1,2 @@
+position startpos moves e2e4 c7c5 g1f3 b8c6 d2d4 c5d4 f3d4 d7d6 b1c3 g8f6 c1g5 e7e6 d1d2 a7a6 e1c1 h7h6 g5e3 f8e7 f2f3 c6d4 e3d4 b7b5 c1b1 a8b8 e4e5 d6e5 d4e5 d8d2 d1d2 b8b7 f1d3 e8g8 c3e4 f6d7 e5g3 b7b6 c2c4 f7f5 e4c3 b5b4 c3a4 b6c6 h1d1 e7g5 d2c2 g5e7 d3e2 g8f7 c4c5 f8d8 g3e1 d7f6 d1d8 e7d8 a4b6 d8b6 c5b6 c6c2 b1c2 f6d5 e1f2 c8b7 c2b3 e6e5 b3a4 e5e4 f3e4 f5e4 a4a5
+go wtime 585610 btime 437990

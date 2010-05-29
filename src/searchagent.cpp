@@ -172,15 +172,6 @@ const long SearchAgent::getTimeToSearch() {
 		}
 
 	}
-	//if (time / (movesLeft + incTime) < 1000) {
-
-	//}
-	if (time / (movesLeft + incTime) < 1000) {
-		std::cout << " info broke movesLeft: " << movesLeft << " time: " << time << std::endl;
-	} else {
-		std::cout << " info movesLeft: " << movesLeft << " time: " << time << std::endl;
-	}
-
 
 	return time / (movesLeft + incTime);
 
@@ -191,12 +182,4 @@ void *threadStartup(void *_object) {
   void *threadResult = object->startThreadSearch();
   return threadResult;
 }
-
-
-
-
-
-
-
-
 

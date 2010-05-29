@@ -40,14 +40,14 @@ const int MATE_RANGE_SCORE = 300;
 const int maxScore = 20000;
 const int maxSearchDepth = 64;
 const int maxSearchPly = 80;
-const int allowIIDAtPV = 3;
-const int allowIIDAtNormal = 5;
-const int prunningDepth=3;
-const int prunningMoves=3;
+const int allowIIDAtPV = 5;
+const int allowIIDAtNormal = 7;
+const int prunningDepth=2;
+const int prunningMoves=2;
 const int pvReduction=2;
-const int nonPvReduction=3;
+const int nonPvReduction=2;
 const int aspirationDepth=5;
-const int scoreTable[10]={1,900,100,9500,9000,50,45,40,50,-90};
+const int scoreTable[10]={1,8000,5000,9500,9000,500,450,400,50,-900};
 
 class SimplePVSearch {
 
@@ -362,7 +362,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 // score moves
 inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, const bool seeOrdered) {
-	const int historyBonus=100;
+	const int historyBonus=1000;
 	moves.bookmark();
 
 	while (moves.hasNext()) {
@@ -387,7 +387,14 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, const 
 		} else {
 			if (move.type==MoveIterator::UNKNOW) {
 				move.type=MoveIterator::NON_CAPTURE;
-				move.score=history[board.getPieceTypeBySquare(move.from)][move.to]*historyBonus;
+				const int hist = history[board.getPieceTypeBySquare(move.from)][move.to];
+				if (hist) {
+					move.score=hist*historyBonus;
+				} else {
+					move.score=evaluator.getPieceSquareValue(board,board.getPieceBySquare(move.from),move.to)-
+							evaluator.getPieceSquareValue(board,board.getPieceBySquare(move.from),move.from);
+				}
+
 			}
 		}
 
