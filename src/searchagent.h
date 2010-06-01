@@ -38,7 +38,7 @@
 
 const std::string mainHashName 		= "DefaultHashTable";
 const size_t defaultDepth			= 5;
-const size_t defaultHashSize		= 64;
+const size_t defaultHashSize		= 256;
 const int defaultGameSize			= 30;
 const int timeTableSize=7;
 

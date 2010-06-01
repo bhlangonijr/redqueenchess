@@ -199,7 +199,7 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 
 		uciOutput(move, moveCounter);
 
-		if (moveCounter==1 || score > alpha) {
+		if (score > alpha) {
 			score = -pvSearch(board, -beta, -alpha, depth-1, ply+1, &line);
 		} else {
 			score = -normalSearch(board, -beta, -alpha, depth-reduction+extension, ply+1, &line, true);
@@ -316,7 +316,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 		const int reduction=reduceDepth(board, move, backup, depth, remainingMoves, isKingAttacked,ply,true);
 		const int extension=extendDepth(isKingAttacked,false,isPawnPush(move,backup));
 
-		if ( moveCounter==1 || score > alpha) {
+		if ( moveCounter==1) {
 			score = -pvSearch(board, -beta, -alpha, depth-1+extension, ply+1, &line);
 		} else {
 			score = -normalSearch(board, -beta, -alpha, depth-reduction+extension, ply+1, &line, true);
@@ -554,8 +554,6 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 	}
 
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
-	const int delta = beta - bigDelta - standPat;
-
 	int moveCounter=0;
 	bool pvNode = (beta - alpha > 1);
 	PvLine line = PvLine();
@@ -571,7 +569,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 		if (!isKingAttacked && !pvNode && depth < 0 &&
 				move.type!=MoveIterator::PROMO_CAPTURE &&
 				!isPawnPromoting(board) &&
-				move.score < delta) {
+				move.score < 0) {
 			//std::cout << " move score/delta: " << move.score << "-"<< delta<< std::endl;
 			continue;
 		}

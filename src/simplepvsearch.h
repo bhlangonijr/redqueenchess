@@ -38,14 +38,14 @@
 const int MATE_RANGE_CHECK = 10;
 const int MATE_RANGE_SCORE = 300;
 const int maxScore = 20000;
-const int maxSearchDepth = 64;
-const int maxSearchPly = 80;
-const int allowIIDAtPV = 5;
-const int allowIIDAtNormal = 7;
+const int maxSearchDepth = 164;
+const int maxSearchPly = 180;
+const int allowIIDAtPV = 3;
+const int allowIIDAtNormal = 5;
 const int prunningDepth=2;
 const int prunningMoves=2;
 const int pvReduction=2;
-const int nonPvReduction=2;
+const int nonPvReduction=3;
 const int aspirationDepth=5;
 const int scoreTable[10]={1,8000,5000,9500,9000,500,450,400,50,-900};
 
