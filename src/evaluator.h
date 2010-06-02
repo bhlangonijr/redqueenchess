@@ -43,7 +43,6 @@
 #define PASSEDMASK(COLOR, X) (FSQUARE(COLOR, (fileAttacks[squareFile[X]] | NFILE(X)), X))
 
 const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 318, 325, 520, 975, 10000, 100, 318, 325, 520, 975, 10000, 0};
-const int endGameMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {110, 310, 325, 520, 975, 10000, 110, 310, 325, 520, 975, 10000, 0};
 
 // opening and middlegame piece square table
 const int defaultPieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
@@ -392,12 +391,7 @@ public:
 
 	}
 	inline const int getPieceMaterialValue(Board& board, const PieceTypeByColor piece) {
-
-		const int egValue = endGameMaterialValues[piece];
-		const int mgValue = defaultMaterialValues[piece];
-		const int mc = board.getMoveCounter();
-
-		return interpolate(mgValue,egValue,mc);
+		return defaultMaterialValues[piece];
 	}
 
 	inline const int getPieceSquareValue(Board& board, const PieceTypeByColor piece, const Square square) {

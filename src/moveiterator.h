@@ -133,6 +133,8 @@ public:
 
 	void sort(const int after);
 
+	void sortRootMoves(long moveScore[MOVE_LIST_MAX_SIZE]);
+
 	const IteratorStage getStage() {
 		return _data.stage;
 	}
@@ -150,6 +152,8 @@ public:
 	}
 
 	const Move& get(const size_t index);
+
+	const size_t getIndex();
 
 	void operator()(Data& data) {
 		_data=data;
@@ -258,6 +262,10 @@ inline const size_t MoveIterator::size() {
 
 inline const MoveIterator::Move& MoveIterator::get(const size_t index) {
 	return _data.list[index];
+}
+
+inline const size_t MoveIterator::getIndex() {
+	return _data.idx;
 }
 
 #endif /* MOVEITERATOR_H_ */

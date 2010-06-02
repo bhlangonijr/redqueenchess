@@ -40,14 +40,14 @@ const int MATE_RANGE_SCORE = 300;
 const int maxScore = 20000;
 const int maxSearchDepth = 164;
 const int maxSearchPly = 180;
-const int allowIIDAtPV = 3;
-const int allowIIDAtNormal = 5;
+const int allowIIDAtPV = 5;
+const int allowIIDAtNormal = 7;
 const int prunningDepth=2;
 const int prunningMoves=2;
 const int pvReduction=2;
 const int nonPvReduction=3;
-const int aspirationDepth=5;
-const int scoreTable[10]={1,8000,5000,9500,9000,500,450,400,50,-900};
+const int aspirationDepth=6;
+const int scoreTable[10]={1,80,50,950,900,50,45,40,10,-90};
 
 class SimplePVSearch {
 
@@ -196,6 +196,7 @@ private:
 	long timeToStop;
 	MoveIterator rootMoves;
 	MoveIterator::Move killer[maxSearchDepth][2];
+	long nodesPerMove[MOVE_LIST_MAX_SIZE];
 	int history[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 	Evaluator evaluator;
 
@@ -204,7 +205,6 @@ private:
 	int pvSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);
 	int normalSearch(Board& board, int alpha, int beta,	int depth, int ply, PvLine* pv,	const bool allowNullMove);
 	int qSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);
-	int miniSearch(Board& board, int alpha, int beta, int depth, int ply);
 	void uciOutput(PvLine* pv, MoveIterator::Move& bestMove, const int totalTime, const int hashFull, const int depth);
 	void uciOutput(MoveIterator::Move& bestMove);
 	void uciOutput(MoveIterator::Move& move, const int moveCounter);
@@ -227,6 +227,8 @@ private:
 	void clearHistory();
 	void updateHistory(Board& board, MoveIterator::Move& move, int depth);
 	void updateKillers(Board& board, MoveIterator::Move& move, int ply);
+	void initRootMovesOrder();
+	void updateRootMovesScore(const long value);
 
 };
 // select a move
@@ -362,7 +364,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 // score moves
 inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, const bool seeOrdered) {
-	const int historyBonus=1000;
+	const int historyBonus=100;
 	moves.bookmark();
 
 	while (moves.hasNext()) {
@@ -462,7 +464,7 @@ inline bool SimplePVSearch::isPawnFinal(Board& board) {
 inline bool SimplePVSearch::isPawnPush(MoveIterator::Move& move, MoveBackup& backup) {
 
 	return (backup.movingPiece==WHITE_PAWN && squareRank[move.to] >= RANK_6) ||
-	(backup.movingPiece==BLACK_PAWN && squareRank[move.to] <= RANK_3);
+			(backup.movingPiece==BLACK_PAWN && squareRank[move.to] <= RANK_3);
 
 }
 
@@ -470,7 +472,7 @@ inline bool SimplePVSearch::isPawnPush(MoveIterator::Move& move, MoveBackup& bac
 inline bool SimplePVSearch::isPawnPromoting(const Board& board) {
 
 	return board.getPieceType(WHITE_PAWN) & rankBB[RANK_7] ||
-	board.getPieceType(BLACK_PAWN) & rankBB[RANK_2];
+			board.getPieceType(BLACK_PAWN) & rankBB[RANK_2];
 
 }
 
@@ -524,9 +526,9 @@ inline void SimplePVSearch::uciOutput(PvLine* pv, MoveIterator::Move& bestMove,
 		long nps = totalTime>1000 ?  ((_nodes)/(totalTime/1000)) : _nodes;
 		std::cout << "info depth "<< depth << std::endl;
 		std::cout << "info depth "<< depth << " score " << scoreString << " time " << totalTime
-		<< " nodes " << (_nodes) << " nps " << nps << " pv" << pvLineToString(pv) << std::endl;
+				<< " nodes " << (_nodes) << " nps " << nps << " pv" << pvLineToString(pv) << std::endl;
 		std::cout << "info nodes " << (_nodes) << " time " << totalTime << " nps " << nps
-		<< " hashfull " << hashFull << std::endl;
+				<< " hashfull " << hashFull << std::endl;
 
 	}
 }
@@ -599,6 +601,18 @@ inline void SimplePVSearch::updateKillers(Board& board, MoveIterator::Move& move
 		killer[ply][1] = killer[ply][0];
 		killer[ply][0] = move;
 	}
+}
+
+// init root moves ordering array
+inline void SimplePVSearch::initRootMovesOrder() {
+	for(int x=0;x<MOVE_LIST_MAX_SIZE;x++) {
+		nodesPerMove[x]=0L;
+	}
+}
+
+// update root moves score
+inline void SimplePVSearch::updateRootMovesScore(const long value) {
+	nodesPerMove[rootMoves.getIndex()]+=value;
 }
 
 #endif /* SIMPLEPVSEARCH_H_ */

@@ -54,7 +54,6 @@ void MoveIterator::sort() {
 
 		}
 	}
-
 }
 
 // sort after an index
@@ -75,4 +74,31 @@ void MoveIterator::sort(const int after) {
 		}
 	}
 
+}
+
+// sort root moves
+void MoveIterator::sortRootMoves(long moveScore[MOVE_LIST_MAX_SIZE]) {
+
+	bool flag=true;
+	for(int i = 0; i <(int)_data.size&&flag; i++){
+		flag=false;
+		for(int j = 0; j <(int) _data.size-1; j++)
+		{
+			if (moveScore[j+1] > moveScore[j]) {
+				Move tmp=_data.list[j];
+				_data.list[j]=_data.list[j+1];
+				_data.list[j+1]=tmp;
+
+				long tmpLong = moveScore[j];
+				moveScore[j]=moveScore[j+1];
+				moveScore[j+1]=tmpLong;
+
+				flag=true;
+			}
+		}
+	}
+/*
+	for(int i = 0; i <(int)_data.size; i++){
+		std::cout << "move " << _data.list[i].toString() << " score: " << moveScore[i] << std::endl;
+	}*/
 }
