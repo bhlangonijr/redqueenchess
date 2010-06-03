@@ -40,13 +40,13 @@ const int MATE_RANGE_SCORE = 300;
 const int maxScore = 20000;
 const int maxSearchDepth = 164;
 const int maxSearchPly = 180;
-const int allowIIDAtPV = 5;
-const int allowIIDAtNormal = 7;
+const int allowIIDAtPV = 3;
+const int allowIIDAtNormal = 11;
 const int prunningDepth=2;
 const int prunningMoves=2;
 const int pvReduction=2;
 const int nonPvReduction=3;
-const int aspirationDepth=6;
+const int aspirationDepth=5;
 const int scoreTable[10]={1,80,50,950,900,50,45,40,10,-90};
 
 class SimplePVSearch {
@@ -213,14 +213,13 @@ private:
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, bool isKingAttacked);
 	void scoreMoves(Board& board, MoveIterator& moves, const bool seeOrdered);
 	bool okToReduce(Board& board, MoveIterator::Move& move, MoveBackup& backup,
-			int depth, int remainingMoves, bool isKingAttacked, int ply);
+			int depth, int remainingMoves, bool isKingAttacked, const bool nullMoveMateScore, int ply);
 	bool okToNullMove(Board& board);
 	bool isPawnFinal(Board& board);
 	bool isPawnPush(MoveIterator::Move& move, MoveBackup& backup);
 	bool isPawnPromoting(const Board& board);
-	int extendDepth(const bool isKingAttacked, const bool nullMoveMateScore, const bool pawnPush);
-	int reduceDepth(Board& board, MoveIterator::Move& move, MoveBackup& backup,
-			int depth, int remainingMoves, bool isKingAttacked, int ply, bool isPV);
+	int adjustDepth(Board& board, MoveIterator::Move& move, MoveBackup& backup,
+			int depth, int remainingMoves, bool isKingAttacked, int ply, const bool nullMoveMateScore, bool isPV);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
 	const bool stop(const bool searchInProgress);
 	const bool timeIsUp();
@@ -408,12 +407,13 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, const 
 
 // Checks if search can be reduced for a given move
 inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move, MoveBackup& backup,
-		int depth, int remainingMoves, bool isKingAttacked, int ply) {
+		int depth, int remainingMoves, bool isKingAttacked, const bool nullMoveMateScore, int ply) {
 
 	MoveIterator::Move& killer1 = killer[ply][0];
 	MoveIterator::Move& killer2 = killer[ply][1];
 
 	bool verify = (
+			(!nullMoveMateScore) &&
 			(remainingMoves > prunningMoves) &&
 			(move.type == MoveIterator::NON_CAPTURE) &&
 			(move.type!=MoveIterator::PROMO_CAPTURE) &&
@@ -476,22 +476,15 @@ inline bool SimplePVSearch::isPawnPromoting(const Board& board) {
 
 }
 
-// depth extension
-inline int SimplePVSearch::extendDepth(const bool isKingAttacked,
-		const bool nullMoveMateScore, const bool pawnPush) {
-
-	return isKingAttacked || nullMoveMateScore || pawnPush ? 1 : 0;
-
-}
 // depth reduction
-inline int SimplePVSearch::reduceDepth(Board& board, MoveIterator::Move& move, MoveBackup& backup,
-		int depth, int remainingMoves, bool isKingAttacked, int ply, bool isPV) {
+inline int SimplePVSearch::adjustDepth(Board& board, MoveIterator::Move& move, MoveBackup& backup,
+		int depth, int remainingMoves, bool isKingAttacked, int ply, const bool nullMoveMateScore, bool isPV) {
 
-	if (!okToReduce(board, move, backup, depth, remainingMoves, isKingAttacked, ply)) {
-		return 1;
+	if (!okToReduce(board, move, backup, depth, remainingMoves, isKingAttacked, nullMoveMateScore, ply)) {
+		return isKingAttacked ? depth : depth-1;
 	}
 
-	return isPV ? pvReduction : nonPvReduction;
+	return (isPV ? depth-pvReduction : depth-nonPvReduction);
 }
 
 inline const bool SimplePVSearch::stop(const bool searchInProgress) {
