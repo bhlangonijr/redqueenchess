@@ -220,7 +220,7 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 			updatePv(pv, line, move);
 			bestMove=move;
 			if (!stop(agent->getSearchInProgress())) {
-				uciOutput(pv, bestMove, getTickCount()-_startTime, agent->hashFull(), depth);
+				uciOutput(pv, stats.bestMove, getTickCount()-_startTime, agent->hashFull(), depth);
 				time = getTickCount();
 			}
 		}

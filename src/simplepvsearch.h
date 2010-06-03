@@ -47,6 +47,7 @@ const int prunningMoves=2;
 const int pvReduction=2;
 const int nonPvReduction=3;
 const int aspirationDepth=5;
+const int historyBonus=100;
 const int scoreTable[10]={1,80,50,950,900,50,45,40,10,-90};
 
 class SimplePVSearch {
@@ -363,7 +364,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 // score moves
 inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, const bool seeOrdered) {
-	const int historyBonus=100;
+
 	moves.bookmark();
 
 	while (moves.hasNext()) {
