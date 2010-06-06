@@ -89,6 +89,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		board.generateEvasions(rootMoves, board.getSideToMove());
 	}
 
+	scoreMoves(board,rootMoves,true);
 	for (int depth = 1; depth <= _depth; depth++) {
 
 		PvLine pv = PvLine();
@@ -162,7 +163,7 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 	int score = -maxScore;
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 
-	if (depth < 2) {
+	if (depth < 3) {
 		rootMoves.sort();
 	} else {
 		rootMoves.sortRootMoves(nodesPerMove);
@@ -251,13 +252,12 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 		return 0;
 	}
 
-	PvLine line = PvLine();
-
 	if (depth<=0) {
-		return qSearch(board, alpha, beta, 0, ply, &line);
+		return qSearch(board, alpha, beta, 0, ply, pv);
 	}
 
 	_nodes++;
+	PvLine line = PvLine();
 	const int oldAlpha = alpha;
 	int score = 0;
 	MoveIterator::Move ttMove;
@@ -323,7 +323,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 			score = -normalSearch(board, -beta, -alpha, newDepth, ply+1, &line, true);
 		}
 
-		if (score > alpha && score < beta && reduced) {
+		if (score > alpha && score < beta && reduced && !stop(agent->getSearchInProgress())) {
 			score = -pvSearch(board, -beta, -alpha, newDepth, ply+1, &line);
 		}
 
@@ -378,13 +378,13 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		return 0;
 	}
 
-	PvLine line = PvLine();
 
 	if (depth<=0) {
-		return qSearch(board, beta-1, beta, 0, ply+1, &line);
+		return qSearch(board, beta-1, beta, 0, ply+1, pv);
 	}
 
 	_nodes++;
+	PvLine line = PvLine();
 	const int oldAlpha = alpha;
 	int score = 0;
 	MoveIterator::Move ttMove;
@@ -456,7 +456,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 	MoveIterator::Move bestMove;
 	int moveCounter=0;
 	int remainingMoves=0;
-	alpha = -maxScore;
+	//alpha = -maxScore;
 
 	while (true) {
 
@@ -484,7 +484,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 
 		score = -normalSearch(board, -beta, -(beta-1), newDepth, ply+1, &line, allowNullMove);
 
-		if (score >= beta && reduced) {
+		if (score >= beta && reduced && !stop(agent->getSearchInProgress())) {
 			score = -normalSearch(board, -beta, -(beta-1), depth-1, ply+1, &line, allowNullMove);
 		}
 
@@ -556,7 +556,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 	int moveCounter=0;
-	bool pvNode = (beta - alpha != 1);
+	bool pvNode = (beta - alpha > 1);
 	PvLine line = PvLine();
 	MoveIterator moves = MoveIterator();
 
