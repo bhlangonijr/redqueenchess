@@ -40,7 +40,7 @@ SearchAgent* SearchAgent::getInstance ()
 
 SearchAgent::SearchAgent() :
 	searchMode(SEARCH_TIME), searchInProgress(false), hashSize(defaultHashSize), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
-	blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), infinite(false), activeHash(0)
+	blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), infinite(false)
 	{
 	// creates initial hashtables
 	createHash();

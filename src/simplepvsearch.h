@@ -47,8 +47,8 @@ const int prunningMoves=2;
 const int pvReduction=2;
 const int nonPvReduction=3;
 const int aspirationDepth=5;
-const int historyBonus=100;
-const int scoreTable[10]={1,80,50,950,900,50,45,40,10,-90};
+const int historyBonus=40;
+const int scoreTable[10]={0,8000,5000,9500,9000,5000,4500,4000,1000,-9000};
 
 class SimplePVSearch {
 
@@ -393,8 +393,8 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, const 
 				if (hist) {
 					move.score=hist*historyBonus;
 				} else {
-					move.score=evaluator.getPieceSquareValue(board,board.getPieceBySquare(move.from),move.to)-
-							evaluator.getPieceSquareValue(board,board.getPieceBySquare(move.from),move.from);
+					move.score=(evaluator.getPieceSquareValue(board,board.getPieceBySquare(move.from),move.to)-
+							evaluator.getPieceSquareValue(board,board.getPieceBySquare(move.from),move.from))*3;
 				}
 
 			}

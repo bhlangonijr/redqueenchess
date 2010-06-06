@@ -180,86 +180,52 @@ public:
 	}
 
 	inline void clearHash() {
-		if (transTable.size()>getActiveHash()) {
-			transTable[getActiveHash()]->clearHash();
-		}
+		transTable->clearHash();
+
 	}
 
 	inline bool hashPut(const Board& board, int value, const int& depth, const int ply, const int maxScore, const NodeFlag& flag, const MoveIterator::Move& move) {
-		if (transTable.size()>getActiveHash()) {
 
-			if (value >= maxScore) {
-				value -= ply;
-			} else if (value <= -maxScore) {
-				value += ply;
-			}
-
-			return transTable[getActiveHash()]->hashPut(board.getKey(), HashData(value,depth,flag,move));
+		if (value >= maxScore) {
+			value -= ply;
+		} else if (value <= -maxScore) {
+			value += ply;
 		}
-		return false;
+
+		return transTable->hashPut(board.getKey(), HashData(value,depth,flag,move));
+
 	}
 
 	inline bool hashGet(const Key _key, HashData& hashData, const int ply, const int maxScore) {
-		if (transTable.size()>getActiveHash()) {
 
-			bool result = transTable[getActiveHash()]->hashGet(_key, hashData);
-
-			if (hashData.value >= maxScore) {
-				hashData.value -= ply;
-			} else if (hashData.value <= -maxScore) {
-				hashData.value += ply;
-			}
-
-			return result;
+		bool result = transTable->hashGet(_key, hashData);
+		if (hashData.value >= maxScore) {
+			hashData.value -= ply;
+		} else if (hashData.value <= -maxScore) {
+			hashData.value += ply;
 		}
-		return false;
 
+		return result;
 	}
 
 	inline bool isHashFull() {
-
-		if (transTable.size()>getActiveHash()) {
-			return transTable[getActiveHash()]->isHashFull();
-		}
-		return true;
+		return transTable->isHashFull();
 	}
 
 	inline int hashFull() {
-
-		if (transTable.size()>getActiveHash()) {
-			return transTable[getActiveHash()]->hashFull();
-		}
-		return true;
-	}
-
-	inline void addTranspositionTable(TranspositionTable<Key,HashData>* table) {
-		transTable.push_back(table);
-	}
-
-	inline size_t getActiveHash() {
-		return activeHash;
-	}
-
-	inline void setActiveHash(const size_t active) {
-		activeHash = active;
+		return transTable->hashFull();
 	}
 
 	void createHash() {
-		TranspositionTable<Key,HashData>* table = new TranspositionTable<Key,HashData>(mainHashName, getHashSize());
-		addTranspositionTable(table);
+		transTable = new TranspositionTable<Key,HashData>(mainHashName, getHashSize());
 	}
 
 	void destroyHash() {
-		if (transTable.size()>getActiveHash()) {
-			delete transTable[getActiveHash()];
-		}
-		transTable.clear();
+		delete transTable;
 	}
 
 	void newSearchHash() {
-		if (transTable.size()>getActiveHash()) {
-			return transTable[getActiveHash()]->newSearch();
-		}
+		return transTable->newSearch();
 	}
 
 	void *startThreadSearch();
@@ -289,8 +255,7 @@ private:
 	int moveTime;
 	bool infinite;
 
-	size_t activeHash;
-	std::vector<TranspositionTable<Key,HashData>*> transTable;
+	TranspositionTable<Key,HashData>* transTable;
 
 	const long getTimeToSearch();
 
