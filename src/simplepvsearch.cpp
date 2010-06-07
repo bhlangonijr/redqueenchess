@@ -102,6 +102,13 @@ int SimplePVSearch::idSearch(Board& board) {
 			score = rootSearch(board, -maxScore, maxScore, depth, 0, &pv);
 		}
 
+		stats.bestMove=pv.moves[0];
+		stats.searchDepth=depth;
+		stats.searchTime=getTickCount()-_startTime;
+		stats.searchNodes=_nodes;
+
+		uciOutput(&pv, stats.bestMove, stats.searchTime, agent->hashFull(), depth);
+
 		iterationScore[depth]=score;
 
 		if (depth >= aspirationDepth)	{
@@ -137,12 +144,6 @@ int SimplePVSearch::idSearch(Board& board) {
 			stats.pvChanges++;
 		}
 
-		stats.bestMove=pv.moves[0];
-		stats.searchDepth=depth;
-		stats.searchTime=getTickCount()-_startTime;
-		stats.searchNodes=_nodes;
-
-		uciOutput(&pv, stats.bestMove, stats.searchTime, agent->hashFull(), depth);
 
 #if SHOW_STATS
 		std::cout << "Search stats: " << std::endl;
@@ -172,7 +173,6 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 	rootMoves.first();
 	int moveCounter=0;
 	int remainingMoves=0;
-	long time=getTickCount();
 	MoveIterator::Move bestMove = pv->moves[0];
 
 	while (rootMoves.hasNext()) {
@@ -223,10 +223,6 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 			alpha = score;
 			updatePv(pv, line, move);
 			bestMove=move;
-			if (!stop(agent->getSearchInProgress())) {
-				uciOutput(pv, stats.bestMove, getTickCount()-_startTime, agent->hashFull(), depth);
-				time = getTickCount();
-			}
 		}
 
 	}
@@ -279,7 +275,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 
 	bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 
-	if (depth > allowIIDAtPV &&	ttMove.from == NONE ) {
+	if (depth > allowIIDAtPV &&	ttMove.from == NONE && !isKingAttacked ) {
 		const int iidSearchDepth = depth-2;
 		PvLine pvCandidate;
 		score = pvSearch(board,alpha,beta,iidSearchDepth,ply+1,&pvCandidate);
@@ -570,7 +566,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 		if (!isKingAttacked && !pvNode && depth < 0 &&
 				move.type!=MoveIterator::PROMO_CAPTURE &&
 				!isPawnPromoting(board) &&
-				move.score < 0) {
+				evaluator.see(board,move) < 0) {
 			continue;
 		}
 

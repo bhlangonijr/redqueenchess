@@ -250,7 +250,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_EVASION_STAGE) {
 		board.generateEvasions(moves, board.getSideToMove());
-		scoreMoves(board, moves, true);
+		scoreMoves(board, moves, false);
 		moves.goNextStage();
 	}
 
@@ -264,7 +264,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
 		board.generateCaptures(moves, board.getSideToMove());
-		scoreMoves(board, moves,true);
+		scoreMoves(board, moves,false);
 		moves.goNextStage();
 	}
 
@@ -274,7 +274,10 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			if (move==ttMove) {
 				continue;
 			}
-			if (move.type==MoveIterator::BAD_CAPTURE) {
+			const int score = evaluator.see(board,move);
+			if (/*move.type==MoveIterator::BAD_CAPTURE*/score < 0) {
+				move.type=MoveIterator::BAD_CAPTURE;
+				move.score+=scoreTable[move.type];
 				moves.prior();
 				break; // it will keep the bad captures after non captures
 			}
@@ -299,7 +302,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_QUIET_STAGE) {
 		board.generateNonCaptures(moves, board.getSideToMove());
-		scoreMoves(board, moves, true);
+		scoreMoves(board, moves, false);
 		moves.goNextStage();
 	}
 
@@ -331,7 +334,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_EVASION_STAGE) {
 		board.generateEvasions(moves, board.getSideToMove());
-		scoreMoves(board, moves, true);
+		scoreMoves(board, moves, false);
 		moves.first();
 		moves.goNextStage();
 	}
@@ -346,7 +349,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
 		board.generateCaptures(moves, board.getSideToMove());
-		scoreMoves(board, moves, true);
+		scoreMoves(board, moves, false);
 		moves.first();
 		moves.goNextStage();
 	}
@@ -394,7 +397,7 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, const 
 					move.score=hist*historyBonus;
 				} else {
 					move.score=(evaluator.getPieceSquareValue(board,board.getPieceBySquare(move.from),move.to)-
-							evaluator.getPieceSquareValue(board,board.getPieceBySquare(move.from),move.from))*3;
+							evaluator.getPieceSquareValue(board,board.getPieceBySquare(move.from),move.from));
 				}
 
 			}
