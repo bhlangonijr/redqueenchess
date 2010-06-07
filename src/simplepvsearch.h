@@ -45,8 +45,8 @@ const int allowIIDAtNormal = 11;
 const int prunningDepth=2;
 const int prunningMoves=2;
 const int pvReduction=2;
-const int nonPvReduction=3;
-const int aspirationDepth=5;
+const int nonPvReduction=2;
+const int aspirationDepth=6;
 const int historyBonus=40;
 const int scoreTable[10]={0,8000,5000,9500,9000,5000,4500,4000,1000,-9000};
 
@@ -420,8 +420,6 @@ inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move, M
 			(!nullMoveMateScore) &&
 			(remainingMoves > prunningMoves) &&
 			(move.type == MoveIterator::NON_CAPTURE) &&
-			(move.type!=MoveIterator::PROMO_CAPTURE) &&
-			(move.type!=MoveIterator::PROMO_NONCAPTURE) &&
 			(move!=killer1) &&
 			(move!=killer2) &&
 			(depth > prunningDepth) &&
@@ -563,6 +561,9 @@ inline const std::string SimplePVSearch::pvLineToString(const PvLine* pv) {
 }
 
 inline void SimplePVSearch::updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move) {
+	if (pv==NULL || move.from==NONE) {
+		return;
+	}
 	pv->moves[0] = move;
 	memcpy(pv->moves + 1, line.moves, line.index * sizeof(MoveIterator::Move));
 	pv->index = line.index + 1;

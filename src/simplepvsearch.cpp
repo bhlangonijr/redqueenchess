@@ -102,13 +102,6 @@ int SimplePVSearch::idSearch(Board& board) {
 			score = rootSearch(board, -maxScore, maxScore, depth, 0, &pv);
 		}
 
-		stats.bestMove=pv.moves[0];
-		stats.searchDepth=depth;
-		stats.searchTime=getTickCount()-_startTime;
-		stats.searchNodes=_nodes;
-
-		uciOutput(&pv, stats.bestMove, stats.searchTime, agent->hashFull(), depth);
-
 		iterationScore[depth]=score;
 
 		if (depth >= aspirationDepth)	{
@@ -144,6 +137,12 @@ int SimplePVSearch::idSearch(Board& board) {
 			stats.pvChanges++;
 		}
 
+		stats.bestMove=pv.moves[0];
+		stats.searchDepth=depth;
+		stats.searchTime=getTickCount()-_startTime;
+		stats.searchNodes=_nodes;
+
+		uciOutput(&pv, stats.bestMove, stats.searchTime, agent->hashFull(), depth);
 
 #if SHOW_STATS
 		std::cout << "Search stats: " << std::endl;
@@ -173,6 +172,7 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 	rootMoves.first();
 	int moveCounter=0;
 	int remainingMoves=0;
+	long time=getTickCount();
 	MoveIterator::Move bestMove = pv->moves[0];
 
 	while (rootMoves.hasNext()) {
@@ -223,6 +223,10 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 			alpha = score;
 			updatePv(pv, line, move);
 			bestMove=move;
+			if (!stop(agent->getSearchInProgress())) {
+				uciOutput(pv, stats.bestMove, getTickCount()-_startTime, agent->hashFull(), depth);
+				time = getTickCount();
+			}
 		}
 
 	}
