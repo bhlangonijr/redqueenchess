@@ -241,7 +241,7 @@ void Uci::executeGo() {
 	} else if (containsString(this->rawInput, "go movetime")) {
 
 		searchAgent->setSearchMode(SearchAgent::SEARCH_MOVETIME);
-		searchAgent->setMoveTime(toInt(getMiddleString(this->rawInput,"go movetime ")));
+		searchAgent->setMoveTime(toLong(getMiddleString(this->rawInput,"go movetime ")));
 
 	} else if (containsString(this->rawInput, "go infinite")) {
 

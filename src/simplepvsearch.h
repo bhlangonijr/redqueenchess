@@ -45,10 +45,10 @@ const int allowIIDAtNormal = 11;
 const int prunningDepth=2;
 const int prunningMoves=2;
 const int pvReduction=2;
-const int nonPvReduction=2;
+const int nonPvReduction=3;
 const int aspirationDepth=6;
-const int historyBonus=40;
-const int scoreTable[10]={0,8000,5000,9500,9000,5000,4500,4000,1000,-9000};
+const int historyBonus=100;
+const int scoreTable[10]={0,800,500,9500,9000,500,450,400,100,-900};
 
 class SimplePVSearch {
 
@@ -115,10 +115,10 @@ public:
 		this->search();
 	}
 
-	SimplePVSearch(Board& board) :   _board(board), _depth(maxSearchDepth), _updateUci(true), errorCount(0), _startTime(0), _searchFixedDepth(true), _infinite(false) {}
-	SimplePVSearch(Board& board, int depth ) : _board(board), _depth(depth), _updateUci(true), errorCount(0), _timeToSearch(0), _startTime(0), _searchFixedDepth(true), _infinite(false) {}
-	SimplePVSearch(Board& board, long timeToSearch, int depth) : _board(board), _depth(depth), _updateUci(true), errorCount(0), _timeToSearch(timeToSearch), _startTime(0), _searchFixedDepth(false), _infinite(false) {}
-	SimplePVSearch(Board& board, bool infinite ) : _board(board), _depth(maxSearchDepth), _updateUci(true), errorCount(0), _timeToSearch(0), _startTime(0), _searchFixedDepth(true), _infinite(true) {}
+	SimplePVSearch(Board& board) :   _board(board), _depth(maxSearchDepth), _updateUci(true), _startTime(0), _searchFixedDepth(true), _infinite(false) {}
+	SimplePVSearch(Board& board, int depth ) : _board(board), _depth(depth), _updateUci(true), _timeToSearch(0), _startTime(0), _searchFixedDepth(true), _infinite(false) {}
+	SimplePVSearch(Board& board, long timeToSearch, int depth) : _board(board), _depth(depth), _updateUci(true), _timeToSearch(timeToSearch), _startTime(0), _searchFixedDepth(false), _infinite(false) {}
+	SimplePVSearch(Board& board, bool infinite ) : _board(board), _depth(maxSearchDepth), _updateUci(true), _timeToSearch(0), _startTime(0), _searchFixedDepth(true), _infinite(true) {}
 
 	virtual ~SimplePVSearch() {}
 	virtual void search();
@@ -186,7 +186,6 @@ private:
 	int _depth;
 	int _score;
 	bool _updateUci;
-	int errorCount;
 	long _timeToSearch;
 	long _startTime;
 	long _nodes;
@@ -250,7 +249,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_EVASION_STAGE) {
 		board.generateEvasions(moves, board.getSideToMove());
-		scoreMoves(board, moves, false);
+		scoreMoves(board, moves, true);
 		moves.goNextStage();
 	}
 
@@ -264,7 +263,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
 		board.generateCaptures(moves, board.getSideToMove());
-		scoreMoves(board, moves,false);
+		scoreMoves(board, moves,true);
 		moves.goNextStage();
 	}
 
@@ -274,10 +273,12 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			if (move==ttMove) {
 				continue;
 			}
-			const int score = evaluator.see(board,move);
-			if (/*move.type==MoveIterator::BAD_CAPTURE*/score < 0) {
+			//const int score = evaluator.see(board,move);
+			if (move.type==MoveIterator::BAD_CAPTURE/*score < 0*/) {
+/*
 				move.type=MoveIterator::BAD_CAPTURE;
 				move.score+=scoreTable[move.type];
+*/
 				moves.prior();
 				break; // it will keep the bad captures after non captures
 			}
@@ -302,7 +303,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_QUIET_STAGE) {
 		board.generateNonCaptures(moves, board.getSideToMove());
-		scoreMoves(board, moves, false);
+		scoreMoves(board, moves, true);
 		moves.goNextStage();
 	}
 
@@ -334,7 +335,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_EVASION_STAGE) {
 		board.generateEvasions(moves, board.getSideToMove());
-		scoreMoves(board, moves, false);
+		scoreMoves(board, moves, true);
 		moves.first();
 		moves.goNextStage();
 	}
@@ -349,7 +350,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
 		board.generateCaptures(moves, board.getSideToMove());
-		scoreMoves(board, moves, false);
+		scoreMoves(board, moves, true);
 		moves.first();
 		moves.goNextStage();
 	}

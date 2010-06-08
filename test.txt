@@ -10,3 +10,13 @@ go wtime 976671 btime 1013466 winc 0 binc 0
 
 ;; not detecting draw
 position startpos moves d2d4 e7e6 g1f3 b8c6 e2e4 d7d5 e4e5 f7f6 f1b5 c8d7 e1g1 f6e5 b5c6 b7c6 f3e5 g8f6 c2c4 f8d6 e5d7 d8d7 c4c5 d6e7 b1c3 e8g8 f1e1 f6e8 d1e2 e7h4 c1e3 a7a5 a1d1 d7f7 g2g3 h4f6 e3c1 e6e5 d4e5 f6e5 c3a4 a8b8
+bad = e2e5
+
+position fen 4r1k1/1p3p1p/1q3npP/p2p4/P2N1bP1/1NP1rP2/1PQ5/R4R1K b - - 0 1
+go movetime 30000 depth 63
+
+position fen rr4k1/2n2p2/2Pp1q2/pp1PpP1R/1p2B3/6p1/P1R1QPK1/8 w - - 0 1
+go movetime 120000 depth 63
+
+position fen rr4k1/2n2p2/2Pp1q2/pp1PpP1R/1p2B3/6p1/P1R1QPK1/8 w - - 0 1
+go movetime 1200 depth 63

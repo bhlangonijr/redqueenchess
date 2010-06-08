@@ -81,6 +81,7 @@ public:
 	const bool getSearchInProgress() const {
 		return searchInProgress;
 	}
+
 	void setSearchInProgress(int _searchInProgress) {
 		searchInProgress = _searchInProgress;
 	}
@@ -115,27 +116,27 @@ public:
 		threadNumber = _threadNumber;
 	}
 
-	inline const int getWhiteTime() const {
+	inline const long getWhiteTime() const {
 		return whiteTime;
 	}
 
-	inline void setWhiteTime(int _whiteTime) {
+	inline void setWhiteTime(long _whiteTime) {
 		whiteTime = _whiteTime;
 	}
 
-	inline const int getWhiteIncrement() const {
+	inline const long getWhiteIncrement() const {
 		return whiteIncrement;
 	}
 
-	inline void setWhiteIncrement(int _whiteIncrement) {
+	inline void setWhiteIncrement(long _whiteIncrement) {
 		whiteIncrement = _whiteIncrement;
 	}
 
-	inline const int getBlackTime() const {
+	inline const long getBlackTime() const {
 		return blackTime;
 	}
 
-	inline void setBlackTime(int _blackTime) {
+	inline void setBlackTime(long _blackTime) {
 		blackTime = _blackTime;
 	}
 
@@ -143,7 +144,7 @@ public:
 		return blackIncrement;
 	}
 
-	inline void setBlackIncrement(int _blackIncrement) {
+	inline void setBlackIncrement(long _blackIncrement) {
 		blackIncrement = _blackIncrement;
 	}
 
@@ -163,11 +164,11 @@ public:
 		movesToGo = _movesToGo;
 	}
 
-	inline const int getMoveTime() const {
+	inline const long getMoveTime() const {
 		return moveTime;
 	}
 
-	inline void setMoveTime(int _moveTime) {
+	inline void setMoveTime(long _moveTime) {
 		moveTime = _moveTime;
 	}
 
@@ -252,7 +253,7 @@ private:
 	long blackIncrement;
 	int depth;
 	int movesToGo;
-	int moveTime;
+	long moveTime;
 	bool infinite;
 
 	TranspositionTable<Key,HashData>* transTable;

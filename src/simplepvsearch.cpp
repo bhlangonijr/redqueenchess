@@ -42,7 +42,6 @@ void SimplePVSearch::search() {
 	Board board(_board);
 	stats.clear();
 	clearHistory();
-	errorCount=0;
 	_startTime = getTickCount();
 	timeToStop = clock() + toClock(_timeToSearch);
 	_score = idSearch(board);
@@ -205,7 +204,7 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 		} else {
 			score = -normalSearch(board, -beta, -alpha, newDepth, ply+1, &line, true);
 		}
-		if (score > alpha && score < beta && reduced) {
+		if (score > alpha && reduced) {
 			score = -pvSearch(board, -beta, -alpha, newDepth, ply+1, &line);
 		}
 
@@ -242,6 +241,10 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 // principal variation search
 int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int ply, PvLine* pv) {
 
+	if (depth<=0) {
+		return qSearch(board, alpha, beta, 0, ply, pv);
+	}
+
 	if (alpha > maxScore - ply - 1) {
 		pv->index=0;
 		return alpha;
@@ -250,10 +253,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 	if	(board.isDraw()) {
 		pv->index=0;
 		return 0;
-	}
-
-	if (depth<=0) {
-		return qSearch(board, alpha, beta, 0, ply, pv);
 	}
 
 	_nodes++;
@@ -369,6 +368,9 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		int depth, int ply, PvLine* pv,	const bool allowNullMove) {
 
+	if (depth<=0) {
+		return qSearch(board, beta-1, beta, 0, ply+1, pv);
+	}
 
 	if (alpha > maxScore - ply - 1) {
 		return alpha;
@@ -376,11 +378,6 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 
 	if	(board.isDraw()) {
 		return 0;
-	}
-
-
-	if (depth<=0) {
-		return qSearch(board, beta-1, beta, 0, ply+1, pv);
 	}
 
 	_nodes++;
@@ -456,7 +453,6 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 	MoveIterator::Move bestMove;
 	int moveCounter=0;
 	int remainingMoves=0;
-	//alpha = -maxScore;
 
 	while (true) {
 
@@ -559,6 +555,10 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 		return standPat;
 	}
 
+	if	(board.isDraw()) {
+		return 0;
+	}
+
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 	int moveCounter=0;
 	bool pvNode = (beta - alpha > 1);
@@ -574,8 +574,9 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 
 		if (!isKingAttacked && !pvNode && depth < 0 &&
 				move.type!=MoveIterator::PROMO_CAPTURE &&
+				move.type!=MoveIterator::PROMO_NONCAPTURE &&
 				!isPawnPromoting(board) &&
-				evaluator.see(board,move) < 0) {
+				move.score < 0) {
 			continue;
 		}
 
@@ -619,9 +620,12 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 //perft
 long SimplePVSearch::perft(Board& board, int depth, int ply) {
 
-	if (depth == 0) return 1;
+	if (depth == 0) {
+		return 1;
+	}
 
 	long time=0;
+
 	if (ply==1) {
 		time=getTickCount();
 	}
