@@ -40,15 +40,15 @@ const int MATE_RANGE_SCORE = 300;
 const int maxScore = 20000;
 const int maxSearchDepth = 164;
 const int maxSearchPly = 180;
-const int allowIIDAtPV = 3;
-const int allowIIDAtNormal = 11;
+const int allowIIDAtPV = 5;
+const int allowIIDAtNormal = 9;
 const int prunningDepth=2;
 const int prunningMoves=2;
-const int pvReduction=2;
-const int nonPvReduction=3;
+const int pvReduction=0;
+const int nonPvReduction=1;
 const int aspirationDepth=6;
 const int historyBonus=100;
-const int scoreTable[10]={0,800,500,9500,9000,500,450,400,100,-900};
+const int scoreTable[10]={0,8000,5000,9500,9000,5000,4500,4000,1000,-9000};
 
 class SimplePVSearch {
 
@@ -218,7 +218,7 @@ private:
 	bool isPawnFinal(Board& board);
 	bool isPawnPush(MoveIterator::Move& move, MoveBackup& backup);
 	bool isPawnPromoting(const Board& board);
-	int adjustDepth(Board& board, MoveIterator::Move& move, MoveBackup& backup,
+	bool adjustDepth(int& extension, int& reduction, Board& board, MoveIterator::Move& move, MoveBackup& backup,
 			int depth, int remainingMoves, bool isKingAttacked, int ply, const bool nullMoveMateScore, bool isPV);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
 	const bool stop(const bool searchInProgress);
@@ -480,14 +480,20 @@ inline bool SimplePVSearch::isPawnPromoting(const Board& board) {
 }
 
 // depth reduction
-inline int SimplePVSearch::adjustDepth(Board& board, MoveIterator::Move& move, MoveBackup& backup,
+inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction, Board& board, MoveIterator::Move& move, MoveBackup& backup,
 		int depth, int remainingMoves, bool isKingAttacked, int ply, const bool nullMoveMateScore, bool isPV) {
 
+	extension=0;
+	reduction=0;
 	if (!okToReduce(board, move, backup, depth, remainingMoves, isKingAttacked, nullMoveMateScore, ply)) {
-		return isKingAttacked ? depth : depth-1;
+		if (isKingAttacked || isPawnPromoting(board) || isPawnPush(move, backup)) {
+			extension=1;
+		}
+		return false;
 	}
 
-	return (isPV ? depth-pvReduction : depth-nonPvReduction);
+	reduction = isPV ? pvReduction : nonPvReduction;
+	return true;
 }
 
 inline const bool SimplePVSearch::stop(const bool searchInProgress) {

@@ -195,17 +195,20 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 
 		uciOutput(move, moveCounter);
 
-		const int newDepth=adjustDepth(board, move, backup, depth,
-				remainingMoves, isKingAttacked,ply,false,true);
-		bool reduced = bool(newDepth<depth-1 || score <= alpha);
+		int reduction=0;
+		int extension=0;
+		bool reduced = adjustDepth(extension, reduction, board, move, backup, depth,
+				remainingMoves, isKingAttacked,ply,false,score > alpha);
+		int newDepth=depth-1;
 
 		if (score > alpha) {
-			score = -pvSearch(board, -beta, -alpha, newDepth, ply+1, &line);
+			score = -pvSearch(board, -beta, -alpha, newDepth-reduction+extension, ply+1, &line);
 		} else {
-			score = -normalSearch(board, -beta, -alpha, newDepth, ply+1, &line, true);
+			reduced=true;
+			score = -normalSearch(board, -beta, -alpha, newDepth-reduction+extension, ply+1, &line, true);
 		}
 		if (score > alpha && reduced) {
-			score = -pvSearch(board, -beta, -alpha, newDepth, ply+1, &line);
+			score = -pvSearch(board, -beta, -alpha, newDepth+extension, ply+1, &line);
 		}
 
 		board.undoMove(backup);
@@ -280,8 +283,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 
 	if (depth > allowIIDAtPV &&	ttMove.from == NONE && !isKingAttacked ) {
 		const int iidSearchDepth = depth-2;
-		PvLine pvCandidate;
-		score = pvSearch(board,alpha,beta,iidSearchDepth,ply+1,&pvCandidate);
+		score = pvSearch(board,alpha,beta,iidSearchDepth,ply+1,&line);
 		if (agent->hashGet(board.getKey(), hashData, ply, maxScore)) {
 			ttMove=hashData.move;
 		}
@@ -312,18 +314,21 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 			remainingMoves++;
 		}
 
-		const int newDepth=adjustDepth(board, move, backup, depth,
-				remainingMoves, isKingAttacked,ply,false,true);
-		bool reduced = bool(newDepth<depth-1 || moveCounter>1);
+		int reduction=0;
+		int extension=0;
+		bool reduced = adjustDepth(extension, reduction, board, move, backup, depth,
+				remainingMoves, isKingAttacked,ply,false,moveCounter==1);
+		int newDepth=depth-1;
 
-		if ( moveCounter==1) {
-			score = -pvSearch(board, -beta, -alpha, newDepth, ply+1, &line);
+		if (moveCounter==1) {
+			score = -pvSearch(board, -beta, -alpha, newDepth-reduction+extension, ply+1, &line);
 		} else {
-			score = -normalSearch(board, -beta, -alpha, newDepth, ply+1, &line, true);
+			reduced=true;
+			score = -normalSearch(board, -beta, -alpha, newDepth-reduction+extension, ply+1, &line, true);
 		}
 
 		if (score > alpha && score < beta && reduced && !stop(agent->getSearchInProgress())) {
-			score = -pvSearch(board, -beta, -alpha, newDepth, ply+1, &line);
+			score = -pvSearch(board, -beta, -alpha, newDepth+extension, ply+1, &line);
 		}
 
 		board.undoMove(backup);
@@ -418,7 +423,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 
 	if (!isKingAttacked && allowNullMove && okToNullMove(board)) {
 
-		const int reduction = 3 + (depth > 4 ? depth/4 : 0);
+		const int reduction = 3 + (depth > 4 ? depth/8 : 0);
 		MoveBackup backup;
 		board.doNullMove(backup);
 		score = -normalSearch(board, -beta, -(beta-1), depth-reduction, ply+1, &line, false);
@@ -442,8 +447,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 	if (depth > allowIIDAtNormal && ttMove.from == NONE &&
 			!isKingAttacked && !nullMoveMateScore) {
 		const int iidSearchDepth = depth/2;
-		PvLine pvCandidate;
-		score = normalSearch(board,alpha,beta,iidSearchDepth,ply+1,&pvCandidate,false);
+		score = normalSearch(board,alpha,beta,iidSearchDepth,ply+1,&line,false);
 		if (agent->hashGet(board.getKey(), hashData, ply, maxScore)) {
 			ttMove=hashData.move;
 		}
@@ -474,14 +478,16 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 			remainingMoves++;
 		}
 
-		const int newDepth=adjustDepth(board, move, backup, depth,
+		int reduction=0;
+		int extension=0;
+		bool reduced = adjustDepth(extension, reduction, board, move, backup, depth,
 				remainingMoves, isKingAttacked,ply,nullMoveMateScore,false);
-		bool reduced = bool(newDepth<depth-1);
+		int newDepth=depth-1;
 
-		score = -normalSearch(board, -beta, -(beta-1), newDepth, ply+1, &line, allowNullMove);
+		score = -normalSearch(board, -beta, -(beta-1), newDepth-reduction+extension, ply+1, &line, allowNullMove);
 
 		if (score >= beta && reduced && !stop(agent->getSearchInProgress())) {
-			score = -normalSearch(board, -beta, -(beta-1), depth-1, ply+1, &line, allowNullMove);
+			score = -normalSearch(board, -beta, -(beta-1), newDepth+extension, ply+1, &line, allowNullMove);
 		}
 
 		board.undoMove(backup);
