@@ -554,6 +554,11 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 		alpha = standPat;
 	}
 
+	if (ply >= maxSearchPly) {
+		pv->index=0;
+		return standPat;
+	}
+
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 	int moveCounter=0;
 	bool pvNode = (beta - alpha > 1);
