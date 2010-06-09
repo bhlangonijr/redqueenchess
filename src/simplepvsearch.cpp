@@ -171,7 +171,6 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 	rootMoves.first();
 	int moveCounter=0;
 	int remainingMoves=0;
-	long time=getTickCount();
 	MoveIterator::Move bestMove = pv->moves[0];
 
 	while (rootMoves.hasNext()) {
@@ -225,10 +224,6 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 			alpha = score;
 			updatePv(pv, line, move);
 			bestMove=move;
-			if (!stop(agent->getSearchInProgress())) {
-				uciOutput(pv, stats.bestMove, getTickCount()-_startTime, agent->hashFull(), depth);
-				time = getTickCount();
-			}
 		}
 
 	}
