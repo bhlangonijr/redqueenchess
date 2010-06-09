@@ -28,6 +28,7 @@
 #define EVALUATOR_H_
 
 #include <string.h>
+#include <stdlib.h>
 #include "inline.h"
 #include "board.h"
 
@@ -380,9 +381,7 @@ public:
 
 	inline const int interpolate(const int first, const int second, const int position) {
 
-		if (gamePhase==OPENING) {
-			return first;
-		} else if (gamePhase==ENDGAME || position > gameSize) {
+		if (position > gameSize) {
 			return second;
 		}
 
@@ -413,23 +412,17 @@ private:
 // main eval function
 inline const int Evaluator::evaluate(Board& board) {
 
-	const int CHECK_MATERIAL = 300;
 	const PieceColor side = board.getSideToMove();
 	const PieceColor other = board.flipSide(board.getSideToMove());
+	setGameStage(predictGameStage(board));
 
 	int material = evalMaterial(board, side) - evalMaterial(board, other);
 	int pieces = evalPieces(board, side) - evalPieces(board, other);
-	//int development = evalDevelopment(board, side) - evalDevelopment(board, other);
-	//int imbalances = evalImbalances(board, side) - evalImbalances(board, other);
-	int mobility = 0;
+	int development = evalDevelopment(board, side) - evalDevelopment(board, other);
+	int imbalances = evalImbalances(board, side) - evalImbalances(board, other);
+	int mobility = evalMobility(board, side) - evalMobility(board, other);
 
-	setGameStage(predictGameStage(board));
-
-	if ((gamePhase!=ENDGAME) && (material > -CHECK_MATERIAL && material < CHECK_MATERIAL )) {
-		mobility = evalMobility(board, side) - evalMobility(board, other);
-	}
-
-	return material+mobility+pieces/*+development+imbalances*/;
+	return material+mobility+pieces+development+imbalances;
 }
 
 // material eval function
@@ -511,11 +504,19 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 // mobility eval function
 inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
+	const PieceColor otherSide = board.flipSide(color);
+
+	const int DELTA_MAX = 7;
 	const int BISHOP_MOBILITY_BONUS = 4;
 	const int ROOK_MOBILITY_BONUS = 2;
 
+	const int BISHOP_TROPISM_BONUS = 2;
+	const int ROOK_TROPISM_BONUS = 3;
+	const int QUEEN_TROPISM_BONUS = 4;
+
 	Bitboard pieces = EMPTY_BB;
 	Bitboard moves = EMPTY_BB;
+
 
 	Square from = NONE;
 	int count=0;
@@ -524,6 +525,7 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
+		count += (DELTA_MAX-kingDistance(board,from,otherSide)) * BISHOP_TROPISM_BONUS;
 		moves |= board.getBishopAttacks(from);
 		from = extractLSB(pieces);
 	}
@@ -533,6 +535,7 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
+		count += (DELTA_MAX-kingDistance(board,from,otherSide)) * ROOK_TROPISM_BONUS;
 		moves = board.getRookAttacks(from);
 		count+=_BitCount(moves)*ROOK_MOBILITY_BONUS;
 		from = extractLSB(pieces);
@@ -542,6 +545,7 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
+		count += (DELTA_MAX-kingDistance(board,from,otherSide)) * QUEEN_TROPISM_BONUS;
 		moves = board.getQueenAttacks(from);
 		count+=_BitCount(moves);
 		from = extractLSB(pieces);
@@ -572,7 +576,7 @@ inline const int Evaluator::evalDevelopment(Board& board, PieceColor color) {
 // mobility eval function
 inline const int Evaluator::evalImbalances(Board& board, PieceColor color) {
 
-	const int bishopPairBonus = 20;
+	const int bishopPairBonus = 15;
 	int count=0;
 
 	Bitboard bishop = board.getPiecesByType(board.makePiece(color,BISHOP));
@@ -585,19 +589,20 @@ inline const int Evaluator::evalImbalances(Board& board, PieceColor color) {
 	return count;
 }
 
-// piece distance
+// king distance
 inline const int Evaluator::kingDistance(Board& board, const Square from, const PieceColor color) {
 
-	/*const Bitboard kingBB = board.getPiecesByType(board.makePiece(color,KING));
-	const Square KingSq = bitboardToSquare(kingBB);
+	const Bitboard kingBB = board.getPiecesByType(board.makePiece(color,KING));
+	const Square kingSq = bitboardToSquare(kingBB);
 
-	if (KingSq==NONE) {
-		return 8;
+	if (kingSq==NONE) {
+		return 7;
 	}
+	const int delta1 = abs(squareRank[kingSq]-squareRank[from]);
+	const int delta2 = abs(squareFile[kingSq]-squareFile[from]);
 
-	return (abs(squareRank[kingSq]-squareRank[from])+
-			abs(squareFile[kingSq]-squareFile[from]))/2;*/
-	return 0;
+	return (delta1+delta2)/2;
+
 }
 
 // static exchange evaluation
