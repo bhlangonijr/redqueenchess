@@ -30,3 +30,14 @@ go wtime 2611640 btime 3664740
 
 //crashes
 position fen 8/6QP/8/8/5k2/8/8/K2q4 w - - 0 1
+
+
+
+crashing when
+
+go depth 12
+
+then 
+
+position startpos moves c2c4 g8f6 b1c3 e7e5 d2d3 d7d5 c4d5 f6d5 g1f3 d5c3 b2c3 b8c6 g2g3 e5e4 d3e4 d8d1 e1d1 c8g4 c1e3 f8a3 d1c2 e8g8 f3d4 c6d4 c3d4 c7c6 a1b1 b7b6 c2b3 a3e7 b1c1 c6c5 d4d5 e7d6 e3f4 d6f4 g3f4 g4h5 f2f3 a8d8 c1d1 f7f6 f1h3 h5e8 e4e5 f6e5 f4e5 f8f4 b3c3
+go wtime 2265980 btime 3198750

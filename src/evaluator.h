@@ -419,8 +419,8 @@ inline const int Evaluator::evaluate(Board& board) {
 
 	int material = evalMaterial(board, side) - evalMaterial(board, other);
 	int pieces = evalPieces(board, side) - evalPieces(board, other);
-	int development = evalDevelopment(board, side) - evalDevelopment(board, other);
-	int imbalances = evalImbalances(board, side) - evalImbalances(board, other);
+	//int development = evalDevelopment(board, side) - evalDevelopment(board, other);
+	//int imbalances = evalImbalances(board, side) - evalImbalances(board, other);
 	int mobility = 0;
 
 	setGameStage(predictGameStage(board));
@@ -429,7 +429,7 @@ inline const int Evaluator::evaluate(Board& board) {
 		mobility = evalMobility(board, side) - evalMobility(board, other);
 	}
 
-	return material+mobility+pieces+development+imbalances;
+	return material+mobility+pieces/*+development+imbalances*/;
 }
 
 // material eval function

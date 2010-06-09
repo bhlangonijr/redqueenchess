@@ -41,14 +41,15 @@ const int maxScore = 20000;
 const int maxSearchDepth = 164;
 const int maxSearchPly = 180;
 const int allowIIDAtPV = 3;
-const int allowIIDAtNormal = 49;
+const int allowIIDAtNormal = 11;
 const int prunningDepth=2;
 const int prunningMoves=2;
 const int pvReduction=1;
 const int nonPvReduction=2;
 const int aspirationDepth=6;
 const int historyBonus=100;
-const int scoreTable[10]={0,8000,5000,9500,9000,5000,4500,4000,1000,-9000};
+const int scoreTable[11]={0,8000,5000,9500,9000,5000,4500,4000,1000,-9000,5000};
+
 
 class SimplePVSearch {
 
@@ -56,7 +57,7 @@ public:
 
 	typedef struct PvLine {
 		int index;
-		MoveIterator::Move moves[maxSearchDepth];
+		MoveIterator::Move moves[maxSearchPly+1];
 	} PvLine;
 
 	typedef struct SearchStats {
@@ -195,7 +196,7 @@ private:
 	SearchStats stats;
 	long timeToStop;
 	MoveIterator rootMoves;
-	MoveIterator::Move killer[maxSearchDepth][2];
+	MoveIterator::Move killer[maxSearchPly+1][2];
 	long nodesPerMove[MOVE_LIST_MAX_SIZE];
 	int history[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 	Evaluator evaluator;
@@ -212,7 +213,7 @@ private:
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, bool isKingAttacked, int ply);
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, bool isKingAttacked);
 	void scoreMoves(Board& board, MoveIterator& moves, const bool seeOrdered);
-	bool okToReduce(Board& board, MoveIterator::Move& move, MoveBackup& backup,
+	bool okToReduce(Board& board, MoveIterator::Move& move,
 			int depth, int remainingMoves, bool isKingAttacked, const bool nullMoveMateScore, int ply);
 	bool okToNullMove(Board& board);
 	bool isPawnFinal(Board& board);
@@ -273,12 +274,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			if (move==ttMove) {
 				continue;
 			}
-			//const int score = evaluator.see(board,move);
-			if (move.type==MoveIterator::BAD_CAPTURE/*score < 0*/) {
-/*
-				move.type=MoveIterator::BAD_CAPTURE;
-				move.score+=scoreTable[move.type];
-*/
+			if (move.type==MoveIterator::BAD_CAPTURE) {
 				moves.prior();
 				break; // it will keep the bad captures after non captures
 			}
@@ -411,7 +407,7 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, const 
 }
 
 // Checks if search can be reduced for a given move
-inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move, MoveBackup& backup,
+inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move,
 		int depth, int remainingMoves, bool isKingAttacked, const bool nullMoveMateScore, int ply) {
 
 	MoveIterator::Move& killer1 = killer[ply][0];
@@ -425,25 +421,11 @@ inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move, M
 			(move!=killer2) &&
 			(depth > prunningDepth) &&
 			(!isKingAttacked) &&
+			(!isPawnFinal(board)) &&
 			(!history[board.getPieceTypeBySquare(move.from)][move.to]
 			));
 
-	if (!verify) {
-		return false;
-	}
-
-	if (isPawnPush(move,backup) ||
-			isPawnFinal(board) ||
-			isPawnPromoting(board)) {
-		return false;
-	}
-
-	bool isCastling = backup.hasWhiteKingCastle ||
-			backup.hasBlackKingCastle ||
-			backup.hasWhiteQueenCastle ||
-			backup.hasBlackQueenCastle;
-
-	return !(isCastling);
+	return verify;
 
 }
 
@@ -485,10 +467,13 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction, Board& b
 
 	extension=0;
 	reduction=0;
-	if (!okToReduce(board, move, backup, depth, remainingMoves, isKingAttacked, nullMoveMateScore, ply)) {
-		if (isKingAttacked || isPawnPromoting(board) || isPawnPush(move, backup)) {
-			extension=1;
-		}
+
+	if (isKingAttacked || isPawnPromoting(board) ||	isPawnPush(move, backup)) {
+		extension=1;
+		return false;
+	}
+
+	if (!okToReduce(board, move, depth, remainingMoves, isKingAttacked, nullMoveMateScore, ply)) {
 		return false;
 	}
 
@@ -568,9 +553,6 @@ inline const std::string SimplePVSearch::pvLineToString(const PvLine* pv) {
 }
 
 inline void SimplePVSearch::updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move) {
-	if (pv==NULL || move.from==NONE) {
-		return;
-	}
 	pv->moves[0] = move;
 	memcpy(pv->moves + 1, line.moves, line.index * sizeof(MoveIterator::Move));
 	pv->index = line.index + 1;
@@ -599,6 +581,7 @@ inline void SimplePVSearch::updateHistory(Board& board, MoveIterator::Move& move
 inline void SimplePVSearch::updateKillers(Board& board, MoveIterator::Move& move, int ply) {
 	if (board.getPieceBySquare(move.to)!=EMPTY ||
 			move.type == MoveIterator::PROMO_NONCAPTURE ||
+   		    move.type == MoveIterator::CASTLE ||
 			move.from ==NONE) {
 		return;
 	}

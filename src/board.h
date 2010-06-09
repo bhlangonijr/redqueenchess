@@ -1094,17 +1094,17 @@ inline void Board::generateCastleMoves(MoveIterator& moves, const PieceColor sid
 
 	if (canCastle(side, KING_SIDE_CASTLE)) {
 		if (side==WHITE) {
-			moves.add(E1,G1,EMPTY,MoveIterator::NON_CAPTURE);
+			moves.add(E1,G1,EMPTY,MoveIterator::CASTLE);
 		} else {
-			moves.add(E8,G8,EMPTY,MoveIterator::NON_CAPTURE);
+			moves.add(E8,G8,EMPTY,MoveIterator::CASTLE);
 		}
 	}
 
 	if (canCastle(side, QUEEN_SIDE_CASTLE)) {
 		if (side==WHITE) {
-			moves.add(E1,C1,EMPTY,MoveIterator::NON_CAPTURE);
+			moves.add(E1,C1,EMPTY,MoveIterator::CASTLE);
 		} else {
-			moves.add(E8,C8,EMPTY,MoveIterator::NON_CAPTURE);
+			moves.add(E8,C8,EMPTY,MoveIterator::CASTLE);
 		}
 	}
 
