@@ -376,7 +376,7 @@ public:
 	const void setGameStage(const GamePhase phase);
 	const GamePhase getGameStage();
 	const GamePhase predictGameStage(Board& board);
-	const int kingDistance(Board& board, const Square from, const PieceColor color);
+	const int squareDistance(Board& board, const Square from, const Square to);
 	const int see(Board& board, MoveIterator::Move& move);
 
 	inline const int interpolate(const int first, const int second, const int position) {
@@ -385,7 +385,6 @@ public:
 			return second;
 		}
 
-		//return int((double)first + (double)1/(double)(gameSize-position) * (double)(second-first));
 		return (first*position)/gameSize+(second*(gameSize-position)/gameSize);
 
 	}
@@ -504,8 +503,6 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 // mobility eval function
 inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
-	const PieceColor otherSide = board.flipSide(color);
-
 	const int DELTA_MAX = 7;
 	const int BISHOP_MOBILITY_BONUS = 4;
 	const int ROOK_MOBILITY_BONUS = 2;
@@ -513,6 +510,9 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	const int BISHOP_TROPISM_BONUS = 2;
 	const int ROOK_TROPISM_BONUS = 3;
 	const int QUEEN_TROPISM_BONUS = 4;
+
+	const Bitboard otherKingBB = board.getPiecesByType(board.makePiece(board.flipSide(color),KING));
+	const Square otherKingSq = bitboardToSquare(otherKingBB);
 
 	Bitboard pieces = EMPTY_BB;
 	Bitboard moves = EMPTY_BB;
@@ -525,7 +525,7 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		count += (DELTA_MAX-kingDistance(board,from,otherSide)) * BISHOP_TROPISM_BONUS;
+		count += (DELTA_MAX-squareDistance(board,from,otherKingSq)) * BISHOP_TROPISM_BONUS;
 		moves |= board.getBishopAttacks(from);
 		from = extractLSB(pieces);
 	}
@@ -535,7 +535,7 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		count += (DELTA_MAX-kingDistance(board,from,otherSide)) * ROOK_TROPISM_BONUS;
+		count += (DELTA_MAX-squareDistance(board,from,otherKingSq)) * ROOK_TROPISM_BONUS;
 		moves = board.getRookAttacks(from);
 		count+=_BitCount(moves)*ROOK_MOBILITY_BONUS;
 		from = extractLSB(pieces);
@@ -545,7 +545,7 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		count += (DELTA_MAX-kingDistance(board,from,otherSide)) * QUEEN_TROPISM_BONUS;
+		count += (DELTA_MAX-squareDistance(board,from,otherKingSq)) * QUEEN_TROPISM_BONUS;
 		moves = board.getQueenAttacks(from);
 		count+=_BitCount(moves);
 		from = extractLSB(pieces);
@@ -589,17 +589,11 @@ inline const int Evaluator::evalImbalances(Board& board, PieceColor color) {
 	return count;
 }
 
-// king distance
-inline const int Evaluator::kingDistance(Board& board, const Square from, const PieceColor color) {
+// square distance
+inline const int Evaluator::squareDistance(Board& board, const Square from, const Square to) {
 
-	const Bitboard kingBB = board.getPiecesByType(board.makePiece(color,KING));
-	const Square kingSq = bitboardToSquare(kingBB);
-
-	if (kingSq==NONE) {
-		return 7;
-	}
-	const int delta1 = abs(squareRank[kingSq]-squareRank[from]);
-	const int delta2 = abs(squareFile[kingSq]-squareFile[from]);
+	const int delta1 = abs(squareRank[to]-squareRank[from]);
+	const int delta2 = abs(squareFile[to]-squareFile[from]);
 
 	return (delta1+delta2)/2;
 

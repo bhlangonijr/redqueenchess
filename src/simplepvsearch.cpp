@@ -171,7 +171,9 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 	rootMoves.first();
 	int moveCounter=0;
 	int remainingMoves=0;
-	MoveIterator::Move bestMove = pv->moves[0];
+	int reduction=0;
+	int extension=0;
+    MoveIterator::Move bestMove = pv->moves[0];
 
 	while (rootMoves.hasNext()) {
 
@@ -194,8 +196,6 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 
 		uciOutput(move, moveCounter);
 
-		int reduction=0;
-		int extension=0;
 		bool reduced = adjustDepth(extension, reduction, board, move, backup, depth,
 				remainingMoves, isKingAttacked,ply,false,score > alpha);
 		int newDepth=depth-1;
@@ -289,6 +289,8 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 	MoveIterator::Move bestMove;
 	int moveCounter=0;
 	int remainingMoves=0;
+	int reduction=0;
+	int extension=0;
 
 	while (true) {
 
@@ -310,8 +312,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 			remainingMoves++;
 		}
 
-		int reduction=0;
-		int extension=0;
 		bool reduced = adjustDepth(extension, reduction, board, move, backup, depth,
 				remainingMoves, isKingAttacked,ply,false,moveCounter==1);
 		int newDepth=depth-1;
@@ -441,19 +441,12 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		}
 	}
 
-	if (depth > allowIIDAtNormal && ttMove.from == NONE &&
-			!isKingAttacked && !nullMoveMateScore) {
-		const int iidSearchDepth = depth/2;
-		score = normalSearch(board,alpha,beta,iidSearchDepth,ply+1,&line,false);
-		if (agent->hashGet(board.getKey(), hashData, ply, maxScore)) {
-			ttMove=hashData.move;
-		}
-	}
-
 	MoveIterator moves = MoveIterator();
 	MoveIterator::Move bestMove;
 	int moveCounter=0;
 	int remainingMoves=0;
+	int reduction=0;
+	int extension=0;
 
 	while (true) {
 
@@ -475,8 +468,6 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 			remainingMoves++;
 		}
 
-		int reduction=0;
-		int extension=0;
 		bool reduced = adjustDepth(extension, reduction, board, move, backup, depth,
 				remainingMoves, isKingAttacked,ply,nullMoveMateScore,false);
 		int newDepth=depth-1;
