@@ -504,7 +504,7 @@ inline void SimplePVSearch::uciOutput(PvLine* pv, MoveIterator::Move& bestMove,
 
 		if (abs(bestMove.score) > (maxScore-MATE_RANGE_SCORE)) {
 			if (bestMove.score>0) {
-				scoreString = "mate " +StringUtil::toStr((maxScore - bestMove.score+1)/2);
+				scoreString = "mate " +StringUtil::toStr((maxScore - (bestMove.score+1))/2);
 			} else {
 				scoreString = "mate " +StringUtil::toStr(-(maxScore + bestMove.score)/2);
 			}

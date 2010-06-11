@@ -507,9 +507,10 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	const int BISHOP_MOBILITY_BONUS = 4;
 	const int ROOK_MOBILITY_BONUS = 2;
 
-	const int BISHOP_TROPISM_BONUS = 2;
-	const int ROOK_TROPISM_BONUS = 3;
-	const int QUEEN_TROPISM_BONUS = 4;
+	const int KNIGHT_TROPISM_BONUS = 2;
+	const int BISHOP_TROPISM_BONUS = 3;
+	const int ROOK_TROPISM_BONUS = 4;
+	const int QUEEN_TROPISM_BONUS = 5;
 
 	const Bitboard otherKingBB = board.getPiecesByType(board.makePiece(board.flipSide(color),KING));
 	const Square otherKingSq = bitboardToSquare(otherKingBB);
@@ -517,9 +518,16 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	Bitboard pieces = EMPTY_BB;
 	Bitboard moves = EMPTY_BB;
 
-
 	Square from = NONE;
 	int count=0;
+
+	pieces = board.getPiecesByType(board.makePiece(color,KNIGHT));
+	from = extractLSB(pieces);
+
+	while ( from!=NONE ) {
+		count += (DELTA_MAX-squareDistance(board,from,otherKingSq)) * KNIGHT_TROPISM_BONUS;
+		from = extractLSB(pieces);
+	}
 
 	pieces = board.getPiecesByType(board.makePiece(color,BISHOP));
 	from = extractLSB(pieces);

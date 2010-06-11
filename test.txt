@@ -31,8 +31,6 @@ go wtime 2611640 btime 3664740
 //crashes
 position fen 8/6QP/8/8/5k2/8/8/K2q4 w - - 0 1
 
-
-
 crashing when
 
 go depth 12
@@ -42,6 +40,25 @@ then
 position startpos moves c2c4 g8f6 b1c3 e7e5 d2d3 d7d5 c4d5 f6d5 g1f3 d5c3 b2c3 b8c6 g2g3 e5e4 d3e4 d8d1 e1d1 c8g4 c1e3 f8a3 d1c2 e8g8 f3d4 c6d4 c3d4 c7c6 a1b1 b7b6 c2b3 a3e7 b1c1 c6c5 d4d5 e7d6 e3f4 d6f4 g3f4 g4h5 f2f3 a8d8 c1d1 f7f6 f1h3 h5e8 e4e5 f6e5 f4e5 f8f4 b3c3
 go wtime 2265980 btime 3198750
 
-position fen 6k1/8/8/8/8/6r1/6K1/8 b - - 0 1
-
 position fen 6k1/8/8/8/8/1r6/6K1/8 w - - 0 1
+go infinite
+
+position fen 6k1/8/8/8/1q6/1r6/6K1/8 w - - 0 1
+go infinite
+
+position fen 6k1/8/8/8/1bb5/1r6/6K1/8 w - - 0 1
+go infinite
+
+position fen 6k1/6p1/7p/1P1P4/4q3/1r5P/6P1/3R1Q1K w - - 0 1
+go movetime 20000 depth 63
+
+position fen 1r6/r7/2bkp3/1p1p1p1p/p1pP1PpP/P1P1P1B1/1PK4P/1N1B4 b - - 0 150
+go depth 14
+
+;;good -> b8f8
+
+position fen 8/1B3k2/4Rbp1/3Pp1p1/5p2/5P1P/3r2PK/8 b - - 0 1
+go infinite
+
+position fen r3r1k1/qp1n3p/3Pp1p1/2p5/1p3P2/6P1/PQ3PBP/2R1R1K1 w - c6 0 1
+go infinite
