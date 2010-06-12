@@ -425,7 +425,6 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		if (score < newBeta) {
 			return score;
 		}
-
 	}
 
 	// null move #1
@@ -436,8 +435,9 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 	}
 
 	// null move #2
-	if (!isKingAttacked && allowNullMove && depth > nullMoveDepth &&
-			okToNullMove(board) && !isMateScore(beta) && eval >= beta-nullMoveMargin) {
+	if (!isKingAttacked && allowNullMove &&/* depth > nullMoveDepth  &&*/
+			okToNullMove(board) && !isMateScore(beta) &&
+			eval >= beta-(depth>nullMoveDepth?nullMoveMargin:0)) {
 
 		const int reduction = 3 + (depth > 4 ? depth/6 : 0);
 		MoveBackup backup;
@@ -492,8 +492,8 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 				move.type == MoveIterator::NON_CAPTURE && move != ttMove &&
 				!isGivenCheck(board,move.from) && moveCounter>1) {
 
-			const int gain = eval + evaluator.see(board,move) ;
-			const int futilityScore = gain + futilityMargin * depth;
+			const int predictedEval = eval + evaluator.see(board,move) ;
+			const int futilityScore = predictedEval + futilityMargin * depth;
 
 			if (futilityScore < beta) {
 				if (futilityScore > alpha) {
