@@ -213,7 +213,7 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 		board.undoMove(backup);
 
 		move.score=score;
-		nodes = (_nodes - nodes);
+		nodes = _nodes - nodes;
 		updateRootMovesScore(nodes);
 
 		if( score >= beta) {
@@ -397,10 +397,10 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 	// tt retrieve
 	if (agent->hashGet(board.getKey(), hashData, ply, maxScore)) {
 		if (hashData.depth>=depth) {
-			const bool okToUseTT = ((
+			const bool okToUseTT = (((
 					(hashData.flag == SearchAgent::UPPER && hashData.value <= alpha) ||
 					(hashData.flag == SearchAgent::LOWER && hashData.value >= beta) ||
-					(hashData.flag == SearchAgent::EXACT)));
+					(hashData.flag == SearchAgent::EXACT))));
 
 			if (okToUseTT) {
 				stats.ttHits++;
@@ -426,7 +426,6 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 			return score;
 		}
 	}
-
 	// null move #1
 	if (!isKingAttacked && allowNullMove && depth < razorDepth &&
 			okToNullMove(board) && !isMateScore(beta) &&
@@ -435,7 +434,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 	}
 
 	// null move #2
-	if (!isKingAttacked && allowNullMove &&/* depth > nullMoveDepth  &&*/
+	if (!isKingAttacked && allowNullMove &&
 			okToNullMove(board) && !isMateScore(beta) &&
 			eval >= beta-(depth>nullMoveDepth?nullMoveMargin:0)) {
 

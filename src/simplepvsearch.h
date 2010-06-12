@@ -57,7 +57,6 @@ const int aspirationDepth=6;
 const int historyBonus=100;
 const int scoreTable[11]={0,8000,5000,9500,9000,5000,4500,4000,1000,-9000,5000};
 
-
 class SimplePVSearch {
 
 public:
@@ -584,7 +583,7 @@ inline void SimplePVSearch::updatePv(PvLine* pv, PvLine& line, MoveIterator::Mov
 // clear history
 inline void SimplePVSearch::clearHistory() {
 	memset(history, 0, sizeof(int)*ALL_PIECE_TYPE_BY_COLOR*ALL_SQUARE);
-	memset(killer, 0, sizeof(MoveIterator::Move)*maxSearchDepth*2);
+	memset(killer, 0, sizeof(MoveIterator::Move)*maxSearchPly*2);
 }
 
 // update history

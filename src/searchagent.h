@@ -256,7 +256,7 @@ private:
 	long moveTime;
 	bool infinite;
 
-	TranspositionTable<Key,HashData>* transTable;
+	TranspositionTable<Key,HashData>* transTable __attribute__ ((aligned(64)));
 
 	const long getTimeToSearch();
 
