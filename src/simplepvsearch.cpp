@@ -428,9 +428,16 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 
 	}
 
-	// null move
-	if (!isKingAttacked && allowNullMove &&
-			okToNullMove(board) && !isMateScore(beta)) {
+	// null move #1
+	if (!isKingAttacked && allowNullMove && depth < razorDepth &&
+			okToNullMove(board) && !isMateScore(beta) &&
+			eval >= beta+futilityMargin*depth) {
+		return eval-futilityMargin*depth;
+	}
+
+	// null move #2
+	if (!isKingAttacked && allowNullMove && depth > nullMoveDepth &&
+			okToNullMove(board) && !isMateScore(beta) && eval >= beta-nullMoveMargin) {
 
 		const int reduction = 3 + (depth > 4 ? depth/6 : 0);
 		MoveBackup backup;
