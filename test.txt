@@ -62,3 +62,11 @@ go infinite
 
 position fen r3r1k1/qp1n3p/3Pp1p1/2p5/1p3P2/6P1/PQ3PBP/2R1R1K1 w - c6 0 1
 go infinite
+
+position startpos moves d2d4 g8f6 c2c4 h7h6 b1c3 c7c5 d4d5 d7d6 e2e4 g7g6 g1f3 f8g7 f1d3 c8g4 h2h3 g4f3 d1f3 b8d7 d3c2 a7a6 e1g1 e8g8 c1f4 f6h5 f4e3 d8b6 c2b3 d7e5 f3d1 e5c4 b3c4 b6b2 a1c1 g7c3 c1b1 b2a3 e3c1 a3a5 b1b7 g8g7 d1d3 h5f6 d3e3 f6g8 a2a3 f7f5 e3g3 c3e5 g3d3 f5e4 d3e4 a5a4 e4d3 f8f7 c1e3 g6g5 f1e1 e5f4 e1b1 g8f6 e3f4 g5f4 b7b6 a6a5 f2f3 a4d7 g1f2 d7d8 d3c3 g7f8 a3a4 f7g7 c3d2 d8e8 d2f4 e8a4 b1b2 f8g8 g2g3 a8f8 b6b8 f8b8 b2b8 g8f7 b8b2 a4a1 b2b7 g7g5
+go infinite
+
+position startpos moves c2c4 g8f6 b1c3 g7g6 g2g3 b8c6 g1f3 e7e5 d2d4 e5d4 f3d4 f8g7 d4c6 b7c6 f1g2 f6g4 d1c2 e8g8 e1g1 g4e5 b2b3 c8b7 c1e3 d7d6 h2h3 a7a6 g1h1 e5d7 a1c1 d8f6 g3g4 f6e6 c2e4 d7e5 e4f4 f7f5 g4g5 f8d8 h3h4 e5g4 e3d4 g7d4 f4d4 c6c5 d4f4 b7g2 h1g2 d8e8 g2g3 e8f8 f1h1 g4e5 c3d5 f8f7 h4h5 g8f8 f4h4 c7c6 d5f4 e6e8 h5g6 e5g6 f4g6 h7g6 h4f4 f8e7 c1c3 e7d7 h1d1 e8b8 c3d3 d6d5 f4b8 a8b8 c4d5 f7g7 d5d6 b8e8 d1d2 g7h7 e2e3 h7h1 f2f3 e8h8 a2a3 h1g1
+go infinite
+
+;; good d2g2

@@ -388,7 +388,7 @@ public:
 		return (first*position)/gameSize+(second*(gameSize-position)/gameSize);
 
 	}
-	inline const int getPieceMaterialValue(Board& board, const PieceTypeByColor piece) {
+	inline const int getPieceMaterialValue(const PieceTypeByColor piece) {
 		return defaultMaterialValues[piece];
 	}
 
@@ -434,7 +434,7 @@ inline const int Evaluator::evalMaterial(Board& board, PieceColor color) {
 	for(int pieceType = first; pieceType <= last; pieceType++) {
 		int count = board.getPieceCountByType(PieceTypeByColor(pieceType));
 		if (count > 0) {
-			material += count * getPieceMaterialValue(board, PieceTypeByColor(pieceType));
+			material += count * getPieceMaterialValue(PieceTypeByColor(pieceType));
 		}
 	}
 

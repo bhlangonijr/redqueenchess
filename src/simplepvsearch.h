@@ -42,6 +42,11 @@ const int maxSearchDepth = 164;
 const int maxSearchPly = 180;
 const int allowIIDAtPV = 3;
 const int allowIIDAtNormal = 11;
+const int razorMargin=350;
+const int futilityMargin=450;
+const int iidMargin=150;
+const int futilityDepth=3;
+const int razorDepth=4;
 const int prunningDepth=4;
 const int prunningMoves=2;
 const int pvReduction=1;
@@ -216,6 +221,8 @@ private:
 	bool okToReduce(Board& board, MoveIterator::Move& move,
 			int depth, int remainingMoves, bool isKingAttacked, const bool nullMoveMateScore, int ply);
 	bool okToNullMove(Board& board);
+	bool isMateScore(const int score);
+	bool isGivenCheck(Board& board, const Square from);
 	bool isPawnFinal(Board& board);
 	bool isPawnPush(MoveIterator::Move& move, MoveBackup& backup);
 	bool isPawnPromoting(const Board& board);
@@ -414,13 +421,13 @@ inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move,
 	MoveIterator::Move& killer2 = killer[ply][1];
 
 	bool verify = (
+			(!isKingAttacked) &&
 			(!nullMoveMateScore) &&
 			(remainingMoves > prunningMoves) &&
 			(move.type == MoveIterator::NON_CAPTURE) &&
 			(move!=killer1) &&
 			(move!=killer2) &&
 			(depth > prunningDepth) &&
-			(!isKingAttacked) &&
 			(!isPawnFinal(board)) &&
 			(!history[board.getPieceTypeBySquare(move.from)][move.to]
 			));
@@ -432,6 +439,20 @@ inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move,
 // Ok to do null move?
 inline bool SimplePVSearch::okToNullMove(Board& board) {
 	return !isPawnFinal(board);
+}
+
+// is mate score?
+inline bool SimplePVSearch::isMateScore(const int score) {
+	return score < -maxScore+maxSearchPly || score > maxScore-maxSearchPly;
+}
+
+// is given check?
+inline bool SimplePVSearch::isGivenCheck(Board& board, const Square from) {
+
+	const Bitboard otherKingBB = board.getPiecesByType(board.makePiece(board.flipSide(board.getSideToMove()),KING));
+	const Square otherKingSq = bitboardToSquare(otherKingBB);
+
+	return (otherKingSq != NONE && board.isAttackedBy(from,otherKingSq));
 }
 
 // remains pawns & kings only?
@@ -581,7 +602,7 @@ inline void SimplePVSearch::updateHistory(Board& board, MoveIterator::Move& move
 inline void SimplePVSearch::updateKillers(Board& board, MoveIterator::Move& move, int ply) {
 	if (board.getPieceBySquare(move.to)!=EMPTY ||
 			move.type == MoveIterator::PROMO_NONCAPTURE ||
-   		    move.type == MoveIterator::CASTLE ||
+			move.type == MoveIterator::CASTLE ||
 			move.from ==NONE) {
 		return;
 	}
