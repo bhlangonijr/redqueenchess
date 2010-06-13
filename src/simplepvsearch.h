@@ -31,21 +31,25 @@
 #include <iostream>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "searchagent.h"
 #include "evaluator.h"
+#define USE_SEE_ORDERING false
 
-const int MATE_RANGE_CHECK = 10;
+const int MAX_SCORE_REPETITION = 4;
 const int MATE_RANGE_SCORE = 300;
 const int maxScore = 20000;
-const int maxSearchDepth = 164;
-const int maxSearchPly = 180;
+const int maxSearchDepth = 80;
+const int maxSearchPly = 100;
 const int allowIIDAtPV = 3;
 const int allowIIDAtNormal = 11;
+const int deltaMargin=950;
 const int razorMargin=350;
 const int futilityMargin=450;
 const int nullMoveMargin=250;
 const int iidMargin=150;
+const int easyMargin=450;
 const int nullMoveDepth=2;
 const int futilityDepth=3;
 const int razorDepth=4;
@@ -55,7 +59,7 @@ const int pvReduction=1;
 const int nonPvReduction=2;
 const int aspirationDepth=6;
 const int historyBonus=100;
-const int scoreTable[11]={0,8000,5000,9500,9000,5000,4500,4000,1000,-9000,5000};
+const int scoreTable[11]={0,8000,5000,9500,9000,5000,4500,4000,100,-900,5000};
 
 class SimplePVSearch {
 
@@ -219,6 +223,7 @@ private:
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, MoveIterator::Move& ttMove, bool isKingAttacked, int ply);
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, bool isKingAttacked);
 	void scoreMoves(Board& board, MoveIterator& moves, const bool seeOrdered);
+	void filterLegalMoves(Board& board, MoveIterator& moves);
 	bool okToReduce(Board& board, MoveIterator::Move& move,
 			int depth, int remainingMoves, bool isKingAttacked, const bool nullMoveMateScore, int ply);
 	bool okToNullMove(Board& board);
@@ -237,6 +242,7 @@ private:
 	void updateKillers(Board& board, MoveIterator::Move& move, int ply);
 	void initRootMovesOrder();
 	void updateRootMovesScore(const long value);
+	long predictTimeUse(const long iterationTime[maxSearchPly], const long totalTime, const int depth);
 
 };
 // select a move
@@ -258,7 +264,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_EVASION_STAGE) {
 		board.generateEvasions(moves, board.getSideToMove());
-		scoreMoves(board, moves, true);
+		scoreMoves(board, moves, USE_SEE_ORDERING);
 		moves.goNextStage();
 	}
 
@@ -272,7 +278,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
 		board.generateCaptures(moves, board.getSideToMove());
-		scoreMoves(board, moves,true);
+		scoreMoves(board, moves,USE_SEE_ORDERING);
 		moves.goNextStage();
 	}
 
@@ -282,9 +288,23 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			if (move==ttMove) {
 				continue;
 			}
+
 			if (move.type==MoveIterator::BAD_CAPTURE) {
-				moves.prior();
-				break; // it will keep the bad captures after non captures
+#if (!USE_SEE_ORDERING)
+				move.score = evaluator.see(board,move);
+				if (move.score<0) {
+#endif
+					moves.prior();
+					break; // it will keep the bad captures after non captures
+#if (!USE_SEE_ORDERING)
+				} else {
+					if (move.score>0) {
+						move.type=MoveIterator::GOOD_CAPTURE;
+					} else {
+						move.type=MoveIterator::EQUAL_CAPTURE;
+					}
+				}
+#endif
 			}
 			return move;
 		}
@@ -307,7 +327,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_QUIET_STAGE) {
 		board.generateNonCaptures(moves, board.getSideToMove());
-		scoreMoves(board, moves, true);
+		scoreMoves(board, moves, USE_SEE_ORDERING);
 		moves.goNextStage();
 	}
 
@@ -339,7 +359,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_EVASION_STAGE) {
 		board.generateEvasions(moves, board.getSideToMove());
-		scoreMoves(board, moves, true);
+		scoreMoves(board, moves, USE_SEE_ORDERING);
 		moves.first();
 		moves.goNextStage();
 	}
@@ -354,7 +374,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
 		board.generateCaptures(moves, board.getSideToMove());
-		scoreMoves(board, moves, true);
+		scoreMoves(board, moves, USE_SEE_ORDERING);
 		moves.first();
 		moves.goNextStage();
 	}
@@ -412,6 +432,22 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, const 
 	}
 	moves.goToBookmark();
 
+}
+
+// filter the move list to only legal moves
+inline void SimplePVSearch::filterLegalMoves(Board& board, MoveIterator& moves) {
+
+	moves.first();
+	while (moves.hasNext()) {
+		MoveIterator::Move& move = moves.next();
+		MoveBackup backup;
+		board.doMove(move,backup);
+		if (board.isNotLegal()) {
+			moves.remove(moves.getIndex()-1);
+		}
+		board.undoMove(backup);
+	}
+	moves.first();
 }
 
 // Checks if search can be reduced for a given move
@@ -558,7 +594,6 @@ inline void SimplePVSearch::uciOutput(MoveIterator::Move& bestMove) {
 inline void SimplePVSearch::uciOutput(MoveIterator::Move& move, const int moveCounter) {
 
 	const long uciOutputSecs=1500;
-
 	if (isUpdateUci()) {
 		if (_startTime+uciOutputSecs < getTickCount()) {
 			std::cout << "info currmove " << move.toString() << " currmovenumber " << moveCounter << std::endl;
@@ -622,7 +657,20 @@ inline void SimplePVSearch::initRootMovesOrder() {
 
 // update root moves score
 inline void SimplePVSearch::updateRootMovesScore(const long value) {
-	nodesPerMove[rootMoves.getIndex()]+=value;
+	nodesPerMove[rootMoves.getIndex()-1]+=value;
+}
+
+inline long SimplePVSearch::predictTimeUse(const long iterationTime[maxSearchPly], const long totalTime, const int depth) {
+
+	double ratio1 = double(iterationTime[depth-1])/double(totalTime);
+	double ratio2 = double(iterationTime[depth-2])/double(totalTime);
+	double ratio3 = double(iterationTime[depth-3])/double(totalTime);
+
+	double newTime = double(iterationTime[depth-1])*exp(ratio1/100)*0.6 +
+			double(iterationTime[depth-1])*exp(ratio2/100)*0.3 +
+			long(iterationTime[depth-1])*exp(ratio3/100)*0.1;
+
+	return long(newTime);
 }
 
 #endif /* SIMPLEPVSEARCH_H_ */

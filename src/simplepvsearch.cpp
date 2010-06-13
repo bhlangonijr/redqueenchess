@@ -27,8 +27,6 @@
 
 #include "simplepvsearch.h"
 
-// If set to true, will check move integrity - used for trace purposes
-#define CHECK_MOVE_GEN_ERRORS false
 // show stats info
 #define SHOW_STATS false
 
@@ -47,21 +45,6 @@ void SimplePVSearch::search() {
 	_score = idSearch(board);
 	SearchAgent::getInstance()->setSearchInProgress(false);
 	_time = getTickCount() - _startTime;
-
-#if CHECK_MOVE_GEN_ERRORS
-	// checks for data corruption
-	Key oldKey = _board.generateKey();
-	Key newKey = board.generateKey();
-
-	if (oldKey!=newKey) {
-		std::cout << "old key " << oldKey <<std::endl;
-		std::cout << "new key " << newKey <<std::endl;
-		_board.printBoard();
-		board.printBoard();
-	}
-
-	assert(oldKey==newKey);
-#endif
 	pthread_exit(NULL);
 
 }
@@ -76,10 +59,12 @@ int SimplePVSearch::idSearch(Board& board) {
 
 	_nodes = 0;
 	int bestScore = -maxScore;
-	int iterationScore[maxSearchDepth];
+	int iterationScore[maxSearchPly];
+	long iterationTime[maxSearchPly];
 	int alpha = -maxScore;
 	int beta = maxScore;
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
+	MoveIterator::Move easyMove;
 	initRootMovesOrder();
 
 	if (!isKingAttacked) {
@@ -87,8 +72,9 @@ int SimplePVSearch::idSearch(Board& board) {
 	} else {
 		board.generateEvasions(rootMoves, board.getSideToMove());
 	}
-
+	filterLegalMoves(board,rootMoves);
 	scoreMoves(board,rootMoves,true);
+
 	for (int depth = 1; depth <= _depth; depth++) {
 
 		PvLine pv = PvLine();
@@ -102,6 +88,23 @@ int SimplePVSearch::idSearch(Board& board) {
 		}
 
 		iterationScore[depth]=score;
+		iterationTime[depth]=getTickCount()-_startTime;
+
+		if (stop(agent->getSearchInProgress()) && depth > 1) {
+			break;
+		}
+
+		if (score > bestScore) {
+			bestScore = score;
+			stats.pvChanges++;
+		}
+
+		stats.bestMove=pv.moves[0];
+		stats.searchDepth=depth;
+		stats.searchTime=getTickCount()-_startTime;
+		stats.searchNodes=_nodes;
+
+		uciOutput(&pv, stats.bestMove, stats.searchTime, agent->hashFull(), depth);
 
 		if (depth >= aspirationDepth)	{
 			int delta1 = iterationScore[depth - 0] - iterationScore[depth - 1];
@@ -122,26 +125,42 @@ int SimplePVSearch::idSearch(Board& board) {
 			}
 		}
 
-		if (repetition >= MATE_RANGE_CHECK &&
-				(abs(score) >= -maxScore-depth) ) {
-			break;
+		if (!(_searchFixedDepth || _infinite)) {
+
+			if (repetition >= MAX_SCORE_REPETITION ){
+				if ((abs(iterationScore[depth - 0]) >= -maxScore-maxSearchPly) ||
+						(abs(iterationScore[depth - 1]) >= -maxScore-maxSearchPly) ) {
+					break;
+				}
+			}
+
+			if (depth==2) {
+				if (rootMoves.get(0).score > rootMoves.get(1).score + easyMargin ) {
+					easyMove=rootMoves.get(0);
+				}
+			}
+
+			if (depth>5 && rootMoves.size()==1) {
+				break;
+			}
+
+			if (depth>7) {
+				if (easyMove==pv.moves[0] && nodesPerMove[0]>=(_nodes*87)/100 &&
+						iterationTime[depth] > _timeToSearch/15) {
+					//std::cout << "easy move: " << easyMove.toString() << std::endl;
+					break;
+				}
+			}
+
+			if (depth>3) {
+				if (_timeToSearch <	predictTimeUse(iterationTime,_timeToSearch,depth+1)) {
+					//std::cout << "iteration time: " << iterationTime[depth] << "  time to search: " << _timeToSearch << std::endl;
+					//std::cout << "cannot finalize iteration: " << predictTimeUse(iterationTime,_timeToSearch,depth+1) << std::endl;
+					break;
+				}
+			}
+
 		}
-
-		if (stop(agent->getSearchInProgress()) && depth > 1) {
-			break;
-		}
-
-		if (score > bestScore) {
-			bestScore = score;
-			stats.pvChanges++;
-		}
-
-		stats.bestMove=pv.moves[0];
-		stats.searchDepth=depth;
-		stats.searchTime=getTickCount()-_startTime;
-		stats.searchNodes=_nodes;
-
-		uciOutput(&pv, stats.bestMove, stats.searchTime, agent->hashFull(), depth);
 
 #if SHOW_STATS
 		std::cout << "Search stats: " << std::endl;
@@ -243,7 +262,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 		return 0;
 	}
 
-	if (depth<=0 || ply >= maxSearchPly) {
+	if (depth<=0) {
 		return qSearch(board, alpha, beta, 0, ply, pv);
 	}
 
@@ -263,6 +282,10 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 
 	if (alpha>=beta) {
 		return alpha;
+	}
+
+	if	(ply >= maxSearchPly) {
+		return evaluator.evaluate(board);
 	}
 
 	//tt retrieve
@@ -369,7 +392,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		return 0;
 	}
 
-	if (depth<=0 || ply >= maxSearchPly) {
+	if (depth<=0) {
 		return qSearch(board, beta-1, beta, 0, ply, pv);
 	}
 
@@ -385,6 +408,10 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 
 	if (beta > maxScore-(ply+1)) {
 		return beta-1;
+	}
+
+	if	(ply >= maxSearchPly) {
+		return evaluator.evaluate(board);
 	}
 
 	PvLine line = PvLine();
@@ -449,7 +476,7 @@ int SimplePVSearch::normalSearch(Board& board, int alpha, int beta,
 		}
 
 		if (score >= beta) {
-			if (score >= maxScore - ply) {
+			if (score >= maxScore - maxSearchPly) {
 				score = beta;
 			}
 			agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::LOWER,emptyMove);
@@ -582,10 +609,9 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 		return beta;
 	}
 
-	const int queenValue = pieceMaterialValues[WHITE_QUEEN];
-	const int bigDelta =  queenValue + (isPawnPromoting(board) ? queenValue : 0);
+	const int delta =  deltaMargin + (isPawnPromoting(board) ? deltaMargin : 0);
 
-	if (standPat < alpha - bigDelta) {
+	if (standPat < alpha - delta) {
 		return alpha;
 	}
 
@@ -614,7 +640,12 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 				move.type!=MoveIterator::PROMO_CAPTURE &&
 				move.type!=MoveIterator::PROMO_NONCAPTURE &&
 				!isPawnPromoting(board) &&
-				move.score < 0) {
+#if (!USE_SEE_ORDERING)
+				evaluator.see(board,move) < 0
+#else
+				move.score < 0
+#endif
+		) {
 			continue;
 		}
 
@@ -672,12 +703,19 @@ long SimplePVSearch::perft(Board& board, int depth, int ply) {
 	MoveIterator moves = MoveIterator();
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 
-	while (true)  {
+	if (!isKingAttacked) {
+		board.generateAllMoves(moves, board.getSideToMove());
+	} else {
+		board.generateEvasions(moves, board.getSideToMove());
+	}
 
-		MoveIterator::Move& move = selectMove(board, moves, emptyMove, isKingAttacked, ply);
+	while (moves.hasNext())  {
+
+		/*MoveIterator::Move& move = selectMove(board, moves, emptyMove, isKingAttacked, ply);
 		if (moves.end()) {
 			break;
-		}
+		}*/
+		MoveIterator::Move& move = moves.next();
 		MoveBackup backup;
 
 		board.doMove(move,backup);

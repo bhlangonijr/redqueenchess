@@ -48,7 +48,7 @@ public:
 	// Move representation
 	struct Move {
 
-		Move() : from(NONE), to(NONE), score(DEFAULT_SCORE), type(UNKNOW)
+		Move() : from(NONE), to(NONE), promotionPiece(EMPTY), score(DEFAULT_SCORE), type(UNKNOW)
 		{}
 
 		Move(const Square fromSquare, const Square toSquare, const PieceTypeByColor piece) :
@@ -199,9 +199,10 @@ inline const void MoveIterator::add(const Square from, const Square to, const Pi
 }
 
 inline const void MoveIterator::remove(const size_t index) {
-	for (size_t x=index;x<_data.size-1;x++) {
-		_data.list[x]=_data.list[x+1];
-	}
+
+	Move tmp=_data.list[_data.size-1];
+	_data.list[_data.size-1]=_data.list[index];
+	_data.list[index]=tmp;
 	_data.size--;
 }
 
