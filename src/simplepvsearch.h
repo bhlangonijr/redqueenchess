@@ -443,7 +443,7 @@ inline void SimplePVSearch::filterLegalMoves(Board& board, MoveIterator& moves) 
 		MoveBackup backup;
 		board.doMove(move,backup);
 		if (board.isNotLegal()) {
-			moves.remove(moves.getIndex()-1);
+			moves.remove(moves.getIndex());
 		}
 		board.undoMove(backup);
 	}
@@ -657,7 +657,7 @@ inline void SimplePVSearch::initRootMovesOrder() {
 
 // update root moves score
 inline void SimplePVSearch::updateRootMovesScore(const long value) {
-	nodesPerMove[rootMoves.getIndex()-1]+=value;
+	nodesPerMove[rootMoves.getIndex()]+=value;
 }
 
 inline long SimplePVSearch::predictTimeUse(const long iterationTime[maxSearchPly], const long totalTime, const int depth) {

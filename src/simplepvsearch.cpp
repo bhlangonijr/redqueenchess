@@ -708,7 +708,7 @@ long SimplePVSearch::perft(Board& board, int depth, int ply) {
 	} else {
 		board.generateEvasions(moves, board.getSideToMove());
 	}
-
+	filterLegalMoves(board,rootMoves);
 	while (moves.hasNext())  {
 
 		/*MoveIterator::Move& move = selectMove(board, moves, emptyMove, isKingAttacked, ply);
