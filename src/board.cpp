@@ -497,7 +497,8 @@ void Board::loadFromFEN(const std::string startFENMoves) {
 	if (enPassant[0]=='-') {
 		setEnPassant(NONE);
 	} else {
-		setEnPassant(Square(St2Sq(enPassant[0],enPassant[1])));
+		const int square=St2Sq(enPassant[0],enPassant[1]);
+		setEnPassant(this->getSideToMove()==WHITE?Square(square-8):Square(square+8));
 	}
 
 	//halfmove clock

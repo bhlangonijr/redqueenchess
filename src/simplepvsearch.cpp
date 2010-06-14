@@ -74,7 +74,6 @@ int SimplePVSearch::idSearch(Board& board) {
 	}
 
 	filterLegalMoves(board,rootMoves);
-	scoreMoves(board,rootMoves,true);
 
 	for (int depth = 1; depth <= _depth; depth++) {
 
@@ -108,10 +107,10 @@ int SimplePVSearch::idSearch(Board& board) {
 		uciOutput(&pv, stats.bestMove, stats.searchTime, agent->hashFull(), depth);
 
 		if (depth >= aspirationDepth)	{
-			int delta1 = iterationScore[depth - 0] - iterationScore[depth - 1];
-			int delta2 = iterationScore[depth - 1] - iterationScore[depth - 2];
-			int aspirationDelta = MAX(abs(delta1) + abs(delta2) / 2, 16);
-			aspirationDelta = (aspirationDelta + 7) / 8 * 8;
+			double delta1 = double(iterationScore[depth - 0] - iterationScore[depth - 1]);
+			double delta2 = double(iterationScore[depth - 1] - iterationScore[depth - 2]);
+			int aspirationDelta = MAX(int(abs(delta1*0.7) + abs(delta2*0.3)), 16);
+			aspirationDelta = (aspirationDelta + 7) / 8*8;
 			alpha = MAX(iterationScore[depth] - aspirationDelta, -maxScore);
 			beta  = MAX(iterationScore[depth] + aspirationDelta,  maxScore);
 		}
@@ -128,9 +127,10 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		if (!(_searchFixedDepth || _infinite)) {
 
-			if (repetition >= MAX_SCORE_REPETITION ){
+			if (repetition >= maxScoreRepetition ){
 				if ((abs(iterationScore[depth - 0]) >= -maxScore-maxSearchPly) ||
-						(abs(iterationScore[depth - 1]) >= -maxScore-maxSearchPly) ) {
+						(abs(iterationScore[depth - 1]) >= -maxScore-maxSearchPly) ||
+						iterationScore[depth - 0] == 0) {
 					break;
 				}
 			}
@@ -179,10 +179,14 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 	int score = -maxScore;
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 
+
 	if (depth < 3) {
-		rootMoves.sort();
+		if (depth==1) {
+			scoreMoves(board,rootMoves,true);
+		}
+		rootMoves.sort(nodesPerMove);
 	} else {
-		rootMoves.sortRootMoves(nodesPerMove);
+		rootMoves.sortOrderingBy(nodesPerMove);
 	}
 
 	rootMoves.first();
@@ -241,7 +245,7 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 
 	}
 
-	rootMoves.sort();
+	rootMoves.sort(nodesPerMove);
 
 	if (!moveCounter) {
 		return isKingAttacked ? -maxScore+ply : 0;
@@ -610,7 +614,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 
 	const int delta =  deltaMargin + (isPawnPromoting(board) ? deltaMargin : 0);
 
-	if (standPat < alpha - delta) {
+	if (standPat < alpha-delta) {
 		return alpha;
 	}
 

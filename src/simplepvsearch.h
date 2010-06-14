@@ -37,29 +37,29 @@
 #include "evaluator.h"
 #define USE_SEE_ORDERING true
 
-const int MAX_SCORE_REPETITION = 4;
-const int MATE_RANGE_SCORE = 300;
+const int maxScoreRepetition = 4;
+const int mateRangeScore = 300;
 const int maxScore = 20000;
 const int maxSearchDepth = 80;
 const int maxSearchPly = 100;
 const int allowIIDAtPV = 5;
-const int allowIIDAtNormal = 11;
-const int deltaMargin=950;
-const int razorMargin=350;
-const int futilityMargin=450;
+const int allowIIDAtNormal = 7;
+const int deltaMargin=650;
+const int razorMargin=550;
+const int futilityMargin=550;
 const int nullMoveMargin=450;
 const int iidMargin=150;
 const int easyMargin=450;
 const int nullMoveDepth=2;
 const int futilityDepth=3;
 const int razorDepth=4;
-const int prunningDepth=4;
+const int prunningDepth=2;
 const int prunningMoves=2;
 const int pvReduction=1;
 const int nonPvReduction=2;
 const int aspirationDepth=6;
 const int historyBonus=100;
-const int scoreTable[11]={0,8000,5000,9500,9000,5000,4500,4000,100,-900,5000};
+const int scoreTable[11]={0,8000,5000,19500,19000,5000,4500,4000,100,-900,5000};
 
 class SimplePVSearch {
 
@@ -437,16 +437,22 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, const 
 // filter the move list to only legal moves
 inline void SimplePVSearch::filterLegalMoves(Board& board, MoveIterator& moves) {
 
+	MoveIterator newMoves;
+
 	moves.first();
 	while (moves.hasNext()) {
 		MoveIterator::Move& move = moves.next();
 		MoveBackup backup;
 		board.doMove(move,backup);
 		if (board.isNotLegal()) {
-			moves.remove(moves.getIndex());
+			board.undoMove(backup);
+			continue;
 		}
+		newMoves.add(move);
 		board.undoMove(backup);
 	}
+	moves.clear();
+	moves.addAll(newMoves);
 	moves.first();
 }
 

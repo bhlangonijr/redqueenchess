@@ -8,11 +8,6 @@ go wtime 1 btime 1 winc 0 binc 0
 position startpos moves c2c4 c7c5 g1f3 f7f5 d2d4 c5d4 f3d4 g7g6 g2g3 f8g7 f1g2 b8c6 d4b3 b7b6 e1g1 c8b7 b1c3 a8c8 c4c5 g8f6 c1g5 h7h6 c3b5 h6g5 g1h1 f6g4 c5b6 d8b6 h1g1 g4h2 a2a4 h2f1 g1f1 c6b4
 go wtime 976671 btime 1013466 winc 0 binc 0
 
-;; not detecting draw
-position startpos moves d2d4 e7e6 g1f3 b8c6 e2e4 d7d5 e4e5 f7f6 f1b5 c8d7 e1g1 f6e5 b5c6 b7c6 f3e5 g8f6 c2c4 f8d6 e5d7 d8d7 c4c5 d6e7 b1c3 e8g8 f1e1 f6e8 d1e2 e7h4 c1e3 a7a5 a1d1 d7f7 g2g3 h4f6 e3c1 e6e5 d4e5 f6e5 c3a4 a8b8
-go infinite
-;;bad = e2e5
-
 position fen 4r1k1/1p3p1p/1q3npP/p2p4/P2N1bP1/1NP1rP2/1PQ5/R4R1K b - - 0 1
 go movetime 30000 depth 63
 
@@ -69,8 +64,12 @@ go infinite
 
 position startpos moves c2c4 g8f6 b1c3 g7g6 g2g3 b8c6 g1f3 e7e5 d2d4 e5d4 f3d4 f8g7 d4c6 b7c6 f1g2 f6g4 d1c2 e8g8 e1g1 g4e5 b2b3 c8b7 c1e3 d7d6 h2h3 a7a6 g1h1 e5d7 a1c1 d8f6 g3g4 f6e6 c2e4 d7e5 e4f4 f7f5 g4g5 f8d8 h3h4 e5g4 e3d4 g7d4 f4d4 c6c5 d4f4 b7g2 h1g2 d8e8 g2g3 e8f8 f1h1 g4e5 c3d5 f8f7 h4h5 g8f8 f4h4 c7c6 d5f4 e6e8 h5g6 e5g6 f4g6 h7g6 h4f4 f8e7 c1c3 e7d7 h1d1 e8b8 c3d3 d6d5 f4b8 a8b8 c4d5 f7g7 d5d6 b8e8 d1d2 g7h7 e2e3 h7h1 f2f3 e8h8 a2a3 h1g1
 go infinite
-
 ;; good d2g2
+
+;; not detecting draw
+position startpos moves d2d4 e7e6 g1f3 b8c6 e2e4 d7d5 e4e5 f7f6 f1b5 c8d7 e1g1 f6e5 b5c6 b7c6 f3e5 g8f6 c2c4 f8d6 e5d7 d8d7 c4c5 d6e7 b1c3 e8g8 f1e1 f6e8 d1e2 e7h4 c1e3 a7a5 a1d1 d7f7 g2g3 h4f6 e3c1 e6e5 d4e5 f6e5 c3a4 a8b8
+go infinite
+;;bad = e2e5
 
 position startpos moves g1f3 d7d5 g2g3 c7c6 f1g2 c8g4 e1g1 b8d7 d2d3 g8f6 h2h3 g4h5 d1e1 e7e5 e2e4 d5e4 d3e4 f8c5 b1d2 e8g8 d2c4 f8e8 a2a4 b7b5 c4d2 d8b6 g3g4 h5g6 f3h4 a8d8 h4g6 h7g6 d2b3 b5b4 b3c5 d7c5 c1e3 b6a5 e1e2 c5e6 f2f3 d8d6 e2f2 e8d8 f1e1 f6d7 b2b3 d7c5 f2f1 e6d4 f1f2 d8d7 f3f4 e5f4 e3f4 d6f6 e4e5 f6f4 f2f4 d4c2 f4c4 c2a1 e1a1 c5e6 a1e1 a5c5 c4c5 e6c5 e1e3 d7d1 g1f2 d1d2 f2g3 d2b2 e5e6 f7e6 g2c6 b2b3 e3b3 c5b3 g3f4 b3c5 f4e3
 go infinite
@@ -80,3 +79,5 @@ go infinite
 
 position startpos moves e2e4 c7c5 b1c3 b8c6 f1c4 e7e6 d2d3 g8f6 c4b5 d7d5 g1f3 d5e4 b5c6 b7c6 d3e4 d8d1 e1d1 f8e7 c1g5 c8a6 h2h3 h7h6 g5h4 a8c8 d1c1 g7g5 h4g3 e8g8 b2b3 c5c4 c1b2 f8d8 h3h4 e7b4 g3e5 b4c3 e5c3 f6e4 h4g5 e4c3 b2c3 h6g5 b3c4 g5g4 f3e5 g4g3 f2g3 f7f6 e5d3 c8c7 h1h6 c7f7 a1h1 g8f8 h6h7 a6c8 h7f7
 
+position fen r3r1k1/qp1n3p/3Pp1p1/2p5/1p3P2/6P1/PQ3PBP/2R1R1K1 w - c6 0 1
+go movetime 10000 depth 63

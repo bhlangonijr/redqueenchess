@@ -49,19 +49,19 @@ public:
 	struct Move {
 
 		Move() : from(NONE), to(NONE), promotionPiece(EMPTY), score(DEFAULT_SCORE), type(UNKNOW)
-		{}
+						{}
 
 		Move(const Square fromSquare, const Square toSquare, const PieceTypeByColor piece) :
 			from(fromSquare), to(toSquare), promotionPiece(piece), score(DEFAULT_SCORE), type(UNKNOW)
-		{}
+			{}
 
 		Move(const Square fromSquare, const Square toSquare, const PieceTypeByColor piece, const MoveType type) :
 			from(fromSquare), to(toSquare), promotionPiece(piece), score(DEFAULT_SCORE), type(type)
-		{}
+			{}
 
 		Move(const Move& move) :
 			from(move.from), to(move.to), promotionPiece(move.promotionPiece), score(move.score), type(move.type)
-		{}
+			{}
 
 		inline bool operator == (const Move &move) const {
 			return ( from==move.from && to==move.to && promotionPiece==move.promotionPiece);
@@ -101,11 +101,13 @@ public:
 
 	} __attribute__ ((aligned(64))) ;
 
-	const void add(const Move& move) ;
+	const void add(const Move& move);
 
 	const void add(const Square from, const Square to, const PieceTypeByColor piece);
 
 	const void add(const Square from, const Square to, const PieceTypeByColor piece, const MoveType type);
+
+	const void addAll(MoveIterator& moves);
 
 	const void remove(const size_t index);
 
@@ -133,7 +135,9 @@ public:
 
 	void sort(const int after);
 
-	void sortRootMoves(long moveScore[MOVE_LIST_MAX_SIZE]);
+	void sort(long* moveScore);
+
+	void sortOrderingBy(long moveScore[MOVE_LIST_MAX_SIZE]);
 
 	const IteratorStage getStage() {
 		return _data.stage;
@@ -198,8 +202,15 @@ inline const void MoveIterator::add(const Square from, const Square to, const Pi
 	_data.list[_data.size++]=Move(from,to,piece,type);
 }
 
-inline const void MoveIterator::remove(const size_t index) {
+inline const void MoveIterator::addAll(MoveIterator& moves) {
+	moves.first();
+	while (moves.hasNext()) {
+		MoveIterator::Move& move = moves.next();
+		this->add(move);
+	}
+}
 
+inline const void MoveIterator::remove(const size_t index) {
 	Move tmp=_data.list[_data.size-1];
 	_data.list[_data.size-1]=_data.list[index];
 	_data.list[index]=tmp;
