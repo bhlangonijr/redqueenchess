@@ -148,14 +148,11 @@ int SimplePVSearch::idSearch(Board& board) {
 			if (depth>7) {
 				if (easyMove==pv.moves[0] && nodesPerMove[0]>=(_nodes*80)/100 &&
 						iterationTime[depth] > _timeToSearch/15) {
-					//std::cout << "easy move: " << easyMove.toString() << std::endl;
 					break;
 				}
 			}
 
 			if (depth>3) {
-				//std::cout << "iteration time: " << iterationTime[depth] << "  time to search: " << _timeToSearch << std::endl;
-				//std::cout << "prediction: " << predictTimeUse(iterationTime,_timeToSearch,depth+1) << std::endl;
 				if (_timeToSearch <	predictTimeUse(iterationTime,_timeToSearch,depth+1)) {
 					break;
 				}
