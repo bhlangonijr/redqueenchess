@@ -97,8 +97,8 @@ void MoveIterator::sortRootMoves(long moveScore[MOVE_LIST_MAX_SIZE]) {
 			}
 		}
 	}
-/*
-	for(int i = 0; i <(int)_data.size; i++){
+
+	/*for(int i = 0; i <(int)_data.size; i++){
 		std::cout << "move " << i << " " << _data.list[i].toString() << " score: " << moveScore[i] << std::endl;
 	}*/
 }

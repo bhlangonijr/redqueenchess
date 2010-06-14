@@ -266,7 +266,7 @@ inline const MoveIterator::Move& MoveIterator::get(const size_t index) {
 }
 
 inline const size_t MoveIterator::getIndex() {
-	return _data.idx;
+	return _data.idx-1;
 }
 
 #endif /* MOVEITERATOR_H_ */

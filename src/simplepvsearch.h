@@ -35,19 +35,19 @@
 
 #include "searchagent.h"
 #include "evaluator.h"
-#define USE_SEE_ORDERING false
+#define USE_SEE_ORDERING true
 
 const int MAX_SCORE_REPETITION = 4;
 const int MATE_RANGE_SCORE = 300;
 const int maxScore = 20000;
 const int maxSearchDepth = 80;
 const int maxSearchPly = 100;
-const int allowIIDAtPV = 3;
+const int allowIIDAtPV = 5;
 const int allowIIDAtNormal = 11;
 const int deltaMargin=950;
 const int razorMargin=350;
 const int futilityMargin=450;
-const int nullMoveMargin=250;
+const int nullMoveMargin=450;
 const int iidMargin=150;
 const int easyMargin=450;
 const int nullMoveDepth=2;
@@ -666,9 +666,9 @@ inline long SimplePVSearch::predictTimeUse(const long iterationTime[maxSearchPly
 	double ratio2 = double(iterationTime[depth-2])/double(totalTime);
 	double ratio3 = double(iterationTime[depth-3])/double(totalTime);
 
-	double newTime = double(iterationTime[depth-1])*exp(ratio1/100)*0.6 +
-			double(iterationTime[depth-1])*exp(ratio2/100)*0.3 +
-			long(iterationTime[depth-1])*exp(ratio3/100)*0.1;
+	double newRatio = ratio1*exp((ratio2/ratio1)*0.6 + (ratio3/ratio2)*0.4);
+
+	double newTime = double(iterationTime[depth-1])*exp(newRatio*1);
 
 	return long(newTime);
 }

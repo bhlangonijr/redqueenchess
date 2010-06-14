@@ -333,6 +333,7 @@ public:
 	Evaluator();
 	virtual ~Evaluator();
 	const int evaluate(Board& board);
+	const int quickEvaluate(Board& board);
 	const int evalMaterial(Board& board, PieceColor color);
 	const int evalPieces(Board& board, PieceColor color);
 	const int evalMobility(Board& board, PieceColor color);
@@ -387,6 +388,18 @@ inline const int Evaluator::evaluate(Board& board) {
 	int mobility = evalMobility(board, side) - evalMobility(board, other);
 
 	return material+mobility+pieces+development+imbalances;
+}
+
+// quick eval function
+inline const int Evaluator::quickEvaluate(Board& board) {
+
+	const PieceColor side = board.getSideToMove();
+	const PieceColor other = board.flipSide(board.getSideToMove());
+
+	int material = evalMaterial(board, side) - evalMaterial(board, other);
+	int development = evalDevelopment(board, side) - evalDevelopment(board, other);
+
+	return material+development;
 }
 
 // material eval function
