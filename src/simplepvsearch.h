@@ -35,7 +35,7 @@
 
 #include "searchagent.h"
 #include "evaluator.h"
-#define USE_SEE_ORDERING true
+#define USE_SEE_ORDERING false
 
 const int maxScoreRepetition = 4;
 const int mateRangeScore = 300;
@@ -43,17 +43,17 @@ const int maxScore = 20000;
 const int maxSearchDepth = 80;
 const int maxSearchPly = 100;
 const int allowIIDAtPV = 5;
-const int allowIIDAtNormal = 7;
+const int allowIIDAtNormal = 11;
 const int deltaMargin=650;
-const int razorMargin=550;
-const int futilityMargin=550;
+const int razorMargin=450;
+const int futilityMargin=450;
 const int nullMoveMargin=450;
 const int iidMargin=150;
-const int easyMargin=450;
+const int easyMargin=400;
 const int nullMoveDepth=2;
-const int futilityDepth=3;
+const int futilityDepth=4;
 const int razorDepth=4;
-const int prunningDepth=2;
+const int prunningDepth=3;
 const int prunningMoves=2;
 const int pvReduction=1;
 const int nonPvReduction=2;
@@ -541,7 +541,7 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction, Board& b
 		return false;
 	}
 
-	reduction = isPV ? pvReduction : nonPvReduction;
+	reduction = isPV ? pvReduction : depth < 13 ? nonPvReduction : nonPvReduction+1;
 	return true;
 }
 
@@ -566,7 +566,7 @@ inline void SimplePVSearch::uciOutput(PvLine* pv, MoveIterator::Move& bestMove,
 
 		std::string scoreString = "cp " + StringUtil::toStr(bestMove.score);
 
-		if (abs(bestMove.score) > (maxScore-MATE_RANGE_SCORE)) {
+		if (abs(bestMove.score) > (maxScore-mateRangeScore)) {
 			if (bestMove.score>0) {
 				scoreString = "mate " +StringUtil::toStr((maxScore - (bestMove.score+1))/2);
 			} else {

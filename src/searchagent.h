@@ -58,7 +58,7 @@ public:
 	};
 
 	enum NodeFlag {
-		LOWER, UPPER, EXACT
+		LOWER, UPPER, EXACT, NM_LOWER
 	};
 
 	struct HashData {

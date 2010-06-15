@@ -81,3 +81,8 @@ position startpos moves e2e4 c7c5 b1c3 b8c6 f1c4 e7e6 d2d3 g8f6 c4b5 d7d5 g1f3 d
 
 position fen r3r1k1/qp1n3p/3Pp1p1/2p5/1p3P2/6P1/PQ3PBP/2R1R1K1 w - c6 0 1
 go movetime 10000 depth 63
+
+position fen 1Q6/5kpp/2p4r/b4p2/P2R4/1N4P1/5PKP/4q3 b - - 0 1
+go depth 14
+
+;; good RxH2
