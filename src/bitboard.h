@@ -350,9 +350,6 @@ const Bitboard adjacentSquares[ALL_SQUARE]={
 		0x0302030000000000ULL,0x0705070000000000ULL,0x0e0a0e0000000000ULL,0x1c141c0000000000ULL,0x3828380000000000ULL,0x7050700000000000ULL,0xe0a0e00000000000ULL,0xc040c00000000000ULL,
 		0x0203000000000000ULL,0x0507000000000000ULL,0x0a0e000000000000ULL,0x141c000000000000ULL,0x2838000000000000ULL,0x5070000000000000ULL,0xa0e0000000000000ULL,0x40c0000000000000ULL};
 
-// bitboard for all bishop attacks
-//static const Bitboard bishopAttacks[ALL_SQUARE][ALL_SLIDER_ATTACKS];
-
 // upper bound bitboard mask
 const Bitboard upperMaskBitboard[ALL_SQUARE]={
 		Sq2UM(A1), Sq2UM(B1), Sq2UM(C1), Sq2UM(D1), Sq2UM(E1), Sq2UM(F1), Sq2UM(G1), Sq2UM(H1),
@@ -378,13 +375,9 @@ const Bitboard lowerMaskBitboard[ALL_SQUARE]={
 #define NFILE(X) ((squareFile[X]!=FILE_H ? fileBB[squareFile[X]+1] : EMPTY_BB) | \
 		(squareFile[X]!=FILE_A ? fileBB[squareFile[X]-1] : EMPTY_BB))
 
-#define BYSIDEBB(X) ((squareFile[X]!=FILE_H ? squareToBitboard[X+1] : EMPTY_BB) | \
-		(squareFile[X]!=FILE_A ? squareToBitboard[X-1] : EMPTY_BB))
+#define FSQUARE(COLOR,BB,X) BB&(COLOR==WHITE?upperMaskBitboard[X]:lowerMaskBitboard[X])&~(rankBB[squareRank[X]])
 
-#define FSQUARE(COLOR, BB, X) (COLOR==WHITE ?  bitsBetween(BB,X,encodeSquare[RANK_8][squareFile[X]]) : \
-		bitsBetween(BB,encodeSquare[RANK_1][squareFile[X]],X))^BYSIDEBB(X)
-
-#define PASSEDMASK(COLOR, X) (FSQUARE(COLOR, (fileAttacks[squareFile[X]] | NFILE(X)), X))
+#define PASSEDMASK(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]] | neighborFiles[X]), X))
 
 const Bitboard neighborFiles[ALL_SQUARE]={
 		NFILE(A1), NFILE(B1), NFILE(C1), NFILE(D1), NFILE(E1), NFILE(F1), NFILE(G1), NFILE(H1),

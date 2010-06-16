@@ -231,7 +231,7 @@ private:
 	bool isMateScore(const int score);
 	bool isGivenCheck(Board& board, const Square from);
 	bool isPawnFinal(Board& board);
-	bool isPawnPush(MoveIterator::Move& move, MoveBackup& backup);
+	bool isPawnPush(Board& board, MoveIterator::Move& move, MoveBackup& backup);
 	bool isPawnPromoting(const Board& board);
 	bool adjustDepth(int& extension, int& reduction, Board& board, MoveIterator::Move& move, MoveBackup& backup,
 			int depth, int remainingMoves, bool isKingAttacked, int ply, const bool nullMoveMateScore, bool isPV);
@@ -511,11 +511,11 @@ inline bool SimplePVSearch::isPawnFinal(Board& board) {
 }
 
 // pawn push
-inline bool SimplePVSearch::isPawnPush(MoveIterator::Move& move, MoveBackup& backup) {
-
-	return (backup.movingPiece==WHITE_PAWN && squareRank[move.to] >= RANK_6) ||
-			(backup.movingPiece==BLACK_PAWN && squareRank[move.to] <= RANK_3);
-
+inline bool SimplePVSearch::isPawnPush(Board& board, MoveIterator::Move& move, MoveBackup& backup) {
+	if (backup.movingPiece!=WHITE_PAWN && backup.movingPiece!=BLACK_PAWN) {
+		return false;
+	}
+	return evaluator.isPawnPassed(board,board.getSideToMove(),move.to);
 }
 
 // pawn promoting
@@ -533,7 +533,7 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction, Board& b
 	extension=0;
 	reduction=0;
 
-	if (isKingAttacked || isPawnPromoting(board) ||	isPawnPush(move, backup)) {
+	if (isKingAttacked || isPawnPromoting(board) ||	isPawnPush(board, move, backup)) {
 		extension=1;
 		return false;
 	}

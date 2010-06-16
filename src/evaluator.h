@@ -44,8 +44,8 @@ const int bishopPairBonus = 15;
 const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 325, 325, 500, 975, 10000, 100, 325, 325, 500, 975, 10000, 0};
 
 const int passedPawnBonus[ALL_PIECE_COLOR][ALL_RANK] = {
-		{0,0,0,1,10,50,100,190},
-		{190,100,50,10,1,0,0,0},
+		{0,0,0,1,5,10,50,1},
+		{1,50,10,5,1,0,0,0},
 		{0,0,0,0,0,0,0,0}
 };
 
@@ -59,7 +59,7 @@ const int defaultPieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 				0,  -5,-10, 20, 20, -10,-5,  0,
 				0,  0, 0, 5, 	5, 0,  0,  0,
 				0,  0,  0,  0,  0,  0,  0,  0,
-				50, 50, 50, 50, 50, 50, 50, 50,
+				5,  5,  5,  5,  5,  5,  5,  5,
 				0,  0,  0,  0,  0,  0,  0,  0,
 		},
 		{//white knight
@@ -114,7 +114,7 @@ const int defaultPieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 		},
 		{//black pawn
 				0,  0,  0,  0,  0,  0,  0,  0,
-				50, 50, 50, 50, 50, 50, 50, 50,
+				5,  5,  5,  5,  5,  5,  5,  5,
 				0,  0,  0,  0,  0,  0,  0,  0,
 				0,  0, 0,  5,  5, 0,  0,  0,
 				0, -5,-10, 20, 20, -10, -5,  0,
@@ -193,9 +193,9 @@ const int endGamePieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 				1,  1,  1, -2, -2,  1,  1,  1,
 				1, -1, -1,  0,  0, -1, -1,  1,
 				0,  5,  5, 10, 10,  5,  5,  0,
-				5,  5, 10, 25, 25, 10,  5,  5,
-				10, 10, 20, 30, 30, 20, 10, 10,
-				50, 50, 50, 50, 50, 50, 50, 50,
+				5,  5, 10, 15, 15, 10,  5,  5,
+				10, 10, 10, 20, 20, 10, 10, 10,
+				11, 15, 15, 25, 25, 15, 15, 11,
 				0,  0,  0,  0,  0,  0,  0,  0,
 		},
 		{//white knight
@@ -250,9 +250,9 @@ const int endGamePieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 		},
 		{//black pawn
 				0,  0,  0,  0,  0,  0,  0,  0,
-				50, 50, 50, 50, 50, 50, 50, 50,
-				10, 10, 20, 30, 30, 20, 10, 10,
-				5,  5, 10, 25, 25, 10,  5,  5,
+				11, 15, 15, 25, 25, 15, 15, 11,
+				10, 10, 10, 20, 20, 10, 10, 10,
+				5,  5, 10, 15, 15, 10,  5,  5,
 				0,  5,  5, 10, 10,  5,  5,  0,
 				1, -1, -1,  0,  0,-1, -1,  1,
 				1,  1,  1, -2, -2, 1,  1,  1,
@@ -339,6 +339,7 @@ public:
 	const int evalMobility(Board& board, PieceColor color);
 	const int evalDevelopment(Board& board, PieceColor color);
 	const int evalImbalances(Board& board, PieceColor color);
+	const bool isPawnPassed(Board& board, const PieceColor color, const Square from);
 	const void setGameStage(const GamePhase phase);
 	const GamePhase getGameStage();
 	const GamePhase predictGameStage(Board& board);
@@ -369,7 +370,6 @@ public:
 	}
 
 private:
-
 	Bitboard getLeastValuablePiece(Board& board, Bitboard attackers, PieceColor& color, PieceTypeByColor& piece);
 	GamePhase gamePhase;
 
@@ -435,8 +435,7 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 		count= DONE_CASTLE_BONUS;
 	}
 
-	Bitboard pawns = board.getPiecesByType(board.makePiece(color,PAWN));
-	Bitboard enemyPawns = board.getPiecesByType(board.makePiece(other,PAWN));
+	const Bitboard pawns = board.getPiecesByType(board.makePiece(color,PAWN));
 
 	//pawns - penalyze doubled & isolated pawns
 	if (pawns) {
@@ -450,7 +449,7 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 				count += DOUBLED_PAWN_PENALTY;
 			}
 
-			if (!(passedMask[color][from]&(enemyPawns|allButThePawn))) {
+			if (isPawnPassed(board,color,from)) {
 				count += passedPawnBonus[color][squareRank[from]];
 			}
 
@@ -558,6 +557,18 @@ inline const int Evaluator::evalImbalances(Board& board, PieceColor color) {
 
 	// TODO implement more imbalances
 	return count;
+}
+
+// verify if pawn is passer
+inline const bool Evaluator::isPawnPassed(Board& board, const PieceColor color, const Square from) {
+	const Bitboard allPieces = board.getAllPieces();
+
+	if ((color==WHITE && squareRank[from]<RANK_4) ||
+		(color==BLACK && squareRank[from]>RANK_5)) {
+		return false;
+	}
+
+	return !(passedMask[color][from]&allPieces);
 }
 
 // square distance
