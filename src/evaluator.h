@@ -397,9 +397,9 @@ inline const int Evaluator::quickEvaluate(Board& board) {
 	const PieceColor other = board.flipSide(board.getSideToMove());
 
 	int material = evalMaterial(board, side) - evalMaterial(board, other);
-	int development = evalDevelopment(board, side) - evalDevelopment(board, other);
+	int pieces = evalPieces(board, side) - evalPieces(board, other);
 
-	return material+development;
+	return material+pieces;
 }
 
 // material eval function

@@ -53,10 +53,11 @@ const int easyMargin=400;
 const int nullMoveDepth=2;
 const int futilityDepth=4;
 const int razorDepth=4;
-const int prunningDepth=3;
+const int prunningDepth=2;
 const int prunningMoves=2;
 const int pvReduction=1;
-const int nonPvReduction=2;
+const int nonPvReduction1=2;
+const int nonPvReduction2=3;
 const int aspirationDepth=6;
 const int historyBonus=100;
 const int scoreTable[11]={0,8000,5000,19500,19000,5000,4500,4000,100,-900,5000};
@@ -214,7 +215,7 @@ private:
 	int idSearch(Board& board);
 	int rootSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);
 	int pvSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);
-	int normalSearch(Board& board, int alpha, int beta,	int depth, int ply, PvLine* pv,	const bool allowNullMove);
+	int zwSearch(Board& board, int beta, int depth, int ply, PvLine* pv, const bool allowNullMove);
 	int qSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);
 	void uciOutput(PvLine* pv, MoveIterator::Move& bestMove, const int totalTime, const int hashFull, const int depth);
 	void uciOutput(MoveIterator::Move& bestMove);
@@ -541,7 +542,7 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction, Board& b
 		return false;
 	}
 
-	reduction = isPV ? pvReduction : depth < 13 ? nonPvReduction : nonPvReduction+1;
+	reduction = isPV ? pvReduction : depth < 13 ? nonPvReduction1 : nonPvReduction2;
 	return true;
 }
 
