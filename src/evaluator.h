@@ -563,8 +563,8 @@ inline const int Evaluator::evalImbalances(Board& board, PieceColor color) {
 inline const bool Evaluator::isPawnPassed(Board& board, const PieceColor color, const Square from) {
 	const Bitboard allPieces = board.getAllPieces();
 
-	if ((color==WHITE && squareRank[from]<RANK_4) ||
-		(color==BLACK && squareRank[from]>RANK_5)) {
+	if ((color==WHITE && squareRank[from]<RANK_3) ||
+		(color==BLACK && squareRank[from]>RANK_6)) {
 		return false;
 	}
 

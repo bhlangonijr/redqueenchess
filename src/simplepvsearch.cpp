@@ -217,7 +217,7 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 
 		uciOutput(move, moveCounter);
 
-		bool reduced = adjustDepth(extension, reduction, board, move, backup, depth,
+		bool reduced = adjustDepth(extension, reduction, board, move, depth,
 				remainingMoves, isKingAttacked,ply,false,score > alpha);
 		int newDepth=depth-1;
 
@@ -329,8 +329,8 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 			remainingMoves++;
 		}
 		const bool givingCheck = isGivenCheck(board,move.from);
-		bool reduced = adjustDepth(extension, reduction, board, move, backup, depth,
-				remainingMoves,givingCheck||isKingAttacked,ply,false,moveCounter==1);
+		bool reduced = adjustDepth(extension, reduction, board, move, depth, remainingMoves,
+				givingCheck||isKingAttacked,ply,false,moveCounter==1);
 		int newDepth=depth-1;
 
 		if (moveCounter==1) {
@@ -541,8 +541,8 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 			remainingMoves++;
 		}
 
-		bool reduced = adjustDepth(extension, reduction, board, move, backup, depth,
-				remainingMoves,givingCheck||isKingAttacked,ply,nullMoveMateScore,false);
+		bool reduced = adjustDepth(extension, reduction, board, move, depth,remainingMoves,
+				givingCheck||isKingAttacked,ply,nullMoveMateScore,false);
 		int newDepth=depth-1;
 
 		score = -zwSearch(board, 1-beta, newDepth-reduction+extension, ply+1, &line, true);
