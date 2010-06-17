@@ -29,6 +29,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 #include "inline.h"
 #include "board.h"
 
@@ -39,13 +40,16 @@ const int BISHOP_TROPISM_BONUS = 3;
 const int ROOK_TROPISM_BONUS = 4;
 const int QUEEN_TROPISM_BONUS = 5;
 const int bishopPairBonus = 15;
+const int gameSize=60;
+const int maxPieces=32;
+const int maxGamePhase=gameSize*maxPieces;
 
 // default material values
 const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 325, 325, 500, 975, 10000, 100, 325, 325, 500, 975, 10000, 0};
 
 const int passedPawnBonus[ALL_PIECE_COLOR][ALL_RANK] = {
-		{0,0,0,1,5,10,50,1},
-		{1,50,10,5,1,0,0,0},
+		{0,0,0,1,10,20,50,1},
+		{1,50,20,10,1,0,0,0},
 		{0,0,0,0,0,0,0,0}
 };
 
@@ -321,13 +325,11 @@ const int endGamePieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 
 };
 
-const int gameSize=40;
-
 class Evaluator {
 public:
 
 	enum GamePhase {
-		OPENING, MIDDLEGAME, ENDGAME
+		OPENING=int(maxGamePhase*0.3), MIDDLEGAME=int(maxGamePhase*0.6), ENDGAME=int(maxGamePhase*0.6+1)
 	};
 
 	Evaluator();
@@ -352,7 +354,7 @@ public:
 			return second;
 		}
 
-		return (first*position)/gameSize+(second*(gameSize-position)/gameSize);
+		return (first*position)/maxGamePhase+(second*(maxGamePhase-position)/maxGamePhase);
 
 	}
 
@@ -360,19 +362,17 @@ public:
 		return defaultMaterialValues[piece];
 	}
 
-	inline const int getPieceSquareValue(Board& board, const PieceTypeByColor piece, const Square square) {
+	inline const int getPieceSquareValue(const PieceTypeByColor piece, const Square square) {
 
 		const int egValue = endGamePieceSquareTable[piece][square];
 		const int mgValue = defaultPieceSquareTable[piece][square];
-		const int mc = board.getMoveCounter();
 
-		return interpolate(mgValue,egValue,mc);
+		return interpolate(mgValue,egValue,this->getGameStage());
 	}
 
 private:
 	Bitboard getLeastValuablePiece(Board& board, Bitboard attackers, PieceColor& color, PieceTypeByColor& piece);
 	GamePhase gamePhase;
-
 };
 
 // main eval function
@@ -380,6 +380,8 @@ inline const int Evaluator::evaluate(Board& board) {
 
 	const PieceColor side = board.getSideToMove();
 	const PieceColor other = board.flipSide(board.getSideToMove());
+
+	this->setGameStage(this->predictGameStage(board));
 
 	int material = evalMaterial(board, side) - evalMaterial(board, other);
 	int pieces = evalPieces(board, side) - evalPieces(board, other);
@@ -425,9 +427,9 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 
 	const PieceColor other = board.flipSide(color);
 	const int DONE_CASTLE_BONUS=       +(board.getPiecesByType(board.makePiece(other,QUEEN))) ? 20 : 10;
-	const int DOUBLED_PAWN_PENALTY =   -5;
-	const int ISOLATED_PAWN_PENALTY =  -5;
-	const int BACKWARD_PAWN_PENALTY =  -3;
+	const int DOUBLED_PAWN_PENALTY =   -10;
+	const int ISOLATED_PAWN_PENALTY =  -15;
+	const int BACKWARD_PAWN_PENALTY =  -5;
 	int count=0;
 
 	// king
@@ -534,7 +536,7 @@ inline const int Evaluator::evalDevelopment(Board& board, PieceColor color) {
 		Bitboard pieces = board.getPiecesByType(PieceTypeByColor(pieceType));
 		Square from = extractLSB(pieces);
 		while ( from!=NONE ) {
-			bonus += getPieceSquareValue(board,PieceTypeByColor(pieceType),Square(from));
+			bonus += getPieceSquareValue(PieceTypeByColor(pieceType),Square(from));
 			from = extractLSB(pieces);
 		}
 	}
@@ -561,14 +563,15 @@ inline const int Evaluator::evalImbalances(Board& board, PieceColor color) {
 
 // verify if pawn is passer
 inline const bool Evaluator::isPawnPassed(Board& board, const PieceColor color, const Square from) {
-	const Bitboard allPieces = board.getAllPieces();
+	const Bitboard pawns = board.getPieceType(board.makePiece(board.flipSide(color),PAWN)) |
+			board.getPieceType(board.makePiece(color,PAWN));
 
 	if ((color==WHITE && squareRank[from]<RANK_3) ||
-		(color==BLACK && squareRank[from]>RANK_6)) {
+			(color==BLACK && squareRank[from]>RANK_6)) {
 		return false;
 	}
 
-	return !(passedMask[color][from]&allPieces);
+	return !(passedMask[color][from]&pawns);
 }
 
 // square distance

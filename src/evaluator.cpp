@@ -46,25 +46,15 @@ const Evaluator::GamePhase Evaluator::getGameStage() {
 
 const Evaluator::GamePhase Evaluator::predictGameStage(Board& board) {
 
-	// very simple game stage detection
-	const int openingMoves=16;
-	const int openingPieces=28;
-	const int endGameMoves=25;
-	const int endGamePieces=14;
+	int moveCounter = board.getMoveCounter();
 
-	GamePhase phase = MIDDLEGAME;
+	if (moveCounter>=gameSize) {
+		return ENDGAME;
+	}
 
 	int piecesOnBoard =_BitCount(board.getAllPieces());
 
-	if (board.getMoveCounter() >= endGameMoves &&
-			piecesOnBoard <= endGamePieces) {
-		phase = ENDGAME;
-	} else if (board.getMoveCounter() <= openingMoves &&
-			piecesOnBoard >= openingPieces) {
-		phase = OPENING;
-	}
-
-	return phase;
+	return Evaluator::GamePhase(piecesOnBoard*moveCounter);
 }
 
 

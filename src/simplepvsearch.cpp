@@ -83,6 +83,7 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		score = rootSearch(board, alpha, beta, depth, 0, &pv);
 
+
 		if(score <= alpha || score >= beta) {
 			score = rootSearch(board, -maxScore, maxScore, depth, 0, &pv);
 		}
@@ -146,8 +147,8 @@ int SimplePVSearch::idSearch(Board& board) {
 			}
 
 			if (depth>7) {
-				if (easyMove==pv.moves[0] && nodesPerMove[0]>=(_nodes*80)/100 &&
-						iterationTime[depth] > _timeToSearch/15) {
+				if (easyMove==pv.moves[0] && nodesPerMove[0]>=(_nodes*85)/100 &&
+						iterationTime[depth] > _timeToSearch/10) {
 					break;
 				}
 			}
@@ -435,6 +436,7 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 	int eval = beta;
 
+	evaluator.setGameStage(evaluator.predictGameStage(board));
 	if (!isKingAttacked) {
 		eval=evaluator.quickEvaluate(board);
 	}
@@ -515,10 +517,10 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 		//futility
 		if (depth >= futilityDepth && !isKingAttacked && !isMateScore(beta) &&
 				move.type == MoveIterator::NON_CAPTURE && move != hashData.move &&
-				!givingCheck && moveCounter>1) {
+				!givingCheck && moveCounter>1 && !isPawnPush(board,move)) {
 
-			const int gain = evaluator.getPieceSquareValue(board,board.getPieceBySquare(move.from),move.to)-
-					evaluator.getPieceSquareValue(board,board.getPieceBySquare(move.from),move.from);
+			const int gain = evaluator.getPieceSquareValue(board.getPieceBySquare(move.from),move.to)-
+					evaluator.getPieceSquareValue(board.getPieceBySquare(move.from),move.from);
 
 			const int futilityScore = eval + gain + futilityMargin * depth;
 

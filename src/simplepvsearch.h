@@ -56,8 +56,8 @@ const int razorDepth=4;
 const int prunningDepth=2;
 const int prunningMoves=2;
 const int pvReduction=1;
-const int nonPvReduction1=2;
-const int nonPvReduction2=3;
+const int nonPvReduction1=1;
+const int nonPvReduction2=2;
 const int aspirationDepth=6;
 const int historyBonus=100;
 const int scoreTable[11]={0,8000,5000,19500,19000,5000,4500,4000,100,-900,5000};
@@ -395,6 +395,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, const bool seeOrdered) {
 
 	moves.bookmark();
+	evaluator.setGameStage(evaluator.predictGameStage(board));
 
 	while (moves.hasNext()) {
 		MoveIterator::Move& move = moves.next();
@@ -422,8 +423,8 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, const 
 				if (hist) {
 					move.score=hist*historyBonus;
 				} else {
-					move.score=(evaluator.getPieceSquareValue(board,board.getPieceBySquare(move.from),move.to)-
-							evaluator.getPieceSquareValue(board,board.getPieceBySquare(move.from),move.from));
+					move.score=(evaluator.getPieceSquareValue(board.getPieceBySquare(move.from),move.to)-
+							evaluator.getPieceSquareValue(board.getPieceBySquare(move.from),move.from));
 				}
 
 			}
@@ -461,20 +462,13 @@ inline void SimplePVSearch::filterLegalMoves(Board& board, MoveIterator& moves) 
 inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move,
 		int depth, int remainingMoves, bool isKingAttacked, const bool nullMoveMateScore, int ply) {
 
-	MoveIterator::Move& killer1 = killer[ply][0];
-	MoveIterator::Move& killer2 = killer[ply][1];
-
 	bool verify = (
 			(!isKingAttacked) &&
 			(!nullMoveMateScore) &&
 			(remainingMoves > prunningMoves) &&
 			(move.type == MoveIterator::NON_CAPTURE) &&
-			(move!=killer1) &&
-			(move!=killer2) &&
 			(depth > prunningDepth) &&
-			(!isPawnFinal(board)) &&
-			(!history[board.getPieceTypeBySquare(move.from)][move.to]
-			));
+            (!isPawnPush(board, move)));
 
 	return verify;
 
@@ -493,7 +487,8 @@ inline bool SimplePVSearch::isMateScore(const int score) {
 // is given check?
 inline bool SimplePVSearch::isGivenCheck(Board& board, const Square from) {
 
-	const Bitboard otherKingBB = board.getPiecesByType(board.makePiece(board.flipSide(board.getSideToMove()),KING));
+	const PieceColor color=board.getPieceColorBySquare(from);
+	const Bitboard otherKingBB = board.getPiecesByType(board.makePiece(board.flipSide(color),KING));
 	const Square otherKingSq = bitboardToSquare(otherKingBB);
 
 	return (otherKingSq != NONE && board.isAttackedBy(from,otherKingSq));
@@ -513,10 +508,16 @@ inline bool SimplePVSearch::isPawnFinal(Board& board) {
 // pawn push
 inline bool SimplePVSearch::isPawnPush(Board& board, MoveIterator::Move& move) {
 
-	if (!board.getPieceType(board.getPieceBySquare(move.from))==PAWN) {
+	if (board.getPieceType(board.getPieceBySquare(move.from))!=PAWN) {
 		return false;
 	}
-	return evaluator.isPawnPassed(board,board.getSideToMove(),move.to);
+	const PieceColor color=board.getPieceColorBySquare(move.from);
+
+	if ((color==WHITE && squareRank[move.to]<RANK_5) ||
+		(color==BLACK && squareRank[move.to]>RANK_6)) {
+		return false;
+	}
+	return evaluator.isPawnPassed(board,color,move.to);
 }
 
 // pawn promoting
@@ -535,7 +536,7 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 	extension=0;
 	reduction=0;
 
-	if (isKingAttacked || isPawnPromoting(board) ||	isPawnPush(board, move)) {
+	if (isKingAttacked || isPawnPromoting(board)) {
 		extension=1;
 		return false;
 	}
@@ -544,7 +545,7 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 		return false;
 	}
 
-	reduction = isPV ? pvReduction : depth < 13 ? nonPvReduction1 : nonPvReduction2;
+	reduction = isPV ? pvReduction : remainingMoves < 5 ? nonPvReduction1 : nonPvReduction2;
 	return true;
 }
 
@@ -639,7 +640,7 @@ inline void SimplePVSearch::updateHistory(Board& board, MoveIterator::Move& move
 		return;
 	}
 
-	history[board.getPieceTypeBySquare(move.from)][move.to]+=depth;
+	history[board.getPieceTypeBySquare(move.from)][move.to]+=depth*depth;
 
 }
 
