@@ -32,6 +32,7 @@
 #include "uci.h"
 #include "constant.h"
 #include "board.h"
+#include "bitboard.h"
 #include "searchagent.h"
 #include "mersenne.h"
 #include "inline.h"
@@ -48,9 +49,9 @@ int main() {
 	// initialization methods
 	initmagicmoves();
 	init_mersenne();
+	initializeBitboards();
 	Board::initializeZobrist();
 	SearchAgent::getInstance();
-
 	Uci *uci = Uci::getInstance();
 
 	std::string paramNumProcs = StringUtil::toStr(getNumProcs());
@@ -73,7 +74,7 @@ int main() {
 	}
 
 	uci->clearUciOption();
-	SearchAgent::getInstance()->destroyHash();
+	SearchAgent::getInstance()->shutdown();
 
 	return 0;
 }

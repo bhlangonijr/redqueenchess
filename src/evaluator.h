@@ -33,6 +33,7 @@
 #include "inline.h"
 #include "board.h"
 
+const int KNIGHT_MOBILITY_BONUS = 6;
 const int BISHOP_MOBILITY_BONUS = 4;
 const int ROOK_MOBILITY_BONUS = 2;
 const int KNIGHT_TROPISM_BONUS = 2;
@@ -345,7 +346,6 @@ public:
 	const void setGameStage(const GamePhase phase);
 	const GamePhase getGameStage();
 	const GamePhase predictGameStage(Board& board);
-	const int squareDistance(Board& board, const Square from, const Square to);
 	const int see(Board& board, MoveIterator::Move& move);
 
 	inline const int interpolate(const int first, const int second, const int position) {
@@ -478,7 +478,10 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	const Square otherKingSq = bitboardToSquare(otherKingBB);
 
 	Bitboard pieces = EMPTY_BB;
-	Bitboard moves = EMPTY_BB;
+	Bitboard knightAttacks = EMPTY_BB;
+	Bitboard bishopAttacks = EMPTY_BB;
+	Bitboard rookAttacks = EMPTY_BB;
+	Bitboard queenAttacks = EMPTY_BB;
 
 	Square from = NONE;
 	int count=0;
@@ -488,7 +491,10 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		kingThreat += (DELTA_MAX-squareDistance(board,from,otherKingSq)) * KNIGHT_TROPISM_BONUS;
+		const int delta = (DELTA_MAX-squareDistance(from,otherKingSq));
+		const Bitboard attacks = board.getKingAttacks(from);
+		kingThreat += delta*KNIGHT_TROPISM_BONUS*(attacks&otherKingBB?2:1);
+		knightAttacks |= attacks;
 		from = extractLSB(pieces);
 	}
 
@@ -496,19 +502,21 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		kingThreat += (DELTA_MAX-squareDistance(board,from,otherKingSq)) * BISHOP_TROPISM_BONUS;
-		moves |= board.getBishopAttacks(from);
+		const int delta = (DELTA_MAX-squareDistance(from,otherKingSq));
+		const Bitboard attacks = board.getBishopAttacks(from);
+		kingThreat += delta*BISHOP_TROPISM_BONUS*(attacks&otherKingBB?2:1);
+		bishopAttacks |= attacks;
 		from = extractLSB(pieces);
 	}
-	count+=_BitCount(moves)*BISHOP_MOBILITY_BONUS;
 
 	pieces = board.getPiecesByType(board.makePiece(color,ROOK));
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		kingThreat += (DELTA_MAX-squareDistance(board,from,otherKingSq)) * ROOK_TROPISM_BONUS;
-		moves = board.getRookAttacks(from);
-		count+=_BitCount(moves)*ROOK_MOBILITY_BONUS;
+		const int delta=(DELTA_MAX-squareDistance(from,otherKingSq));
+		const Bitboard attacks = board.getRookAttacks(from);
+		kingThreat += delta*ROOK_TROPISM_BONUS*(attacks&otherKingBB?2:1);
+		rookAttacks |= attacks;
 		from = extractLSB(pieces);
 	}
 
@@ -516,11 +524,19 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		kingThreat += (DELTA_MAX-squareDistance(board,from,otherKingSq)) * QUEEN_TROPISM_BONUS;
-		moves = board.getQueenAttacks(from);
-		count+=_BitCount(moves);
+		const int delta=(DELTA_MAX-squareDistance(from,otherKingSq));
+		const Bitboard attacks = board.getQueenAttacks(from);
+		kingThreat += delta*QUEEN_TROPISM_BONUS*(attacks&otherKingBB?2:1);
+		queenAttacks |= attacks;
 		from = extractLSB(pieces);
 	}
+
+	const int knightMobility = _BitCount(knightAttacks)*KNIGHT_MOBILITY_BONUS;
+	const int bishopMobility = _BitCount(bishopAttacks)*BISHOP_MOBILITY_BONUS;
+	const int rookMobility = _BitCount(rookAttacks)*ROOK_MOBILITY_BONUS;
+	const int queenMobility = _BitCount(queenAttacks);
+
+	count = knightMobility+bishopMobility+rookMobility+queenMobility;
 
 	return count+kingThreat;
 }
@@ -572,16 +588,6 @@ inline const bool Evaluator::isPawnPassed(Board& board, const PieceColor color, 
 	}
 
 	return !(passedMask[color][from]&pawns);
-}
-
-// square distance
-inline const int Evaluator::squareDistance(Board& board, const Square from, const Square to) {
-
-	const int delta1 = abs(squareRank[to]-squareRank[from]);
-	const int delta2 = abs(squareFile[to]-squareFile[from]);
-
-	return (delta1+delta2)>>2;
-
 }
 
 // static exchange evaluation

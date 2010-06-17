@@ -229,6 +229,8 @@ public:
 		return transTable->newSearch();
 	}
 
+	void shutdown();
+
 	void *startThreadSearch();
 
 protected:

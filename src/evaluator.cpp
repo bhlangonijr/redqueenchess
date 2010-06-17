@@ -54,7 +54,7 @@ const Evaluator::GamePhase Evaluator::predictGameStage(Board& board) {
 
 	int piecesOnBoard =_BitCount(board.getAllPieces());
 
-	return Evaluator::GamePhase(piecesOnBoard*moveCounter);
+	return Evaluator::GamePhase((maxPieces-piecesOnBoard)*moveCounter);
 }
 
 

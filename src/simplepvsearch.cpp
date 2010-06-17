@@ -436,7 +436,6 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 	int eval = beta;
 
-	evaluator.setGameStage(evaluator.predictGameStage(board));
 	if (!isKingAttacked) {
 		eval=evaluator.quickEvaluate(board);
 	}

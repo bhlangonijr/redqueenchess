@@ -29,6 +29,8 @@
 #define MIN(x,y) (x<y?x:y)
 #define MAX(x,y) (x>y?x:y)
 
+static int squareDelta[ALL_SQUARE][ALL_SQUARE];
+
 // print a bitboard in a readble form
 void printBitboard(Bitboard bb) {
 
@@ -44,3 +46,22 @@ void printBitboard(Bitboard bb) {
 	std::cout << std::endl;
 
 }
+
+// initialize bitboards
+void initializeBitboards() {
+
+	for (int x=0;x<ALL_SQUARE;x++) {
+		for (int y=0;y<ALL_SQUARE;y++) {
+			const int delta1 = abs(squareRank[x]-squareRank[y]);
+			const int delta2 = abs(squareFile[x]-squareFile[y]);
+			squareDelta[x][y]=(delta1+delta2)/2;
+		}
+	}
+
+}
+
+int squareDistance(const Square from, const Square to) {
+	return squareDelta[from][to];
+}
+
+

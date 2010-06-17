@@ -29,6 +29,7 @@
 
 #include <inttypes.h>
 #include <iostream>
+#include <stdlib.h>
 
 #include "inline.h"
 
@@ -420,7 +421,12 @@ const Bitboard passedMask[ALL_PIECE_COLOR][ALL_SQUARE]= {
 
 };
 
+
 extern void printBitboard(Bitboard bb);
+
+extern void initializeBitboards();
+
+extern int squareDistance(const Square from, const Square to);
 
 // get the bit index from a bitboard
 inline Square bitboardToSquare(const Bitboard& bitboard) {

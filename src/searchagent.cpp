@@ -39,12 +39,12 @@ SearchAgent* SearchAgent::getInstance ()
 }
 
 SearchAgent::SearchAgent() :
-	searchMode(SEARCH_TIME), searchInProgress(false), hashSize(defaultHashSize), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
-	blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), infinite(false)
-	{
+			searchMode(SEARCH_TIME), searchInProgress(false), hashSize(defaultHashSize), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
+			blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), infinite(false)
+{
 	// creates initial hashtables
 	createHash();
-	}
+}
 
 // start a new game
 void SearchAgent::newGame() {
@@ -88,24 +88,24 @@ void SearchAgent::setPositionFromFEN(std::string fenMoves) {
 // start search
 void* SearchAgent::startThreadSearch() {
 
-	SimplePVSearch simplePV(board);
+	SimplePVSearch simpleSearcher(board);
 
 	if (this->getSearchMode()==SearchAgent::SEARCH_DEPTH) {
-		simplePV.setSearchFixedDepth(true);
-		simplePV.setDepth(this->getDepth());
+		simpleSearcher.setSearchFixedDepth(true);
+		simpleSearcher.setDepth(this->getDepth());
 	} else if (this->getSearchMode()==SearchAgent::SEARCH_TIME ||
-				this->getSearchMode()==SearchAgent::SEARCH_MOVETIME) {
-		simplePV.setSearchFixedDepth(false);
-		simplePV.setTimeToSearch(this->getTimeToSearch());
+			this->getSearchMode()==SearchAgent::SEARCH_MOVETIME) {
+		simpleSearcher.setSearchFixedDepth(false);
+		simpleSearcher.setTimeToSearch(this->getTimeToSearch());
 	} else if (this->getSearchMode()==SearchAgent::SEARCH_INFINITE) {
-		simplePV.setInfinite(true);
-		simplePV.setDepth(maxSearchDepth);
+		simpleSearcher.setInfinite(true);
+		simpleSearcher.setDepth(maxSearchDepth);
 	} else {
-		simplePV.setSearchFixedDepth(true);
-		simplePV.setDepth(defaultDepth);
+		simpleSearcher.setSearchFixedDepth(true);
+		simpleSearcher.setDepth(defaultDepth);
 	}
 
-	simplePV.search();
+	simpleSearcher.search();
 	return 0;
 }
 
@@ -178,8 +178,11 @@ const long SearchAgent::getTimeToSearch() {
 }
 
 void *threadStartup(void *_object) {
-  SearchAgent *object = (SearchAgent *)_object;
-  void *threadResult = object->startThreadSearch();
-  return threadResult;
+	SearchAgent *object = (SearchAgent *)_object;
+	void *threadResult = object->startThreadSearch();
+	return threadResult;
 }
 
+void SearchAgent::shutdown() {
+	delete transTable;
+}
