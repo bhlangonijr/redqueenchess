@@ -43,10 +43,7 @@ void SimplePVSearch::search() {
 	_startTime = getTickCount();
 	timeToStop = clock() + toClock(_timeToSearch);
 	_score = idSearch(board);
-	SearchAgent::getInstance()->setSearchInProgress(false);
 	_time = getTickCount() - _startTime;
-	pthread_exit(NULL);
-
 }
 
 // get current score

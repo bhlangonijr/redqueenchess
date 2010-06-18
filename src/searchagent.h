@@ -140,7 +140,7 @@ public:
 		blackTime = _blackTime;
 	}
 
-	inline const int getBlackIncrement() const {
+	inline const long getBlackIncrement() const {
 		return blackIncrement;
 	}
 
@@ -176,7 +176,7 @@ public:
 		return infinite;
 	}
 
-	inline void setInfinite(int _infinite) {
+	inline void setInfinite(bool _infinite) {
 		infinite = _infinite;
 	}
 

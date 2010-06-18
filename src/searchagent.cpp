@@ -39,16 +39,27 @@ SearchAgent* SearchAgent::getInstance ()
 }
 
 SearchAgent::SearchAgent() :
-			searchMode(SEARCH_TIME), searchInProgress(false), hashSize(defaultHashSize), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
-			blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), infinite(false)
-{
+					searchMode(SEARCH_TIME), searchInProgress(false), hashSize(defaultHashSize), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
+					blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), infinite(false)
+					{
 	// creates initial hashtables
 	createHash();
-}
+					}
 
 // start a new game
 void SearchAgent::newGame() {
+
+	int attempts=20;
+	while (--attempts>0) {
+		if (this->getSearchInProgress()) {
+			usleep(50000);
+		} else {
+			break;
+		}
+	}
+
 	board.setInitialPosition();
+
 	this->clearHash();
 
 	this->setSearchMode(SEARCH_TIME);
@@ -61,7 +72,6 @@ void SearchAgent::newGame() {
 	this->setMovesToGo(0);
 	this->setMoveTime(0);
 	this->setInfinite(false);
-	this->setSearchInProgress(false);
 
 }
 
@@ -88,6 +98,8 @@ void SearchAgent::setPositionFromFEN(std::string fenMoves) {
 // start search
 void* SearchAgent::startThreadSearch() {
 
+	setSearchInProgress(true);
+
 	SimplePVSearch simpleSearcher(board);
 
 	if (this->getSearchMode()==SearchAgent::SEARCH_DEPTH) {
@@ -106,6 +118,9 @@ void* SearchAgent::startThreadSearch() {
 	}
 
 	simpleSearcher.search();
+
+	setSearchInProgress(false);
+
 	return 0;
 }
 
@@ -117,16 +132,11 @@ void SearchAgent::startSearch() {
 		return;
 	}
 
-	setSearchInProgress(true);
 	newSearchHash();
 
-	pthread_t executor;
+	pthread_t executor = 0;
 	int ret = 0;
 	ret = pthread_create( &executor, NULL, threadStartup, this);
-
-	/*pthread_t executor2;
-	int ret2 = 0;
-	ret2 = pthread_create( &executor2, NULL, threadStartup, this);*/
 
 }
 
@@ -145,7 +155,7 @@ void SearchAgent::doPerft() {
 
 }
 
-// stop search
+// (brute) stop search
 void SearchAgent::stopSearch() {
 	setSearchInProgress(false);
 }
@@ -173,7 +183,7 @@ const long SearchAgent::getTimeToSearch() {
 
 	}
 
-	return time / (movesLeft + incTime);
+	return time / (long(movesLeft) + incTime);
 
 }
 
@@ -184,5 +194,5 @@ void *threadStartup(void *_object) {
 }
 
 void SearchAgent::shutdown() {
-	delete transTable;
+	this->destroyHash();
 }

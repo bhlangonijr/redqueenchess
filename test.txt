@@ -92,3 +92,17 @@ go depth 14
 
 position startpos moves c2c4 g8f6 g1f3 a7a6 b1c3 c7c5 g2g3 b7b6 e2e4 b8c6 d2d4 d7d6 h2h3 c8b7 d4d5 c6e5 f3h4 e5g6 h4g6 h7g6 f2f4 d8c7 d1a4 c7d7 a4b3 d7c7 b3a4 c7d7 a4d7 f6d7 c1e3 e7e5 e1c1 e5f4 g3f4 f8e7 f1e2 e8c8 e2f3 d8e8 c1c2 e7f6 c2d3 h8h4 d1b1 c8c7 f3g4 g6g5 f4g5 d7e5 d3e2 e5g4 h3g4 h4h1 b1h1 f6c3 b2c3 e8e4 h1f1 e4e7 f1b1 b6b5 c4b5 a6b5
 go infinite
+
+position fen r1r2bk1/pp1n1p1p/2pqb1p1/3p4/1P1P4/1QN1PN2/P3BPPP/2RR2K1 w - - 0 1
+go movetime 60000 depth 63
+stop
+ucinewgame
+isready
+position fen r2q1r2/pp1b2kp/2n1p1p1/3p4/3P1P1P/2PB1N2/6P1/R3QRK1 w - - 0 1
+go movetime 60000 depth 63
+
+;; stops thinking when analyzing
+
+
+
+

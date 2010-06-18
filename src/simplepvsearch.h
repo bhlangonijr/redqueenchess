@@ -141,8 +141,8 @@ public:
 		return ((clock() * 1000) / CLOCKS_PER_SEC);
 	}
 
-	inline const long toClock(const int time) {
-		return int((((double)(time)/(double)1000)*(double)CLOCKS_PER_SEC));
+	inline const long toClock(const long time) {
+		return long((((double)(time)/(double)1000)*(double)CLOCKS_PER_SEC));
 	}
 
 	inline const bool isUpdateUci() const {
@@ -555,7 +555,7 @@ inline const bool SimplePVSearch::stop(const bool searchInProgress) {
 
 inline const bool SimplePVSearch::timeIsUp() {
 
-	const uint64_t checkNodes=0x1FFF;
+	const long checkNodes=0x1FFF;
 	if ( _searchFixedDepth || _infinite || (!_nodes & checkNodes)) {
 		return false;
 	}

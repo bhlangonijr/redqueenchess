@@ -36,10 +36,17 @@
 const int KNIGHT_MOBILITY_BONUS = 6;
 const int BISHOP_MOBILITY_BONUS = 4;
 const int ROOK_MOBILITY_BONUS = 2;
+
 const int KNIGHT_TROPISM_BONUS = 2;
 const int BISHOP_TROPISM_BONUS = 3;
 const int ROOK_TROPISM_BONUS = 4;
 const int QUEEN_TROPISM_BONUS = 5;
+
+const int KNIGHT_ATTACK_BONUS = 5;
+const int BISHOP_ATTACK_BONUS = 7;
+const int ROOK_ATTACK_BONUS = 9;
+const int QUEEN_ATTACK_BONUS = 11;
+
 const int bishopPairBonus = 15;
 const int gameSize=60;
 const int maxPieces=32;
@@ -473,9 +480,12 @@ inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 // mobility eval function
 inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
-	const int DELTA_MAX = 7;
 	const Bitboard otherKingBB = board.getPiecesByType(board.makePiece(board.flipSide(color),KING));
 	const Square otherKingSq = bitboardToSquare(otherKingBB);
+	const Bitboard knights = board.getPiecesByType(board.makePiece(color,KNIGHT));
+	const Bitboard bishops = board.getPiecesByType(board.makePiece(color,BISHOP));
+	const Bitboard rooks = board.getPiecesByType(board.makePiece(color,ROOK));
+	const Bitboard queens = board.getPiecesByType(board.makePiece(color,QUEEN));
 
 	Bitboard pieces = EMPTY_BB;
 	Bitboard knightAttacks = EMPTY_BB;
@@ -487,56 +497,58 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	int count=0;
 	int kingThreat=0;
 
-	pieces = board.getPiecesByType(board.makePiece(color,KNIGHT));
+	pieces = knights;
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		const int delta = (DELTA_MAX-squareDistance(from,otherKingSq));
-		const Bitboard attacks = board.getKingAttacks(from);
-		kingThreat += delta*KNIGHT_TROPISM_BONUS*(attacks&otherKingBB?2:1);
+		const int delta = inverseSquareDistance(from,otherKingSq);
+		const Bitboard attacks = board.getKnightAttacks(from);
+		const int kingAttacked=attacks&otherKingBB;
+		kingThreat += delta*(kingAttacked?KNIGHT_ATTACK_BONUS:KNIGHT_TROPISM_BONUS);
 		knightAttacks |= attacks;
 		from = extractLSB(pieces);
 	}
 
-	pieces = board.getPiecesByType(board.makePiece(color,BISHOP));
+	pieces = bishops;
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		const int delta = (DELTA_MAX-squareDistance(from,otherKingSq));
+		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getBishopAttacks(from);
-		kingThreat += delta*BISHOP_TROPISM_BONUS*(attacks&otherKingBB?2:1);
+		const int kingAttacked=attacks&otherKingBB;
+		kingThreat += delta*(kingAttacked?BISHOP_ATTACK_BONUS:BISHOP_TROPISM_BONUS);
 		bishopAttacks |= attacks;
 		from = extractLSB(pieces);
 	}
 
-	pieces = board.getPiecesByType(board.makePiece(color,ROOK));
+	pieces = rooks;
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		const int delta=(DELTA_MAX-squareDistance(from,otherKingSq));
+		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getRookAttacks(from);
-		kingThreat += delta*ROOK_TROPISM_BONUS*(attacks&otherKingBB?2:1);
+		const int kingAttacked=attacks&otherKingBB;
+		kingThreat += delta*(kingAttacked?ROOK_ATTACK_BONUS:ROOK_TROPISM_BONUS);
 		rookAttacks |= attacks;
 		from = extractLSB(pieces);
 	}
 
-	pieces = board.getPiecesByType(board.makePiece(color,QUEEN));
+	pieces = queens;
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		const int delta=(DELTA_MAX-squareDistance(from,otherKingSq));
+		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getQueenAttacks(from);
-		kingThreat += delta*QUEEN_TROPISM_BONUS*(attacks&otherKingBB?2:1);
+		const int kingAttacked=attacks&otherKingBB;
+		kingThreat += delta*(kingAttacked?QUEEN_ATTACK_BONUS:QUEEN_TROPISM_BONUS);
 		queenAttacks |= attacks;
 		from = extractLSB(pieces);
 	}
 
-	const int knightMobility = _BitCount(knightAttacks)*KNIGHT_MOBILITY_BONUS;
-	const int bishopMobility = _BitCount(bishopAttacks)*BISHOP_MOBILITY_BONUS;
-	const int rookMobility = _BitCount(rookAttacks)*ROOK_MOBILITY_BONUS;
-	const int queenMobility = _BitCount(queenAttacks);
-
-	count = knightMobility+bishopMobility+rookMobility+queenMobility;
+	count+=_BitCount(knightAttacks)*KNIGHT_MOBILITY_BONUS;
+	count+=_BitCount(bishopAttacks)*BISHOP_MOBILITY_BONUS;
+	count+=_BitCount(rookAttacks)*ROOK_MOBILITY_BONUS;
+	count+=_BitCount(queenAttacks);
 
 	return count+kingThreat;
 }
@@ -560,7 +572,7 @@ inline const int Evaluator::evalDevelopment(Board& board, PieceColor color) {
 	return bonus;
 }
 
-// mobility eval function
+// imbalances eval function
 inline const int Evaluator::evalImbalances(Board& board, PieceColor color) {
 
 	int count=0;

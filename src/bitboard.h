@@ -428,6 +428,8 @@ extern void initializeBitboards();
 
 extern int squareDistance(const Square from, const Square to);
 
+extern int inverseSquareDistance(const Square from, const Square to);
+
 // get the bit index from a bitboard
 inline Square bitboardToSquare(const Bitboard& bitboard) {
 

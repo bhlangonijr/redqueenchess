@@ -92,9 +92,19 @@ bool Uci::execute()
 	case UCINEWGAME :
 		executeUciNewGame();
 		break;
-	case ISREADY :
+	case ISREADY : {
+		int attempts=20;
+		SearchAgent *searchAgent = SearchAgent::getInstance();
+		while (--attempts>0) {
+			if (searchAgent->getSearchInProgress()) {
+				usleep(50000);
+			} else {
+				break;
+			}
+		}
 		std::cout << "readyok" << std::endl;
 		break;
+	}
 	case POSITION :
 		executePosition();
 		break;
@@ -133,9 +143,9 @@ void Uci::setCommand(Command cmd)
 
 // gets command
 Uci::Command Uci::getCommand() const
-{
+		{
 	return Uci::command;
-}
+		}
 
 // sets rawinput
 void Uci::setRawInput(const std::string input)
@@ -145,9 +155,9 @@ void Uci::setRawInput(const std::string input)
 
 // gets command
 std::string Uci::getRawInput() const
-{
+		{
 	return Uci::rawInput;
-}
+		}
 
 // sets uci options
 void Uci::setUciOption(std::vector< UciOption *> options) {
