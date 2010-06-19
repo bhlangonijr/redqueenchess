@@ -80,7 +80,6 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		score = rootSearch(board, alpha, beta, depth, 0, &pv);
 
-
 		if(score <= alpha || score >= beta) {
 			score = rootSearch(board, -maxScore, maxScore, depth, 0, &pv);
 		}
@@ -88,7 +87,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		iterationScore[depth]=score;
 		iterationTime[depth]=getTickCount()-_startTime;
 
-		if (stop(agent->getSearchInProgress()) && depth > 1) {
+		if (stop(agent->shouldStop()) && depth > 1) {
 			break;
 		}
 
@@ -98,6 +97,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		}
 
 		stats.bestMove=pv.moves[0];
+		stats.ponderMove=pv.moves[1];
 		stats.searchDepth=depth;
 		stats.searchTime=getTickCount()-_startTime;
 		stats.searchNodes=_nodes;
@@ -105,12 +105,12 @@ int SimplePVSearch::idSearch(Board& board) {
 		uciOutput(&pv, stats.bestMove, stats.searchTime, agent->hashFull(), depth);
 
 		if (depth >= aspirationDepth)	{
-			double delta1 = double(iterationScore[depth - 0] - iterationScore[depth - 1]);
-			double delta2 = double(iterationScore[depth - 1] - iterationScore[depth - 2]);
-			int aspirationDelta = MAX(int(abs(delta1*0.7) + abs(delta2*0.3)), 16);
-			aspirationDelta = (aspirationDelta + 7) / 8*8;
-			alpha = MAX(iterationScore[depth] - aspirationDelta, -maxScore);
-			beta  = MAX(iterationScore[depth] + aspirationDelta,  maxScore);
+			double delta1 = double(iterationScore[depth-0]-iterationScore[depth-1]);
+			double delta2 = double(iterationScore[depth-1]-iterationScore[depth-2]);
+			int aspirationDelta = MAX(int(abs(delta1*0.7)+abs(delta2*0.3)), 16);
+			aspirationDelta = (aspirationDelta + 7)/8*8;
+			alpha = MAX(iterationScore[depth]-aspirationDelta,-maxScore);
+			beta  = MIN(iterationScore[depth]+aspirationDelta,+maxScore);
 		}
 
 		int repetition=0;
@@ -121,6 +121,10 @@ int SimplePVSearch::idSearch(Board& board) {
 			} else {
 				break;
 			}
+		}
+
+		if (stats.bestMove!=easyMove) {
+			easyMove = MoveIterator::Move();
 		}
 
 		if (!(_searchFixedDepth || _infinite)) {
@@ -164,7 +168,7 @@ int SimplePVSearch::idSearch(Board& board) {
 #endif
 	}
 
-	uciOutput(stats.bestMove);
+	uciOutput(stats.bestMove,stats.ponderMove);
 
 	return stats.bestMove.score;
 }
@@ -257,7 +261,7 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 // principal variation search
 int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int ply, PvLine* pv) {
 
-	if (stop(agent->getSearchInProgress())) {
+	if (stop(agent->shouldStop())) {
 		return 0;
 	}
 
@@ -327,24 +331,26 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 			remainingMoves++;
 		}
 		const bool givingCheck = isGivenCheck(board,move.from);
-		bool reduced = adjustDepth(extension, reduction, board, move, depth, remainingMoves,
+		const bool reduced = adjustDepth(extension, reduction, board, move, depth, remainingMoves,
 				givingCheck||isKingAttacked,ply,false,moveCounter==1);
 		int newDepth=depth-1;
+		bool fullSearch=false;
 
 		if (moveCounter==1) {
 			score = -pvSearch(board, -beta, -alpha, newDepth-reduction+extension, ply+1, &line);
+			fullSearch=(score > alpha && reduced);
 		} else {
-			reduced=true;
 			score = -zwSearch(board, -alpha, newDepth-reduction+extension, ply+1, &line, true);
+			fullSearch=(score > alpha && score < beta);
 		}
 
-		if (score > alpha && score < beta && reduced) {
+		if (fullSearch) {
 			score = -pvSearch(board, -beta, -alpha, newDepth+extension, ply+1, &line);
 		}
 
 		board.undoMove(backup);
 
-		if (stop(agent->getSearchInProgress())) {
+		if (stop(agent->shouldStop())) {
 			return 0;
 		}
 
@@ -383,7 +389,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 // zero window search - non pv nodes
 int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine* pv, const bool allowNullMove) {
 
-	if (stop(agent->getSearchInProgress())) {
+	if (stop(agent->shouldStop())) {
 		return 0;
 	}
 
@@ -467,12 +473,15 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 		score = -zwSearch(board, 1-beta, depth-reduction, ply+1, &line, false);
 		board.undoNullMove(backup);
 
-		if (stop(agent->getSearchInProgress())) {
+		if (stop(agent->shouldStop())) {
 			return 0;
 		}
 
 		if (score >= beta) {
-			if (score >= maxScore - maxSearchPly) {
+			if (score < -maxScore+maxSearchPly) {
+				nullMoveMateScore=true;
+			}
+			if (score >= maxScore-maxSearchPly) {
 				score = beta;
 			}
 			agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::NM_LOWER,emptyMove);
@@ -480,9 +489,6 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 			return score;
 		}
 
-		if (score < -maxScore+maxSearchPly) {
-			nullMoveMateScore=true;
-		}
 	}
 
 	//iid
@@ -549,9 +555,10 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 			score = -zwSearch(board, 1-beta, newDepth+extension, ply+1, &line, true);
 		}
 
+
 		board.undoMove(backup);
 
-		if (stop(agent->getSearchInProgress())) {
+		if (stop(agent->shouldStop())) {
 			return 0;
 		}
 
@@ -568,7 +575,7 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 		return isKingAttacked ? -maxScore+ply : 0;
 	}
 
-	agent->hashPut(board, beta-1,depth,ply,maxScore,SearchAgent::UPPER,emptyMove);
+	agent->hashPut(board,beta-1,depth,ply,maxScore,SearchAgent::UPPER,emptyMove);
 	stats.ttUpper++;
 
 	return beta-1;
@@ -579,7 +586,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 
 	_nodes++;
 
-	if (stop(agent->getSearchInProgress())) {
+	if (stop(agent->shouldStop())) {
 		return 0;
 	}
 
@@ -647,7 +654,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 
 		board.undoMove(backup);
 
-		if (stop(agent->getSearchInProgress())) {
+		if (stop(agent->shouldStop())) {
 			return 0;
 		}
 

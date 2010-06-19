@@ -30,6 +30,7 @@
 #include <iostream>
 #include <assert.h>
 #include <pthread.h>
+#include <time.h>
 
 #include "board.h"
 #include "simplepvsearch.h"
@@ -65,7 +66,8 @@ public:
 		HashData() : value(0), depth(0), flag(LOWER)  {};
 		HashData(const int& _value, const int& _depth, const NodeFlag& _flag, const MoveIterator::Move& _move) :
 			value(_value), depth(_depth), flag(_flag), move(_move)  {};
-		HashData(const HashData& hashData) : value(hashData.value), depth(hashData.depth), flag(hashData.flag), move(hashData.move)  {};
+		HashData(const HashData& hashData) : value(hashData.value), depth(hashData.depth),
+				flag(hashData.flag), move(hashData.move)  {};
 		int value;
 		int depth;
 		NodeFlag flag;
@@ -78,17 +80,30 @@ public:
 	const Board getBoard() const;
 	void setBoard(Board _board);
 
+	const bool shouldStop() const {
+		return !searchInProgress || requestStop;
+	}
+
 	const bool getSearchInProgress() const {
 		return searchInProgress;
 	}
 
-	void setSearchInProgress(int _searchInProgress) {
+	void setSearchInProgress(bool _searchInProgress) {
 		searchInProgress = _searchInProgress;
+	}
+
+	void setRequestStop(bool shouldStop) {
+		requestStop = shouldStop;
+	}
+
+	bool getRequestStop() {
+		return requestStop;
 	}
 
 	const SearchMode getSearchMode() const {
 		return searchMode;
 	}
+
 	void setSearchMode(SearchMode _searchMode) {
 		searchMode = _searchMode;
 	}
@@ -99,6 +114,12 @@ public:
 	void startSearch();
 	void doPerft();
 	void stopSearch();
+
+	inline void suspend(long mseconds) //TODO HACK - remove me later
+	{
+		clock_t stopTime = mseconds + clock();
+		while (stopTime > clock());
+	}
 
 	inline const size_t getHashSize() const {
 		return hashSize;
@@ -246,6 +267,7 @@ private:
 	SearchMode searchMode;
 
 	volatile bool searchInProgress;
+	volatile bool requestStop;
 
 	size_t hashSize;
 	int threadNumber;

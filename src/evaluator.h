@@ -48,7 +48,7 @@ const int ROOK_ATTACK_BONUS = 9;
 const int QUEEN_ATTACK_BONUS = 11;
 
 const int bishopPairBonus = 15;
-const int gameSize=60;
+const int gameSize=35;
 const int maxPieces=32;
 const int maxGamePhase=gameSize*maxPieces;
 
@@ -56,8 +56,8 @@ const int maxGamePhase=gameSize*maxPieces;
 const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 325, 325, 500, 975, 10000, 100, 325, 325, 500, 975, 10000, 0};
 
 const int passedPawnBonus[ALL_PIECE_COLOR][ALL_RANK] = {
-		{0,0,0,1,10,20,50,1},
-		{1,50,20,10,1,0,0,0},
+		{0,0,0,1,20,50,190,1},
+		{1,190,50,20,1,0,0,0},
 		{0,0,0,0,0,0,0,0}
 };
 

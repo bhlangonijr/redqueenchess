@@ -97,7 +97,7 @@ bool Uci::execute()
 		SearchAgent *searchAgent = SearchAgent::getInstance();
 		while (--attempts>0) {
 			if (searchAgent->getSearchInProgress()) {
-				usleep(50000);
+				searchAgent->suspend(50);
 			} else {
 				break;
 			}

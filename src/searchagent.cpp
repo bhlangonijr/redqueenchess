@@ -39,12 +39,12 @@ SearchAgent* SearchAgent::getInstance ()
 }
 
 SearchAgent::SearchAgent() :
-					searchMode(SEARCH_TIME), searchInProgress(false), hashSize(defaultHashSize), threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
-					blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), infinite(false)
-					{
+					searchMode(SEARCH_TIME), searchInProgress(false), requestStop(false),
+					hashSize(defaultHashSize),	threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
+					blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), infinite(false)	{
 	// creates initial hashtables
 	createHash();
-					}
+}
 
 // start a new game
 void SearchAgent::newGame() {
@@ -52,7 +52,8 @@ void SearchAgent::newGame() {
 	int attempts=20;
 	while (--attempts>0) {
 		if (this->getSearchInProgress()) {
-			usleep(50000);
+			stopSearch();
+			suspend(50);
 		} else {
 			break;
 		}
@@ -120,6 +121,7 @@ void* SearchAgent::startThreadSearch() {
 	simpleSearcher.search();
 
 	setSearchInProgress(false);
+	setRequestStop(false);
 
 	return 0;
 }
@@ -134,7 +136,7 @@ void SearchAgent::startSearch() {
 
 	newSearchHash();
 
-	pthread_t executor = 0;
+	pthread_t executor;
 	int ret = 0;
 	ret = pthread_create( &executor, NULL, threadStartup, this);
 
@@ -157,7 +159,7 @@ void SearchAgent::doPerft() {
 
 // (brute) stop search
 void SearchAgent::stopSearch() {
-	setSearchInProgress(false);
+	setRequestStop(true);
 }
 
 const long SearchAgent::getTimeToSearch() {
@@ -183,7 +185,7 @@ const long SearchAgent::getTimeToSearch() {
 
 	}
 
-	return time / (long(movesLeft) + incTime);
+	return time/(long(movesLeft)+incTime);
 
 }
 
