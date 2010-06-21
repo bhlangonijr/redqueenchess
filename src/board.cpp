@@ -33,7 +33,6 @@ NodeZobrist zobrist;
 Board::Board() : currentBoard()
 {
 	setInitialPosition();
-
 }
 
 Board::Board(const Board& board) : currentBoard( Node(board.currentBoard) ) {

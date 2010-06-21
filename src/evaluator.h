@@ -42,10 +42,10 @@ const int BISHOP_TROPISM_BONUS = 3;
 const int ROOK_TROPISM_BONUS = 4;
 const int QUEEN_TROPISM_BONUS = 5;
 
-const int KNIGHT_ATTACK_BONUS = 5;
-const int BISHOP_ATTACK_BONUS = 7;
-const int ROOK_ATTACK_BONUS = 9;
-const int QUEEN_ATTACK_BONUS = 11;
+const int KNIGHT_ATTACK_BONUS = 3;
+const int BISHOP_ATTACK_BONUS = 4;
+const int ROOK_ATTACK_BONUS = 5;
+const int QUEEN_ATTACK_BONUS = 6;
 
 const int bishopPairBonus = 15;
 const int gameSize=35;
@@ -56,8 +56,8 @@ const int maxGamePhase=gameSize*maxPieces;
 const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 325, 325, 500, 975, 10000, 100, 325, 325, 500, 975, 10000, 0};
 
 const int passedPawnBonus[ALL_PIECE_COLOR][ALL_RANK] = {
-		{0,0,0,1,20,50,190,1},
-		{1,190,50,20,1,0,0,0},
+		{0,0,0,1,10,20,50,0},
+		{0,50,20,10,1,0,0,0},
 		{0,0,0,0,0,0,0,0}
 };
 
@@ -591,15 +591,27 @@ inline const int Evaluator::evalImbalances(Board& board, PieceColor color) {
 
 // verify if pawn is passer
 inline const bool Evaluator::isPawnPassed(Board& board, const PieceColor color, const Square from) {
-	const Bitboard pawns = board.getPieceType(board.makePiece(board.flipSide(color),PAWN)) |
-			board.getPieceType(board.makePiece(color,PAWN));
+	const Bitboard pawns = (board.getPiecesByType(WHITE_PAWN) |
+			board.getPiecesByType(BLACK_PAWN)) ^ squareToBitboard[from];
+
+	const Bitboard mask = passedMask[color][from];
+
+	if (!pawns) {
+		return true;
+	}
 
 	if ((color==WHITE && squareRank[from]<RANK_3) ||
 			(color==BLACK && squareRank[from]>RANK_6)) {
 		return false;
 	}
+	/*if (!(mask&pawns)) {
+		board.printBoard();
+		printBitboard(mask);
+		printBitboard(pawns);
+	}
 
-	return !(passedMask[color][from]&pawns);
+*/
+	return !(mask&pawns);
 }
 
 // static exchange evaluation

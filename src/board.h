@@ -638,7 +638,7 @@ inline const bool Board::isDraw() {
 
 	int repetition = 0;
 
-	for (int x=1;x<getMoveCounter();x++) {
+	for (int x=getMoveCounter()-2;x>=1;x-=2) {
 		if (currentBoard.keyHistory[getMoveCounter()]==currentBoard.keyHistory[x]) {
 			repetition++;
 		}

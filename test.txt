@@ -108,3 +108,7 @@ go infinite
 
 ;; must exchange rook-bishop to promote pawn
 
+position startpos moves e2e4 c7c5 c2c3 b8c6 g1f3 d7d5 e4d5 d8d5 d2d4 g7g6 f1e2 c5d4 c3d4 f8g7 b1c3 d5d8 d4d5 c6b8 e1g1 g8f6 c1e3 e8g8 d1b3 b8a6 a1d1 f6g4 e2a6 g4e3 f2e3 b7a6 h2h3 d8d6 f1f2 a8b8 b3c2 c8f5 e3e4 f5d7 c2d3 f8c8 d3e3 d6b6 e3d2 c8c4 e4e5 b6c5 d1e1 e7e6 d5d6 d7c6 d2e3 c5e3 e1e3 c4c5 f3d4 c6d7 d4f3 f7f6 e5f6 g7f6 c3e4 c5c1 g1h2 f6g7 b2b3 h7h6 h2g3 b8b6 f2d2 g8h7 f3d4 g7e5 g3f2 c1c8 e4g5 h6g5 e3e5 b6d6 e5g5 c8c3 g5e5 h7g8 e5e2 d6d5 d4f3 d7b5 d2d5 e6d5 e2d2 b5d3 f2e3 d3e4 e3d4 c3c1 f3g5 e4f5 g2g4 f5d7 d4d5 d7b5 d2f2 c1d1 d5e5 d1e1 e5d4 e1d1 d4e5 d1e1 e5d6 e1d1 d6e6 a6a5 e6f6 d1d6 f6e5 d6d1 a2a4 b5d3 f2f7 a7a6 f7c7 d1e1 e5d4 d3f1 c7c5 e1b1 c5c3 b1e1 h3h4 f1e2 g5e4 e1f1 g4g5 g8f8 e4g3 f1d1 d4c5 e2g4 c5b6 d1d5 b6a6 d5e5 a6b6 g4e6 g3f1 e5d5 f1h2 e6d7 c3e3 d7f5 h2f3 f8g8 b6c6 d5d8 c6b5 d8d5 b5c4 d5d8 f3d4 d8c8 c4d5 f5g4 e3e7 c8a8 e7c7 g4d1 c7c6 g8h7 c6b6 a8a7 d5e5 a7a8 b6b5 a8a6 b5b8 d1g4 b8b7 h7g8 b7c7 g4d1 c7c1 d1h5 c1c8 g8h7 e5f4 a6a7 c8c5 h5d1 c5b5 a7a6 b5b7 h7g8 f4e5 d1g4 b7b8 g8h7 b8b5 g4d1 b5b7 h7g8 e5f4 a6a8 b7b6 g8h7 b6b7 h7g8 b7b5 a8a6 b5b8 g8f7 b8b5 f7g8 b5b8 g8f7 b8c8 a6b6 c8c7 f7e8 c7c3 e8d7 c3d3 d1h5 d4b5 d7e7 b5d4 e7d7 d4b5 d7e7 d3d5 e7e8 f4e5 e8e7 b5d4 b6a6 e5f4 e7e8 d4b5 a6b6 b3b4 a5b4 a4a5 b6b8 a5a6 e8e7 b5d4 b8f8 f4e5 f8e8 a6a7 e8a8 d4c6 e7e8 e5f4 b4b3 d5b5 e8d7 b5b8 d7c6 b8a8 c6b6 a8b8 b6a7 b8b3 a7a6 b3a3 a6b5 a3b3 b5a6 f4e5 h5e2 e5d5 e2d1 b3b2 d1g4 b2a2 a6b6 a2f2 g4h5 f2b2 b6c7 b2f2 c7b6 f2f6 b6b5
+go infinite
+
+
