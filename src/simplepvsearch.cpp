@@ -110,8 +110,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		if (depth >= aspirationDepth)	{ // like in stockfish
 			int delta1 = iterationScore[depth-0]-iterationScore[depth-1];
 			int delta2 = iterationScore[depth-1]-iterationScore[depth-2];
-			int aspirationDelta = MAX((abs(delta1)+abs(delta2))/2, 16);
-			aspirationDelta = (aspirationDelta+7)/8*8;
+			int aspirationDelta = MAX(abs(delta1)+abs(delta2)/2, 16)+7;
 			alpha = MAX(iterationScore[depth]-aspirationDelta,-maxScore);
 			beta  = MIN(iterationScore[depth]+aspirationDelta,+maxScore);
 		}
