@@ -42,20 +42,20 @@ const uint32_t index64[64] = {
 		44, 24, 15,  8, 23,  7,  6,  5
 };
 // return the index of LSB
-inline unsigned int _BitScanForward(unsigned int* const index, const uint64_t mask)
+inline int _BitScanForward(int* const index, const uint64_t mask)
 {
 #if defined(__LP64__)
 	uint64_t ret;
 	asm	("bsfq %[mask], %[ret]" : [ret] "=r" (ret) :[mask] "mr" (mask));
-	*index = (unsigned int)ret;
+	*index = int(ret);
 #else
-	*index = (unsigned int) index64[((mask & -mask) * debruijn64) >> 58];
+	*index = int(index64[((mask & -mask) * debruijn64) >> 58]);
 #endif
 
 	return mask?1:0;
 }
 // return the index of MSB
-inline unsigned int _BitScanReverse(unsigned int* const index, const uint64_t mask)
+inline int _BitScanReverse(int* const index, const uint64_t mask)
 {
 
 #if defined(__LP64__)
@@ -79,25 +79,46 @@ inline unsigned int _BitScanReverse(unsigned int* const index, const uint64_t ma
 	return mask?1:0;
 }
 
-inline uint32_t _BitCount(const uint64_t data)
+inline int _BitCount(const uint64_t data)
 {
-   if (!data) {
-	   return 0;
-   }
-   #if defined(__LP64__)
-      return __builtin_popcountll( data );
-   #else
-      uint64_t x = data;
-      const uint64_t k1 = 0x5555555555555555ULL;
-      const uint64_t k2 = 0x3333333333333333ULL;
-      const uint64_t k4 = 0x0f0f0f0f0f0f0f0fULL;
-      const uint64_t kf = 0x0101010101010101ULL;
-      x =  x       - ((x >> 1)  & k1);
-      x = (x & k2) + ((x >> 2)  & k2);
-      x = (x       +  (x >> 4)) & k4 ;
-      x = (x * kf) >> 56;
-      return (uint32_t) x;
-   #endif
+	if (!data) {
+		return 0;
+	}
+#if defined(__LP64__)
+	return __builtin_popcountll( data );
+#else
+	uint64_t x = data;
+	const uint64_t k1 = 0x5555555555555555ULL;
+	const uint64_t k2 = 0x3333333333333333ULL;
+	const uint64_t k4 = 0x0f0f0f0f0f0f0f0fULL;
+	const uint64_t kf = 0x0101010101010101ULL;
+	x =  x       - ((x >> 1)  & k1);
+	x = (x & k2) + ((x >> 2)  & k2);
+	x = (x       +  (x >> 4)) & k4 ;
+	x = (x * kf) >> 56;
+	return int(x);
+#endif
+}
+
+inline uint32_t _BitCount15(const uint64_t data)
+{
+	if (!data) {
+		return 0;
+	}
+#if defined(__LP64__)
+	return __builtin_popcountll( data );
+#else
+	unsigned w = unsigned(data >> 32);
+	unsigned v = unsigned(data);
+	v -= (v >> 1) & 0x55555555;
+	w -= (w >> 1) & 0x55555555;
+	v = ((v >> 2) & 0x33333333) + (v & 0x33333333);
+	w = ((w >> 2) & 0x33333333) + (w & 0x33333333);
+	v += w;
+	v *= 0x11111111;
+	return  int(v >> 28);
+
+#endif
 }
 
 extern int getNumProcs();

@@ -120,12 +120,12 @@ struct MoveBackup {
 struct Node {
 
 	Node () : key(0ULL), piece(), moveCounter(0), halfMoveCounter(0)
-									{}
+	{}
 
 	Node (const Node& node) : key(node.key), piece( node.piece ), enPassant( node.enPassant ),
 			sideToMove( node.sideToMove ), moveCounter(node.moveCounter),
 			halfMoveCounter(node.halfMoveCounter)
-			{
+	{
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=node.square[x];
 		}
@@ -139,7 +139,7 @@ struct Node {
 		castleDone[WHITE]=node.castleDone[WHITE];
 		castleDone[BLACK]=node.castleDone[BLACK];
 
-			}
+	}
 
 	Key key;
 
@@ -635,6 +635,37 @@ inline const bool Board::isAttackedBy(const Square from, const Square to) {
 
 // verify draw by 50th move rule, 3 fold rep and insuficient material
 inline const bool Board::isDraw() {
+
+	const Bitboard pawns = this->getPiecesByType(WHITE_PAWN) |
+			this->getPiecesByType(BLACK_PAWN);
+
+	if (!pawns) {
+
+		const Bitboard allPieces = getAllPieces();
+
+		const Bitboard pieces = this->getPiecesByType(WHITE_KNIGHT) |
+				this->getPiecesByType(BLACK_KNIGHT) |
+				this->getPiecesByType(WHITE_BISHOP) |
+				this->getPiecesByType(BLACK_BISHOP);
+
+		const Bitboard kings = this->getPiecesByType(WHITE_KING) |
+				this->getPiecesByType(BLACK_KING);
+
+		if (!((pieces|kings)^allPieces)) {
+
+			Bitboard whiteMaterial = _BitCount15(this->getPiecesByType(WHITE_BISHOP) |
+					this->getPiecesByType(WHITE_KNIGHT));
+
+			Bitboard blackMaterial = _BitCount15(this->getPiecesByType(BLACK_BISHOP) |
+					this->getPiecesByType(BLACK_KNIGHT));
+
+			if (whiteMaterial < 2 and blackMaterial < 2) {
+				return true;
+			}
+
+		}
+
+	}
 
 	int repetition = 0;
 

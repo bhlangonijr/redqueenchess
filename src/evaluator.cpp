@@ -46,15 +46,9 @@ const Evaluator::GamePhase Evaluator::getGameStage() {
 
 const Evaluator::GamePhase Evaluator::predictGameStage(Board& board) {
 
-	int moveCounter = board.getMoveCounter();
-
-	if (moveCounter>=gameSize) {
-		return ENDGAME;
-	}
-
 	int piecesOnBoard =_BitCount(board.getAllPieces());
 
-	return Evaluator::GamePhase((maxPieces-piecesOnBoard)*moveCounter);
+	return Evaluator::GamePhase((maxPieces-piecesOnBoard));
 }
 
 

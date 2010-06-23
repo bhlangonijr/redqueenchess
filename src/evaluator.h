@@ -48,9 +48,7 @@ const int ROOK_ATTACK_BONUS = 5;
 const int QUEEN_ATTACK_BONUS = 6;
 
 const int bishopPairBonus = 15;
-const int gameSize=35;
 const int maxPieces=32;
-const int maxGamePhase=gameSize*maxPieces;
 
 // default material values
 const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 325, 325, 500, 975, 10000, 100, 325, 325, 500, 975, 10000, 0};
@@ -337,7 +335,7 @@ class Evaluator {
 public:
 
 	enum GamePhase {
-		OPENING=int(maxGamePhase*0.3), MIDDLEGAME=int(maxGamePhase*0.6), ENDGAME=int(maxGamePhase*0.6+1)
+		OPENING=int(maxPieces*0.3), MIDDLEGAME=int(maxPieces*0.6), ENDGAME=int(maxPieces*0.6+1)
 	};
 
 	Evaluator();
@@ -356,12 +354,7 @@ public:
 	const int see(Board& board, MoveIterator::Move& move);
 
 	inline const int interpolate(const int first, const int second, const int position) {
-
-		if (position > gameSize) {
-			return second;
-		}
-
-		return (first*position)/maxGamePhase+(second*(maxGamePhase-position)/maxGamePhase);
+		return (first*position)/maxPieces+(second*(maxPieces-position)/maxPieces);
 
 	}
 

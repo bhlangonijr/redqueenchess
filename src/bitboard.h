@@ -436,7 +436,7 @@ inline Square bitboardToSquare(const Bitboard& bitboard) {
 	if (!bitboard) {
 		return Square(NONE);
 	}
-	unsigned int square = 0;
+	int square=0;
 
 	if (!_BitScanForward(&square, bitboard)) {
 		return Square(NONE);
@@ -449,8 +449,8 @@ inline Square bitboardToSquare(const Bitboard& bitboard) {
 // get slider attacks based on the attacks mask and occupance
 inline Bitboard getSliderAttacks(const Bitboard& attacks, const Bitboard& mask, const Square start)
 {
-	unsigned int minor=A1;
-	unsigned int major=H8;
+	int minor=A1;
+	int major=H8;
 
 	const Bitboard occ= mask & attacks;
 
@@ -479,7 +479,7 @@ inline Square extractLSB(Bitboard& bitboard) {
 	if (!bitboard) {
 		return Square(NONE);
 	}
-	unsigned int square = 0;
+	int square=0;
 
 	if (!_BitScanForward(&square, bitboard)) {
 		return Square(NONE);

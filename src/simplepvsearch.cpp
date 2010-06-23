@@ -481,7 +481,7 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 		const int reduction = 3 + (depth > 4 ? depth/4 : 0);
 		MoveBackup backup;
 		board.doNullMove(backup);
-		score = -zwSearch(board, 1-beta, depth-reduction, ply+1, &line, false); // TODO ply+1 ?
+		score = -zwSearch(board, 1-beta, depth-reduction, ply+1, &line, false);
 		board.undoNullMove(backup);
 
 		if (stop(agent->shouldStop())) {
