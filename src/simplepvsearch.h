@@ -42,16 +42,15 @@
 // game constants
 const int maxScoreRepetition = 4;
 const int mateRangeScore = 300;
-const int maxScore = 20000;
 const int maxSearchDepth = 80;
 const int maxSearchPly = 100;
 
 // internal iterative deepening
-const int allowIIDAtPV = 5;
-const int allowIIDAtNormal = 9;
+const int allowIIDAtPV = 7;
+const int allowIIDAtNormal = 11;
 
 // margin constants
-#define futilityMargin(depth) (300 + depth * 100)
+#define futilityMargin(depth) (50 + depth * 250)
 const int deltaMargin=950;
 const int razorMargin=450;
 const int nullMoveMargin=450;
@@ -72,7 +71,7 @@ const int prunningNonPvMoves=2;
 
 //reduction constants
 const int pvReduction=1;
-const int nonPvReduction=1;
+const int nonPvReduction=2;
 
 //score table & history bonus
 const int historyBonus=100;

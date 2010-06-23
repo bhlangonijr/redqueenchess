@@ -33,20 +33,21 @@
 #include "inline.h"
 #include "board.h"
 
-const int KNIGHT_MOBILITY_BONUS = 6;
-const int BISHOP_MOBILITY_BONUS = 4;
-const int ROOK_MOBILITY_BONUS = 2;
+const int KNIGHT_MOBILITY_BONUS = 4;
+const int BISHOP_MOBILITY_BONUS = 2;
+const int ROOK_MOBILITY_BONUS = 1;
 
-const int KNIGHT_TROPISM_BONUS = 2;
-const int BISHOP_TROPISM_BONUS = 3;
-const int ROOK_TROPISM_BONUS = 4;
-const int QUEEN_TROPISM_BONUS = 5;
+const int KNIGHT_TROPISM_BONUS = 1;
+const int BISHOP_TROPISM_BONUS = 1;
+const int ROOK_TROPISM_BONUS = 2;
+const int QUEEN_TROPISM_BONUS = 3;
 
-const int KNIGHT_ATTACK_BONUS = 3;
-const int BISHOP_ATTACK_BONUS = 4;
-const int ROOK_ATTACK_BONUS = 5;
-const int QUEEN_ATTACK_BONUS = 6;
+const int KNIGHT_ATTACK_BONUS = 2;
+const int BISHOP_ATTACK_BONUS = 2;
+const int ROOK_ATTACK_BONUS = 3;
+const int QUEEN_ATTACK_BONUS = 5;
 
+const int maxScore = 20000;
 const int bishopPairBonus = 15;
 const int maxPieces=32;
 
@@ -68,8 +69,8 @@ const int defaultPieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 				5, -5,-10,  0,  0, -10, -5, 5,
 				0,  -5,-10, 20, 20, -10,-5,  0,
 				0,  0, 0, 5, 	5, 0,  0,  0,
-				0,  0,  0,  0,  0,  0,  0,  0,
-				5,  5,  5,  5,  5,  5,  5,  5,
+				10, 10, 10, 10, 10, 10, 10, 10,
+				50, 50, 50, 50, 50,  50, 50, 50,
 				0,  0,  0,  0,  0,  0,  0,  0,
 		},
 		{//white knight
@@ -124,8 +125,8 @@ const int defaultPieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 		},
 		{//black pawn
 				0,  0,  0,  0,  0,  0,  0,  0,
-				5,  5,  5,  5,  5,  5,  5,  5,
-				0,  0,  0,  0,  0,  0,  0,  0,
+				50, 50, 50, 50, 50,  50, 50, 50,
+				10, 10, 10, 10, 10, 10, 10, 10,
 				0,  0, 0,  5,  5, 0,  0,  0,
 				0, -5,-10, 20, 20, -10, -5,  0,
 				5, -5,-10,  0,  0,-10, -5,  5,
@@ -204,8 +205,8 @@ const int endGamePieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 				1, -1, -1,  0,  0, -1, -1,  1,
 				0,  5,  5, 10, 10,  5,  5,  0,
 				5,  5, 10, 15, 15, 10,  5,  5,
-				10, 10, 10, 20, 20, 10, 10, 10,
-				11, 15, 15, 25, 25, 15, 15, 11,
+				25, 25, 25, 25, 25, 25, 25, 25,
+				50, 50, 50, 50, 50,  50, 50,50,
 				0,  0,  0,  0,  0,  0,  0,  0,
 		},
 		{//white knight
@@ -260,8 +261,8 @@ const int endGamePieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 		},
 		{//black pawn
 				0,  0,  0,  0,  0,  0,  0,  0,
-				11, 15, 15, 25, 25, 15, 15, 11,
-				10, 10, 10, 20, 20, 10, 10, 10,
+				50, 50, 50, 50, 50,  50, 50,50,
+				25, 25, 25, 25, 25, 25, 25, 25,
 				5,  5, 10, 15, 15, 10,  5,  5,
 				0,  5,  5, 10, 10,  5,  5,  0,
 				1, -1, -1,  0,  0,-1, -1,  1,
@@ -389,7 +390,15 @@ inline const int Evaluator::evaluate(Board& board) {
 	int imbalances = evalImbalances(board, side) - evalImbalances(board, other);
 	int mobility = evalMobility(board, side) - evalMobility(board, other);
 
-	return material+mobility+pieces+development+imbalances;
+	int value = material+mobility+pieces+development+imbalances;
+
+	if (value>maxScore) {
+		value=maxScore;
+	} else if (value<-maxScore) {
+		value=-maxScore;
+	}
+
+	return value;
 }
 
 // quick eval function

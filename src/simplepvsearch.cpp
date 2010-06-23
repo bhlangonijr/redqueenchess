@@ -37,6 +37,7 @@ void SimplePVSearch::search(Board& _board) {
 	Board board(_board);
 	stats.clear();
 	clearHistory();
+	evaluator.setGameStage(evaluator.predictGameStage(board));
 	_startTime = getTickCount();
 	timeToStop = clock() + toClock(_timeToSearch);
 	_score = idSearch(board);
@@ -283,7 +284,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 
 	PvLine line = PvLine();
 	const int oldAlpha = alpha;
-	int score = 0;
+	int score = -maxScore;
 	SearchAgent::HashData hashData;
 
 	_nodes++;
@@ -481,7 +482,7 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 		const int reduction = 3 + (depth > 4 ? depth/4 : 0);
 		MoveBackup backup;
 		board.doNullMove(backup);
-		score = -zwSearch(board, 1-beta, depth-reduction, ply+1, &line, false);
+		score = -zwSearch(board, 1-beta, depth-reduction, ply, &line, false);
 		board.undoNullMove(backup);
 
 		if (stop(agent->shouldStop())) {
@@ -538,9 +539,13 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 
 		const bool givingCheck = isGivenCheck(board,move.to);
 		//futility
-		if (depth < futilityDepth && !isKingAttacked && !isMateScore(beta) &&
-				move.type == MoveIterator::NON_CAPTURE && move != hashData.move &&
-				!givingCheck && !isPawnPush(board,move)) {
+		if (depth < futilityDepth && !isKingAttacked &&
+				!isMateScore(beta) && move != hashData.move &&
+				!givingCheck && !isPawnPush(board,move) &&
+				moveCounter>1 &&
+				(move.type == MoveIterator::NON_CAPTURE ||
+						(move.type == MoveIterator::BAD_CAPTURE &&
+								evaluator.see(board,move)<0) )) {
 
 			const int gain = evaluator.getPieceSquareValue(board.getPieceBySquare(move.from),move.to)-
 					evaluator.getPieceSquareValue(board.getPieceBySquare(move.from),move.from);
@@ -618,12 +623,6 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 		return beta;
 	}
 
-	const int delta =  deltaMargin + (isPawnPromoting(board) ? deltaMargin : 0);
-
-	if (standPat < alpha-delta) {
-		return alpha;
-	}
-
 	if	(ply >= maxSearchPly) {
 		return standPat;
 	}
@@ -633,8 +632,9 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 	}
 
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
+
 	int moveCounter=0;
-	bool pvNode = (beta - alpha != 1);
+	bool pvNode = bool(beta - alpha != 1);
 	PvLine line = PvLine();
 	MoveIterator moves = MoveIterator();
 
