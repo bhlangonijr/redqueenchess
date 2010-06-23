@@ -496,7 +496,7 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 
 	//iid
 	if (depth > allowIIDAtNormal &&	hashData.move.from == NONE &&
-			!isKingAttacked && eval >= beta-iidMargin) {
+			!isKingAttacked && eval >= beta-iidMargin && !nullMoveMateScore) {
 		const int iidSearchDepth = depth/2;
 		score = zwSearch(board,beta,iidSearchDepth,ply,&line,false);
 		agent->hashGet(board.getKey(), hashData, ply, maxScore);

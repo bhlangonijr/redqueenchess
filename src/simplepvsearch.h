@@ -566,7 +566,7 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 	extension=0;
 	reduction=0;
 
-	if (isKingAttacked) {
+	if (isKingAttacked || nullMoveMateScore) {
 		extension=1;
 		return false;
 	}
