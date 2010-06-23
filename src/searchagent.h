@@ -52,7 +52,10 @@ const int timeTable [7][3] = {
 		{17, 1000, 0}
 };
 
+class SimplePVSearch;
+
 class SearchAgent {
+
 public:
 	enum SearchMode {
 		SEARCH_TIME, SEARCH_DEPTH, SEARCH_MOVESTOGO, SEARCH_MOVETIME, SEARCH_MOVES, SEARCH_INFINITE
@@ -75,13 +78,14 @@ public:
 	};
 
 	static SearchAgent* getInstance();
+
 	void newGame();
 
 	const Board getBoard() const;
 	void setBoard(Board _board);
 
 	const bool shouldStop() const {
-		return !searchInProgress || requestStop;
+		return requestStop;
 	}
 
 	const bool getSearchInProgress() const {
@@ -257,7 +261,9 @@ public:
 protected:
 
 	SearchAgent();
+
 	SearchAgent(const SearchAgent&);
+
 	SearchAgent& operator= (const SearchAgent&);
 
 private:

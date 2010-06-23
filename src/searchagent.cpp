@@ -38,12 +38,14 @@ SearchAgent* SearchAgent::getInstance ()
 	return searchAgent;
 }
 
+SimplePVSearch simpleSearcher;
+
 SearchAgent::SearchAgent() :
-					searchMode(SEARCH_TIME), searchInProgress(false), requestStop(false),
-					hashSize(defaultHashSize),	threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
-					blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), infinite(false)	{
+							searchMode(SEARCH_TIME), searchInProgress(false), requestStop(false),
+							hashSize(defaultHashSize),	threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
+							blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), infinite(false) {
 	// creates initial hashtables
-	createHash();
+	this->createHash();
 }
 
 // start a new game
@@ -101,8 +103,6 @@ void* SearchAgent::startThreadSearch() {
 
 	setSearchInProgress(true);
 
-	SimplePVSearch simpleSearcher(board);
-
 	if (this->getSearchMode()==SearchAgent::SEARCH_DEPTH) {
 		simpleSearcher.setSearchFixedDepth(true);
 		simpleSearcher.setDepth(this->getDepth());
@@ -118,7 +118,7 @@ void* SearchAgent::startThreadSearch() {
 		simpleSearcher.setDepth(defaultDepth);
 	}
 
-	simpleSearcher.search();
+	simpleSearcher.search(board);
 
 	setSearchInProgress(false);
 	setRequestStop(false);
@@ -151,15 +151,18 @@ void SearchAgent::doPerft() {
 	}
 
 	std::cout << "info Executing perft..." << std::endl;
-	SimplePVSearch simplePV(board);
+	Board newBoard(board);
+	SimplePVSearch simplePV;
 	long nodes = simplePV.perft(board,this->getDepth(),1);
 	std::cout << "info Finished perft: " << nodes << std::endl;
 
 }
 
-// (brute) stop search
+// stop search
 void SearchAgent::stopSearch() {
-	setRequestStop(true);
+	if (getSearchInProgress()) {
+		setRequestStop(true);
+	}
 }
 
 const long SearchAgent::getTimeToSearch() {

@@ -72,11 +72,15 @@ const int prunningNonPvMoves=2;
 
 //reduction constants
 const int pvReduction=1;
-const int nonPvReduction=2;
+const int nonPvReduction=1;
 
 //score table & history bonus
 const int historyBonus=100;
 const int scoreTable[11]={0,8000,5000,9500,9000,5000,4500,4000,100,-900,5000};
+
+class SearchAgent;
+
+class MoveIterator;
 
 class SimplePVSearch {
 
@@ -144,18 +148,14 @@ public:
 
 	} SearchStats;
 
-	void operator()() {
-		this->search();
-	}
-
-	SimplePVSearch(Board& board) :   _board(board), _depth(maxSearchDepth), _updateUci(true), _startTime(0), _searchFixedDepth(true), _infinite(false) {}
-	SimplePVSearch(Board& board, int depth ) : _board(board), _depth(depth), _updateUci(true), _timeToSearch(0), _startTime(0), _searchFixedDepth(true), _infinite(false) {}
-	SimplePVSearch(Board& board, long timeToSearch, int depth) : _board(board), _depth(depth), _updateUci(true), _timeToSearch(timeToSearch), _startTime(0), _searchFixedDepth(false), _infinite(false) {}
-	SimplePVSearch(Board& board, bool infinite ) : _board(board), _depth(maxSearchDepth), _updateUci(true), _timeToSearch(0), _startTime(0), _searchFixedDepth(true), _infinite(true) {}
+	SimplePVSearch() : _depth(maxSearchDepth), _updateUci(true), _startTime(0), _searchFixedDepth(true), _infinite(false) {}
 
 	virtual ~SimplePVSearch() {}
-	virtual void search();
+
+	virtual void search(Board& _board);
+
 	virtual long perft(Board& board, int depth, int ply);
+
 	virtual int getScore();
 
 	inline const long getTickCount() {
@@ -215,7 +215,7 @@ public:
 	}
 
 private:
-	Board& _board;
+
 	int _depth;
 	int _score;
 	bool _updateUci;
@@ -232,6 +232,8 @@ private:
 	long nodesPerMove[MOVE_LIST_MAX_SIZE];
 	int history[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 	Evaluator evaluator;
+	SearchAgent* agent;
+	MoveIterator::Move emptyMove;
 
 	int idSearch(Board& board);
 	int rootSearch(Board& board, int alpha, int beta, int depth, int ply, PvLine* pv);

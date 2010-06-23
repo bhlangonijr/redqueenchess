@@ -581,8 +581,6 @@ inline const int Evaluator::evalImbalances(Board& board, PieceColor color) {
 
 	if ((bishop & WHITE_SQUARES) && (bishop & BLACK_SQUARES)) {
 		count += bishopPairBonus;
-	} else {
-		count -= bishopPairBonus;
 	}
 
 	// TODO implement more imbalances
@@ -604,13 +602,7 @@ inline const bool Evaluator::isPawnPassed(Board& board, const PieceColor color, 
 			(color==BLACK && squareRank[from]>RANK_6)) {
 		return false;
 	}
-	/*if (!(mask&pawns)) {
-		board.printBoard();
-		printBitboard(mask);
-		printBitboard(pawns);
-	}
 
-*/
 	return !(mask&pawns);
 }
 
