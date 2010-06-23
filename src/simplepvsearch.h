@@ -46,12 +46,11 @@ const int maxSearchDepth = 80;
 const int maxSearchPly = 100;
 
 // internal iterative deepening
-const int allowIIDAtPV = 7;
-const int allowIIDAtNormal = 11;
+const int allowIIDAtPV = 5;
+const int allowIIDAtNormal = 9;
 
 // margin constants
-#define futilityMargin(depth) (50 + depth * 250)
-const int deltaMargin=950;
+#define futilityMargin(depth) (300 + depth * 150)
 const int razorMargin=450;
 const int nullMoveMargin=450;
 const int iidMargin=250;
@@ -59,7 +58,6 @@ const int easyMargin=500;
 
 //depth prunning threshold
 const int aspirationDepth=6;
-const int nullMoveDepth=2;
 const int futilityDepth=4;
 const int razorDepth=4;
 const int prunningPvDepth=2;
@@ -71,7 +69,7 @@ const int prunningNonPvMoves=2;
 
 //reduction constants
 const int pvReduction=1;
-const int nonPvReduction=2;
+const int nonPvReduction=1;
 
 //score table & history bonus
 const int historyBonus=100;

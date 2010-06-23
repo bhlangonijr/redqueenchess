@@ -637,7 +637,7 @@ inline const bool Board::isAttackedBy(const Square from, const Square to) {
 inline const bool Board::isDraw() {
 
 	for (int x=4;x<=getHalfMoveCounter();x+=2) {
-		if (currentBoard.keyHistory[getMoveCounter()-x]==currentBoard.keyHistory[getMoveCounter()]) {
+		if (currentBoard.keyHistory[getMoveCounter()-x]==this->getKey()) {
 			return true;
 		}
 	}

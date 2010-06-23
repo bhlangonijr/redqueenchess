@@ -376,7 +376,7 @@ const Bitboard lowerMaskBitboard[ALL_SQUARE]={
 #define NFILE(X) ((squareFile[X]!=FILE_H ? fileBB[squareFile[X]+1] : EMPTY_BB) | \
 		(squareFile[X]!=FILE_A ? fileBB[squareFile[X]-1] : EMPTY_BB))
 
-#define FSQUARE(COLOR,BB,X) BB&(COLOR==WHITE?upperMaskBitboard[X]:lowerMaskBitboard[X])&~(rankBB[squareRank[X]])
+#define FSQUARE(COLOR,BB,X) (BB&(COLOR==WHITE?upperMaskBitboard[X]:lowerMaskBitboard[X]))&~(rankBB[squareRank[X]])
 
 #define PASSEDMASK(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]] | neighborFiles[X]), X))
 

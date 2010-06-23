@@ -285,11 +285,11 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 		}
 	}
 
-	increaseMoveCounter();
-	updateKeyHistory();
-
 	setKey(getKey()^zobrist.sideToMove);
 	setSideToMove(otherSide);
+
+	increaseMoveCounter();
+	updateKeyHistory();
 
 }
 
@@ -306,18 +306,19 @@ void Board::doNullMove(MoveBackup& backup){
 	backup.hasWhiteQueenCastle=false;
 	backup.hasBlackKingCastle=false;
 	backup.hasBlackQueenCastle=false;
+	backup.halfMoveCounter =  getHalfMoveCounter();
+	increaseHalfMoveCounter(); //TODO verify this
 
 	if (getEnPassant()!=NONE) {
 		setKey(getKey()^zobrist.enPassant[getSquareFile(getEnPassant())]);
 		setEnPassant(NONE);
 	}
 
-	increaseMoveCounter();
-	updateKeyHistory();
-
 	setKey(getKey()^zobrist.sideToMove);
 	setSideToMove(otherSide);
 
+	increaseMoveCounter();
+	updateKeyHistory();
 
 }
 
@@ -367,6 +368,7 @@ void Board::undoNullMove(MoveBackup& backup){
 	setCastleRights(WHITE, backup.whiteCastleRight);
 	setCastleRights(BLACK, backup.blackCastleRight);
 	setEnPassant(backup.enPassant);
+	currentBoard.halfMoveCounter = backup.halfMoveCounter;
 	decreaseMoveCounter();
 	setSideToMove(sideToMove);
 	setKey(backup.key);

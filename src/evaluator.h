@@ -336,7 +336,7 @@ class Evaluator {
 public:
 
 	enum GamePhase {
-		OPENING=int(maxPieces*0.3), MIDDLEGAME=int(maxPieces*0.6), ENDGAME=int(maxPieces*0.6+1)
+		OPENING=int(maxPieces*0.3), MIDDLEGAME=int(maxPieces*0.8), ENDGAME=int(maxPieces*0.8+1)
 	};
 
 	Evaluator();
@@ -356,7 +356,6 @@ public:
 
 	inline const int interpolate(const int first, const int second, const int position) {
 		return (first*position)/maxPieces+(second*(maxPieces-position)/maxPieces);
-
 	}
 
 	inline const int getPieceMaterialValue(const PieceTypeByColor piece) {
@@ -592,7 +591,7 @@ inline const int Evaluator::evalImbalances(Board& board, PieceColor color) {
 // verify if pawn is passer
 inline const bool Evaluator::isPawnPassed(Board& board, const PieceColor color, const Square from) {
 	const Bitboard pawns = (board.getPiecesByType(WHITE_PAWN) |
-			board.getPiecesByType(BLACK_PAWN)) ^ squareToBitboard[from];
+			board.getPiecesByType(BLACK_PAWN));
 
 	const Bitboard mask = passedMask[color][from];
 

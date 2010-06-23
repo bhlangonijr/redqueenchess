@@ -79,8 +79,7 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		score = rootSearch(board, alpha, beta, depth, 0, &pv);
 
-		if((score <= alpha || score >= beta) ||
-				(abs(alpha)>maxScore || abs(beta)>maxScore)) {
+		if(score <= alpha || score >= beta) {
 			alpha=-maxScore;
 			beta=maxScore;
 			score = rootSearch(board, alpha, beta, depth, 0, &pv);
@@ -288,7 +287,7 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 	SearchAgent::HashData hashData;
 
 	_nodes++;
-	if	(board.isDraw()) {
+	if	(board.isDraw() || ply >= maxSearchPly) {
 		return 0;
 	}
 
@@ -297,10 +296,6 @@ int SimplePVSearch::pvSearch(Board& board, int alpha, int beta,	int depth, int p
 
 	if (alpha>=beta) {
 		return alpha;
-	}
-
-	if	(ply >= maxSearchPly) {
-		return evaluator.evaluate(board);
 	}
 
 	//tt retrieve
@@ -414,20 +409,16 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 
 	_nodes++;
 
-	if	(board.isDraw()) {
+	if	(board.isDraw() || ply >= maxSearchPly) {
 		return 0;
 	}
 
-	if (beta < -maxScore+ply) {
+	if (-maxScore+ply >= beta) {
 		return beta;
 	}
 
-	if (beta > maxScore-(ply+1)) {
+	if (maxScore-(ply+1) < beta) {
 		return beta-1;
-	}
-
-	if	(ply >= maxSearchPly) {
-		return evaluator.evaluate(board);
 	}
 
 	PvLine line = PvLine();
@@ -452,7 +443,7 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 	int eval = beta;
 
 	if (!isKingAttacked) {
-		eval=evaluator.quickEvaluate(board);
+		eval=evaluator.evaluate(board);
 	}
 
 	//razoring
@@ -482,7 +473,7 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 		const int reduction = 3 + (depth > 4 ? depth/4 : 0);
 		MoveBackup backup;
 		board.doNullMove(backup);
-		score = -zwSearch(board, 1-beta, depth-reduction, ply, &line, false);
+		score = -zwSearch(board, 1-beta, depth-reduction, ply+1, &line, false);
 		board.undoNullMove(backup);
 
 		if (stop(agent->shouldStop())) {
@@ -542,7 +533,6 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 		if (depth < futilityDepth && !isKingAttacked &&
 				!isMateScore(beta) && move != hashData.move &&
 				!givingCheck && !isPawnPush(board,move) &&
-				moveCounter>1 &&
 				(move.type == MoveIterator::NON_CAPTURE ||
 						(move.type == MoveIterator::BAD_CAPTURE &&
 								evaluator.see(board,move)<0) )) {
@@ -596,6 +586,10 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 
 	if (!moveCounter) {
 		return isKingAttacked ? -maxScore+ply : 0;
+	}
+
+	if (bestScore==-maxScore) {
+		bestScore=beta-1;
 	}
 
 	agent->hashPut(board,bestScore,depth,ply,maxScore,SearchAgent::UPPER,emptyMove);

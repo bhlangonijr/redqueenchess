@@ -212,9 +212,9 @@ public:
 
 	inline bool hashPut(const Board& board, int value, const int& depth, const int ply, const int maxScore, const NodeFlag& flag, const MoveIterator::Move& move) {
 
-		if (value >= maxScore) {
+		if (value >= maxScore-100) {
 			value -= ply;
-		} else if (value <= -maxScore) {
+		} else if (value <= -maxScore+100) {
 			value += ply;
 		}
 
@@ -225,9 +225,9 @@ public:
 	inline bool hashGet(const Key _key, HashData& hashData, const int ply, const int maxScore) {
 
 		bool result = transTable->hashGet(_key, hashData);
-		if (hashData.value >= maxScore) {
+		if (hashData.value >= maxScore-100) {
 			hashData.value -= ply;
-		} else if (hashData.value <= -maxScore) {
+		} else if (hashData.value <= -maxScore+100) {
 			hashData.value += ply;
 		}
 
