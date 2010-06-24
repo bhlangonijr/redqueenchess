@@ -285,8 +285,8 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 		}
 	}
 
-	setKey(getKey()^zobrist.sideToMove);
 	setSideToMove(otherSide);
+	setKey(getKey()^zobrist.sideToMove[otherSide]);
 
 	increaseMoveCounter();
 	updateKeyHistory();
@@ -307,15 +307,15 @@ void Board::doNullMove(MoveBackup& backup){
 	backup.hasBlackKingCastle=false;
 	backup.hasBlackQueenCastle=false;
 	backup.halfMoveCounter =  getHalfMoveCounter();
-	increaseHalfMoveCounter(); //TODO verify this
+	resetHalfMoveCounter(); //TODO verify this
 
 	if (getEnPassant()!=NONE) {
 		setKey(getKey()^zobrist.enPassant[getSquareFile(getEnPassant())]);
 		setEnPassant(NONE);
 	}
 
-	setKey(getKey()^zobrist.sideToMove);
 	setSideToMove(otherSide);
+	setKey(getKey()^zobrist.sideToMove[getSideToMove()]);
 
 	increaseMoveCounter();
 	updateKeyHistory();
@@ -587,7 +587,9 @@ void Board::initializeZobrist() {
 			zobrist.pieceSquare[piece][square]=genrand_int64();
 		}
 	}
-	zobrist.sideToMove=genrand_int64();
+	zobrist.sideToMove[WHITE]=genrand_int64();
+	zobrist.sideToMove[BLACK]=genrand_int64();
+	zobrist.sideToMove[COLOR_NONE]=0x0;
 	for(int file=0; file<ALL_FILE; file++) {
 		zobrist.enPassant[file]=genrand_int64();
 	}
@@ -626,9 +628,7 @@ const Key Board::generateKey() {
 	if (currentBoard.enPassant != NONE) {
 		key ^= zobrist.enPassant[getSquareFile(currentBoard.enPassant)];
 	}
-	if (getSideToMove()==BLACK) {
-		key ^= zobrist.sideToMove;
-	}
+	key ^= zobrist.sideToMove[getSideToMove()];
 
 	return key;
 }

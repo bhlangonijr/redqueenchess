@@ -209,7 +209,7 @@ struct NodeZobrist {
 	Key pieceSquare[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 	Key castleRight[ALL_CASTLE_RIGHT*ALL_CASTLE_RIGHT];
 	Key enPassant[ALL_FILE];
-	Key sideToMove;
+	Key sideToMove[ALL_PIECE_COLOR];
 
 };
 
@@ -635,6 +635,7 @@ inline const bool Board::isAttackedBy(const Square from, const Square to) {
 
 // verify draw by 50th move rule, 3 fold rep and insuficient material
 inline const bool Board::isDraw() {
+
 
 	for (int x=4;x<=getHalfMoveCounter();x+=2) {
 		if (currentBoard.keyHistory[getMoveCounter()-x]==this->getKey()) {

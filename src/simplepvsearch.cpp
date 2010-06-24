@@ -607,7 +607,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 		return 0;
 	}
 
-	if	(board.isDraw()) {
+	if	(board.isDraw() || ply >= maxSearchPly) {
 		return 0;
 	}
 
@@ -615,10 +615,6 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 
 	if(standPat>=beta) {
 		return beta;
-	}
-
-	if	(ply >= maxSearchPly) {
-		return standPat;
 	}
 
 	if( alpha < standPat) {
@@ -649,6 +645,7 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 		}
 
 		moveCounter++;
+
 		if (!isKingAttacked && !pvNode && depth < 0 &&
 				move.type!=MoveIterator::PROMO_CAPTURE &&
 				move.type!=MoveIterator::PROMO_NONCAPTURE &&
