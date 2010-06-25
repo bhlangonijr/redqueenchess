@@ -50,8 +50,8 @@ const int allowIIDAtPV = 5;
 const int allowIIDAtNormal = 9;
 
 // margin constants
-#define futilityMargin(depth) (400 + depth * 150)
-const int razorMargin=450;
+#define futilityMargin(depth) (300 + depth * 150)
+#define razorMargin(depth) (250 + depth * 150)
 const int nullMoveMargin=450;
 const int iidMargin=250;
 const int easyMargin=500;
@@ -491,7 +491,6 @@ inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move,
 			(move!=killer2) &&
 			(!isKingAttacked) &&
 			(!isGivingCheck) &&
-			(!isPawnPush(board,move)) &&
 			(!isPawnPromoting(board)) &&
 			(!nullMoveMateScore)
 	);
@@ -545,8 +544,8 @@ inline bool SimplePVSearch::isPawnPush(Board& board, MoveIterator::Move& move) {
 					(color==BLACK && squareRank[move.to]<=RANK_4))) {
 		return true;
 	}
-	return ((color==WHITE && squareRank[move.to]==RANK_7) ||
-			(color==BLACK && squareRank[move.to]==RANK_2));
+	return ((color==WHITE && squareRank[move.to]>=RANK_6) ||
+			(color==BLACK && squareRank[move.to]<=RANK_3));
 
 }
 
@@ -566,7 +565,7 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 	extension=0;
 	reduction=0;
 
-	if (isKingAttacked || nullMoveMateScore) {
+	if (isKingAttacked || isPawnPush(board,move) || nullMoveMateScore) {
 		extension=1;
 		return false;
 	}

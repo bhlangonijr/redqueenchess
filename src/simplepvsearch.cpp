@@ -440,7 +440,7 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 	}
 
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
-	int eval = beta;
+	int eval = -maxScore;
 
 	if (!isKingAttacked) {
 		eval=evaluator.evaluate(board);
@@ -449,11 +449,10 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 	//razoring
 	if (depth < razorDepth && hashData.move.from == NONE &&
 			!isKingAttacked && !isMateScore(beta) &&
-			!isPawnPromoting(board) &&
-			eval < beta - (razorMargin+16*depth)) {
-		const int newBeta = beta - (razorMargin+16*depth);
-		score = qSearch(board, newBeta-1, newBeta, 0, ply, pv);
-		if (score < newBeta) {
+			!isPawnPromoting(board) && allowNullMove &&
+			beta > eval + (razorMargin(depth)) ) {
+		score = qSearch(board, beta-1, beta, 0, ply, pv);
+		if (score < beta) {
 			return score;
 		}
 	}
@@ -480,10 +479,11 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 			return 0;
 		}
 
+		if (score < -maxScore+maxSearchPly) {
+			nullMoveMateScore=true;
+		}
+
 		if (score >= beta) {
-			if (score < -maxScore+maxSearchPly) {
-				nullMoveMateScore=true;
-			}
 			if (score >= maxScore-maxSearchPly) {
 				score = beta;
 			}
@@ -636,7 +636,6 @@ int SimplePVSearch::qSearch(Board& board, int alpha, int beta, int depth, int pl
 		}
 
 		MoveBackup backup;
-
 		board.doMove(move,backup);
 
 		if (board.isNotLegal()) {

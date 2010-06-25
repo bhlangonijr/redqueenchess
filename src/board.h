@@ -120,12 +120,12 @@ struct MoveBackup {
 struct Node {
 
 	Node () : key(0ULL), piece(), moveCounter(0), halfMoveCounter(0)
-							{}
+	{}
 
 	Node (const Node& node) : key(node.key), piece( node.piece ), enPassant( node.enPassant ),
 			sideToMove( node.sideToMove ), moveCounter(node.moveCounter),
 			halfMoveCounter(node.halfMoveCounter)
-			{
+	{
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=node.square[x];
 		}
@@ -139,7 +139,7 @@ struct Node {
 		castleDone[WHITE]=node.castleDone[WHITE];
 		castleDone[BLACK]=node.castleDone[BLACK];
 
-			}
+	}
 
 	Key key;
 
@@ -635,7 +635,6 @@ inline const bool Board::isAttackedBy(const Square from, const Square to) {
 
 // verify draw by 50th move rule, 3 fold rep and insuficient material
 inline const bool Board::isDraw() {
-
 
 	for (int x=4;x<=getHalfMoveCounter();x+=2) {
 		if (currentBoard.keyHistory[getMoveCounter()-x]==this->getKey()) {
