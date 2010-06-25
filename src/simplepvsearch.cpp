@@ -52,7 +52,6 @@ int SimplePVSearch::getScore() {
 // iterative deepening
 int SimplePVSearch::idSearch(Board& board) {
 
-	_nodes = 0;
 	int bestScore = -maxScore;
 	int iterationScore[maxSearchPly];
 	long iterationTime[maxSearchPly];
@@ -62,6 +61,8 @@ int SimplePVSearch::idSearch(Board& board) {
 	MoveIterator::Move easyMove;
 	initRootMovesOrder();
 	rootMoves.clear();
+	_nodes = 0;
+	checkNodes=0;
 
 	if (!isKingAttacked) {
 		board.generateAllMoves(rootMoves, board.getSideToMove());
@@ -79,7 +80,8 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		score = rootSearch(board, alpha, beta, depth, 0, &pv);
 
-		if(score <= alpha || score >= beta) {
+		if((score <= alpha || score >= beta) &&
+				!stop(agent->shouldStop())) {
 			alpha=-maxScore;
 			beta=maxScore;
 			score = rootSearch(board, alpha, beta, depth, 0, &pv);
@@ -105,12 +107,15 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		uciOutput(&pv, stats.bestMove, stats.searchTime, agent->hashFull(), depth, alpha, beta);
 
-		if (depth >= aspirationDepth)	{ // like in stockfish
+		if (depth >= aspirationDepth && abs(score) < winningScore)	{ // like in stockfish
 			int delta1 = iterationScore[depth-0]-iterationScore[depth-1];
 			int delta2 = iterationScore[depth-1]-iterationScore[depth-2];
 			int aspirationDelta = MAX(abs(delta1)+abs(delta2)/2, 16)+7;
 			alpha = MAX(iterationScore[depth]-aspirationDelta,-maxScore);
 			beta  = MIN(iterationScore[depth]+aspirationDelta,+maxScore);
+		} else {
+			alpha=-maxScore;
+			beta=maxScore;
 		}
 
 		int repetition=0;
@@ -156,7 +161,8 @@ int SimplePVSearch::idSearch(Board& board) {
 				}
 			}
 
-			if (depth>3) {
+			std::cout << "timeToSearch: " << _timeToSearch << " prediction: " << predictTimeUse(iterationTime,_timeToSearch,depth+1) << std::endl;
+			if (depth>5) {
 				if (_timeToSearch <	predictTimeUse(iterationTime,_timeToSearch,depth+1)) {
 					break;
 				}
@@ -182,7 +188,6 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 	PvLine line = PvLine();
 	int score = -maxScore;
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
-
 
 	if (depth < 3) {
 		if (depth==1) {
@@ -239,6 +244,10 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 		move.score=score;
 		nodes = _nodes - nodes;
 		updateRootMovesScore(nodes);
+
+		if (stop(agent->shouldStop()) && depth>1) {
+			return 0;
+		}
 
 		if( score >= beta) {
 			if (!stop(agent->shouldStop())) {
@@ -440,6 +449,7 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 	}
 
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
+
 	int eval = -maxScore;
 
 	if (!isKingAttacked) {
@@ -447,7 +457,7 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 	}
 
 	//razoring
-	if (depth < razorDepth && hashData.move.from == NONE &&
+	/*if (depth < razorDepth && hashData.move.from == NONE &&
 			!isKingAttacked && !isMateScore(beta) &&
 			!isPawnPromoting(board) && allowNullMove &&
 			beta > eval + (razorMargin(depth)) ) {
@@ -456,18 +466,18 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 			return score;
 		}
 	}
-
+*/
 	// null move #1
-	if (!isKingAttacked && allowNullMove &&
+	/*if (!isKingAttacked && allowNullMove &&
 			depth < razorDepth && okToNullMove(board) &&
 			!isMateScore(beta) && eval >= beta+futilityMargin(depth)) {
 		return eval-futilityMargin(depth);
 	}
-
+*/
 	// null move #2
 	if (!isKingAttacked && allowNullMove &&
-			okToNullMove(board) && !isMateScore(beta) &&
-			eval >= beta-(depth>=razorDepth?nullMoveMargin:0)) {
+			okToNullMove(board) && !isMateScore(beta) /*&&
+			eval >= beta-(depth>=razorDepth?nullMoveMargin:0)*/) {
 
 		const int reduction = 3 + (depth > 4 ? depth/4 : 0);
 		MoveBackup backup;
@@ -535,7 +545,7 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 				!givingCheck && !isPawnPush(board,move) &&
 				(move.type == MoveIterator::NON_CAPTURE ||
 						(move.type == MoveIterator::BAD_CAPTURE &&
-								evaluator.see(board,move)<0) )) {
+								evaluator.see(board,move)<0))) {
 
 			const int gain = evaluator.getPieceSquareValue(board.getPieceBySquare(move.from),move.to)-
 					evaluator.getPieceSquareValue(board.getPieceBySquare(move.from),move.from);

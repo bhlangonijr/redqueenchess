@@ -48,6 +48,7 @@ const int ROOK_ATTACK_BONUS = 3;
 const int QUEEN_ATTACK_BONUS = 5;
 
 const int maxScore = 20000;
+const int winningScore = 2000;
 const int bishopPairBonus = 15;
 const int maxPieces=32;
 

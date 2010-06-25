@@ -50,7 +50,7 @@ const int allowIIDAtPV = 5;
 const int allowIIDAtNormal = 9;
 
 // margin constants
-#define futilityMargin(depth) (300 + depth * 150)
+#define futilityMargin(depth) (200 + depth * 150)
 #define razorMargin(depth) (250 + depth * 150)
 const int nullMoveMargin=450;
 const int iidMargin=250;
@@ -145,7 +145,7 @@ public:
 
 	} SearchStats;
 
-	SimplePVSearch() : _depth(maxSearchDepth), _updateUci(true), _startTime(0), _searchFixedDepth(true), _infinite(false) {}
+	SimplePVSearch() : _depth(maxSearchDepth), _updateUci(true), _startTime(0), _searchFixedDepth(true), _infinite(false), _nodes(0), checkNodes(0) {}
 
 	virtual ~SimplePVSearch() {}
 
@@ -218,10 +218,11 @@ private:
 	bool _updateUci;
 	long _timeToSearch;
 	long _startTime;
-	long _nodes;
 	long _time;
 	bool _searchFixedDepth;
 	bool _infinite;
+	long _nodes;
+	long checkNodes;
 	SearchStats stats;
 	long timeToStop;
 	MoveIterator rootMoves;
@@ -595,9 +596,11 @@ inline const bool SimplePVSearch::stop(const bool shouldStop) {
 
 inline const bool SimplePVSearch::timeIsUp() {
 
-	if (_searchFixedDepth || _infinite || !_nodes & 0xFFF) {
+	checkNodes++;
+	if (_searchFixedDepth || _infinite || checkNodes >= 10000) {
 		return false;
 	}
+	checkNodes=0;
 	return (clock()>=timeToStop);
 
 }
@@ -729,9 +732,9 @@ inline long SimplePVSearch::predictTimeUse(const long iterationTime[maxSearchPly
 	double ratio2 = double(iterationTime[depth-2])/double(totalTime);
 	double ratio3 = double(iterationTime[depth-3])/double(totalTime);
 
-	double newRatio = ratio1*exp((ratio2/ratio1)*0.6 + (ratio3/ratio2)*0.4);
+	double newRatio = ratio1*exp((ratio2/ratio1)*0.7 + (ratio3/ratio2)*0.3);
 
-	double newTime = double(iterationTime[depth-1])*exp(newRatio*1);
+	double newTime = double(iterationTime[depth-1])*exp(newRatio);
 
 	return long(newTime);
 }

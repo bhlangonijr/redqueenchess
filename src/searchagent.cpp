@@ -51,16 +51,6 @@ SearchAgent::SearchAgent() :
 // start a new game
 void SearchAgent::newGame() {
 
-	int attempts=20;
-	while (--attempts>0) {
-		if (this->getSearchInProgress()) {
-			stopSearch();
-			suspend(50);
-		} else {
-			break;
-		}
-	}
-
 	board.setInitialPosition();
 
 	this->clearHash();

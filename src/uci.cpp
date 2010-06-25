@@ -93,11 +93,11 @@ bool Uci::execute()
 		executeUciNewGame();
 		break;
 	case ISREADY : {
-		int attempts=20;
+		int attempts=10;
 		SearchAgent *searchAgent = SearchAgent::getInstance();
 		while (--attempts>0) {
 			if (searchAgent->getSearchInProgress()) {
-				searchAgent->suspend(50);
+				searchAgent->suspend(5);
 			} else {
 				break;
 			}
