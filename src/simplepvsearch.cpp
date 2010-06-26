@@ -39,9 +39,9 @@ void SimplePVSearch::search(Board& _board) {
 	clearHistory();
 	evaluator.setGameStage(evaluator.predictGameStage(board));
 	_startTime = getTickCount();
-	timeToStop = clock() + toClock(_timeToSearch);
+	timeToStop = clock() + toClock(_timeToSearch-10);
 	_score = idSearch(board);
-	_time = getTickCount() - _startTime;
+	_time = getTickCount()-_startTime;
 }
 
 // get current score
@@ -161,7 +161,7 @@ int SimplePVSearch::idSearch(Board& board) {
 				}
 			}
 
-			std::cout << "timeToSearch: " << _timeToSearch << " prediction: " << predictTimeUse(iterationTime,_timeToSearch,depth+1) << std::endl;
+			//std::cout << "timeToSearch: " << _timeToSearch << " prediction: " << predictTimeUse(iterationTime,_timeToSearch,depth+1) << std::endl;
 			if (depth>5) {
 				if (_timeToSearch <	predictTimeUse(iterationTime,_timeToSearch,depth+1)) {
 					break;
@@ -250,9 +250,6 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 		}
 
 		if( score >= beta) {
-			if (!stop(agent->shouldStop())) {
-				uciOutput(pv, move, getTickCount()-_startTime, agent->hashFull(), depth, alpha, beta);
-			}
 			return beta;
 		}
 
@@ -260,9 +257,6 @@ int SimplePVSearch::rootSearch(Board& board, int alpha, int beta, int depth, int
 			alpha = score;
 			bestMove=move;
 			updatePv(pv, line, bestMove);
-			if (!stop(agent->shouldStop())) {
-				uciOutput(pv, move, getTickCount()-_startTime, agent->hashFull(), depth, alpha, beta);
-			}
 		}
 
 		uciOutput(move, moveCounter);
@@ -453,11 +447,11 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 	int eval = -maxScore;
 
 	if (!isKingAttacked) {
-		eval=evaluator.evaluate(board);
+		eval=evaluator.quickEvaluate(board);
 	}
 
 	//razoring
-	/*if (depth < razorDepth && hashData.move.from == NONE &&
+	if (depth < razorDepth && hashData.move.from == NONE &&
 			!isKingAttacked && !isMateScore(beta) &&
 			!isPawnPromoting(board) && allowNullMove &&
 			beta > eval + (razorMargin(depth)) ) {
@@ -466,21 +460,22 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 			return score;
 		}
 	}
-*/
+
 	// null move #1
-	/*if (!isKingAttacked && allowNullMove &&
+	if (!isKingAttacked && allowNullMove &&
 			depth < razorDepth && okToNullMove(board) &&
 			!isMateScore(beta) && eval >= beta+futilityMargin(depth)) {
 		return eval-futilityMargin(depth);
 	}
-*/
+
 	// null move #2
 	if (!isKingAttacked && allowNullMove &&
-			okToNullMove(board) && !isMateScore(beta) /*&&
-			eval >= beta-(depth>=razorDepth?nullMoveMargin:0)*/) {
+			okToNullMove(board) && !isMateScore(beta) &&
+			eval >= beta-(depth>=razorDepth?nullMoveMargin:0)) {
 
 		const int reduction = 3 + (depth > 4 ? depth/4 : 0);
 		MoveBackup backup;
+
 		board.doNullMove(backup);
 		score = -zwSearch(board, 1-beta, depth-reduction, ply+1, &line, false);
 		board.undoNullMove(backup);
@@ -488,11 +483,6 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 		if (stop(agent->shouldStop())) {
 			return 0;
 		}
-
-		if (score < -maxScore+maxSearchPly) {
-			nullMoveMateScore=true;
-		}
-
 		if (score >= beta) {
 			if (score >= maxScore-maxSearchPly) {
 				score = beta;
@@ -500,8 +490,11 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 			agent->hashPut(board,score,depth,ply,maxScore,SearchAgent::NM_LOWER,emptyMove);
 			stats.nullMoveHits++;
 			return score;
+		} else {
+			if (score < -maxScore-maxSearchPly) {
+				nullMoveMateScore=true;
+			}
 		}
-
 	}
 
 	//iid
@@ -518,7 +511,7 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 	int remainingMoves=0;
 	int reduction=0;
 	int extension=0;
-	int bestScore=-maxScore;
+	int bestScore=beta-1;
 
 	while (true) {
 
@@ -543,6 +536,7 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 		if (depth < futilityDepth && !isKingAttacked &&
 				!isMateScore(beta) && move != hashData.move &&
 				!givingCheck && !isPawnPush(board,move) &&
+				!nullMoveMateScore &&
 				(move.type == MoveIterator::NON_CAPTURE ||
 						(move.type == MoveIterator::BAD_CAPTURE &&
 								evaluator.see(board,move)<0))) {
@@ -596,10 +590,6 @@ int SimplePVSearch::zwSearch(Board& board, int beta, int depth, int ply, PvLine*
 
 	if (!moveCounter) {
 		return isKingAttacked ? -maxScore+ply : 0;
-	}
-
-	if (bestScore==-maxScore) {
-		bestScore=beta-1;
 	}
 
 	agent->hashPut(board,bestScore,depth,ply,maxScore,SearchAgent::UPPER,emptyMove);

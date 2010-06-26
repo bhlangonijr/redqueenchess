@@ -47,7 +47,7 @@ const int maxSearchPly = 100;
 
 // internal iterative deepening
 const int allowIIDAtPV = 5;
-const int allowIIDAtNormal = 9;
+const int allowIIDAtNormal = 7;
 
 // margin constants
 #define futilityMargin(depth) (200 + depth * 150)
@@ -69,7 +69,7 @@ const int prunningNonPvMoves=2;
 
 //reduction constants
 const int pvReduction=1;
-const int nonPvReduction=2;
+const int nonPvReduction=1;
 
 //score table & history bonus
 const int historyBonus=100;
@@ -145,7 +145,7 @@ public:
 
 	} SearchStats;
 
-	SimplePVSearch() : _depth(maxSearchDepth), _updateUci(true), _startTime(0), _searchFixedDepth(true), _infinite(false), _nodes(0), checkNodes(0) {}
+	SimplePVSearch() : _depth(maxSearchDepth), _updateUci(true), _startTime(0), _searchFixedDepth(false), _infinite(false), _nodes(0), checkNodes(0) {}
 
 	virtual ~SimplePVSearch() {}
 
@@ -591,17 +591,24 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 }
 
 inline const bool SimplePVSearch::stop(const bool shouldStop) {
-	return (shouldStop || timeIsUp());
+
+	return (timeIsUp() || shouldStop);
+
 }
 
 inline const bool SimplePVSearch::timeIsUp() {
 
-	checkNodes++;
-	if (_searchFixedDepth || _infinite || checkNodes >= 10000) {
+	if (_searchFixedDepth || _infinite) {
 		return false;
 	}
-	checkNodes=0;
-	return (clock()>=timeToStop);
+
+	checkNodes++;
+
+	if (checkNodes <= 0x1FFF) {
+		return false;
+	}
+
+	return clock()>=timeToStop;
 
 }
 
