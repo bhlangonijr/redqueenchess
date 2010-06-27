@@ -510,7 +510,7 @@ int SimplePVSearch::zwSearch(Board& board,  SearchInfo& si, int beta, int depth,
 	int remainingMoves=0;
 	int reduction=0;
 	int extension=0;
-	int bestScore=beta-1;
+	int bestScore=-maxScore;
 
 	while (true) {
 
@@ -580,6 +580,8 @@ int SimplePVSearch::zwSearch(Board& board,  SearchInfo& si, int beta, int depth,
 			}
 		}
 	}
+
+	bestScore=MAX(beta-1,bestScore);
 
 	if (!moveCounter) {
 		return isKingAttacked ? -maxScore+ply : 0;
