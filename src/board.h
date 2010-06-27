@@ -86,9 +86,6 @@ const int zobristCastleIndex[ALL_CASTLE_RIGHT][ALL_CASTLE_RIGHT]={
 //start FEN position
 const std::string startFENPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-//material values for move classification
-const int pieceMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 318, 325, 520, 975, 10000, 100, 318, 325, 520, 975, 10000, 0};
-
 // Backup move
 struct MoveBackup {
 	MoveBackup()
@@ -645,18 +642,15 @@ inline const bool Board::isDraw() {
 	const Bitboard pawns = this->getPiecesByType(WHITE_PAWN) |
 			this->getPiecesByType(BLACK_PAWN);
 	if (!pawns) {
-		const Bitboard allPieces = getAllPieces();
 		const Bitboard pieces = this->getPiecesByType(WHITE_KNIGHT) |
 				this->getPiecesByType(BLACK_KNIGHT) |
 				this->getPiecesByType(WHITE_BISHOP) |
-				this->getPiecesByType(BLACK_BISHOP);
-		const Bitboard kings = this->getPiecesByType(WHITE_KING) |
+				this->getPiecesByType(BLACK_BISHOP) |
+				this->getPiecesByType(WHITE_KING) |
 				this->getPiecesByType(BLACK_KING);
-
-		if (!((pieces|kings)^allPieces) && (_BitCount(pieces|kings) < 4)) {
+		if (!(pieces^getAllPieces()) && (_BitCount(pieces)<4)) {
 			return true;
 		}
-
 	}
 
 	return getHalfMoveCounter()>=100;

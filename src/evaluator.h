@@ -34,19 +34,31 @@
 #include "board.h"
 #include "data.h"
 
-const int KNIGHT_MOBILITY_BONUS = 4;
-const int BISHOP_MOBILITY_BONUS = 2;
-const int ROOK_MOBILITY_BONUS = 1;
+const int DONE_CASTLE_BONUS=       +10;
+const int DOUBLED_PAWN_PENALTY =   -10;
+const int ISOLATED_PAWN_PENALTY =  -15;
+const int BACKWARD_PAWN_PENALTY =  -5;
 
-const int KNIGHT_TROPISM_BONUS = 1;
-const int BISHOP_TROPISM_BONUS = 1;
-const int ROOK_TROPISM_BONUS = 2;
-const int QUEEN_TROPISM_BONUS = 3;
+const int KNIGHT_MOBILITY_BONUS = 	6;
+const int BISHOP_MOBILITY_BONUS = 	4;
+const int ROOK_MOBILITY_BONUS = 	2;
 
-const int KNIGHT_ATTACK_BONUS = 2;
-const int BISHOP_ATTACK_BONUS = 2;
-const int ROOK_ATTACK_BONUS = 3;
-const int QUEEN_ATTACK_BONUS = 5;
+const int KNIGHT_TROPISM_BONUS = 	1;
+const int BISHOP_TROPISM_BONUS = 	1;
+const int ROOK_TROPISM_BONUS = 		2;
+const int QUEEN_TROPISM_BONUS = 	3;
+
+const int KNIGHT_ATTACK_BONUS = 	4;
+const int BISHOP_ATTACK_BONUS = 	3;
+const int ROOK_ATTACK_BONUS = 		5;
+const int QUEEN_ATTACK_BONUS = 		7;
+
+const int KNIGHT_KING_SQUARE_ATTACK_BONUS = 	2;
+const int BISHOP_KING_SQUARE_ATTACK_BONUS = 	2;
+const int ROOK_KING_SQUARE_ATTACK_BONUS = 		3;
+const int QUEEN_KING_SQUARE_ATTACK_BONUS = 		4;
+
+const int KING_SQUARE_THREAT_BONUS = 10;
 
 const int maxScore = 20000;
 const int winningScore = 2000;
@@ -54,12 +66,12 @@ const int bishopPairBonus = 15;
 const int maxPieces=32;
 
 //default material values
-const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 325, 325, 500, 975, 10000, 100, 325, 325, 500, 975, 10000, 0};
+const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 320, 330, 500, 900, 20000, 100, 320, 330, 500, 900, 20000, 0};
 
 //passed pawn bonuses
 const int passedPawnBonus[ALL_PIECE_COLOR][ALL_RANK] = {
-		{0,0,0,1,10,20,50,0},
-		{0,50,20,10,1,0,0,0},
+		{0,0,0,1,10,30,70,0},
+		{0,70,30,10,1,0,0,0},
 		{0,0,0,0,0,0,0,0}
 };
 
@@ -149,14 +161,12 @@ inline const int Evaluator::evalMaterial(Board& board, PieceColor color) {
 	const int first = board.makePiece(color,PAWN);
 	const int last = board.makePiece(color,KING);
 	int material = 0;
-
 	for(int pieceType = first; pieceType <= last; pieceType++) {
 		int count = board.getPieceCountByType(PieceTypeByColor(pieceType));
 		if (count > 0) {
 			material += count * getPieceMaterialValue(PieceTypeByColor(pieceType));
 		}
 	}
-
 	return material;
 }
 
@@ -165,15 +175,11 @@ inline const int Evaluator::evalMaterial(Board& board, PieceColor color) {
 inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
 
 	const PieceColor other = board.flipSide(color);
-	const int DONE_CASTLE_BONUS=       +(board.getPiecesByType(board.makePiece(other,QUEEN))) ? 20 : 10;
-	const int DOUBLED_PAWN_PENALTY =   -10;
-	const int ISOLATED_PAWN_PENALTY =  -15;
-	const int BACKWARD_PAWN_PENALTY =  -5;
 	int count=0;
 
 	// king
 	if (board.isCastleDone(color)) {
-		count= DONE_CASTLE_BONUS;
+		count+= DONE_CASTLE_BONUS + board.getPiecesByType(board.makePiece(other,QUEEN)) ? 10 : 0;
 	}
 
 	const Bitboard pawns = board.getPiecesByType(board.makePiece(color,PAWN));
@@ -214,6 +220,7 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 
 	const Bitboard otherKingBB = board.getPiecesByType(board.makePiece(board.flipSide(color),KING));
 	const Square otherKingSq = bitboardToSquare(otherKingBB);
+	const Bitboard otherKingSquareBB = adjacentSquares[otherKingSq];
 	const Bitboard knights = board.getPiecesByType(board.makePiece(color,KNIGHT));
 	const Bitboard bishops = board.getPiecesByType(board.makePiece(color,BISHOP));
 	const Bitboard rooks = board.getPiecesByType(board.makePiece(color,ROOK));
@@ -235,11 +242,17 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	while ( from!=NONE ) {
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getKnightAttacks(from);
-		const int kingAttacked=attacks&otherKingBB;
-		kingThreat += delta*(kingAttacked?KNIGHT_ATTACK_BONUS:KNIGHT_TROPISM_BONUS);
+		if (attacks&otherKingBB) {
+			kingThreat += delta*KNIGHT_ATTACK_BONUS;
+		} else if (attacks&otherKingSquareBB) {
+			kingThreat += delta*KNIGHT_KING_SQUARE_ATTACK_BONUS;
+		} else {
+			kingThreat += delta*KNIGHT_TROPISM_BONUS;
+		}
 		knightAttacks |= attacks;
 		from = extractLSB(pieces);
 	}
+	count+=_BitCount(knightAttacks)*KNIGHT_MOBILITY_BONUS;
 
 	pieces = bishops;
 	from = extractLSB(pieces);
@@ -247,11 +260,17 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	while ( from!=NONE ) {
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getBishopAttacks(from);
-		const int kingAttacked=attacks&otherKingBB;
-		kingThreat += delta*(kingAttacked?BISHOP_ATTACK_BONUS:BISHOP_TROPISM_BONUS);
+		if (attacks&otherKingBB) {
+			kingThreat += delta*BISHOP_ATTACK_BONUS;
+		} else if (attacks&otherKingSquareBB) {
+			kingThreat += delta*BISHOP_KING_SQUARE_ATTACK_BONUS;
+		} else {
+			kingThreat += delta*BISHOP_TROPISM_BONUS;
+		}
 		bishopAttacks |= attacks;
 		from = extractLSB(pieces);
 	}
+	count+=_BitCount(bishopAttacks)*BISHOP_MOBILITY_BONUS;
 
 	pieces = rooks;
 	from = extractLSB(pieces);
@@ -259,8 +278,14 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	while ( from!=NONE ) {
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getRookAttacks(from);
-		const int kingAttacked=attacks&otherKingBB;
-		kingThreat += delta*(kingAttacked?ROOK_ATTACK_BONUS:ROOK_TROPISM_BONUS);
+		count+=_BitCount(attacks)*ROOK_MOBILITY_BONUS;
+		if (attacks&otherKingBB) {
+			kingThreat += delta*ROOK_ATTACK_BONUS;
+		} else if (attacks&otherKingSquareBB) {
+			kingThreat += delta*ROOK_KING_SQUARE_ATTACK_BONUS;
+		} else {
+			kingThreat += delta*ROOK_TROPISM_BONUS;
+		}
 		rookAttacks |= attacks;
 		from = extractLSB(pieces);
 	}
@@ -271,18 +296,25 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	while ( from!=NONE ) {
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getQueenAttacks(from);
-		const int kingAttacked=attacks&otherKingBB;
-		kingThreat += delta*(kingAttacked?QUEEN_ATTACK_BONUS:QUEEN_TROPISM_BONUS);
+		if (attacks&otherKingBB) {
+			kingThreat += delta*QUEEN_ATTACK_BONUS;
+		} else if (attacks&otherKingSquareBB) {
+			kingThreat += delta*QUEEN_KING_SQUARE_ATTACK_BONUS;
+		} else {
+			kingThreat += delta*QUEEN_TROPISM_BONUS;
+		}
 		queenAttacks |= attacks;
 		from = extractLSB(pieces);
 	}
-
-	count+=_BitCount(knightAttacks)*KNIGHT_MOBILITY_BONUS;
-	count+=_BitCount(bishopAttacks)*BISHOP_MOBILITY_BONUS;
-	count+=_BitCount(rookAttacks)*ROOK_MOBILITY_BONUS;
 	count+=_BitCount(queenAttacks);
 
-	return count+kingThreat;
+	const Bitboard allAttacks = queenAttacks | rookAttacks |
+			bishopAttacks | knightAttacks;
+
+	const Bitboard otherKingSqThreatBB = allAttacks & otherKingSquareBB;
+	const int kingSquareThreat = _BitCount(otherKingSqThreatBB)*KING_SQUARE_THREAT_BONUS;
+
+	return count+kingThreat+kingSquareThreat;
 }
 
 // piece-square eval function
@@ -321,21 +353,13 @@ inline const int Evaluator::evalImbalances(Board& board, PieceColor color) {
 
 // verify if pawn is passer
 inline const bool Evaluator::isPawnPassed(Board& board, const PieceColor color, const Square from) {
-	const Bitboard pawns = (board.getPiecesByType(WHITE_PAWN) |
-			board.getPiecesByType(BLACK_PAWN));
-
-	const Bitboard mask = passedMask[color][from];
+	const Bitboard pawns = board.getPiecesByType(board.makePiece(board.flipSide(color),PAWN));
 
 	if (!pawns) {
 		return true;
 	}
 
-	if ((color==WHITE && squareRank[from]<RANK_3) ||
-			(color==BLACK && squareRank[from]>RANK_6)) {
-		return false;
-	}
-
-	return !(mask&pawns);
+	return !bool(passedMask[color][from]&pawns);
 }
 
 // static exchange evaluation
