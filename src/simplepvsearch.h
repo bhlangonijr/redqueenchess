@@ -47,10 +47,10 @@ const int maxSearchPly = 100;
 
 // internal iterative deepening
 const int allowIIDAtPV = 5;
-const int allowIIDAtNormal = 9;
+const int allowIIDAtNormal = 7;
 
 // margin constants
-#define futilityMargin(depth) (150 + depth * 250)
+#define futilityMargin(depth) (100 + depth * 200)
 #define razorMargin(depth) (200 + depth * 250)
 const int nullMoveMargin=450;
 const int iidMargin=250;
@@ -59,7 +59,7 @@ const int easyMargin=500;
 //depth prunning threshold
 const int aspirationDepth=6;
 const int futilityDepth=3;
-const int razorDepth=3;
+const int razorDepth=4;
 const int prunningPvDepth=2;
 const int prunningNonPvDepth=2;
 
@@ -241,6 +241,7 @@ private:
 	Evaluator evaluator;
 	SearchAgent* agent;
 	MoveIterator::Move emptyMove;
+	SearchInfo rootSearchInfo;
 
 	int idSearch(Board& board);
 	int rootSearch(Board& board, SearchInfo& si, int alpha, int beta, int depth, int ply, PvLine* pv);
@@ -269,8 +270,6 @@ private:
 	bool isPawnPromoting(const Board& board);
 	bool adjustDepth(int& extension, int& reduction, Board& board, MoveIterator::Move& move, int depth,
 			int remainingMoves, bool isKingAttacked, bool isGivingCheck, int ply, const bool nullMoveMateScore, bool isPV);
-	void computeGain(SearchInfo& si, Board& board,
-			MoveIterator::Move& move, MoveBackup& backup);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
 	const bool stop(const bool shouldStop);
 	const bool timeIsUp();
@@ -617,16 +616,6 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 	}
 
 	return false;
-}
-
-inline void SimplePVSearch::computeGain(SearchInfo& si, Board& board,
-		MoveIterator::Move& move, MoveBackup& backup) {
-	if (backup.capturedPiece!=EMPTY) {
-		si.eval += evaluator.getPieceMaterialValue(backup.capturedPiece) -
-				evaluator.getPieceMaterialValue(backup.movingPiece);
-	}
-	si.eval += evaluator.getPieceSquareValue(backup.movingPiece,move.to)-
-			evaluator.getPieceSquareValue(backup.movingPiece,move.from);
 }
 
 inline const bool SimplePVSearch::stop(const bool shouldStop) {
