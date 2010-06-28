@@ -36,9 +36,6 @@
 #include "searchagent.h"
 #include "evaluator.h"
 
-// if set to true will always try using see - move ordering
-#define USE_SEE_ORDERING false
-
 // game constants
 const int maxScoreRepetition = 4;
 const int mateRangeScore = 300;
@@ -47,7 +44,7 @@ const int maxSearchPly = 100;
 
 // internal iterative deepening
 const int allowIIDAtPV = 5;
-const int allowIIDAtNormal = 7;
+const int allowIIDAtNormal = 11;
 
 // margin constants
 #define futilityMargin(depth) (100 + depth * 200)
@@ -69,7 +66,7 @@ const int prunningNonPvMoves=2;
 
 //reduction constants
 const int pvReduction=1;
-const int nonPvReduction=2;
+const int nonPvReduction=1;
 
 //score table & history bonus
 const int historyBonus=100;
@@ -256,7 +253,7 @@ private:
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves,
 			MoveIterator::Move& ttMove, bool isKingAttacked, int ply);
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, bool isKingAttacked);
-	void scoreMoves(Board& board, MoveIterator& moves, const bool seeOrdered);
+	void scoreMoves(Board& board, MoveIterator& moves);
 	void filterLegalMoves(Board& board, MoveIterator& moves);
 	bool okToReduce(Board& board, MoveIterator::Move& move,	bool isKingAttacked, const bool isGivingCheck,
 			const bool nullMoveMateScore, int ply);
@@ -301,7 +298,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_EVASION_STAGE) {
 		board.generateEvasions(moves, board.getSideToMove());
-		scoreMoves(board, moves, USE_SEE_ORDERING);
+		scoreMoves(board, moves);
 		moves.goNextStage();
 	}
 
@@ -315,7 +312,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
 		board.generateCaptures(moves, board.getSideToMove());
-		scoreMoves(board, moves, USE_SEE_ORDERING);
+		scoreMoves(board, moves);
 		moves.goNextStage();
 	}
 
@@ -325,23 +322,17 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			if (move==ttMove) {
 				continue;
 			}
-
+			move.score = evaluator.see(board,move);
+			if (move.score>0) {
+				move.type=MoveIterator::GOOD_CAPTURE;
+			} if (move.score<0) {
+				move.type=MoveIterator::BAD_CAPTURE;
+			} else {
+				move.type=MoveIterator::EQUAL_CAPTURE;
+			}
 			if (move.type==MoveIterator::BAD_CAPTURE) {
-#if (!USE_SEE_ORDERING)
-				move.score = evaluator.see(board,move);
-				if (move.score<0) {
-#endif
-					moves.prior();
-					break; // it will keep the bad captures after non captures
-#if (!USE_SEE_ORDERING)
-				} else {
-					if (move.score>0) {
-						move.type=MoveIterator::GOOD_CAPTURE;
-					} else {
-						move.type=MoveIterator::EQUAL_CAPTURE;
-					}
-				}
-#endif
+				moves.prior();
+				break; // it will keep the bad captures after non captures
 			}
 			return move;
 		}
@@ -364,7 +355,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_QUIET_STAGE) {
 		board.generateNonCaptures(moves, board.getSideToMove());
-		scoreMoves(board, moves, USE_SEE_ORDERING);
+		scoreMoves(board, moves);
 		moves.goNextStage();
 	}
 
@@ -396,7 +387,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_EVASION_STAGE) {
 		board.generateEvasions(moves, board.getSideToMove());
-		scoreMoves(board, moves, USE_SEE_ORDERING);
+		scoreMoves(board, moves);
 		moves.first();
 		moves.goNextStage();
 	}
@@ -411,7 +402,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
 		board.generateCaptures(moves, board.getSideToMove());
-		scoreMoves(board, moves, USE_SEE_ORDERING);
+		scoreMoves(board, moves);
 		moves.first();
 		moves.goNextStage();
 	}
@@ -428,7 +419,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 }
 
 // score moves
-inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, const bool seeOrdered) {
+inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 
 	moves.bookmark();
 
@@ -436,12 +427,8 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves, const 
 		MoveIterator::Move& move = moves.next();
 
 		if (board.getPieceBySquare(move.to) != EMPTY) {
-			if (seeOrdered) {
-				move.score = evaluator.see(board,move);
-			} else {
-				move.score = evaluator.getPieceMaterialValue(board.getPieceBySquare(move.to)) -
+			move.score = evaluator.getPieceMaterialValue(board.getPieceBySquare(move.to)) -
 						evaluator.getPieceMaterialValue(board.getPieceBySquare(move.from));
-			}
 
 			if (move.type==MoveIterator::UNKNOW) {
 				move.type = MoveIterator::EQUAL_CAPTURE;
@@ -502,6 +489,7 @@ inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move,
 			(move!=killer2) &&
 			(!isKingAttacked) &&
 			(!isGivingCheck) &&
+			(!isPawnPush(board,move)) &&
 			(!isPawnPromoting(board)) &&
 			(!nullMoveMateScore)
 	);
@@ -594,7 +582,7 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 	extension=0;
 	reduction=0;
 
-	if (isKingAttacked || isPawnPush(board,move) || nullMoveMateScore) {
+	if (isKingAttacked || nullMoveMateScore) {
 		extension=1;
 		return false;
 	}

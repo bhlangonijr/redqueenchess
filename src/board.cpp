@@ -304,7 +304,7 @@ void Board::doNullMove(MoveBackup& backup){
 	backup.hasBlackKingCastle=false;
 	backup.hasBlackQueenCastle=false;
 	backup.halfMoveCounter =  getHalfMoveCounter();
-	increaseHalfMoveCounter(); //TODO verify this
+	resetHalfMoveCounter(); //TODO verify this
 
 	if (getEnPassant()!=NONE) {
 		setKey(getKey()^zobrist.enPassant[getSquareFile(getEnPassant())]);
