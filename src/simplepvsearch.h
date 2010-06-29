@@ -65,7 +65,7 @@ const int prunningPvMoves=2;
 const int prunningNonPvMoves=2;
 
 //reduction constants
-const int pvReduction=1;
+const int pvReduction=0;
 const int nonPvReduction=1;
 
 //score table & history bonus

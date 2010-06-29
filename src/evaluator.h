@@ -377,6 +377,10 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 
 	gain[idx] = defaultMaterialValues[secondPiece];
 
+	if (board.getPieceType(secondPiece)==KING) {
+		return queenValue*10;
+	}
+
 	while (true) {
 
 		allAttackers |= attackers;
