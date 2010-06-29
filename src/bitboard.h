@@ -386,6 +386,14 @@ const Bitboard neighborFiles[ALL_SQUARE]={
 		NFILE(A8), NFILE(B8), NFILE(C8), NFILE(D8), NFILE(E8), NFILE(F8), NFILE(G8), NFILE(H8)
 };
 
+const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 320, 330, 500, 900, 20000, 100, 320, 330, 500, 900, 20000, 0};
+
+const int passedPawnBonus[ALL_PIECE_COLOR][ALL_RANK] = {
+		{0,25,30,35,40,50,70,0},
+		{0,70,50,40,35,30,25,0},
+		{0,0,0,0,0,0,0,0}
+};
+
 extern void printBitboard(Bitboard bb);
 
 extern void initializeBitboards();

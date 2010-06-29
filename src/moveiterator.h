@@ -49,7 +49,7 @@ public:
 	struct Move {
 
 		Move() : from(NONE), to(NONE), promotionPiece(EMPTY), score(DEFAULT_SCORE), type(UNKNOW)
-						{}
+								{}
 
 		Move(const Square fromSquare, const Square toSquare, const PieceTypeByColor piece) :
 			from(fromSquare), to(toSquare), promotionPiece(piece), score(DEFAULT_SCORE), type(UNKNOW)
@@ -249,18 +249,19 @@ inline MoveIterator::Move& MoveIterator::prior() {
 
 inline MoveIterator::Move& MoveIterator::selectBest() {
 
-	size_t idxMax = _data.idx;
-	for (size_t x=_data.idx+1;x<_data.size;x++) {
-		if (_data.list[x].score > _data.list[idxMax].score) {
-			idxMax = x;
+	if (_data.size>1) {
+		size_t idxMax = _data.idx;
+		for (size_t x=_data.idx+1;x<_data.size;x++) {
+			if (_data.list[x].score > _data.list[idxMax].score) {
+				idxMax = x;
+			}
+		}
+		if (idxMax != _data.idx) {
+			Move tmp=_data.list[_data.idx];
+			_data.list[_data.idx]=_data.list[idxMax];
+			_data.list[idxMax]=tmp;
 		}
 	}
-	if (idxMax != _data.idx) {
-		Move tmp=_data.list[_data.idx];
-		_data.list[_data.idx]=_data.list[idxMax];
-		_data.list[idxMax]=tmp;
-	}
-
 	return next();
 }
 

@@ -58,22 +58,11 @@ const int BISHOP_KING_SQUARE_ATTACK_BONUS = 	2;
 const int ROOK_KING_SQUARE_ATTACK_BONUS = 		3;
 const int QUEEN_KING_SQUARE_ATTACK_BONUS = 		4;
 
-const int KING_SQUARE_THREAT_BONUS = 10;
+const int BISHOP_PAIR_BONUS = 15;
 
 const int maxScore = 20000;
 const int winningScore = 2000;
-const int bishopPairBonus = 15;
 const int maxPieces=32;
-
-//default material values
-const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {100, 320, 330, 500, 900, 20000, 100, 320, 330, 500, 900, 20000, 0};
-
-//passed pawn bonuses
-const int passedPawnBonus[ALL_PIECE_COLOR][ALL_RANK] = {
-		{0,0,0,1,10,30,70,0},
-		{0,70,30,10,1,0,0,0},
-		{0,0,0,0,0,0,0,0}
-};
 
 class Evaluator {
 public:
@@ -101,10 +90,6 @@ public:
 		return (first*position)/maxPieces+(second*(maxPieces-position)/maxPieces);
 	}
 
-	inline const int getPieceMaterialValue(const PieceTypeByColor piece) {
-		return defaultMaterialValues[piece];
-	}
-
 	inline const int getPieceSquareValue(const PieceTypeByColor piece, const Square square) {
 
 		const int egValue = endGamePieceSquareTable[piece][square];
@@ -126,7 +111,7 @@ inline const int Evaluator::evaluate(Board& board) {
 
 	this->setGameStage(this->predictGameStage(board));
 
-	int material = evalMaterial(board, side) - evalMaterial(board, other);
+	int material = board.getMaterial(side) - board.getMaterial(other);
 	int pieces = evalPieces(board, side) - evalPieces(board, other);
 	int development = evalDevelopment(board, side) - evalDevelopment(board, other);
 	int imbalances = evalImbalances(board, side) - evalImbalances(board, other);
@@ -149,27 +134,14 @@ inline const int Evaluator::quickEvaluate(Board& board) {
 	const PieceColor side = board.getSideToMove();
 	const PieceColor other = board.flipSide(board.getSideToMove());
 
-	int material = evalMaterial(board, side) - evalMaterial(board, other);
+	int material = board.getMaterial(side) - board.getMaterial(other);
 	int pieces = evalPieces(board, side) - evalPieces(board, other);
+	/*if (material>maxScore) {
+		std::cout << "test" << (material+pieces) << std::endl;
+	}*/
 
 	return material+pieces;
 }
-
-// material eval function
-inline const int Evaluator::evalMaterial(Board& board, PieceColor color) {
-
-	const int first = board.makePiece(color,PAWN);
-	const int last = board.makePiece(color,KING);
-	int material = 0;
-	for(int pieceType = first; pieceType <= last; pieceType++) {
-		int count = board.getPieceCountByType(PieceTypeByColor(pieceType));
-		if (count > 0) {
-			material += count * getPieceMaterialValue(PieceTypeByColor(pieceType));
-		}
-	}
-	return material;
-}
-
 
 // king eval function
 inline const int Evaluator::evalPieces(Board& board, PieceColor color) {
@@ -225,13 +197,9 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	const Bitboard bishops = board.getPiecesByType(board.makePiece(color,BISHOP));
 	const Bitboard rooks = board.getPiecesByType(board.makePiece(color,ROOK));
 	const Bitboard queens = board.getPiecesByType(board.makePiece(color,QUEEN));
+	const Bitboard allPieces = board.getAllPieces();
 
 	Bitboard pieces = EMPTY_BB;
-	Bitboard knightAttacks = EMPTY_BB;
-	Bitboard bishopAttacks = EMPTY_BB;
-	Bitboard rookAttacks = EMPTY_BB;
-	Bitboard queenAttacks = EMPTY_BB;
-
 	Square from = NONE;
 	int count=0;
 	int kingThreat=0;
@@ -242,6 +210,7 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	while ( from!=NONE ) {
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getKnightAttacks(from);
+		count+=(_BitCount(attacks&~allPieces)-4)*KNIGHT_MOBILITY_BONUS;
 		if (attacks&otherKingBB) {
 			kingThreat += delta*KNIGHT_ATTACK_BONUS;
 		} else if (attacks&otherKingSquareBB) {
@@ -249,10 +218,8 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 		} else {
 			kingThreat += delta*KNIGHT_TROPISM_BONUS;
 		}
-		knightAttacks |= attacks;
 		from = extractLSB(pieces);
 	}
-	count+=_BitCount(knightAttacks)*KNIGHT_MOBILITY_BONUS;
 
 	pieces = bishops;
 	from = extractLSB(pieces);
@@ -260,6 +227,7 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	while ( from!=NONE ) {
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getBishopAttacks(from);
+		count+=(_BitCount(attacks)-6)*BISHOP_MOBILITY_BONUS;
 		if (attacks&otherKingBB) {
 			kingThreat += delta*BISHOP_ATTACK_BONUS;
 		} else if (attacks&otherKingSquareBB) {
@@ -267,10 +235,8 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 		} else {
 			kingThreat += delta*BISHOP_TROPISM_BONUS;
 		}
-		bishopAttacks |= attacks;
 		from = extractLSB(pieces);
 	}
-	count+=_BitCount(bishopAttacks)*BISHOP_MOBILITY_BONUS;
 
 	pieces = rooks;
 	from = extractLSB(pieces);
@@ -278,7 +244,7 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	while ( from!=NONE ) {
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getRookAttacks(from);
-		count+=_BitCount(attacks)*ROOK_MOBILITY_BONUS;
+		count+=(_BitCount(attacks)-7)*ROOK_MOBILITY_BONUS;
 		if (attacks&otherKingBB) {
 			kingThreat += delta*ROOK_ATTACK_BONUS;
 		} else if (attacks&otherKingSquareBB) {
@@ -286,7 +252,6 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 		} else {
 			kingThreat += delta*ROOK_TROPISM_BONUS;
 		}
-		rookAttacks |= attacks;
 		from = extractLSB(pieces);
 	}
 
@@ -303,18 +268,10 @@ inline const int Evaluator::evalMobility(Board& board, PieceColor color) {
 		} else {
 			kingThreat += delta*QUEEN_TROPISM_BONUS;
 		}
-		queenAttacks |= attacks;
 		from = extractLSB(pieces);
 	}
-	count+=_BitCount(queenAttacks);
 
-	const Bitboard allAttacks = queenAttacks | rookAttacks |
-			bishopAttacks | knightAttacks;
-
-	const Bitboard otherKingSqThreatBB = allAttacks & otherKingSquareBB;
-	const int kingSquareThreat = _BitCount(otherKingSqThreatBB)*KING_SQUARE_THREAT_BONUS;
-
-	return count+kingThreat+kingSquareThreat;
+	return count+kingThreat;
 }
 
 // piece-square eval function
@@ -344,7 +301,7 @@ inline const int Evaluator::evalImbalances(Board& board, PieceColor color) {
 	Bitboard bishop = board.getPiecesByType(board.makePiece(color,BISHOP));
 
 	if ((bishop & WHITE_SQUARES) && (bishop & BLACK_SQUARES)) {
-		count += bishopPairBonus;
+		count += BISHOP_PAIR_BONUS;
 	}
 
 	// TODO implement more imbalances
@@ -359,7 +316,7 @@ inline const bool Evaluator::isPawnPassed(Board& board, const PieceColor color, 
 		return true;
 	}
 
-	return !bool(passedMask[color][from]&pawns);
+	return !(passedMask[color][from]&pawns);
 }
 
 // static exchange evaluation

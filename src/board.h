@@ -117,18 +117,23 @@ struct MoveBackup {
 struct Node {
 
 	Node () : key(0ULL), piece(), moveCounter(0), halfMoveCounter(0)
-	{}
+			{}
 
 	Node (const Node& node) : key(node.key), piece( node.piece ), enPassant( node.enPassant ),
 			sideToMove( node.sideToMove ), moveCounter(node.moveCounter),
 			halfMoveCounter(node.halfMoveCounter)
-	{
+			{
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=node.square[x];
 		}
 		for(register int x=0;x<MAX_GAME_LENGTH;x++){
 			keyHistory[x]=node.keyHistory[x];
 		}
+		for(register int x=0;x<ALL_PIECE_TYPE_BY_COLOR;x++){
+			pieceCount[x]=node.pieceCount[x];
+		}
+		fullMaterial[WHITE]=node.fullMaterial[WHITE];
+		fullMaterial[BLACK]=node.fullMaterial[BLACK];
 		pieceColor[WHITE]=node.pieceColor[WHITE];
 		pieceColor[BLACK]=node.pieceColor[BLACK];
 		castleRight[WHITE]=node.castleRight[WHITE];
@@ -136,7 +141,7 @@ struct Node {
 		castleDone[WHITE]=node.castleDone[WHITE];
 		castleDone[BLACK]=node.castleDone[BLACK];
 
-	}
+			}
 
 	Key key;
 
@@ -158,7 +163,7 @@ struct Node {
 			Bitboard blackKing;
 		} data;
 
-	}piece;
+	} piece;
 
 	CastleRight castleRight[ALL_PIECE_COLOR];
 	bool castleDone[ALL_PIECE_COLOR];
@@ -166,7 +171,8 @@ struct Node {
 	PieceColor sideToMove;
 	PieceTypeByColor square[ALL_SQUARE];
 	Bitboard pieceColor[ALL_PIECE_COLOR];
-
+	int pieceCount[ALL_PIECE_TYPE_BY_COLOR];
+	int fullMaterial[ALL_PIECE_COLOR];
 	Key keyHistory[MAX_GAME_LENGTH];
 	int moveCounter;
 	int halfMoveCounter;
@@ -179,6 +185,7 @@ struct Node {
 		halfMoveCounter=0;
 		for(register int x=0;x<ALL_PIECE_TYPE_BY_COLOR;x++){
 			piece.array[x]=0ULL;
+			pieceCount[x]=0;
 		}
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=EMPTY;
@@ -187,6 +194,8 @@ struct Node {
 			keyHistory[x]=0x0ULL;
 		}
 
+		fullMaterial[WHITE]=0;
+		fullMaterial[BLACK]=0;
 		pieceColor[WHITE]=0ULL;
 		pieceColor[BLACK]=0ULL;
 		pieceColor[COLOR_NONE]=FULL_BB;
@@ -267,7 +276,9 @@ public:
 	const Bitboard getEmptySquares() const;
 	const Bitboard getPiecesByType(const PieceTypeByColor piece) const;
 	const PieceTypeByColor getPieceBySquare(const Square square) const;
-	int const getPieceCountByType(const PieceTypeByColor piece) const;
+	const int getPieceCountByType(const PieceTypeByColor piece) const;
+	const int getMaterial(const PieceColor color) const;
+
 
 	void generateCaptures(MoveIterator& moves, const PieceColor side);
 	void generateNonCaptures(MoveIterator& moves, const PieceColor side);
@@ -343,6 +354,8 @@ inline bool Board::putPiece(const PieceTypeByColor piece, const Square square) {
 	currentBoard.piece.array[piece] |= squareToBitboard[square];
 	currentBoard.pieceColor[pieceColor[piece]] |= squareToBitboard[square];
 	currentBoard.square[square] = piece;
+	currentBoard.pieceCount[piece]++;
+	currentBoard.fullMaterial[pieceColor[piece]]+=defaultMaterialValues[piece];
 
 	return true;
 }
@@ -351,6 +364,8 @@ inline bool Board::removePiece(const PieceTypeByColor piece, const Square square
 	currentBoard.piece.array[piece] ^= squareToBitboard[square];
 	currentBoard.pieceColor[pieceColor[piece]] ^= squareToBitboard[square];
 	currentBoard.square[square] = EMPTY;
+	currentBoard.pieceCount[piece]--;
+	currentBoard.fullMaterial[pieceColor[piece]]-=defaultMaterialValues[piece];
 
 	return true;
 }
@@ -690,10 +705,12 @@ inline const PieceTypeByColor Board::getPieceBySquare(const Square square) const
 
 // get piece count by type
 inline const int Board::getPieceCountByType(const PieceTypeByColor piece) const {
+	return currentBoard.pieceCount[piece];
+}
 
-	if (piece==EMPTY || !currentBoard.piece.array[piece]) return 0;
-
-	return _BitCount(currentBoard.piece.array[piece]);
+// get full material by side
+inline const int Board::getMaterial(const PieceColor color) const {
+	return currentBoard.fullMaterial[color];
 }
 
 // overload method - gets current occupied squares in the board

@@ -151,7 +151,7 @@ public:
 
 	} SearchStats;
 
-	SimplePVSearch() : _depth(maxSearchDepth), _updateUci(true), _startTime(0), _searchFixedDepth(false), _infinite(false), _nodes(0), checkNodes(0) {}
+	SimplePVSearch() : _depth(maxSearchDepth), _updateUci(true), _startTime(0), _searchFixedDepth(false), _infinite(false), _nodes(0) {}
 
 	virtual ~SimplePVSearch() {}
 
@@ -228,7 +228,6 @@ private:
 	bool _searchFixedDepth;
 	bool _infinite;
 	long _nodes;
-	long checkNodes;
 	SearchStats stats;
 	long timeToStop;
 	MoveIterator rootMoves;
@@ -427,8 +426,8 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 		MoveIterator::Move& move = moves.next();
 
 		if (board.getPieceBySquare(move.to) != EMPTY) {
-			move.score = evaluator.getPieceMaterialValue(board.getPieceBySquare(move.to)) -
-						evaluator.getPieceMaterialValue(board.getPieceBySquare(move.from));
+			move.score = defaultMaterialValues[board.getPieceBySquare(move.to)] -
+					defaultMaterialValues[board.getPieceBySquare(move.from)];
 
 			if (move.type==MoveIterator::UNKNOW) {
 				move.type = MoveIterator::EQUAL_CAPTURE;
@@ -618,9 +617,7 @@ inline const bool SimplePVSearch::timeIsUp() {
 		return false;
 	}
 
-	checkNodes++;
-
-	if (checkNodes <= 0x1FFF) {
+	if (_nodes & 0xFFF) {
 		return false;
 	}
 

@@ -65,7 +65,6 @@ int SimplePVSearch::idSearch(Board& board) {
 	initRootMovesOrder();
 	rootMoves.clear();
 	_nodes = 0;
-	checkNodes=0;
 
 	if (!isKingAttacked) {
 		board.generateAllMoves(rootMoves, board.getSideToMove());
@@ -699,19 +698,19 @@ long SimplePVSearch::perft(Board& board, int depth, int ply) {
 	MoveIterator moves = MoveIterator();
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 
-	if (!isKingAttacked) {
+	/*if (!isKingAttacked) {
 		board.generateAllMoves(moves, board.getSideToMove());
 	} else {
 		board.generateEvasions(moves, board.getSideToMove());
-	}
+	}*/
 	//filterLegalMoves(board,rootMoves);
-	while (moves.hasNext())  {
+	while (true/*moves.hasNext()*/)  {
 
-		/*MoveIterator::Move& move = selectMove(board, moves, emptyMove, isKingAttacked, ply);
+		MoveIterator::Move& move = selectMove(board, moves, emptyMove, isKingAttacked, ply);
 		if (moves.end()) {
 			break;
-		}*/
-		MoveIterator::Move& move = moves.next();
+		}
+		//MoveIterator::Move& move = moves.next();
 		MoveBackup backup;
 
 		board.doMove(move,backup);
