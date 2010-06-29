@@ -489,7 +489,6 @@ inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move,
 			(!isKingAttacked) &&
 			(!isGivingCheck) &&
 			(!isPawnPush(board,move)) &&
-			(!isPawnPromoting(board)) &&
 			(!nullMoveMateScore)
 	);
 
