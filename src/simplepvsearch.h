@@ -326,7 +326,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 				move.score = evaluator.see(board,move);
 				if (move.score>0) {
 					move.type=MoveIterator::GOOD_CAPTURE;
-				} if (move.score==0) {
+				} else if (move.score==0) {
 					move.type=MoveIterator::EQUAL_CAPTURE;
 				}
 			}
@@ -507,6 +507,7 @@ inline bool SimplePVSearch::okToPrune(Board& board, MoveIterator::Move& move, Mo
 			move != hashMove &&
 			!isGivingCheck &&
 			!isPawnPush(board,move) &&
+			!isPawnPromoting(board) &&
 			!nullMoveMateScore &&
 			(move.type == MoveIterator::NON_CAPTURE ||
 					move.type == MoveIterator::BAD_CAPTURE));
