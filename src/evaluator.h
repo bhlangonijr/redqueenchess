@@ -84,6 +84,7 @@ public:
 	const void setGameStage(const GamePhase phase);
 	const GamePhase getGameStage();
 	const GamePhase predictGameStage(Board& board);
+	const int seeSign(Board& board, MoveIterator::Move& move);
 	const int see(Board& board, MoveIterator::Move& move);
 
 	inline const int interpolate(const int first, const int second, const int position) {
@@ -91,10 +92,8 @@ public:
 	}
 
 	inline const int getPieceSquareValue(const PieceTypeByColor piece, const Square square) {
-
 		const int egValue = endGamePieceSquareTable[piece][square];
 		const int mgValue = defaultPieceSquareTable[piece][square];
-
 		return interpolate(mgValue,egValue,this->getGameStage());
 	}
 
@@ -319,6 +318,18 @@ inline const bool Evaluator::isPawnPassed(Board& board, const PieceColor color, 
 	return !(passedMask[color][from]&pawns);
 }
 
+// static exchange evaluation sign
+inline const int Evaluator::seeSign(Board& board, MoveIterator::Move& move) {
+
+	if (defaultMaterialValues[board.getPieceBySquare(move.from)] <=
+			defaultMaterialValues[board.getPieceBySquare(move.to)] &&
+			board.getPieceType(board.getPieceBySquare(move.from)) != KING) {
+		return 1;
+	}
+
+	return this->see(board,move);
+}
+
 // static exchange evaluation
 inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 
@@ -377,9 +388,9 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 
 	gain[idx] = defaultMaterialValues[secondPiece];
 
-	if (board.getPieceType(secondPiece)==KING) {
+	/*if (board.getPieceType(secondPiece)==KING) {
 		return queenValue*10;
-	}
+	}*/
 
 	while (true) {
 

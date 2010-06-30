@@ -119,11 +119,6 @@ void* SearchAgent::startThreadSearch() {
 // start search
 void SearchAgent::startSearch() {
 
-	if (getSearchInProgress()) {
-		Uci::getInstance()->text("Search in progress...");
-		return;
-	}
-
 	newSearchHash();
 
 	pthread_t executor;
@@ -134,11 +129,6 @@ void SearchAgent::startSearch() {
 
 // start perft
 void SearchAgent::doPerft() {
-
-	if (getSearchInProgress()) {
-		Uci::getInstance()->text("Search in progress...");
-		return;
-	}
 
 	std::cout << "info Executing perft..." << std::endl;
 	Board newBoard(board);

@@ -44,7 +44,7 @@ const int maxSearchPly = 100;
 
 // internal iterative deepening
 const int allowIIDAtPV = 5;
-const int allowIIDAtNormal = 11;
+const int allowIIDAtNormal = 7;
 
 // margin constants
 #define futilityMargin(depth) (100 + depth * 200)
@@ -65,7 +65,7 @@ const int prunningPvMoves=2;
 const int prunningNonPvMoves=2;
 
 //reduction constants
-const int pvReduction=0;
+const int pvReduction=1;
 const int nonPvReduction=1;
 
 //score table & history bonus
@@ -321,13 +321,14 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			if (move==ttMove) {
 				continue;
 			}
-			move.score = evaluator.see(board,move);
-			if (move.score>0) {
-				move.type=MoveIterator::GOOD_CAPTURE;
-			} if (move.score<0) {
-				move.type=MoveIterator::BAD_CAPTURE;
-			} else {
-				move.type=MoveIterator::EQUAL_CAPTURE;
+
+			if (move.type==MoveIterator::BAD_CAPTURE) {
+				move.score = evaluator.see(board,move);
+				if (move.score>0) {
+					move.type=MoveIterator::GOOD_CAPTURE;
+				} if (move.score==0) {
+					move.type=MoveIterator::EQUAL_CAPTURE;
+				}
 			}
 			if (move.type==MoveIterator::BAD_CAPTURE) {
 				moves.prior();
@@ -500,7 +501,7 @@ inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move,
 inline bool SimplePVSearch::okToPrune(Board& board, MoveIterator::Move& move, MoveIterator::Move& hashMove,
 		bool isKingAttacked, const bool isGivingCheck, const bool nullMoveMateScore, const int depth) {
 
-	bool verify = ((
+	bool verify = (
 			depth < futilityDepth &&
 			!isKingAttacked &&
 			move != hashMove &&
@@ -508,7 +509,7 @@ inline bool SimplePVSearch::okToPrune(Board& board, MoveIterator::Move& move, Mo
 			!isPawnPush(board,move) &&
 			!nullMoveMateScore &&
 			(move.type == MoveIterator::NON_CAPTURE ||
-					move.type == MoveIterator::BAD_CAPTURE)) );
+					move.type == MoveIterator::BAD_CAPTURE));
 
 	return verify;
 

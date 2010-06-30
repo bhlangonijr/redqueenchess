@@ -193,7 +193,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int alpha, int beta
 
 	if (depth < 3) {
 		rootMoves.sort(nodesPerMove);
-	} else if (depth > 5) {
+	} else {
 		rootMoves.sortOrderingBy(nodesPerMove);
 	}
 
@@ -448,15 +448,15 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	}
 
 	//razoring
-	if (depth < razorDepth && hashData.move.from == NONE &&
-			!isKingAttacked && !isMateScore(beta) &&
-			!isPawnPromoting(board) && allowNullMove &&
-			beta > si.eval + (razorMargin(depth)) ) {
-		score = qSearch(board, si, beta-1, beta, 0, ply, pv);
-		if (score < beta) {
-			return score;
-		}
-	}
+//	if (depth < razorDepth && hashData.move.from == NONE &&
+//			!isKingAttacked && !isMateScore(beta) &&
+//			!isPawnPromoting(board) && allowNullMove &&
+//			beta > si.eval + (razorMargin(depth)) ) {
+//		score = qSearch(board, si, beta-1, beta, 0, ply, pv);
+//		if (score < beta) {
+//			return score;
+//		}
+//	}
 
 	// null move #1
 	if (!isKingAttacked && allowNullMove &&
