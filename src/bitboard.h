@@ -390,11 +390,17 @@ const int pawnValue 	= 100;
 const int knightValue 	= 320;
 const int bishopValue 	= 330;
 const int rookValue 	= 500;
-const int queenValue 	= 1000;
+const int queenValue 	= 975;
 const int kingValue 	= 20000;
 
-const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {pawnValue, knightValue, bishopValue, rookValue, queenValue, kingValue,
-															pawnValue, knightValue, bishopValue, rookValue, queenValue, kingValue, 0};
+const int maxFullMaterialValue =
+		pawnValue*8+knightValue+bishopValue+rookValue+queenValue+kingValue;
+
+const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {
+		pawnValue, knightValue, bishopValue, rookValue, queenValue, kingValue,
+		pawnValue, knightValue, bishopValue, rookValue, queenValue, kingValue,
+		0
+};
 
 const int passedPawnBonus[ALL_PIECE_COLOR][ALL_RANK] = {
 		{0,25,30,35,40,50,70,0},

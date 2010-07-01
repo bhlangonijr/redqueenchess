@@ -141,6 +141,7 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	backup.hasWhiteQueenCastle=false;
 	backup.hasBlackKingCastle=false;
 	backup.hasBlackQueenCastle=false;
+	backup.phase=getGamePhase();
 	backup.halfMoveCounter =  getHalfMoveCounter();
 
 	removePiece(fromPiece,move.from);
@@ -285,6 +286,11 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	setSideToMove(otherSide);
 	setKey(getKey()^zobrist.sideToMove[otherSide]);
 
+	//if (toPiece!=EMPTY) {
+		setGamePhase(GamePhase((getMaterial(WHITE)-kingValue)-(getMaterial(BLACK)-kingValue)));
+	//}
+	//std::cout << "Phase: " << this->getGamePhase() << " max " << int(GamePhase(maxGamePhase-(getMaterial(WHITE)-kingValue)-(getMaterial(BLACK)-kingValue))) << std::endl;
+	//std::cout << "white: " << getMaterial(WHITE) << " black " << getMaterial(BLACK) << std::endl;
 	increaseMoveCounter();
 	updateKeyHistory();
 
@@ -303,6 +309,7 @@ void Board::doNullMove(MoveBackup& backup){
 	backup.hasWhiteQueenCastle=false;
 	backup.hasBlackKingCastle=false;
 	backup.hasBlackQueenCastle=false;
+	backup.phase=getGamePhase();
 	backup.halfMoveCounter =  getHalfMoveCounter();
 	resetHalfMoveCounter(); //TODO verify this
 
@@ -327,6 +334,7 @@ void Board::undoMove(MoveBackup& backup){
 	removePiece(currentBoard.square[backup.to],backup.to);
 	putPiece(piece,backup.from);
 	currentBoard.halfMoveCounter = backup.halfMoveCounter;
+	currentBoard.gamePhase=backup.phase;
 
 	if (backup.hasCapture) {
 		putPiece(backup.capturedPiece,backup.capturedSquare);
@@ -366,6 +374,7 @@ void Board::undoNullMove(MoveBackup& backup){
 	setCastleRights(BLACK, backup.blackCastleRight);
 	setEnPassant(backup.enPassant);
 	currentBoard.halfMoveCounter = backup.halfMoveCounter;
+	currentBoard.gamePhase=backup.phase;
 	decreaseMoveCounter();
 	setSideToMove(sideToMove);
 	setKey(backup.key);

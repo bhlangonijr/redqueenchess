@@ -83,6 +83,14 @@ const int zobristCastleIndex[ALL_CASTLE_RIGHT][ALL_CASTLE_RIGHT]={
 		{12,13,14,15}
 };
 
+const int maxGamePhase = (maxFullMaterialValue - kingValue) * 2;
+
+// game phase
+enum GamePhase {
+	OPENING=		 maxGamePhase/80,
+	MIDDLEGAME=		 maxGamePhase-queenValue*2,
+	ENDGAME=		 maxGamePhase
+};
 //start FEN position
 const std::string startFENPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
@@ -110,18 +118,19 @@ struct MoveBackup {
 	Square from;
 	Square to;
 	int halfMoveCounter;
+	GamePhase phase;
 
 };
 
 // the board node representation
 struct Node {
 
-	Node () : key(0ULL), piece(), moveCounter(0), halfMoveCounter(0)
+	Node () : key(0ULL), piece(), moveCounter(0), halfMoveCounter(0), gamePhase(OPENING)
 			{}
 
 	Node (const Node& node) : key(node.key), piece( node.piece ), enPassant( node.enPassant ),
 			sideToMove( node.sideToMove ), moveCounter(node.moveCounter),
-			halfMoveCounter(node.halfMoveCounter)
+			halfMoveCounter(node.halfMoveCounter), gamePhase(node.gamePhase)
 			{
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=node.square[x];
@@ -141,7 +150,7 @@ struct Node {
 		castleDone[WHITE]=node.castleDone[WHITE];
 		castleDone[BLACK]=node.castleDone[BLACK];
 
-			}
+	}
 
 	Key key;
 
@@ -176,6 +185,7 @@ struct Node {
 	Key keyHistory[MAX_GAME_LENGTH];
 	int moveCounter;
 	int halfMoveCounter;
+	GamePhase gamePhase;
 
 	// clear structure node
 	void clear()
@@ -183,6 +193,7 @@ struct Node {
 		key=0ULL;
 		moveCounter=0;
 		halfMoveCounter=0;
+		gamePhase=OPENING;
 		for(register int x=0;x<ALL_PIECE_TYPE_BY_COLOR;x++){
 			piece.array[x]=0ULL;
 			pieceCount[x]=0;
@@ -325,6 +336,9 @@ public:
 	const int getHalfMoveCounter() const;
 
 	void updateKeyHistory();
+
+	const GamePhase getGamePhase();
+	void setGamePhase(const GamePhase phase);
 
 	const long getTickCount() {
 		return ((clock() * 1000) / CLOCKS_PER_SEC);
@@ -1166,6 +1180,16 @@ inline const int Board::getHalfMoveCounter() const {
 // update key history
 inline void Board::updateKeyHistory() {
 	currentBoard.keyHistory[getMoveCounter()]=getKey();
+}
+
+// get game phase
+inline const GamePhase Board::getGamePhase() {
+	return currentBoard.gamePhase;
+}
+
+// set game phase
+inline void Board::setGamePhase(const GamePhase phase) {
+	currentBoard.gamePhase=phase;
 }
 
 #endif /* BOARD_H_ */

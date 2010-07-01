@@ -37,7 +37,9 @@ void SimplePVSearch::search(Board& _board) {
 	Board board(_board);
 	stats.clear();
 	clearHistory();
-	evaluator.setGameStage(evaluator.predictGameStage(board));
+	initRootMovesOrder();
+	rootMoves.clear();
+	_nodes = 0;
 	_startTime = getTickCount();
 	timeToStop = clock() + toClock(_timeToSearch-10);
 	_score = idSearch(board);
@@ -61,10 +63,6 @@ int SimplePVSearch::idSearch(Board& board) {
 	MoveIterator::Move easyMove;
 	rootSearchInfo.eval = evaluator.evaluate(board);
 	rootSearchInfo.inCheck = isKingAttacked;
-
-	initRootMovesOrder();
-	rootMoves.clear();
-	_nodes = 0;
 
 	if (!isKingAttacked) {
 		board.generateAllMoves(rootMoves, board.getSideToMove());
@@ -223,9 +221,9 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int alpha, int beta
 			remainingMoves++;
 		}
 
-		const bool givingCheck = isGivenCheck(board,move.to);
+		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
 		bool reduced = adjustDepth(extension, reduction, board, move, depth,
-				remainingMoves,isKingAttacked,givingCheck,ply,false,score > alpha);
+				remainingMoves,isKingAttacked,givingCheck,ply,false);
 		int newDepth=depth-1+extension;
 		SearchInfo newSi(si.eval,givingCheck);
 
@@ -342,10 +340,10 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 			remainingMoves++;
 		}
 
-		const bool givingCheck = isGivenCheck(board,move.to);
+		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
 
 		const bool reduced = adjustDepth(extension, reduction, board, move, depth, remainingMoves,
-				isKingAttacked,givingCheck,ply,false,moveCounter==1);
+				isKingAttacked,givingCheck,ply,false);
 		SearchInfo newSi(si.eval,givingCheck);
 		int newDepth=depth-1;
 		bool fullSearch=false;
@@ -528,7 +526,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 
 		moveCounter++;
 
-		const bool givingCheck = isGivenCheck(board,move.to);
+		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
 		SearchInfo newSi(si.eval,givingCheck);
 
 		//futility
@@ -550,7 +548,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		}
 
 		bool reduced = adjustDepth(extension, reduction, board, move, depth,remainingMoves,
-				isKingAttacked,givingCheck,ply,nullMoveMateScore,false);
+				isKingAttacked,givingCheck,ply,nullMoveMateScore);
 		int newDepth=depth-1+extension;
 
 		score = -zwSearch(board, newSi, 1-beta, newDepth-reduction, ply+1, &line, true);
@@ -638,7 +636,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 		}
 
 		moveCounter++;
-		const bool givingCheck = isGivenCheck(board,move.to);
+		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
 		SearchInfo newSi(standPat,givingCheck);
 
 		if (!isKingAttacked && !pvNode && depth < 0 &&

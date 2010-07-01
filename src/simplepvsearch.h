@@ -57,16 +57,13 @@ const int easyMargin=500;
 const int aspirationDepth=6;
 const int futilityDepth=3;
 const int razorDepth=4;
-const int prunningPvDepth=2;
-const int prunningNonPvDepth=2;
+const int lmrDepthThreshold=2;
 
 //counting moves prunning threshold
-const int prunningPvMoves=2;
-const int prunningNonPvMoves=2;
+const int lateMoveThreshold=2;
 
 //reduction constants
-const int pvReduction=1;
-const int nonPvReduction=1;
+const int lmrReduction=1;
 
 //score table & history bonus
 const int historyBonus=100;
@@ -260,12 +257,11 @@ private:
 			bool isKingAttacked, const bool isGivingCheck, const bool nullMoveMateScore, const int depth);
 	bool okToNullMove(Board& board);
 	bool isMateScore(const int score);
-	bool isGivenCheck(Board& board, const Square from);
 	bool isPawnFinal(Board& board);
 	bool isPawnPush(Board& board, MoveIterator::Move& move);
 	bool isPawnPromoting(const Board& board);
 	bool adjustDepth(int& extension, int& reduction, Board& board, MoveIterator::Move& move, int depth,
-			int remainingMoves, bool isKingAttacked, bool isGivingCheck, int ply, const bool nullMoveMateScore, bool isPV);
+			int remainingMoves, bool isKingAttacked, bool isGivingCheck, int ply, const bool nullMoveMateScore);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
 	const bool stop(const bool shouldStop);
 	const bool timeIsUp();
@@ -442,8 +438,9 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 			if (move.type==MoveIterator::UNKNOW) {
 				move.type=MoveIterator::NON_CAPTURE;
 				const int hist = history[board.getPieceTypeBySquare(move.from)][move.to];
-				const int gain = (evaluator.getPieceSquareValue(board.getPieceBySquare(move.from),move.to)-
-						evaluator.getPieceSquareValue(board.getPieceBySquare(move.from),move.from));
+				const int gain =
+						evaluator.getPieceSquareValue(board.getPieceBySquare(move.from),move.to,board.getGamePhase())-
+						evaluator.getPieceSquareValue(board.getPieceBySquare(move.from),move.from,board.getGamePhase());
 				move.score=hist*historyBonus+gain;
 			}
 		}
@@ -527,16 +524,6 @@ inline bool SimplePVSearch::isMateScore(const int score) {
 	score > maxScore-maxSearchPly;
 }
 
-// is given check?
-inline bool SimplePVSearch::isGivenCheck(Board& board, const Square from) {
-
-	const PieceColor color=board.getPieceColorBySquare(from);
-	const Bitboard otherKingBB = board.getPiecesByType(board.makePiece(board.flipSide(color),KING));
-	const Square otherKingSq = bitboardToSquare(otherKingBB);
-
-	return (otherKingSq != NONE && board.isAttackedBy(from,otherKingSq));
-}
-
 // remains pawns & kings only?
 inline bool SimplePVSearch::isPawnFinal(Board& board) {
 
@@ -577,7 +564,7 @@ inline bool SimplePVSearch::isPawnPromoting(const Board& board) {
 // depth reduction
 inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 		Board& board, MoveIterator::Move& move, int depth, int remainingMoves,
-		bool isKingAttacked, bool isGivingCheck, int ply, const bool nullMoveMateScore, bool isPV) {
+		bool isKingAttacked, bool isGivingCheck, int ply, const bool nullMoveMateScore) {
 
 	extension=0;
 	reduction=0;
@@ -591,16 +578,9 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 		return false;
 	}
 
-	if (isPV) {
-		if (remainingMoves>prunningPvMoves && depth > prunningPvDepth) {
-			reduction=pvReduction;
-			return true;
-		}
-	} else {
-		if (remainingMoves>prunningNonPvMoves && depth > prunningNonPvDepth) {
-			reduction = nonPvReduction;
-			return true;
-		}
+	if (remainingMoves>lateMoveThreshold && depth>lmrDepthThreshold) {
+		reduction=lmrReduction;
+		return true;
 	}
 
 	return false;
