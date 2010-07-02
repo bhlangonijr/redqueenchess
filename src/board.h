@@ -83,13 +83,13 @@ const int zobristCastleIndex[ALL_CASTLE_RIGHT][ALL_CASTLE_RIGHT]={
 		{12,13,14,15}
 };
 
-const int maxGamePhase = (maxFullMaterialValue - kingValue) * 2;
+const int maxGamePhase = 32;
 
 // game phase
 enum GamePhase {
-	OPENING=		 maxGamePhase/80,
-	MIDDLEGAME=		 maxGamePhase-queenValue*2,
-	ENDGAME=		 maxGamePhase
+	OPENING=		 0,
+	MIDDLEGAME=		 5,
+	ENDGAME=		 26
 };
 //start FEN position
 const std::string startFENPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -143,6 +143,8 @@ struct Node {
 		}
 		fullMaterial[WHITE]=node.fullMaterial[WHITE];
 		fullMaterial[BLACK]=node.fullMaterial[BLACK];
+		pieceColorCount[WHITE]=node.pieceColorCount[WHITE];
+		pieceColorCount[BLACK]=node.pieceColorCount[BLACK];
 		pieceColor[WHITE]=node.pieceColor[WHITE];
 		pieceColor[BLACK]=node.pieceColor[BLACK];
 		castleRight[WHITE]=node.castleRight[WHITE];
@@ -181,6 +183,7 @@ struct Node {
 	PieceTypeByColor square[ALL_SQUARE];
 	Bitboard pieceColor[ALL_PIECE_COLOR];
 	int pieceCount[ALL_PIECE_TYPE_BY_COLOR];
+	int pieceColorCount[ALL_PIECE_COLOR];
 	int fullMaterial[ALL_PIECE_COLOR];
 	Key keyHistory[MAX_GAME_LENGTH];
 	int moveCounter;
@@ -207,6 +210,8 @@ struct Node {
 
 		fullMaterial[WHITE]=0;
 		fullMaterial[BLACK]=0;
+		pieceColorCount[WHITE]=0;
+		pieceColorCount[BLACK]=0;
 		pieceColor[WHITE]=0ULL;
 		pieceColor[BLACK]=0ULL;
 		pieceColor[COLOR_NONE]=FULL_BB;
@@ -288,8 +293,8 @@ public:
 	const Bitboard getPiecesByType(const PieceTypeByColor piece) const;
 	const PieceTypeByColor getPieceBySquare(const Square square) const;
 	const int getPieceCountByType(const PieceTypeByColor piece) const;
+	const int getPieceCountByColor(const PieceColor color ) const;
 	const int getMaterial(const PieceColor color) const;
-
 
 	void generateCaptures(MoveIterator& moves, const PieceColor side);
 	void generateNonCaptures(MoveIterator& moves, const PieceColor side);
@@ -370,7 +375,7 @@ inline bool Board::putPiece(const PieceTypeByColor piece, const Square square) {
 	currentBoard.square[square] = piece;
 	currentBoard.pieceCount[piece]++;
 	currentBoard.fullMaterial[pieceColor[piece]]+=defaultMaterialValues[piece];
-
+	currentBoard.pieceColorCount[pieceColor[piece]]++;
 	return true;
 }
 // remove a piece from the board and erase piece info
@@ -380,7 +385,7 @@ inline bool Board::removePiece(const PieceTypeByColor piece, const Square square
 	currentBoard.square[square] = EMPTY;
 	currentBoard.pieceCount[piece]--;
 	currentBoard.fullMaterial[pieceColor[piece]]-=defaultMaterialValues[piece];
-
+	currentBoard.pieceColorCount[pieceColor[piece]]--;
 	return true;
 }
 
@@ -720,6 +725,11 @@ inline const PieceTypeByColor Board::getPieceBySquare(const Square square) const
 // get piece count by type
 inline const int Board::getPieceCountByType(const PieceTypeByColor piece) const {
 	return currentBoard.pieceCount[piece];
+}
+
+// get piece count by type
+inline const int Board::getPieceCountByColor(const PieceColor color) const {
+	return currentBoard.pieceColorCount[color];
 }
 
 // get full material by side

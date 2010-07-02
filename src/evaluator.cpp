@@ -65,9 +65,7 @@ const int Evaluator::quickEvaluate(Board& board) {
 
 	int material = board.getMaterial(side) - board.getMaterial(other);
 	int pieces = evalPieces(board, side) - evalPieces(board, other);
-	/*if (material>maxScore) {
-		std::cout << "test" << (material+pieces) << std::endl;
-	}*/
+
 	return material+pieces;
 }
 

@@ -44,7 +44,7 @@ const int maxSearchPly = 100;
 
 // internal iterative deepening
 const int allowIIDAtPV = 5;
-const int allowIIDAtNormal = 7;
+const int allowIIDAtNormal = 11;
 
 // margin constants
 #define futilityMargin(depth) (100 + depth * 200)

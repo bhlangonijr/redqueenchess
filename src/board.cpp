@@ -286,11 +286,8 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	setSideToMove(otherSide);
 	setKey(getKey()^zobrist.sideToMove[otherSide]);
 
-	//if (toPiece!=EMPTY) {
-		setGamePhase(GamePhase((getMaterial(WHITE)-kingValue)-(getMaterial(BLACK)-kingValue)));
-	//}
-	//std::cout << "Phase: " << this->getGamePhase() << " max " << int(GamePhase(maxGamePhase-(getMaterial(WHITE)-kingValue)-(getMaterial(BLACK)-kingValue))) << std::endl;
-	//std::cout << "white: " << getMaterial(WHITE) << " black " << getMaterial(BLACK) << std::endl;
+	setGamePhase(GamePhase(maxGamePhase-getPieceCountByColor(WHITE)-getPieceCountByColor(BLACK)));
+
 	increaseMoveCounter();
 	updateKeyHistory();
 
