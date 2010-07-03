@@ -60,10 +60,6 @@ const int QUEEN_KING_SQUARE_ATTACK_BONUS = 		4;
 
 const int BISHOP_PAIR_BONUS = 15;
 
-const int maxScore = 20000;
-const int winningScore = 2000;
-const int maxPieces=32;
-
 class Evaluator {
 public:
 

@@ -63,6 +63,7 @@ int SimplePVSearch::idSearch(Board& board) {
 	MoveIterator::Move easyMove;
 	rootSearchInfo.eval = evaluator.evaluate(board);
 	rootSearchInfo.inCheck = isKingAttacked;
+	rootMoves.clearScore();
 
 	if (!isKingAttacked) {
 		board.generateAllMoves(rootMoves, board.getSideToMove());
@@ -188,17 +189,9 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int alpha, int beta
 	PvLine line = PvLine();
 	int score = -maxScore;
 	const bool isKingAttacked = si.inCheck;
-
-/*
-	if (depth < 3) {
-		rootMoves.sort(nodesPerMove);
-	} else {
-*/
-		rootMoves.sortOrderingBy(nodesPerMove);
-		rootMoves.sort(nodesPerMove);
-/*	}*/
-
+	rootMoves.sortOrderingBy(nodesPerMove);
 	rootMoves.first();
+
 	int moveCounter=0;
 	int remainingMoves=0;
 	int reduction=0;
@@ -242,7 +235,6 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int alpha, int beta
 
 		board.undoMove(backup);
 
-		move.score=score;
 		nodes = _nodes-nodes;
 		updateRootMovesScore(nodes);
 
@@ -256,6 +248,8 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int alpha, int beta
 
 		if( score > alpha ) {
 			alpha = score;
+			rootMoves.clearScore();
+			move.score=score;
 			bestMove=move;
 			updatePv(pv, line, bestMove);
 		}
@@ -265,7 +259,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int alpha, int beta
 	}
 
 	rootMoves.sortOrderingBy(nodesPerMove);
-	rootMoves.sort(nodesPerMove);
+	rootMoves.first();
 
 	if (!moveCounter) {
 		return isKingAttacked ? -maxScore+ply : 0;

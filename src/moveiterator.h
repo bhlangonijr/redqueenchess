@@ -159,6 +159,8 @@ public:
 
 	const size_t getIndex();
 
+	const void clearScore();
+
 	void operator()(Data& data) {
 		_data=data;
 	}
@@ -279,6 +281,12 @@ inline const MoveIterator::Move& MoveIterator::get(const size_t index) {
 
 inline const size_t MoveIterator::getIndex() {
 	return _data.idx-1;
+}
+
+inline const void MoveIterator::clearScore() {
+	for(int i = 0; i <(int) _data.size; i++) {
+		_data.list[i].score=-maxScore;
+	}
 }
 
 #endif /* MOVEITERATOR_H_ */

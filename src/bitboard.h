@@ -386,6 +386,11 @@ const Bitboard neighborFiles[ALL_SQUARE]={
 		NFILE(A8), NFILE(B8), NFILE(C8), NFILE(D8), NFILE(E8), NFILE(F8), NFILE(G8), NFILE(H8)
 };
 
+
+const int maxScore = 20000;
+const int winningScore = 2000;
+const int maxPieces=32;
+
 const int pawnValue 	= 100;
 const int knightValue 	= 320;
 const int bishopValue 	= 330;
