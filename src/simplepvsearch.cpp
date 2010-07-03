@@ -189,11 +189,14 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int alpha, int beta
 	int score = -maxScore;
 	const bool isKingAttacked = si.inCheck;
 
+/*
 	if (depth < 3) {
 		rootMoves.sort(nodesPerMove);
 	} else {
+*/
 		rootMoves.sortOrderingBy(nodesPerMove);
-	}
+		rootMoves.sort(nodesPerMove);
+/*	}*/
 
 	rootMoves.first();
 	int moveCounter=0;
@@ -261,6 +264,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int alpha, int beta
 
 	}
 
+	rootMoves.sortOrderingBy(nodesPerMove);
 	rootMoves.sort(nodesPerMove);
 
 	if (!moveCounter) {

@@ -82,7 +82,7 @@ public:
 	const int see(Board& board, MoveIterator::Move& move);
 
 	inline const int interpolate(const int first, const int second, const int position) {
-		return (first*position)/maxGamePhase+(second*(maxGamePhase-position)/maxGamePhase);
+		return (first*position)/maxGamePhase+(second*(maxGamePhase-position))/maxGamePhase;
 	}
 
 	inline const int getPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase) {
