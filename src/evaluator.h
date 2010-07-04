@@ -38,25 +38,18 @@ const int DONE_CASTLE_BONUS=       +10;
 const int DOUBLED_PAWN_PENALTY =   -10;
 const int ISOLATED_PAWN_PENALTY =  -15;
 const int BACKWARD_PAWN_PENALTY =  -5;
-
-const int KNIGHT_MOBILITY_BONUS = 	6;
-const int BISHOP_MOBILITY_BONUS = 	4;
-const int ROOK_MOBILITY_BONUS = 	2;
-
-const int KNIGHT_TROPISM_BONUS = 	1;
-const int BISHOP_TROPISM_BONUS = 	1;
-const int ROOK_TROPISM_BONUS = 		2;
-const int QUEEN_TROPISM_BONUS = 	3;
-
-const int KNIGHT_ATTACK_BONUS = 	4;
-const int BISHOP_ATTACK_BONUS = 	3;
-const int ROOK_ATTACK_BONUS = 		5;
-const int QUEEN_ATTACK_BONUS = 		7;
-
-const int SMALL_KING_SQUARE_ATTACK_BONUS = 	5;
-const int BIG_KING_SQUARE_ATTACK_BONUS = 	7;
-
 const int BISHOP_PAIR_BONUS = 15;
+
+const int knightMobilityBonus[maxGamePhase+1] = {6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,3,3,3,3,3,3,2,2,2,1,1,1};
+const int bishopMobilityBonus[maxGamePhase+1] = {4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,1,1,1};
+const int rookMobilityBonus[maxGamePhase+1] =   {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1};
+
+const int bishopKingBonus[maxGamePhase+1] = {1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3};
+const int rookKingBonus[maxGamePhase+1] =   {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4};
+const int queenKingBonus[maxGamePhase+1] =  {3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5};
+
+const int minorKingZoneAttackBonus[maxGamePhase+1] = {2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,6,6,6,6,6,7,7,7,7,7,7};
+const int majorKingZoneAttackBonus[maxGamePhase+1] = {4,4,4,4,5,5,5,5,5,6,6,6,6,6,7,7,7,8,8,8,9,9,10,10,10,10,10,10,10,10,10,10,10};
 
 class Evaluator {
 public:
@@ -67,7 +60,7 @@ public:
 	const int quickEvaluate(Board& board);
 	const int evalMaterial(Board& board, PieceColor color);
 	const int evalPieces(Board& board, PieceColor color);
-	const int evalMobility(Board& board, PieceColor color);
+	const int evalBoardControl(Board& board, PieceColor color, int& kingThreat);
 	const int evalDevelopment(Board& board, PieceColor color);
 	const int evalImbalances(Board& board, PieceColor color);
 	const bool isPawnPassed(Board& board, const PieceColor color, const Square from);
@@ -82,7 +75,7 @@ public:
 	inline const int getPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase) {
 		const int egValue = endGamePieceSquareTable[piece][square];
 		const int mgValue = defaultPieceSquareTable[piece][square];
-		return interpolate(mgValue,egValue,phase);
+		return interpolate(egValue,mgValue,phase);
 	}
 
 private:

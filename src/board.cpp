@@ -286,7 +286,8 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	setSideToMove(otherSide);
 	setKey(getKey()^zobrist.sideToMove[otherSide]);
 
-	setGamePhase(GamePhase(getPieceCountByColor(WHITE)+getPieceCountByColor(BLACK)));
+	setGamePhase(GamePhase(maxGamePhase-
+			getPieceCountByColor(WHITE)-getPieceCountByColor(BLACK)));
 
 	increaseMoveCounter();
 	updateKeyHistory();
