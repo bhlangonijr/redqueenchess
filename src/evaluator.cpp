@@ -126,6 +126,10 @@ const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	const Bitboard allPieces = board.getAllPieces();
 
 	Bitboard pieces = EMPTY_BB;
+	Bitboard knightAttacks = EMPTY_BB;
+	Bitboard bishopAttacks = EMPTY_BB;
+	Bitboard rookAttacks = EMPTY_BB;
+	Bitboard queenAttacks = EMPTY_BB;
 	Square from = NONE;
 	int count=0;
 	int kingThreat=0;
@@ -134,16 +138,9 @@ const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getKnightAttacks(from);
+		knightAttacks |= attacks;
 		count+=(_BitCount(attacks&~allPieces)-4)*KNIGHT_MOBILITY_BONUS;
-		if (attacks&otherKingBB) {
-			kingThreat += delta*KNIGHT_ATTACK_BONUS;
-		} else if (attacks&otherKingSquareBB) {
-			kingThreat += delta*KNIGHT_KING_SQUARE_ATTACK_BONUS;
-		} else {
-			kingThreat += delta*KNIGHT_TROPISM_BONUS;
-		}
 		from = extractLSB(pieces);
 	}
 
@@ -153,14 +150,9 @@ const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	while ( from!=NONE ) {
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getBishopAttacks(from);
+		bishopAttacks |= attacks;
 		count+=(_BitCount(attacks)-6)*BISHOP_MOBILITY_BONUS;
-		if (attacks&otherKingBB) {
-			kingThreat += delta*BISHOP_ATTACK_BONUS;
-		} else if (attacks&otherKingSquareBB) {
-			kingThreat += delta*BISHOP_KING_SQUARE_ATTACK_BONUS;
-		} else {
-			kingThreat += delta*BISHOP_TROPISM_BONUS;
-		}
+		kingThreat += delta*BISHOP_TROPISM_BONUS;
 		from = extractLSB(pieces);
 	}
 
@@ -170,14 +162,9 @@ const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	while ( from!=NONE ) {
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getRookAttacks(from);
+		rookAttacks |= attacks;
 		count+=(_BitCount(attacks)-7)*ROOK_MOBILITY_BONUS;
-		if (attacks&otherKingBB) {
-			kingThreat += delta*ROOK_ATTACK_BONUS;
-		} else if (attacks&otherKingSquareBB) {
-			kingThreat += delta*ROOK_KING_SQUARE_ATTACK_BONUS;
-		} else {
-			kingThreat += delta*ROOK_TROPISM_BONUS;
-		}
+		kingThreat += delta*ROOK_TROPISM_BONUS;
 		from = extractLSB(pieces);
 	}
 
@@ -187,15 +174,26 @@ const int Evaluator::evalMobility(Board& board, PieceColor color) {
 	while ( from!=NONE ) {
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getQueenAttacks(from);
-		if (attacks&otherKingBB) {
-			kingThreat += delta*QUEEN_ATTACK_BONUS;
-		} else if (attacks&otherKingSquareBB) {
-			kingThreat += delta*QUEEN_KING_SQUARE_ATTACK_BONUS;
-		} else {
-			kingThreat += delta*QUEEN_TROPISM_BONUS;
-		}
+		queenAttacks |= attacks;
+		count+=(_BitCount(attacks)-10);
+		kingThreat += delta*QUEEN_TROPISM_BONUS;
 		from = extractLSB(pieces);
 	}
+
+	if (knightAttacks&otherKingSquareBB) {
+		kingThreat += SMALL_KING_SQUARE_ATTACK_BONUS;
+	}
+	if (bishopAttacks&otherKingSquareBB) {
+		kingThreat += _BitCount(bishopAttacks&otherKingSquareBB)*SMALL_KING_SQUARE_ATTACK_BONUS;
+	}
+	if (rookAttacks&otherKingSquareBB) {
+		kingThreat += _BitCount(rookAttacks&otherKingSquareBB)*SMALL_KING_SQUARE_ATTACK_BONUS;
+	}
+	if (queenAttacks&otherKingSquareBB) {
+		kingThreat += _BitCount(queenAttacks&otherKingSquareBB)*BIG_KING_SQUARE_ATTACK_BONUS;
+	}
+
+
 
 	return count+kingThreat;
 }

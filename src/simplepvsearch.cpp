@@ -63,7 +63,6 @@ int SimplePVSearch::idSearch(Board& board) {
 	MoveIterator::Move easyMove;
 	rootSearchInfo.eval = evaluator.evaluate(board);
 	rootSearchInfo.inCheck = isKingAttacked;
-	rootMoves.clearScore();
 
 	if (!isKingAttacked) {
 		board.generateAllMoves(rootMoves, board.getSideToMove());
@@ -72,12 +71,24 @@ int SimplePVSearch::idSearch(Board& board) {
 	}
 
 	filterLegalMoves(board,rootMoves);
+	rootMoves.clearScore();
 
 	for (int depth = 1; depth <= _depth; depth++) {
 
 		PvLine pv = PvLine();
 		pv.index=0;
 		int score = 0;
+		// like in stockfish
+		if (depth >= aspirationDepth && abs(iterationScore[depth-1]) < winningScore)	{
+			int delta1 = iterationScore[depth-1]-iterationScore[depth-2];
+			int delta2 = iterationScore[depth-2]-iterationScore[depth-3];
+			int aspirationDelta = MAX(abs(delta1)+abs(delta2)/2, 16)+7;
+			alpha = MAX(iterationScore[depth-1]-aspirationDelta,-maxScore);
+			beta  = MIN(iterationScore[depth-1]+aspirationDelta,+maxScore);
+		} else {
+			alpha=-maxScore;
+			beta=maxScore;
+		}
 
 		score = rootSearch(board, rootSearchInfo, alpha, beta, depth, 0, &pv);
 
@@ -107,17 +118,6 @@ int SimplePVSearch::idSearch(Board& board) {
 		stats.searchNodes=_nodes;
 
 		uciOutput(&pv, stats.bestMove, stats.searchTime, agent->hashFull(), depth, alpha, beta);
-
-		if (depth >= aspirationDepth && abs(score) < winningScore)	{ // like in stockfish
-			int delta1 = iterationScore[depth-0]-iterationScore[depth-1];
-			int delta2 = iterationScore[depth-1]-iterationScore[depth-2];
-			int aspirationDelta = MAX(abs(delta1)+abs(delta2)/2, 16)+7;
-			alpha = MAX(iterationScore[depth]-aspirationDelta,-maxScore);
-			beta  = MIN(iterationScore[depth]+aspirationDelta,+maxScore);
-		} else {
-			alpha=-maxScore;
-			beta=maxScore;
-		}
 
 		int repetition=0;
 
