@@ -217,6 +217,12 @@ public:
 		} else if (value <= -maxScore+100) {
 			value += ply;
 		}
+		HashData hashData;
+		if (transTable->hashGet(board.getKey(), hashData)) {
+			if (hashData.depth > depth) {
+				return false;
+			}
+		}
 
 		return transTable->hashPut(board.getKey(), HashData(value,depth,flag,move));
 

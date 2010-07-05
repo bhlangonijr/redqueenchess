@@ -43,7 +43,7 @@ const int maxSearchDepth = 80;
 const int maxSearchPly = 100;
 
 // internal iterative deepening
-const int allowIIDAtPV = 5;
+const int allowIIDAtPV = 3;
 const int allowIIDAtNormal = 11;
 
 // margin constants
@@ -54,7 +54,7 @@ const int iidMargin=250;
 const int easyMargin=500;
 
 //depth prunning threshold
-const int aspirationDepth=6;
+const int aspirationDepth=60;
 const int futilityDepth=3;
 const int razorDepth=4;
 const int lmrDepthThreshold=2;

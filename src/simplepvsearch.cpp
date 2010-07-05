@@ -454,18 +454,18 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 			return score;
 		}
 	}
-
+/*
 	// null move #1
 	if (!isKingAttacked && allowNullMove &&
 			depth < razorDepth && okToNullMove(board) &&
 			!isMateScore(beta) && si.eval >= beta+futilityMargin(depth)) {
 		return si.eval-futilityMargin(depth);
 	}
-
+*/
 	// null move #2
 	if (!isKingAttacked && allowNullMove &&
 			okToNullMove(board) && !isMateScore(beta) &&
-			si.eval >= beta-(depth>=razorDepth?nullMoveMargin:0)) {
+			si.eval >= beta) {
 
 		const int reduction = 3 + (depth > 4 ? depth/4 : 0);
 		MoveBackup backup;
