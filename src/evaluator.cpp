@@ -85,8 +85,10 @@ const int Evaluator::evalPieces(Board& board, PieceColor color) {
 	int count=0;
 
 	// king
-	if (board.isCastleDone(color)) {
-		count+= DONE_CASTLE_BONUS + board.getPiecesByType(board.makePiece(other,QUEEN)) ? 10 : 0;
+	if (board.isCastleDone(color) &&
+			board.getGamePhase() <= MIDDLEGAME) {
+		count+= DONE_CASTLE_BONUS +
+				board.getPiecesByType(board.makePiece(other,QUEEN)) ? 10 : 0;
 	}
 
 	const Bitboard pawns = board.getPiecesByType(board.makePiece(color,PAWN));
@@ -142,6 +144,7 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 	Bitboard queenAttacks = EMPTY_BB;
 	Square from = NONE;
 	int count=0;
+	kingThreat=0;
 
 	pieces = knights;
 	from = extractLSB(pieces);

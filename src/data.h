@@ -33,6 +33,31 @@
 
 #define PASSEDMASK(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]] | neighborFiles[X]), X))
 
+const int DONE_CASTLE_BONUS=       +10;
+
+const int DOUBLED_PAWN_PENALTY =   -10;
+const int ISOLATED_PAWN_PENALTY =  -15;
+const int BACKWARD_PAWN_PENALTY =  -5;
+const int BISHOP_PAIR_BONUS = 	   +15;
+
+
+const int knightMobilityBonus[maxGamePhase+1] = {6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,3,3,3,3,3,3,2,2,2,1,1,1};
+const int bishopMobilityBonus[maxGamePhase+1] = {4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,1,1,1};
+const int rookMobilityBonus[maxGamePhase+1] =   {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1};
+
+const int bishopKingBonus[maxGamePhase+1] = {1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3};
+const int rookKingBonus[maxGamePhase+1] =   {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4};
+const int queenKingBonus[maxGamePhase+1] =  {3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5};
+
+const int minorKingZoneAttackBonus[maxGamePhase+1] = {2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,6,6,6,6,6,7,7,7,7,7,7};
+const int majorKingZoneAttackBonus[maxGamePhase+1] = {4,4,4,4,5,5,5,5,5,6,6,6,6,6,7,7,7,8,8,8,9,9,10,10,10,10,10,10,10,10,10,10,10};
+
+const int passedPawnBonus[ALL_PIECE_COLOR][ALL_RANK] = {
+		{0,25,30,35,40,50,70,0},
+		{0,70,50,40,35,30,25,0},
+		{0,0,0,0,0,0,0,0}
+};
+
 const Bitboard passedMask[ALL_PIECE_COLOR][ALL_SQUARE]= {
 		{
 				PASSEDMASK(WHITE,A1), PASSEDMASK(WHITE,B1), PASSEDMASK(WHITE,C1), PASSEDMASK(WHITE,D1), PASSEDMASK(WHITE,E1), PASSEDMASK(WHITE,F1), PASSEDMASK(WHITE,G1), PASSEDMASK(WHITE,H1),

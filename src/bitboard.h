@@ -404,12 +404,6 @@ const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {
 		0
 };
 
-const int passedPawnBonus[ALL_PIECE_COLOR][ALL_RANK] = {
-		{0,25,30,35,40,50,70,0},
-		{0,70,50,40,35,30,25,0},
-		{0,0,0,0,0,0,0,0}
-};
-
 extern void printBitboard(Bitboard bb);
 
 extern void initializeBitboards();

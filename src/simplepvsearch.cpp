@@ -191,6 +191,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int alpha, int beta
 	const bool isKingAttacked = si.inCheck;
 	rootMoves.sortOrderingBy(nodesPerMove);
 	rootMoves.first();
+	rootMoves.clearScore();
 
 	int moveCounter=0;
 	int remainingMoves=0;
@@ -444,15 +445,15 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	}
 
 	//razoring
-//	if (depth < razorDepth && hashData.move.from == NONE &&
-//			!isKingAttacked && !isMateScore(beta) &&
-//			!isPawnPromoting(board) && allowNullMove &&
-//			beta > si.eval + (razorMargin(depth)) ) {
-//		score = qSearch(board, si, beta-1, beta, 0, ply, pv);
-//		if (score < beta) {
-//			return score;
-//		}
-//	}
+	if (depth < razorDepth && hashData.move.from == NONE &&
+			!isKingAttacked && !isMateScore(beta) &&
+			!isPawnPromoting(board) && allowNullMove &&
+			beta > si.eval + (razorMargin(depth)) ) {
+		score = qSearch(board, si, beta-1, beta, 0, ply, pv);
+		if (score < beta) {
+			return score;
+		}
+	}
 
 	// null move #1
 	if (!isKingAttacked && allowNullMove &&
