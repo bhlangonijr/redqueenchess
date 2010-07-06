@@ -448,24 +448,24 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	if (depth < razorDepth && hashData.move.from == NONE &&
 			!isKingAttacked && !isMateScore(beta) &&
 			!isPawnPromoting(board) && allowNullMove &&
-			beta > si.eval + (razorMargin(depth)) ) {
+			beta > si.eval + razorMargin(depth)) {
 		score = qSearch(board, si, beta-1, beta, 0, ply, pv);
 		if (score < beta) {
 			return score;
 		}
 	}
-/*
+
 	// null move #1
 	if (!isKingAttacked && allowNullMove &&
 			depth < razorDepth && okToNullMove(board) &&
 			!isMateScore(beta) && si.eval >= beta+futilityMargin(depth)) {
 		return si.eval-futilityMargin(depth);
 	}
-*/
+
 	// null move #2
-	if (!isKingAttacked && allowNullMove &&
-			okToNullMove(board) && !isMateScore(beta) &&
-			si.eval >= beta) {
+	if (depth>1 && !isKingAttacked &&
+			allowNullMove && okToNullMove(board) &&
+			!isMateScore(beta) && si.eval >= beta) {
 
 		const int reduction = 3 + (depth > 4 ? depth/4 : 0);
 		MoveBackup backup;
@@ -532,7 +532,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		if (okToPrune(board, move, hashData.move,
 				isKingAttacked, givingCheck, nullMoveMateScore, depth)) {
 
-			const int futilityScore = si.eval + futilityMargin(depth) + 50;
+			const int futilityScore = si.eval + futilityMargin(depth);
 			if (futilityScore < beta) {
 				if (futilityScore>bestScore) {
 					bestScore=futilityScore;

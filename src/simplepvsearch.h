@@ -506,8 +506,8 @@ inline bool SimplePVSearch::okToPrune(Board& board, MoveIterator::Move& move, Mo
 			!isPawnPush(board,move) &&
 			!isPawnPromoting(board) &&
 			!nullMoveMateScore &&
-			(move.type == MoveIterator::NON_CAPTURE ||
-					move.type == MoveIterator::BAD_CAPTURE));
+			move.type == MoveIterator::NON_CAPTURE
+			);
 
 	return verify;
 
