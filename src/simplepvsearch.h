@@ -54,7 +54,7 @@ const int iidMargin=250;
 const int easyMargin=500;
 
 //depth prunning threshold
-const int aspirationDepth=60;
+const int aspirationDepth=6;
 const int futilityDepth=3;
 const int razorDepth=4;
 const int lmrDepthThreshold=2;
@@ -574,11 +574,16 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 		return false;
 	}
 
+	if (nullMoveMateScore) {
+		return false;
+	}
+
 	if (!okToReduce(board, move, isKingAttacked, isGivingCheck, nullMoveMateScore, ply)) {
 		return false;
 	}
 
-	if (remainingMoves>lateMoveThreshold && depth>lmrDepthThreshold) {
+	if (remainingMoves>lateMoveThreshold &&
+			depth>lmrDepthThreshold) {
 		reduction=lmrReduction;
 		return true;
 	}
