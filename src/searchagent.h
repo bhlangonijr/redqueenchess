@@ -62,19 +62,87 @@ public:
 	};
 
 	enum NodeFlag {
-		LOWER, UPPER, EXACT, NM_LOWER
+		LOWER=0, UPPER, EXACT, NM_LOWER
 	};
 
+	/*struct HashData {
+
+		HashData() : _value(0), _depth(0), _flag(LOWER),
+				_from(NONE), _to(NONE), _promotion(EMPTY), _generation(0) {};
+
+		HashData(const int& value, const int& depth, const NodeFlag& flag, const MoveIterator::Move& move) :
+			_value(int16_t(value)), _depth(int16_t(depth)), _flag(int8_t(flag)),
+			_from(int8_t(move.from)), _to(int8_t(move.to)),_promotion(int8_t(move.promotionPiece)), _generation (0)  {};
+
+		inline NodeFlag flag() {
+			return NodeFlag(_flag);
+		}
+		inline MoveIterator::Move move() {
+			return MoveIterator::Move(Square(_from),Square(_to),
+					PieceTypeByColor(_promotion));
+		}
+		inline int depth() {
+			return int(_depth);
+		}
+		inline int value() {
+			return int(_value);
+		}
+		inline void setValue(int value) {
+			_value=int16_t(value);
+		}
+		inline void clear() {
+			_value=0;
+			_depth=0;
+			_flag=int8_t(LOWER);
+			_from=int8_t(NONE);
+			_to=int8_t(NONE);
+			_promotion=int8_t(EMPTY);
+			_generation=0;
+		}
+
+		int16_t _value;
+		int16_t _depth;
+		int8_t _flag;
+		int8_t _from;
+		int8_t _to;
+		int8_t _promotion;
+		int8_t _generation;
+	};
+*/
 	struct HashData {
-		HashData() : value(0), depth(0), flag(LOWER)  {};
-		HashData(const int& _value, const int& _depth, const NodeFlag& _flag, const MoveIterator::Move& _move) :
-			value(_value), depth(_depth), flag(_flag), move(_move)  {};
-		HashData(const HashData& hashData) : value(hashData.value), depth(hashData.depth),
-				flag(hashData.flag), move(hashData.move)  {};
-		int value;
-		int depth;
-		NodeFlag flag;
-		MoveIterator::Move move;
+		HashData() : _value(0), _depth(0), _flag(LOWER)  {};
+		HashData(const int& value, const int& depth, const NodeFlag& flag, const MoveIterator::Move& move) :
+			_value(value), _depth(depth), _flag(flag), _move(move)  {};
+
+		HashData(const HashData& hashData) : _value(hashData._value), _depth(hashData._depth),
+				_flag(hashData._flag), _move(hashData._move)  {};
+
+		int _value;
+		int _depth;
+		NodeFlag _flag;
+		MoveIterator::Move _move;
+
+		NodeFlag& flag() {
+			return _flag;
+		}
+		MoveIterator::Move& move() {
+			return _move;
+		}
+		int& depth() {
+			return _depth;
+		}
+		int& value() {
+			return _value;
+		}
+		void setValue(int value) {
+			_value=value;
+		}
+		inline void clear() {
+			_value=0;
+			_depth=0;
+			_flag=LOWER;
+		}
+
 	};
 
 	static SearchAgent* getInstance();
@@ -118,12 +186,6 @@ public:
 	void startSearch();
 	void doPerft();
 	void stopSearch();
-
-	inline void suspend(long mseconds) //TODO HACK - remove me later
-	{
-		clock_t stopTime = mseconds + clock();
-		while (stopTime > clock());
-	}
 
 	inline const size_t getHashSize() const {
 		return hashSize;
@@ -210,31 +272,54 @@ public:
 
 	}
 
-	inline bool hashPut(const Board& board, int value, const int& depth, const int ply, const int maxScore, const NodeFlag& flag, const MoveIterator::Move& move) {
+	inline bool hashPut(const Key _key, int value, const int depth, const int ply, const NodeFlag flag, const MoveIterator::Move move) {
 
 		if (value >= maxScore-100) {
 			value -= ply;
 		} else if (value <= -maxScore+100) {
 			value += ply;
 		}
-		HashData hashData;
-		if (transTable->hashGet(board.getKey(), hashData)) {
-			if (hashData.depth > depth) {
-				return false;
-			}
-		}
 
-		return transTable->hashPut(board.getKey(), HashData(value,depth,flag,move));
+		/*				HashData hashData;
+				if (transTable->hashGet(_key, hashData)) {
+					if (hashData.depth() > depth) {
+						return false;
+					}
+				}*/
+
+		return transTable->hashPut(_key, HashData(value,depth,flag,move));
 
 	}
 
-	inline bool hashGet(const Key _key, HashData& hashData, const int ply, const int maxScore) {
+	inline bool hashGet(const Key _key, HashData& hashData, const int ply) {
 
 		bool result = transTable->hashGet(_key, hashData);
-		if (hashData.value >= maxScore-100) {
-			hashData.value -= ply;
-		} else if (hashData.value <= -maxScore+100) {
-			hashData.value += ply;
+		if (result) {
+			int value = hashData.value();
+			if (value >= maxScore-100) {
+				hashData.setValue(value-ply);
+			} else if (value <= -maxScore+100) {
+				hashData.setValue(value+ply);
+			}
+		} else {
+			hashData.clear();
+		}
+
+		return result;
+	}
+
+	inline bool hashPruneGet(const Key _key, HashData& hashData, const int ply,
+			const int depth, const bool allowNullMove, const int beta) {
+
+		bool result = hashGet(_key, hashData, ply);
+
+		if (result) {
+			result = (allowNullMove || hashData.flag() != NM_LOWER) &&
+					((hashData.depth()>=depth) ||
+							(hashData.value() >= MAX(maxScore-100,beta)) ||
+							(hashData.value() < MIN(-maxScore+100,beta))) &&
+							((hashData.flag() == LOWER && hashData.value() >= beta) ||
+									(hashData.flag() == UPPER && hashData.value() < beta));
 		}
 
 		return result;

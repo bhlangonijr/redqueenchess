@@ -71,6 +71,10 @@ public:
 			return (!(from==move.from && to==move.to && promotionPiece==move.promotionPiece));
 		}
 
+		inline bool none() {
+			return from==NONE;
+		}
+
 		Square from;
 		Square to;
 		PieceTypeByColor promotionPiece;
