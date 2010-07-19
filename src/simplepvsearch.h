@@ -44,7 +44,7 @@ const int maxSearchPly = 100;
 
 // internal iterative deepening
 const int allowIIDAtPV = 3;
-const int allowIIDAtNormal = 11;
+const int allowIIDAtNormal = 5;
 
 // margin constants
 #define futilityMargin(depth) (150 + depth * 200)
@@ -55,10 +55,9 @@ const int easyMargin=500;
 const int aspirationDepth=6;
 const int futilityDepth=3;
 const int lmrDepthThreshold=2;
-
 const int lateMoveThreshold=2;
 
-const int scoreTable[11]={0,8000,5000,9500,9000,5000,4500,4000,100,-900,5000};
+const int scoreTable[11]={0,8000,5000,9500,9000,4500,4000,100,-900,5000};
 
 class SearchAgent;
 
@@ -241,6 +240,7 @@ private:
 			MoveIterator::Move& ttMove, bool isKingAttacked, int ply);
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, bool isKingAttacked);
 	void scoreMoves(Board& board, MoveIterator& moves);
+	void scoreRootMoves(Board& board, MoveIterator& moves);
 	void filterLegalMoves(Board& board, MoveIterator& moves);
 	bool okToReduce(Board& board, MoveIterator::Move& move,	bool isKingAttacked, const bool isGivingCheck,
 			const bool nullMoveMateScore, int ply);
@@ -285,7 +285,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 	if (moves.getStage()==MoveIterator::INIT_EVASION_STAGE) {
 		board.generateEvasions(moves, board.getSideToMove());
 		scoreMoves(board, moves);
-		moves.goNextStage();
+		moves.setStage(MoveIterator::ON_EVASION_STAGE);
 	}
 
 	if (moves.getStage()==MoveIterator::ON_EVASION_STAGE) {
@@ -299,7 +299,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
 		board.generateCaptures(moves, board.getSideToMove());
 		scoreMoves(board, moves);
-		moves.goNextStage();
+		moves.setStage(MoveIterator::ON_CAPTURE_STAGE);
 	}
 
 	if (moves.getStage()==MoveIterator::ON_CAPTURE_STAGE) {
@@ -311,30 +311,27 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 			if (move.type==MoveIterator::BAD_CAPTURE) {
 				move.score = evaluator.see(board,move);
-				if (move.score>0) {
+				if (move.score>=0) {
 					move.type=MoveIterator::GOOD_CAPTURE;
-				} else if (move.score==0) {
-					move.type=MoveIterator::EQUAL_CAPTURE;
+				} else {
+					moves.prior();
+					break; // it will keep the bad captures after non captures
 				}
-			}
-			if (move.type==MoveIterator::BAD_CAPTURE) {
-				moves.prior();
-				break; // it will keep the bad captures after non captures
 			}
 			return move;
 		}
-		moves.goNextStage();
+		moves.setStage(MoveIterator::KILLER1_STAGE);
 	}
 
 	if (moves.getStage()==MoveIterator::KILLER1_STAGE) {
-		moves.goNextStage();
+		moves.setStage(MoveIterator::KILLER2_STAGE);
 		if (killer1 != ttMove && board.isMoveLegal(killer1)) {
 			return killer1;
 		}
 	}
 
 	if (moves.getStage()==MoveIterator::KILLER2_STAGE) {
-		moves.goNextStage();
+		moves.setStage(MoveIterator::INIT_QUIET_STAGE);
 		if (killer2 != ttMove && board.isMoveLegal(killer2)) {
 			return killer2;
 		}
@@ -343,7 +340,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 	if (moves.getStage()==MoveIterator::INIT_QUIET_STAGE) {
 		board.generateNonCaptures(moves, board.getSideToMove());
 		scoreMoves(board, moves);
-		moves.goNextStage();
+		moves.setStage(MoveIterator::ON_QUIET_STAGE);
 	}
 
 	if (moves.getStage()==MoveIterator::ON_QUIET_STAGE) {
@@ -354,7 +351,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			}
 			return move;
 		}
-		moves.goNextStage();
+		moves.setStage(MoveIterator::END_STAGE);
 	}
 
 	return emptyMove;
@@ -376,7 +373,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 		board.generateEvasions(moves, board.getSideToMove());
 		scoreMoves(board, moves);
 		moves.first();
-		moves.goNextStage();
+		moves.setStage(MoveIterator::ON_EVASION_STAGE);
 	}
 
 	if (moves.getStage()==MoveIterator::ON_EVASION_STAGE) {
@@ -391,7 +388,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 		board.generateCaptures(moves, board.getSideToMove());
 		scoreMoves(board, moves);
 		moves.first();
-		moves.goNextStage();
+		moves.setStage(MoveIterator::ON_CAPTURE_STAGE);
 	}
 
 	if (moves.getStage()==MoveIterator::ON_CAPTURE_STAGE) {
@@ -415,15 +412,14 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 		const PieceTypeByColor pieceFrom = board.getPieceBySquare(move.from);
 		const PieceTypeByColor pieceTo = board.getPieceBySquare(move.to);
 
-		if (board.getPieceBySquare(move.to) != EMPTY) {
+		if (pieceTo != EMPTY) {
 			move.score = defaultMaterialValues[pieceTo] -
 					defaultMaterialValues[pieceFrom];
 
 			if (move.type==MoveIterator::UNKNOW) {
-				move.type = MoveIterator::EQUAL_CAPTURE;
-				if (move.score > 0) {
+				if (move.score >= 0) {
 					move.type=MoveIterator::GOOD_CAPTURE;
-				} else if (move.score < 0) {
+				} else {
 					move.type=MoveIterator::BAD_CAPTURE;
 				}
 			}
@@ -440,6 +436,43 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 		}
 
 		move.score+=scoreTable[move.type];
+	}
+	moves.goToBookmark();
+
+}
+
+inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
+
+	moves.bookmark();
+
+	while (moves.hasNext()) {
+		MoveIterator::Move& move = moves.next();
+		MoveBackup backup;
+		board.doMove(move,backup);
+
+		const PieceTypeByColor pieceFrom = board.getPieceBySquare(move.from);
+		const PieceTypeByColor pieceTo = board.getPieceBySquare(move.to);
+
+		move.score = -evaluator.evaluate(board);
+
+		if (pieceTo!=EMPTY) {
+
+			const int value = defaultMaterialValues[pieceTo] -
+					defaultMaterialValues[pieceFrom];
+
+			if (move.type==MoveIterator::UNKNOW) {
+				if (value >= 0) {
+					move.type=MoveIterator::GOOD_CAPTURE;
+				} else {
+					move.type=MoveIterator::BAD_CAPTURE;
+				}
+			}
+		} else {
+			if (move.type==MoveIterator::UNKNOW) {
+				move.type=MoveIterator::NON_CAPTURE;
+			}
+		}
+		board.undoMove(backup);
 	}
 	moves.goToBookmark();
 
@@ -471,13 +504,10 @@ inline void SimplePVSearch::filterLegalMoves(Board& board, MoveIterator& moves) 
 inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move,
 		bool isKingAttacked, const bool isGivingCheck, const bool nullMoveMateScore, int ply) {
 
-	MoveIterator::Move& killer1 = killer[ply][0];
-	MoveIterator::Move& killer2 = killer[ply][1];
-
 	bool verify = (
 			move.type == MoveIterator::NON_CAPTURE &&
-			move!=killer1 &&
-			move!=killer2 &&
+			move!=killer[ply][0] &&
+			move!=killer[ply][1] &&
 			!isKingAttacked &&
 			!isGivingCheck &&
 			!isPawnPush(board,move) &&

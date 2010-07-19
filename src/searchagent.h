@@ -39,7 +39,7 @@
 
 const std::string mainHashName 		= "DefaultHashTable";
 const size_t defaultDepth			= 5;
-const size_t defaultHashSize		= 256;
+const size_t defaultHashSize		= 128;
 const int defaultGameSize			= 30;
 const int timeTableSize=7;
 
@@ -65,21 +65,22 @@ public:
 		LOWER=0, UPPER, EXACT, NM_LOWER
 	};
 
-	/*struct HashData {
+/*
+	struct HashData {
 
 		HashData() : _value(0), _depth(0), _flag(LOWER),
 				_from(NONE), _to(NONE), _promotion(EMPTY), _generation(0) {};
 
 		HashData(const int& value, const int& depth, const NodeFlag& flag, const MoveIterator::Move& move) :
-			_value(int16_t(value)), _depth(int16_t(depth)), _flag(int8_t(flag)),
-			_from(int8_t(move.from)), _to(int8_t(move.to)),_promotion(int8_t(move.promotionPiece)), _generation (0)  {};
+			_value(value), _depth(int16_t(depth)), _flag(int16_t(flag)),
+			_from(int16_t(move.from)), _to(int16_t(move.to)),_promotion(int16_t(move.promotionPiece)), _generation (0)  {};
 
 		inline NodeFlag flag() {
 			return NodeFlag(_flag);
 		}
 		inline MoveIterator::Move move() {
 			return MoveIterator::Move(Square(_from),Square(_to),
-					PieceTypeByColor(_promotion));
+					PieceTypeByColor(_promotion), MoveIterator::TT_MOVE);
 		}
 		inline int depth() {
 			return int(_depth);
@@ -93,22 +94,23 @@ public:
 		inline void clear() {
 			_value=0;
 			_depth=0;
-			_flag=int8_t(LOWER);
-			_from=int8_t(NONE);
-			_to=int8_t(NONE);
+			_flag=int16_t(LOWER);
+			_from=int16_t(NONE);
+			_to=int16_t(NONE);
 			_promotion=int8_t(EMPTY);
 			_generation=0;
 		}
 
-		int16_t _value;
+		int _value;
 		int16_t _depth;
-		int8_t _flag;
-		int8_t _from;
-		int8_t _to;
-		int8_t _promotion;
-		int8_t _generation;
+		int16_t _flag;
+		int16_t _from;
+		int16_t _to;
+		int16_t _promotion;
+		int16_t _generation;
 	};
 */
+
 	struct HashData {
 		HashData() : _value(0), _depth(0), _flag(LOWER)  {};
 		HashData(const int& value, const int& depth, const NodeFlag& flag, const MoveIterator::Move& move) :
@@ -280,13 +282,6 @@ public:
 			value += ply;
 		}
 
-		/*				HashData hashData;
-				if (transTable->hashGet(_key, hashData)) {
-					if (hashData.depth() > depth) {
-						return false;
-					}
-				}*/
-
 		return transTable->hashPut(_key, HashData(value,depth,flag,move));
 
 	}
@@ -314,12 +309,11 @@ public:
 		bool result = hashGet(_key, hashData, ply);
 
 		if (result) {
-			result = (allowNullMove || hashData.flag() != NM_LOWER) &&
-					((hashData.depth()>=depth) ||
-							(hashData.value() >= MAX(maxScore-100,beta)) ||
-							(hashData.value() < MIN(-maxScore+100,beta))) &&
-							((hashData.flag() == LOWER && hashData.value() >= beta) ||
-									(hashData.flag() == UPPER && hashData.value() < beta));
+			result =((allowNullMove && hashData.depth()>=depth) ||
+					(hashData.value() >= MAX(maxScore-100,beta)) ||
+					(hashData.value() < MIN(-maxScore+100,beta))) &&
+					((hashData.flag() == LOWER && hashData.value() >= beta) ||
+					(hashData.flag() == UPPER && hashData.value() < beta));
 		}
 
 		return result;
@@ -338,7 +332,9 @@ public:
 	}
 
 	void destroyHash() {
-		delete transTable;
+		if (transTable) {
+			delete transTable;
+		}
 	}
 
 	void newSearchHash() {
@@ -377,7 +373,7 @@ private:
 	long moveTime;
 	bool infinite;
 
-	TranspositionTable<Key,HashData>* transTable __attribute__ ((aligned(64)));
+	TranspositionTable<Key,HashData>* transTable;
 
 	const long getTimeToSearch();
 

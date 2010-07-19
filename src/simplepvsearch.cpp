@@ -72,6 +72,10 @@ int SimplePVSearch::idSearch(Board& board) {
 
 	filterLegalMoves(board,rootMoves);
 	rootMoves.clearScore();
+	scoreRootMoves(board,rootMoves);
+	if (rootMoves.get(0).score > rootMoves.get(1).score + easyMargin ) {
+		easyMove=rootMoves.get(0);
+	}
 
 	for (int depth = 1; depth <= _depth; depth++) {
 
@@ -139,13 +143,7 @@ int SimplePVSearch::idSearch(Board& board) {
 				}
 			}
 
-			if (depth==2) {
-				if (rootMoves.get(0).score > rootMoves.get(1).score + easyMargin ) {
-					easyMove=rootMoves.get(0);
-				}
-			}
-
-			if (depth>2) {
+			if (depth>1) {
 				if (stats.bestMove!=easyMove) {
 					easyMove = MoveIterator::Move();
 				}
@@ -458,6 +456,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 			if (score >= maxScore-maxSearchPly) {
 				score = beta;
 			}
+			agent->hashPut(board.getKey(),score,depth,ply,SearchAgent::NM_LOWER,emptyMove);
 			stats.nullMoveHits++;
 			return score;
 		} else {

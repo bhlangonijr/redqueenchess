@@ -49,6 +49,7 @@ public:
 	TranspositionTable(std::string id_) :
 		hashSize(DEFAULT_INITIAL_SIZE),
 		id(id_),
+		transTable(0),
 		writes(0) {
 		init();
 	}
@@ -56,6 +57,7 @@ public:
 	TranspositionTable(std::string id_, size_t initialSize) :
 		hashSize(initialSize),
 		id(id_),
+		transTable(0),
 		writes(0) {
 		init();
 	}
@@ -78,14 +80,17 @@ public:
 private:
 
 	void init() {
-		for (_size = 2; _size * sizeof(_Value) <= hashSize << 20; _size *= 2);
-		_size /= 2;
+		for (_size = 2; _size<=hashSize; _size *= 2);
+		_size = ((_size/2)<<20)/sizeof(HashEntry);
 		_mask = _size - 1;
-		transTable = new HashEntry[_size];
-		if (transTable == NULL) {
-			std::cerr << "Failed to allocate memory for transposition table." << std::endl;
+
+		try {
+			transTable = new HashEntry[_size];
+		} catch (std::exception const& e) {
+			std::cerr << "Failed to allocate memory for transposition table: " << e.what() << std::endl;
 			exit(EXIT_FAILURE);
 		}
+
 		clearHash();
 
 	}
@@ -116,7 +121,7 @@ inline void TranspositionTable<HashKeyType, HashValueType>::clearHash() {
 template<class HashKeyType, class HashValueType>
 inline bool TranspositionTable<HashKeyType, HashValueType>::hashPut(const HashKeyType key, const HashValueType value) {
 	HashEntry *entry;
-	entry = transTable + int(key & _mask);
+	entry = transTable + (size_t(key) & _mask);
 	if (!entry) {
 		return false;
 	}
@@ -130,7 +135,7 @@ template<class HashKeyType, class HashValueType>
 inline bool TranspositionTable<HashKeyType, HashValueType>::hashGet(const HashKeyType key, HashValueType& value) {
 
 	HashEntry *entry;
-	entry = transTable + int(key & _mask);
+	entry = transTable + (size_t(key) & _mask);
 	if (entry->key==key) {
 		value = entry->value;
 		return true;
@@ -142,6 +147,8 @@ inline bool TranspositionTable<HashKeyType, HashValueType>::hashGet(const HashKe
 template<class HashKeyType, class HashValueType>
 inline void TranspositionTable<HashKeyType, HashValueType>::resizeHash() {
 	writes=0;
+	_size=0;
+	_mask=0;
 	if (transTable) {
 		delete [] transTable;
 	}

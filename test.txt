@@ -136,3 +136,8 @@ position startpos moves d2d3 g8f6 e2e4 e7e5 b1c3 b8c6 g1f3 d7d6 d3d4 c8g4 f1b5 e
 
 position fen 8/8/8/8/3k4/8/6r1/4K3 b - - 2 1
 go infinite
+
+
+position fen rn3rk1/pbppq1pp/1p2pb2/4N2Q/3PN3/3B4/PPP2PPP/R3K2R w KQ - 6 11
+
+;;; h5h7 mate!
