@@ -442,7 +442,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 			allowNullMove && okToNullMove(board) &&
 			!isMateScore(beta) && si.eval >= beta) {
 
-		const int reduction = 3 + (depth > 4 ? depth/4 : 0);
+		const int reduction = 3 + (depth > 4 ? depth/7 : 0);
 		MoveBackup backup;
 
 		board.doNullMove(backup);
