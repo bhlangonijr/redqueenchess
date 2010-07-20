@@ -76,7 +76,6 @@ int SimplePVSearch::idSearch(Board& board) {
 	if (rootMoves.get(0).score > rootMoves.get(1).score + easyMargin ) {
 		easyMove=rootMoves.get(0);
 	}
-	rootMoves.clearScore();
 
 	for (int depth = 1; depth <= _depth; depth++) {
 
