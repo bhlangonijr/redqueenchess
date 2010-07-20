@@ -76,6 +76,7 @@ int SimplePVSearch::idSearch(Board& board) {
 	if (rootMoves.get(0).score > rootMoves.get(1).score + easyMargin ) {
 		easyMove=rootMoves.get(0);
 	}
+	rootMoves.clearScore();
 
 	for (int depth = 1; depth <= _depth; depth++) {
 
@@ -442,7 +443,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 			allowNullMove && okToNullMove(board) &&
 			!isMateScore(beta) && si.eval >= beta) {
 
-		const int reduction = 3 + (depth > 4 ? depth/7 : 0);
+		const int reduction = 3 + (depth > 4 ? depth/4 : 0);
 		MoveBackup backup;
 
 		board.doNullMove(backup);

@@ -309,15 +309,22 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 				continue;
 			}
 
-			if (move.type==MoveIterator::BAD_CAPTURE) {
-				move.score = evaluator.see(board,move);
-				if (move.score>=0) {
+			if (move.type==MoveIterator::UNKNOW) {
+				const int seeValue = evaluator.see(board,move);
+				move.score = seeValue + scoreTable[move.type];
+				if (seeValue>=0) {
 					move.type=MoveIterator::GOOD_CAPTURE;
 				} else {
+					move.type=MoveIterator::BAD_CAPTURE;
 					moves.prior();
-					break; // it will keep the bad captures after non captures
+					continue;
 				}
+
+			} else if (move.type==MoveIterator::BAD_CAPTURE) {
+				moves.prior();
+				break;
 			}
+
 			return move;
 		}
 		moves.setStage(MoveIterator::KILLER1_STAGE);
@@ -392,8 +399,22 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 	}
 
 	if (moves.getStage()==MoveIterator::ON_CAPTURE_STAGE) {
-		if (moves.hasNext()) {
-			return moves.selectBest();
+		while (moves.hasNext()) {
+			MoveIterator::Move& move=moves.selectBest();
+
+			if (move.type==MoveIterator::UNKNOW) {
+				const int seeValue = evaluator.see(board,move);
+				move.score = seeValue + scoreTable[move.type];
+				if (seeValue>=0) {
+					move.type=MoveIterator::GOOD_CAPTURE;
+				} else {
+					move.type=MoveIterator::BAD_CAPTURE;
+					moves.prior();
+					continue;
+				}
+			}
+
+			return move;
 		}
 		moves.setStage(MoveIterator::END_STAGE);
 	}
@@ -415,12 +436,9 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 		if (pieceTo != EMPTY) {
 			move.score = defaultMaterialValues[pieceTo] -
 					defaultMaterialValues[pieceFrom];
-
 			if (move.type==MoveIterator::UNKNOW) {
 				if (move.score >= 0) {
 					move.type=MoveIterator::GOOD_CAPTURE;
-				} else {
-					move.type=MoveIterator::BAD_CAPTURE;
 				}
 			}
 		} else {
