@@ -65,15 +65,14 @@ public:
 		LOWER=0, UPPER, EXACT, NM_LOWER
 	};
 
-/*
-	struct HashData {
+/*	struct HashData {
 
 		HashData() : _value(0), _depth(0), _flag(LOWER),
 				_from(NONE), _to(NONE), _promotion(EMPTY), _generation(0) {};
 
 		HashData(const int& value, const int& depth, const NodeFlag& flag, const MoveIterator::Move& move) :
-			_value(value), _depth(int16_t(depth)), _flag(int16_t(flag)),
-			_from(int16_t(move.from)), _to(int16_t(move.to)),_promotion(int16_t(move.promotionPiece)), _generation (0)  {};
+			_value(int16_t(value)), _depth(int16_t(depth)), _flag(uint8_t(flag)),
+			_from(uint8_t(move.from)), _to(uint8_t(move.to)),_promotion(uint8_t(move.promotionPiece)), _generation (0)  {};
 
 		inline NodeFlag flag() {
 			return NodeFlag(_flag);
@@ -94,22 +93,22 @@ public:
 		inline void clear() {
 			_value=0;
 			_depth=0;
-			_flag=int16_t(LOWER);
-			_from=int16_t(NONE);
-			_to=int16_t(NONE);
-			_promotion=int8_t(EMPTY);
+			_flag=uint8_t(LOWER);
+			_from=uint8_t(NONE);
+			_to=uint8_t(NONE);
+			_promotion=uint8_t(EMPTY);
 			_generation=0;
 		}
 
-		int _value;
+		int16_t _value;
 		int16_t _depth;
-		int16_t _flag;
-		int16_t _from;
-		int16_t _to;
-		int16_t _promotion;
-		int16_t _generation;
-	};
-*/
+		uint8_t _flag;
+		uint8_t _from;
+		uint8_t _to;
+		uint8_t _promotion;
+		uint8_t _generation;
+	};*/
+
 
 	struct HashData {
 		HashData() : _value(0), _depth(0), _flag(LOWER)  {};

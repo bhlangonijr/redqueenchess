@@ -308,23 +308,10 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			if (move==ttMove) {
 				continue;
 			}
-
-			if (move.type==MoveIterator::UNKNOW) {
-				const int seeValue = evaluator.see(board,move);
-				move.score = seeValue + scoreTable[move.type];
-				if (seeValue>=0) {
-					move.type=MoveIterator::GOOD_CAPTURE;
-				} else {
-					move.type=MoveIterator::BAD_CAPTURE;
-					moves.prior();
-					continue;
-				}
-
-			} else if (move.type==MoveIterator::BAD_CAPTURE) {
+			if (move.type==MoveIterator::BAD_CAPTURE) {
 				moves.prior();
 				break;
 			}
-
 			return move;
 		}
 		moves.setStage(MoveIterator::KILLER1_STAGE);
@@ -400,21 +387,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::ON_CAPTURE_STAGE) {
 		while (moves.hasNext()) {
-			MoveIterator::Move& move=moves.selectBest();
-
-			if (move.type==MoveIterator::UNKNOW) {
-				const int seeValue = evaluator.see(board,move);
-				move.score = seeValue + scoreTable[move.type];
-				if (seeValue>=0) {
-					move.type=MoveIterator::GOOD_CAPTURE;
-				} else {
-					move.type=MoveIterator::BAD_CAPTURE;
-					moves.prior();
-					continue;
-				}
-			}
-
-			return move;
+			return moves.selectBest();
 		}
 		moves.setStage(MoveIterator::END_STAGE);
 	}
@@ -434,11 +407,14 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 		const PieceTypeByColor pieceTo = board.getPieceBySquare(move.to);
 
 		if (pieceTo != EMPTY) {
-			move.score = defaultMaterialValues[pieceTo] -
-					defaultMaterialValues[pieceFrom];
+			move.score = evaluator.seeSign(board,move);
+			/*move.score = defaultMaterialValues[pieceTo] -
+					defaultMaterialValues[pieceFrom];*/
 			if (move.type==MoveIterator::UNKNOW) {
 				if (move.score >= 0) {
 					move.type=MoveIterator::GOOD_CAPTURE;
+				} else {
+					move.type=MoveIterator::BAD_CAPTURE;
 				}
 			}
 		} else {
@@ -464,12 +440,12 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 	moves.bookmark();
 
 	while (moves.hasNext()) {
+
 		MoveIterator::Move& move = moves.next();
 		MoveBackup backup;
-		board.doMove(move,backup);
-
 		const PieceTypeByColor pieceFrom = board.getPieceBySquare(move.from);
 		const PieceTypeByColor pieceTo = board.getPieceBySquare(move.to);
+		board.doMove(move,backup);
 
 		move.score = -evaluator.evaluate(board);
 
