@@ -63,8 +63,6 @@ const int Evaluator::evaluate(Board& board) {
 		value=-maxScore;
 	}
 
-	value = int(double(double(rand())/double(RAND_MAX))*99) + int(double(value)*0.1);
-
 	return value;
 }
 
@@ -76,10 +74,9 @@ const int Evaluator::quickEvaluate(Board& board) {
 
 	int material = board.getMaterial(side) - board.getMaterial(other);
 	int pieces = evalPieces(board, side) - evalPieces(board, other);
+	int development = evalDevelopment(board, side) - evalDevelopment(board, other);
 
-	int randEval = int(double(double(rand())/double(RAND_MAX))*99) + int(double(material+pieces)*0.1);
-
-	return randEval;
+	return material+pieces+development;
 }
 
 // king eval function
