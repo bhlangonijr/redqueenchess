@@ -252,7 +252,7 @@ private:
 	bool isPawnPush(Board& board, MoveIterator::Move& move);
 	bool isPawnPromoting(const Board& board);
 	bool adjustDepth(int& extension, int& reduction, Board& board, MoveIterator::Move& move, int depth,
-			int remainingMoves, bool isKingAttacked, bool isGivingCheck, int ply, const bool nullMoveMateScore);
+			int remainingMoves, bool isKingAttacked, bool isGivingCheck, int ply, const bool nullMoveMateScore, const bool isPV);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
 	const bool stop(const bool shouldStop);
 	const bool timeIsUp();
@@ -583,7 +583,7 @@ inline bool SimplePVSearch::isPawnPromoting(const Board& board) {
 // depth reduction
 inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 		Board& board, MoveIterator::Move& move, int depth, int remainingMoves,
-		bool isKingAttacked, bool isGivingCheck, int ply, const bool nullMoveMateScore) {
+		bool isKingAttacked, bool isGivingCheck, int ply, const bool nullMoveMateScore, const bool isPV) {
 
 	extension=0;
 	reduction=0;
@@ -599,7 +599,10 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 
 	if (remainingMoves>lateMoveThreshold &&
 			depth>lmrDepthThreshold) {
-		reduction=1;
+		reduction= 1;
+		if (!isPV && depth>8) {
+			reduction=depth/4;
+		}
 		return true;
 	}
 
