@@ -408,6 +408,7 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 
 		if (pieceTo != EMPTY) {
 			move.score = evaluator.seeSign(board,move);
+
 			/*move.score = defaultMaterialValues[pieceTo] -
 					defaultMaterialValues[pieceFrom];*/
 			if (move.type==MoveIterator::UNKNOW) {
@@ -447,7 +448,11 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 		const PieceTypeByColor pieceTo = board.getPieceBySquare(move.to);
 		board.doMove(move,backup);
 
-		move.score = -evaluator.evaluate(board);
+		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
+
+		SearchInfo newSi(rootSearchInfo.eval,givingCheck);
+		PvLine pv;
+		move.score = -pvSearch(board,newSi,-maxScore,maxScore,1,0,&pv);
 
 		if (pieceTo!=EMPTY) {
 
