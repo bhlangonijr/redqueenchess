@@ -407,7 +407,7 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 		const PieceTypeByColor pieceTo = board.getPieceBySquare(move.to);
 
 		if (pieceTo != EMPTY) {
-			move.score = evaluator.seeSign(board,move);
+			move.score = evaluator.see(board,move);
 
 			/*move.score = defaultMaterialValues[pieceTo] -
 					defaultMaterialValues[pieceFrom];*/
