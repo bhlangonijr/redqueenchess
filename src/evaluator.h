@@ -51,18 +51,25 @@ public:
 	const int seeSign(Board& board, MoveIterator::Move& move);
 	const int see(Board& board, MoveIterator::Move& move);
 
+	inline const int getPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase) {
+		return pst[phase][piece][square];
+	}
+
+private:
+
 	inline const int interpolate(const int first, const int second, const int position) {
 		return (first*position)/maxGamePhase+(second*(maxGamePhase-position))/maxGamePhase;
 	}
 
-	inline const int getPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase) {
+	inline const int calcPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase) {
 		const int egValue = endGamePieceSquareTable[piece][square];
 		const int mgValue = defaultPieceSquareTable[piece][square];
 		return interpolate(egValue,mgValue,phase);
 	}
 
-private:
+	void initializePst();
 	Bitboard getLeastValuablePiece(Board& board, Bitboard attackers, PieceColor& color, PieceTypeByColor& piece);
+	int pst[maxGamePhase+1][ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 };
 
 
@@ -81,10 +88,11 @@ inline const bool Evaluator::isPawnPassed(Board& board, const PieceColor color, 
 // static exchange evaluation sign
 inline const int Evaluator::seeSign(Board& board, MoveIterator::Move& move) {
 
-	if (defaultMaterialValues[board.getPieceBySquare(move.from)] <=
-			defaultMaterialValues[board.getPieceBySquare(move.to)] &&
-			board.getPieceType(board.getPieceBySquare(move.from)) != KING) {
-		return 1;
+	const int value = defaultMaterialValues[board.getPieceBySquare(move.to)]-
+			defaultMaterialValues[board.getPieceBySquare(move.from)];
+
+	if ( value >= 0	&&	board.getPieceType(board.getPieceBySquare(move.from)) != KING) {
+		return value;
 	}
 
 	return this->see(board,move);

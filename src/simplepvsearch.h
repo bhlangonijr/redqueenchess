@@ -409,8 +409,6 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 		if (pieceTo != EMPTY) {
 			move.score = evaluator.see(board,move);
 
-			/*move.score = defaultMaterialValues[pieceTo] -
-					defaultMaterialValues[pieceFrom];*/
 			if (move.type==MoveIterator::UNKNOW) {
 				if (move.score >= 0) {
 					move.type=MoveIterator::GOOD_CAPTURE;
@@ -510,8 +508,8 @@ inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move,
 			!isKingAttacked &&
 			!isGivingCheck &&
 			!isPawnPush(board,move) &&
-			!isPawnPromoting(board) &&
-			!nullMoveMateScore
+			!nullMoveMateScore &&
+			!history[board.getPieceTypeBySquare(move.from)][move.to]
 	);
 
 	return verify;
