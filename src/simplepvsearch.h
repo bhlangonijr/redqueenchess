@@ -509,7 +509,7 @@ inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move,
 			!isGivingCheck &&
 			!isPawnPush(board,move) &&
 			!nullMoveMateScore &&
-			!history[board.getPieceTypeBySquare(move.from)][move.to]
+			!history[board.getPieceBySquare(move.from)][move.to]
 	);
 
 	return verify;
