@@ -1,14 +1,11 @@
 /*
-   A C-program for MT19937-64 (2004/9/29 version).
+   A C-program for MT19937, with initialization improved 2002/1/26.
    Coded by Takuji Nishimura and Makoto Matsumoto.
 
-   This is a 64-bit version of Mersenne Twister pseudorandom number
-   generator.
+   Before using, initialize the state by using init_genrand(seed)
+   or init_by_array(init_key, key_length).
 
-   Before using, initialize the state by using init_genrand64(seed)
-   or init_by_array64(init_key, key_length).
-
-   Copyright (C) 2004, Makoto Matsumoto and Takuji Nishimura,
+   Copyright (C) 1997 - 2002, Makoto Matsumoto and Takuji Nishimura,
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -38,112 +35,115 @@
    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-   References:
-   T. Nishimura, ``Tables of 64-bit Mersenne Twisters''
-     ACM Transactions on Modeling and
-     Computer Simulation 10. (2000) 348--357.
-   M. Matsumoto and T. Nishimura,
-     ``Mersenne Twister: a 623-dimensionally equidistributed
-       uniform pseudorandom number generator''
-     ACM Transactions on Modeling and
-     Computer Simulation 8. (Jan. 1998) 3--30.
 
    Any feedback is very welcome.
-   http://www.math.hiroshima-u.ac.jp/~m-mat/MT/emt.html
-   email: m-mat @ math.sci.hiroshima-u.ac.jp (remove spaces)
+   http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html
+   email: m-mat @ math.sci.hiroshima-u.ac.jp (remove space)
 */
 
+#include "inttypes.h"
+#include "mersenne.h"
 
-#include <stdio.h>
-#include <inttypes.h>
+/* Period parameters */
+#define N 624
+#define M 397
+#define MATRIX_A 0x9908b0dfUL   /* constant vector a */
+#define UPPER_MASK 0x80000000UL /* most significant w-r bits */
+#define LOWER_MASK 0x7fffffffUL /* least significant r bits */
 
-#define NN 312
-#define MM 156
-#define MATRIX_A 0xB5026F5AA96619E9ULL
-#define UM 0xFFFFFFFF80000000ULL /* Most significant 33 bits */
-#define LM 0x7FFFFFFFULL /* Least significant 31 bits */
+static unsigned long mt[N]; /* the array for the state vector  */
+static int mti=N+1; /* mti==N+1 means mt[N] is not initialized */
 
-
-/* The array for the state vector */
-static uint64_t mt[NN];
-/* mti==NN+1 means mt[NN] is not initialized */
-static int mti=NN+1;
-
-/* initializes mt[NN] with a seed */
-void init_genrand64(uint64_t seed)
+/* initializes mt[N] with a seed */
+static void init_genrand(unsigned long s)
 {
-    mt[0] = seed;
-    for (mti=1; mti<NN; mti++)
-        mt[mti] =  (6364136223846793005ULL * (mt[mti-1] ^ (mt[mti-1] >> 62)) + mti);
+    mt[0]= s & 0xffffffffUL;
+    for (mti=1; mti<N; mti++) {
+        mt[mti] =
+            (1812433253UL * (mt[mti-1] ^ (mt[mti-1] >> 30)) + mti);
+        /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
+        /* In the previous versions, MSBs of the seed affect   */
+        /* only MSBs of the array mt[].                        */
+        /* 2002/01/09 modified by Makoto Matsumoto             */
+        mt[mti] &= 0xffffffffUL;
+        /* for >32 bit machines */
+    }
 }
 
 /* initialize by an array with array-length */
 /* init_key is the array for initializing keys */
 /* key_length is its length */
-void init_by_array64(uint64_t init_key[],
-		     uint64_t key_length)
+/* slight change for C++, 2004/2/26 */
+static void init_by_array(unsigned long init_key[], int key_length)
 {
-	uint64_t i, j, k;
-    init_genrand64(19650218ULL);
+    int i, j, k;
+    init_genrand(19650218UL);
     i=1; j=0;
-    k = (NN>key_length ? NN : key_length);
+    k = (N>key_length ? N : key_length);
     for (; k; k--) {
-        mt[i] = (mt[i] ^ ((mt[i-1] ^ (mt[i-1] >> 62)) * 3935559000370003845ULL))
+        mt[i] = (mt[i] ^ ((mt[i-1] ^ (mt[i-1] >> 30)) * 1664525UL))
           + init_key[j] + j; /* non linear */
+        mt[i] &= 0xffffffffUL; /* for WORDSIZE > 32 machines */
         i++; j++;
-        if (i>=NN) { mt[0] = mt[NN-1]; i=1; }
+        if (i>=N) { mt[0] = mt[N-1]; i=1; }
         if (j>=key_length) j=0;
     }
-    for (k=NN-1; k; k--) {
-        mt[i] = (mt[i] ^ ((mt[i-1] ^ (mt[i-1] >> 62)) * 2862933555777941757ULL))
+    for (k=N-1; k; k--) {
+        mt[i] = (mt[i] ^ ((mt[i-1] ^ (mt[i-1] >> 30)) * 1566083941UL))
           - i; /* non linear */
+        mt[i] &= 0xffffffffUL; /* for WORDSIZE > 32 machines */
         i++;
-        if (i>=NN) { mt[0] = mt[NN-1]; i=1; }
+        if (i>=N) { mt[0] = mt[N-1]; i=1; }
     }
 
-    mt[0] = 1ULL << 63; /* MSB is 1; assuring non-zero initial array */
+    mt[0] = 0x80000000UL; /* MSB is 1; assuring non-zero initial array */
 }
 
-/* generates a random number on [0, 2^64-1]-interval */
-uint64_t genrand_int64(void)
-{
-    int i;
-    uint64_t x;
-    static uint64_t mag01[2]={0ULL, MATRIX_A};
+/* generates a random number on [0,0xffffffff]-interval */
+uint32_t genrand_int32(void) {
+  unsigned long y;
+  static unsigned long mag01[2]={0x0UL, MATRIX_A};
+  /* mag01[x] = x * MATRIX_A  for x=0,1 */
 
-    if (mti >= NN) { /* generate NN words at one time */
+  if (mti >= N) { /* generate N words at one time */
+    int kk;
 
-        /* if init_genrand64() has not been called, */
-        /* a default initial seed is used     */
-        if (mti == NN+1)
-            init_genrand64(5489ULL);
+    if (mti == N+1)   /* if init_genrand() has not been called, */
+      init_genrand(5489UL); /* a default initial seed is used */
 
-        for (i=0;i<NN-MM;i++) {
-            x = (mt[i]&UM)|(mt[i+1]&LM);
-            mt[i] = mt[i+MM] ^ (x>>1) ^ mag01[(int)(x&1ULL)];
-        }
-        for (;i<NN-1;i++) {
-            x = (mt[i]&UM)|(mt[i+1]&LM);
-            mt[i] = mt[i+(MM-NN)] ^ (x>>1) ^ mag01[(int)(x&1ULL)];
-        }
-        x = (mt[NN-1]&UM)|(mt[0]&LM);
-        mt[NN-1] = mt[MM-1] ^ (x>>1) ^ mag01[(int)(x&1ULL)];
-
-        mti = 0;
+    for (kk=0;kk<N-M;kk++) {
+      y = (mt[kk]&UPPER_MASK)|(mt[kk+1]&LOWER_MASK);
+      mt[kk] = mt[kk+M] ^ (y >> 1) ^ mag01[y & 0x1UL];
     }
+    for (;kk<N-1;kk++) {
+      y = (mt[kk]&UPPER_MASK)|(mt[kk+1]&LOWER_MASK);
+      mt[kk] = mt[kk+(M-N)] ^ (y >> 1) ^ mag01[y & 0x1UL];
+    }
+    y = (mt[N-1]&UPPER_MASK)|(mt[0]&LOWER_MASK);
+    mt[N-1] = mt[M-1] ^ (y >> 1) ^ mag01[y & 0x1UL];
 
-    x = mt[mti++];
+    mti = 0;
+  }
 
-    x ^= (x >> 29) & 0x5555555555555555ULL;
-    x ^= (x << 17) & 0x71D67FFFEDA60000ULL;
-    x ^= (x << 37) & 0xFFF7EEE000000000ULL;
-    x ^= (x >> 43);
+  y = mt[mti++];
 
-    return x;
+  /* Tempering */
+  y ^= (y >> 11);
+  y ^= (y << 7) & 0x9d2c5680UL;
+  y ^= (y << 15) & 0xefc60000UL;
+  y ^= (y >> 18);
+
+  return y;
 }
 
+uint64_t genrand_int64(void) {
+  uint64_t x, y;
+
+  x = genrand_int32(); y = genrand_int32();
+  return (x<<32)|y;
+}
 
 void init_mersenne(void) {
-  uint64_t init[4]={0x123, 0x234, 0x345, 0x456}, length=4;
-  init_by_array64(init, length);
+  unsigned long init[4]={0x123, 0x234, 0x345, 0x456}, length=4;
+  init_by_array(init, length);
 }
