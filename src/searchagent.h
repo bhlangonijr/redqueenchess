@@ -282,13 +282,13 @@ public:
 			value += ply;
 		}
 
-		return transTable->hashPut(uint32_t(_key), HashData(value,depth,flag,move));
+		return transTable->hashPut(HashKey(_key), HashData(value,depth,flag,move));
 
 	}
 
 	inline bool hashGet(const Key _key, HashData& hashData, const int ply) {
 
-		bool result = transTable->hashGet(uint32_t(_key), hashData);
+		bool result = transTable->hashGet(HashKey(_key), hashData);
 		if (result) {
 			int value = hashData.value();
 			if (value >= maxScore-100) {
@@ -304,7 +304,7 @@ public:
 	inline bool hashPruneGet(const Key _key, HashData& hashData, const int ply,
 			const int depth, const bool allowNullMove, const int beta) {
 
-		bool result = hashGet(uint32_t(_key), hashData, ply);
+		bool result = hashGet(HashKey(_key), hashData, ply);
 
 		if (result) {
 			result =((allowNullMove && hashData.depth()>=depth) ||
