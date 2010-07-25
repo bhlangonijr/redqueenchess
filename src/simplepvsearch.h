@@ -43,8 +43,8 @@ const int maxSearchDepth = 80;
 const int maxSearchPly = 100;
 
 // internal iterative deepening
-const int allowIIDAtPV = 3;
-const int allowIIDAtNormal = 7;
+const int allowIIDAtPV = 5;
+const int allowIIDAtNormal = 11;
 
 // margin constants
 #define futilityMargin(depth) (150 + depth * 200)
@@ -560,19 +560,11 @@ inline bool SimplePVSearch::isPawnFinal(Board& board) {
 // pawn push
 inline bool SimplePVSearch::isPawnPush(Board& board, MoveIterator::Move& move) {
 
-	if (board.getPieceType(board.getPieceBySquare(move.to))!=PAWN) {
+	if (board.getPieceTypeBySquare(move.to)!=PAWN) {
 		return false;
 	}
-	const PieceColor color=board.getPieceColorBySquare(move.to);
 
-	if (evaluator.isPawnPassed(board,color,move.to) &&
-			((color==WHITE && squareRank[move.to]>=RANK_5) ||
-					(color==BLACK && squareRank[move.to]<=RANK_4))) {
-		return true;
-	}
-	return ((color==WHITE && squareRank[move.to]>=RANK_6) ||
-			(color==BLACK && squareRank[move.to]<=RANK_3));
-
+	return evaluator.isPawnPassed(board,move.to);
 }
 
 // pawn promoting
@@ -603,8 +595,8 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 	if (remainingMoves>lateMoveThreshold &&
 			depth>lmrDepthThreshold) {
 		reduction= 1;
-		if (!isPV && depth>8) {
-			reduction=depth/4;
+		if (!isPV && depth > 7) {
+			reduction+=depth/8;
 		}
 		return true;
 	}

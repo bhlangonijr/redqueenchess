@@ -106,7 +106,7 @@ const int Evaluator::evalPieces(Board& board, PieceColor color) {
 				count += DOUBLED_PAWN_PENALTY;
 			}
 
-			if (isPawnPassed(board,color,from)) {
+			if (isPawnPassed(board,from)) {
 				count += passedPawnBonus[color][squareRank[from]];
 			}
 

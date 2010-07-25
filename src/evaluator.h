@@ -46,7 +46,7 @@ public:
 	const int evalBoardControl(Board& board, PieceColor color, int& kingThreat);
 	const int evalDevelopment(Board& board, PieceColor color);
 	const int evalImbalances(Board& board, PieceColor color);
-	const bool isPawnPassed(Board& board, const PieceColor color, const Square from);
+	const bool isPawnPassed(Board& board, const Square from);
 	const void setGameStage(const GamePhase phase);
 	const int seeSign(Board& board, MoveIterator::Move& move);
 	const int see(Board& board, MoveIterator::Move& move);
@@ -75,14 +75,14 @@ private:
 
 
 // verify if pawn is passer
-inline const bool Evaluator::isPawnPassed(Board& board, const PieceColor color, const Square from) {
-	const Bitboard pawns = board.getPiecesByType(board.makePiece(board.flipSide(color),PAWN));
+inline const bool Evaluator::isPawnPassed(Board& board, const Square from) {
+	const Bitboard pawns = board.getPiecesByType(WHITE_PAWN) |
+			board.getPiecesByType(BLACK_PAWN);
 
-	if (!pawns) {
-		return true;
-	}
+	const Bitboard thePawn = squareToBitboard[from];
+	const PieceColor color = board.getPieceColorBySquare(from);
 
-	return !(passedMask[color][from]&pawns);
+	return !(passedMask[color][from]&(pawns^thePawn));
 }
 
 // static exchange evaluation sign

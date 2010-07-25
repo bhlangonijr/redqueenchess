@@ -273,7 +273,7 @@ public:
 	const PieceColor getPieceColor(const PieceTypeByColor piece) const;
 	const PieceColor getPieceColorBySquare(const Square square) const;
 	const PieceType getPieceType(const PieceTypeByColor piece) const;
-	//const PieceType getPieceTypeBySquare(const Square square) const;
+	const PieceType getPieceTypeBySquare(const Square square) const;
 	const PieceTypeByColor makePiece(const PieceColor color, const PieceType type) const;
 	const Square makeSquare(const Rank rank, const File file) const;
 	const Rank getSquareRank(const Square square) const;
@@ -510,10 +510,10 @@ inline const PieceType Board::getPieceType(const PieceTypeByColor piece) const {
 	return pieceType[piece];
 }
 
-/*// get piece type by square
+// get piece type by square
 inline const PieceType Board::getPieceTypeBySquare(const Square square) const {
 	return pieceType[currentBoard.square[square]];
-}*/
+}
 
 // make piece by color and type
 inline const PieceTypeByColor Board::makePiece(const PieceColor color, const PieceType type) const {
