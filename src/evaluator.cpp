@@ -35,27 +35,23 @@ Evaluator::~Evaluator() {
 }
 
 // main eval function
-const int Evaluator::evaluate(Board& board) {
+const int Evaluator::evaluate(Board& board, const int& alpha, const int& beta) {
 
 	const PieceColor side = board.getSideToMove();
 	const PieceColor other = board.flipSide(board.getSideToMove());
 
-	int material = board.getMaterial(side) - board.getMaterial(other);
-	int pieces = evalPieces(board, side) - evalPieces(board, other);
-	int development = evalDevelopment(board, side) - evalDevelopment(board, other);
-	int imbalances = evalImbalances(board, side) - evalImbalances(board, other);
-	int kingThreatSide=0;
-	int kingThreatOther=0;
-	int mobility = evalBoardControl(board, side, kingThreatSide) -
-			evalBoardControl(board, other, kingThreatOther);
-	int kingThreat=kingThreatSide-kingThreatOther;
+	int value = board.getMaterial(side) - board.getMaterial(other);
+	value += evalPieces(board, side) - evalPieces(board, other);
+	value += evalDevelopment(board, side) - evalDevelopment(board, other);
+	value += evalImbalances(board, side) - evalImbalances(board, other);
 
-	//	std::cout << "side " << side << " mobility " << mobility << " side1 " <<  kingThreatSide << " side2 " <<  kingThreatOther <<  std::endl;
-	//	std::cout << "dev side " << evalDevelopment(board, side) << " dev other " << evalDevelopment(board, other)  <<  std::endl;
-
-
-	int value = material+mobility+pieces+
-			development+imbalances+kingThreat;
+	if (value > alpha-lazyEvalMargin && value < beta+lazyEvalMargin) {
+		int kingThreatSide=0;
+		int kingThreatOther=0;
+		value += evalBoardControl(board, side, kingThreatSide) -
+				 evalBoardControl(board, other, kingThreatOther);
+		value += kingThreatSide-kingThreatOther;
+	}
 
 	if (value>maxScore) {
 		value=maxScore;
@@ -72,11 +68,10 @@ const int Evaluator::quickEvaluate(Board& board) {
 	const PieceColor side = board.getSideToMove();
 	const PieceColor other = board.flipSide(board.getSideToMove());
 
-	int material = board.getMaterial(side) - board.getMaterial(other);
-	int pieces = evalPieces(board, side) - evalPieces(board, other);
-	int development = evalDevelopment(board, side) - evalDevelopment(board, other);
+	int value = board.getMaterial(side) - board.getMaterial(other);
+	value += evalDevelopment(board, side) - evalDevelopment(board, other);
 
-	return material+pieces+development;
+	return value;
 }
 
 // king eval function

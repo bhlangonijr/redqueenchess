@@ -34,12 +34,14 @@
 #include "board.h"
 #include "data.h"
 
+const int lazyEvalMargin=200;
+
 class Evaluator {
 public:
 
 	Evaluator();
 	virtual ~Evaluator();
-	const int evaluate(Board& board);
+	const int evaluate(Board& board, const int& alpha, const int& beta);
 	const int quickEvaluate(Board& board);
 	const int evalMaterial(Board& board, PieceColor color);
 	const int evalPieces(Board& board, PieceColor color);

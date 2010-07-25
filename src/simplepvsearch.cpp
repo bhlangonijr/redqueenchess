@@ -61,7 +61,7 @@ int SimplePVSearch::idSearch(Board& board) {
 	int beta = maxScore;
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 	MoveIterator::Move easyMove;
-	rootSearchInfo.eval = evaluator.evaluate(board);
+	rootSearchInfo.eval = evaluator.evaluate(board,alpha,beta);
 	rootSearchInfo.inCheck = isKingAttacked;
 
 	if (!isKingAttacked) {
@@ -587,7 +587,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 		return 0;
 	}
 
-	int standPat = evaluator.evaluate(board);
+	int standPat = evaluator.evaluate(board,alpha,beta);
 
 	if(standPat>=beta) {
 		return beta;

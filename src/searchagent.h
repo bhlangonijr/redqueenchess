@@ -109,6 +109,7 @@ public:
 		uint8_t _generation;
 	};*/
 
+	typedef uint32_t HashKey;
 
 	struct HashData {
 		HashData() : _value(0), _depth(0), _flag(LOWER)  {};
@@ -281,13 +282,13 @@ public:
 			value += ply;
 		}
 
-		return transTable->hashPut(_key, HashData(value,depth,flag,move));
+		return transTable->hashPut(uint32_t(_key), HashData(value,depth,flag,move));
 
 	}
 
 	inline bool hashGet(const Key _key, HashData& hashData, const int ply) {
 
-		bool result = transTable->hashGet(_key, hashData);
+		bool result = transTable->hashGet(uint32_t(_key), hashData);
 		if (result) {
 			int value = hashData.value();
 			if (value >= maxScore-100) {
@@ -295,8 +296,6 @@ public:
 			} else if (value <= -maxScore+100) {
 				hashData.setValue(value+ply);
 			}
-		} else {
-			hashData.clear();
 		}
 
 		return result;
@@ -305,7 +304,7 @@ public:
 	inline bool hashPruneGet(const Key _key, HashData& hashData, const int ply,
 			const int depth, const bool allowNullMove, const int beta) {
 
-		bool result = hashGet(_key, hashData, ply);
+		bool result = hashGet(uint32_t(_key), hashData, ply);
 
 		if (result) {
 			result =((allowNullMove && hashData.depth()>=depth) ||
@@ -327,7 +326,7 @@ public:
 	}
 
 	void createHash() {
-		transTable = new TranspositionTable<Key,HashData>(mainHashName, getHashSize());
+		transTable = new TranspositionTable<HashKey,HashData>(mainHashName, getHashSize());
 	}
 
 	void destroyHash() {
@@ -372,7 +371,7 @@ private:
 	long moveTime;
 	bool infinite;
 
-	TranspositionTable<Key,HashData>* transTable;
+	TranspositionTable<HashKey,HashData>* transTable;
 
 	const long getTimeToSearch();
 
