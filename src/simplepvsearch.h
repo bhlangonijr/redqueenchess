@@ -43,7 +43,7 @@ const int maxSearchDepth = 80;
 const int maxSearchPly = 100;
 
 // internal iterative deepening
-const int allowIIDAtPV = 3;
+const int allowIIDAtPV = 5;
 const int allowIIDAtNormal = 7;
 
 // margin constants
