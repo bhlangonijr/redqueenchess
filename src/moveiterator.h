@@ -49,7 +49,7 @@ public:
 	struct Move {
 
 		Move() : from(NONE), to(NONE), promotionPiece(EMPTY), score(DEFAULT_SCORE), type(UNKNOW)
-								{}
+			{}
 
 		Move(const Square fromSquare, const Square toSquare, const PieceTypeByColor piece) :
 			from(fromSquare), to(toSquare), promotionPiece(piece), score(DEFAULT_SCORE), type(UNKNOW)
@@ -64,11 +64,11 @@ public:
 			{}
 
 		inline bool operator == (const Move &move) const {
-			return ( from==move.from && to==move.to && promotionPiece==move.promotionPiece);
+			return ( from==move.from && to==move.to);
 		}
 
 		inline bool operator != (const Move &move) const {
-			return (!(from==move.from && to==move.to && promotionPiece==move.promotionPiece));
+			return (!(from==move.from && to==move.to));
 		}
 
 		inline bool none() {
@@ -254,7 +254,6 @@ inline MoveIterator::Move& MoveIterator::prior() {
 }
 
 inline MoveIterator::Move& MoveIterator::selectBest() {
-
 	if (_data.size>1) {
 		size_t idxMax = _data.idx;
 		for (size_t x=_data.idx+1;x<_data.size;x++) {

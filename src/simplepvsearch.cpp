@@ -329,6 +329,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 
 		MoveBackup backup;
 		board.doMove(move,backup);
+		assert(move.from!=NONE);
 
 		if (board.isNotLegal()) {
 			board.undoMove(backup);

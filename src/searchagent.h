@@ -65,7 +65,7 @@ public:
 		LOWER=0, UPPER, EXACT, NM_LOWER
 	};
 
-	/*struct HashData {
+	struct HashData {
 
 		HashData() : _value(0), _depth(0), _flag(LOWER),
 				_from(NONE), _to(NONE), _promotion(EMPTY), _generation(0) {};
@@ -107,10 +107,11 @@ public:
 		uint8_t _to;
 		uint8_t _promotion;
 		uint8_t _generation;
-	};*/
+	};
 
 	typedef uint32_t HashKey;
 
+	/*
 	struct HashData {
 		HashData() : _value(0), _depth(0), _flag(LOWER)  {};
 		HashData(const int& value, const int& depth, const NodeFlag& flag, const MoveIterator::Move& move) :
@@ -146,6 +147,7 @@ public:
 		}
 
 	};
+	 */
 
 	static SearchAgent* getInstance();
 
@@ -274,15 +276,15 @@ public:
 
 	}
 
-	inline bool hashPut(const Key _key, int value, const int depth, const int ply, const NodeFlag flag, const MoveIterator::Move move) {
+	inline bool hashPut(const Key _key, int value, const int depth, const int ply, const NodeFlag flag, const MoveIterator::Move& move) {
 
 		if (value >= maxScore-100) {
 			value -= ply;
 		} else if (value <= -maxScore+100) {
 			value += ply;
 		}
-
-		return transTable->hashPut(HashKey(_key), HashData(value,depth,flag,move));
+		MoveIterator::Move ttMove(move.from,move.to,move.promotionPiece,MoveIterator::TT_MOVE);
+		return transTable->hashPut(HashKey(_key), HashData(value,depth,flag,ttMove));
 
 	}
 
@@ -313,7 +315,7 @@ public:
 					(hashData.value() >= MAX(maxScore-100,beta)) ||
 					(hashData.value() < MIN(-maxScore+100,beta))) &&
 					((hashData.flag() == LOWER && hashData.value() >= beta) ||
-					(hashData.flag() == UPPER && hashData.value() < beta));
+							(hashData.flag() == UPPER && hashData.value() < beta));
 		}
 
 		return result;

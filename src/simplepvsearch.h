@@ -43,8 +43,8 @@ const int maxSearchDepth = 80;
 const int maxSearchPly = 100;
 
 // internal iterative deepening
-const int allowIIDAtPV = 5;
-const int allowIIDAtNormal = 11;
+const int allowIIDAtPV = 3;
+const int allowIIDAtNormal = 7;
 
 // margin constants
 #define futilityMargin(depth) (150 + depth * 200)
@@ -427,7 +427,6 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 				move.score=hist+gain;
 			}
 		}
-
 		move.score+=scoreTable[move.type];
 	}
 	moves.goToBookmark();
@@ -453,7 +452,6 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 		move.score = -pvSearch(board,newSi,-maxScore,maxScore,1,0,&pv);
 
 		if (pieceTo!=EMPTY) {
-
 			const int value = defaultMaterialValues[pieceTo] -
 					defaultMaterialValues[pieceFrom];
 
@@ -503,13 +501,10 @@ inline bool SimplePVSearch::okToReduce(Board& board, MoveIterator::Move& move,
 
 	bool verify = (
 			move.type == MoveIterator::NON_CAPTURE &&
-			move!=killer[ply][0] &&
-			move!=killer[ply][1] &&
 			!isKingAttacked &&
 			!isGivingCheck &&
 			!isPawnPush(board,move) &&
 			!nullMoveMateScore //&&
-			//!history[board.getPieceBySquare(move.from)][move.to]
 	);
 
 	return verify;
@@ -592,14 +587,19 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 		return false;
 	}
 
+
 	if (remainingMoves>lateMoveThreshold &&
 			depth>lmrDepthThreshold) {
 		reduction= 1;
-		if (!isPV && depth > 7) {
+
+		if (!isPV && depth > 7 &&
+				!history[board.getPieceBySquare(move.from)][move.to]) {
 			reduction+=depth/8;
 		}
+
 		return true;
 	}
+
 
 	return false;
 }
@@ -660,13 +660,12 @@ inline void SimplePVSearch::uciOutput(MoveIterator::Move& bestMove, MoveIterator
 
 	if (isUpdateUci()) {
 		if (!bestMove.none()) {
-			if (isUpdateUci()) {
-				std::cout << "bestmove " << bestMove.toString();
-				if (!ponderMove.none()) {
-					std::cout << " ponder "<< ponderMove.toString();
-				}
-				std::cout << std::endl;
+			std::cout << "bestmove " << bestMove.toString();
+			if (!ponderMove.none()) {
+				std::cout << " ponder "<< ponderMove.toString();
 			}
+			std::cout << std::endl;
+
 		} else {
 			std::cout << "bestmove (none)" << std::endl;
 		}
@@ -706,10 +705,10 @@ inline void SimplePVSearch::clearHistory() {
 // update history
 inline void SimplePVSearch::updateHistory(Board& board, MoveIterator::Move& move, int depth) {
 
-	if (board.getPieceBySquare(move.to)!=EMPTY ||
-			move.type == MoveIterator::PROMO_NONCAPTURE ||
-			move.type == MoveIterator::PROMO_CAPTURE ||
-			move.type == MoveIterator::CASTLE ||
+	if (!(move.type==MoveIterator::NON_CAPTURE ||
+			move.type==MoveIterator::KILLER1 ||
+			move.type==MoveIterator::KILLER2 ||
+			move.type==MoveIterator::TT_MOVE) ||
 			move.none()) {
 		return;
 	}
@@ -720,16 +719,19 @@ inline void SimplePVSearch::updateHistory(Board& board, MoveIterator::Move& move
 
 // update killers
 inline void SimplePVSearch::updateKillers(Board& board, MoveIterator::Move& move, int ply) {
-	if (board.getPieceBySquare(move.to)!=EMPTY ||
-			move.type == MoveIterator::PROMO_NONCAPTURE ||
-			move.type == MoveIterator::PROMO_CAPTURE ||
-			move.type == MoveIterator::CASTLE ||
+	if (!(move.type==MoveIterator::NON_CAPTURE ||
+			move.type==MoveIterator::KILLER1 ||
+			move.type==MoveIterator::KILLER2 ||
+			move.type==MoveIterator::TT_MOVE) ||
 			move.none()) {
 		return;
 	}
+
 	if (move != killer[ply][0]) {
 		killer[ply][1] = killer[ply][0];
 		killer[ply][0] = move;
+		killer[ply][0].type = MoveIterator::KILLER1;
+		killer[ply][1].type = MoveIterator::KILLER2;
 	}
 }
 
