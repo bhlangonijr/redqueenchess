@@ -250,6 +250,7 @@ private:
 	bool isMateScore(const int score);
 	bool isPawnFinal(Board& board);
 	bool isPawnPush(Board& board, MoveIterator::Move& move);
+	bool isCaptureOrPromotion(Board& board, MoveIterator::Move& move);
 	bool isPawnPromoting(const Board& board);
 	bool adjustDepth(int& extension, int& reduction, Board& board, MoveIterator::Move& move, int depth,
 			int remainingMoves, bool isKingAttacked, bool isGivingCheck, int ply, const bool nullMoveMateScore, const bool isPV);
@@ -558,9 +559,13 @@ inline bool SimplePVSearch::isPawnPush(Board& board, MoveIterator::Move& move) {
 	if (board.getPieceTypeBySquare(move.to)!=PAWN) {
 		return false;
 	}
-
 	return evaluator.isPawnPassed(board,move.to);
 }
+
+inline bool SimplePVSearch::isCaptureOrPromotion(Board& board, MoveIterator::Move& move) {
+	return board.getPieceBySquare(move.to) != EMPTY || move.promotionPiece != EMPTY;
+}
+
 
 // pawn promoting
 inline bool SimplePVSearch::isPawnPromoting(const Board& board) {
@@ -705,11 +710,7 @@ inline void SimplePVSearch::clearHistory() {
 // update history
 inline void SimplePVSearch::updateHistory(Board& board, MoveIterator::Move& move, int depth) {
 
-	if (!(move.type==MoveIterator::NON_CAPTURE ||
-			move.type==MoveIterator::KILLER1 ||
-			move.type==MoveIterator::KILLER2 ||
-			move.type==MoveIterator::TT_MOVE) ||
-			move.none()) {
+	if (isCaptureOrPromotion(board,move) || move.none()) {
 		return;
 	}
 
@@ -719,11 +720,8 @@ inline void SimplePVSearch::updateHistory(Board& board, MoveIterator::Move& move
 
 // update killers
 inline void SimplePVSearch::updateKillers(Board& board, MoveIterator::Move& move, int ply) {
-	if (!(move.type==MoveIterator::NON_CAPTURE ||
-			move.type==MoveIterator::KILLER1 ||
-			move.type==MoveIterator::KILLER2 ||
-			move.type==MoveIterator::TT_MOVE) ||
-			move.none()) {
+
+	if (isCaptureOrPromotion(board,move) || move.none()) {
 		return;
 	}
 

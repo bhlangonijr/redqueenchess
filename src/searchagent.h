@@ -57,6 +57,9 @@ class SimplePVSearch;
 class SearchAgent {
 
 public:
+
+	typedef uint32_t HashKey;
+
 	enum SearchMode {
 		SEARCH_TIME, SEARCH_DEPTH, SEARCH_MOVESTOGO, SEARCH_MOVETIME, SEARCH_MOVES, SEARCH_INFINITE
 	};
@@ -65,7 +68,7 @@ public:
 		LOWER=0, UPPER, EXACT, NM_LOWER
 	};
 
-	/*struct HashData {
+	struct HashData {
 
 		HashData() : _value(0), _depth(0), _flag(LOWER),
 				_from(NONE), _to(NONE), _promotion(EMPTY), _generation(0) {};
@@ -108,10 +111,9 @@ public:
 		uint8_t _promotion;
 		uint8_t _generation;
 	};
-*/
-	typedef uint32_t HashKey;
 
-	struct HashData {
+
+	/*struct HashData {
 		HashData() : _value(0), _depth(0), _flag(LOWER)  {};
 		HashData(const int& value, const int& depth, const NodeFlag& flag, const MoveIterator::Move& move) :
 			_value(value), _depth(depth), _flag(flag), _move(move)  {};
@@ -145,7 +147,7 @@ public:
 			_flag=LOWER;
 		}
 
-	};
+	};*/
 
 	static SearchAgent* getInstance();
 

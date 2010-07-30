@@ -63,6 +63,14 @@ public:
 			from(move.from), to(move.to), promotionPiece(move.promotionPiece), score(move.score), type(move.type)
 			{}
 
+		inline void operator = (const Move &move) {
+			from=move.from;
+			to=move.to;
+			promotionPiece=move.promotionPiece;
+			score=move.score;
+			type=move.type;
+		}
+
 		inline bool operator == (const Move &move) const {
 			return ( from==move.from && to==move.to);
 		}
@@ -94,7 +102,6 @@ public:
 	};
 
 	struct Data {
-
 		Data(): size(0), idx(0), saveIdx(0), stage(BEGIN_STAGE) {};
 		Data(Data& data) : list(data.list), size(data.size), idx(data.idx), saveIdx(data.saveIdx), stage(BEGIN_STAGE){};
 		Move list[MOVE_LIST_MAX_SIZE] __attribute__ ((aligned(64)));

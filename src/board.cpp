@@ -229,6 +229,7 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 			}
 		}
 	}
+
 	if (!isCastleDone(otherSide) && getCastleRights(otherSide)!=NO_CASTLE) {
 		if (toPiece==makePiece(otherSide,ROOK)) {
 			if (getSideToMove()==WHITE) {
