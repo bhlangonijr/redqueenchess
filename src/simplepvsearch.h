@@ -563,7 +563,8 @@ inline bool SimplePVSearch::isPawnPush(Board& board, MoveIterator::Move& move) {
 }
 
 inline bool SimplePVSearch::isCaptureOrPromotion(Board& board, MoveIterator::Move& move) {
-	return board.getPieceBySquare(move.to) != EMPTY || move.promotionPiece != EMPTY;
+	return board.getPieceBySquare(move.to) != EMPTY ||
+			move.promotionPiece != EMPTY;
 }
 
 
@@ -598,7 +599,7 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 		reduction= 1;
 
 		if (!isPV && depth > 7 &&
-				!history[board.getPieceBySquare(move.from)][move.to]) {
+				!history[board.getPieceBySquare(move.to)][move.to]) {
 			reduction+=depth/8;
 		}
 
