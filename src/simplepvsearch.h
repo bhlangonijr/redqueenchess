@@ -598,10 +598,10 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 			depth>lmrDepthThreshold) {
 		reduction= 1;
 
-	/*	if (!isPV && depth > 7 &&
+		if (!isPV && depth > 7 &&
 				!history[board.getPieceBySquare(move.to)][move.to]) {
 			reduction+=depth/8;
-		}*/
+		}
 
 		return true;
 	}
