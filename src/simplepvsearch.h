@@ -54,8 +54,8 @@ const int easyMargin=500;
 //depth prunning threshold
 const int aspirationDepth=6;
 const int futilityDepth=3;
-const int lmrDepthThreshold=1;
-const int lateMoveThreshold=1;
+const int lmrDepthThreshold=2;
+const int lateMoveThreshold=2;
 
 const int scoreTable[11]={0,8000,5000,9500,9000,4500,4000,100,-900,5000};
 
@@ -598,10 +598,10 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 			depth>lmrDepthThreshold) {
 		reduction= 1;
 
-		if (!isPV && depth > 7 &&
+	/*	if (!isPV && depth > 7 &&
 				!history[board.getPieceBySquare(move.to)][move.to]) {
 			reduction+=depth/8;
-		}
+		}*/
 
 		return true;
 	}
