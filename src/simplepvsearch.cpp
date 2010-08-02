@@ -427,18 +427,18 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 
 	PvLine line = PvLine();
 	bool nullMoveMateScore=false;
+	bool okToPruneWithHash=false;
 	int score = 0;
 	SearchAgent::HashData hashData;
 	MoveIterator::Move hashMove;
 
 	// tt retrieve & prunning
-	if (agent->hashPruneGet(board.getKey(), hashData, ply, depth, allowNullMove, beta)) {
-		stats.ttHits++;
-		return hashData.value();
-	}
-
-	if (!hashData.move().none()) {
+	if (agent->hashPruneGet(okToPruneWithHash, board.getKey(), hashData, ply, depth, allowNullMove, beta)) {
 		hashMove = hashData.move();
+		stats.ttHits++;
+		if (okToPruneWithHash) {
+			return hashData.value();
+		}
 	}
 
 	const bool isKingAttacked = si.inCheck;

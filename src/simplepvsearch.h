@@ -54,8 +54,8 @@ const int easyMargin=500;
 //depth prunning threshold
 const int aspirationDepth=6;
 const int futilityDepth=3;
-const int lmrDepthThreshold=2;
-const int lateMoveThreshold=2;
+const int lmrDepthThreshold=1;
+const int lateMoveThreshold=1;
 
 const int scoreTable[11]={0,8000,5000,9500,9000,4500,4000,100,-900,5000};
 

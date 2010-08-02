@@ -305,17 +305,19 @@ public:
 		return result;
 	}
 
-	inline bool hashPruneGet(const Key _key, HashData& hashData, const int ply,
+	inline bool hashPruneGet(bool& okToPrune, const Key _key, HashData& hashData, const int ply,
 			const int depth, const bool allowNullMove, const int beta) {
 
-		bool result = hashGet(HashKey(_key), hashData, ply);
+		const bool result = hashGet(HashKey(_key), hashData, ply);
 
 		if (result) {
-			result =((allowNullMove && hashData.depth()>=depth) ||
+			okToPrune =((allowNullMove && hashData.depth()>=depth) ||
 					(hashData.value() >= MAX(maxScore-100,beta)) ||
 					(hashData.value() < MIN(-maxScore+100,beta))) &&
 					((hashData.flag() == LOWER && hashData.value() >= beta) ||
 							(hashData.flag() == UPPER && hashData.value() < beta));
+		} else {
+			okToPrune = false;
 		}
 
 		return result;
