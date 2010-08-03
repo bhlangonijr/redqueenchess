@@ -65,7 +65,7 @@ public:
 	};
 
 	enum NodeFlag {
-		LOWER=0, UPPER, EXACT, NM_LOWER
+		NODE_NONE=0, LOWER=1, UPPER=2, EXACT=4, NODE_NULL=8, NM_LOWER=LOWER|NODE_NULL
 	};
 
 	struct HashData {
@@ -311,11 +311,12 @@ public:
 		const bool result = hashGet(HashKey(_key), hashData, ply);
 
 		if (result) {
-			okToPrune =((allowNullMove && hashData.depth()>=depth) ||
+			okToPrune =(((allowNullMove || !(hashData.flag() & NODE_NULL)) &&
+					hashData.depth()>=depth)) /*||
 					(hashData.value() >= MAX(maxScore-100,beta)) ||
-					(hashData.value() < MIN(-maxScore+100,beta))) &&
-					((hashData.flag() == LOWER && hashData.value() >= beta) ||
-							(hashData.flag() == UPPER && hashData.value() < beta));
+					(hashData.value() < MIN(-maxScore+100,beta)))*/ &&
+					(((hashData.flag() & LOWER) && hashData.value() >= beta) ||
+					((hashData.flag() & UPPER) && hashData.value() < beta));
 		} else {
 			okToPrune = false;
 		}
