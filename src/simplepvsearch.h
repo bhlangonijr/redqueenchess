@@ -50,10 +50,13 @@ const int allowIIDAtNormal = 7;
 #define futilityMargin(depth) (150 + depth * 200)
 const int iidMargin=250;
 const int easyMargin=500;
+const int deltaMargin=950;
+const int nullMoveMargin=150;
 
 //depth prunning threshold
 const int aspirationDepth=6;
 const int futilityDepth=3;
+const int nullMoveDepth=4;
 const int lmrDepthThreshold=2;
 const int lateMoveThreshold=2;
 

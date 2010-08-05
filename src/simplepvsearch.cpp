@@ -446,10 +446,16 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		si.eval = evaluator.quickEvaluate(board);
 	}
 
+	if (!isKingAttacked && allowNullMove && depth < nullMoveDepth &&
+			okToNullMove(board) && !isMateScore(beta) &&
+			si.eval >= beta+futilityMargin(depth)) {
+		return si.eval-futilityMargin(depth);
+	}
+
 	// null move
 	if (depth>1 && !isKingAttacked &&
 			allowNullMove && okToNullMove(board) &&
-			!isMateScore(beta) && si.eval >= beta) {
+			!isMateScore(beta) && si.eval >= (depth>=nullMoveDepth?nullMoveMargin:0)) {
 
 		const int reduction = 3 + (depth > 4 ? depth/6 : 0);
 		MoveBackup backup;
@@ -599,6 +605,13 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 	}
 
 	const bool isKingAttacked = si.inCheck;
+
+	if (!isKingAttacked) {
+		const int delta =  deltaMargin + (isPawnPromoting(board) ? deltaMargin : 0);
+		if (standPat < alpha - delta) {
+			return alpha;
+		}
+	}
 
 	int moveCounter=0;
 	bool pvNode = bool(beta-alpha != 1);
