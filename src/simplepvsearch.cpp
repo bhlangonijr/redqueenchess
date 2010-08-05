@@ -455,7 +455,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	// null move
 	if (depth>1 && !isKingAttacked &&
 			allowNullMove && okToNullMove(board) &&
-			!isMateScore(beta) && si.eval >= (depth>=nullMoveDepth?nullMoveMargin:0)) {
+			!isMateScore(beta) && si.eval >= beta-(depth>=nullMoveDepth?nullMoveMargin:0)) {
 
 		const int reduction = 3 + (depth > 4 ? depth/6 : 0);
 		MoveBackup backup;
