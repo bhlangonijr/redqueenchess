@@ -298,6 +298,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 
 	//tt retrieve
 	if (agent->hashGet(board.getKey(), hashData, ply)) {
+		stats.ttHits++;
 		hashMove = hashData.move();
 	}
 
@@ -308,6 +309,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		const int iidSearchDepth = depth-2;
 		score = pvSearch(board,si,alpha,beta,iidSearchDepth,ply,&line);
 		if (agent->hashGet(board.getKey(), hashData, ply)) {
+			stats.ttHits++;
 			hashMove = hashData.move();
 		}
 	}
@@ -487,6 +489,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		const int iidSearchDepth = depth/2;
 		score = zwSearch(board,si,beta,iidSearchDepth,ply,&line,false);
 		if (agent->hashGet(board.getKey(), hashData, ply)) {
+			stats.ttHits++;
 			hashMove = hashData.move();
 		}
 	}

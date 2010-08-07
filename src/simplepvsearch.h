@@ -47,11 +47,11 @@ const int allowIIDAtPV = 5;
 const int allowIIDAtNormal = 7;
 
 // margin constants
-#define futilityMargin(depth) (150 + depth * 200)
+#define futilityMargin(depth) (150 + depth * 250)
 const int iidMargin=260;
 const int easyMargin=500;
 const int deltaMargin=950;
-const int nullMoveMargin=550;
+const int nullMoveMargin=450;
 
 //depth prunning threshold
 const int aspirationDepth=6;
