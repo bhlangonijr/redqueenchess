@@ -112,43 +112,6 @@ public:
 		uint8_t _generation;
 	};
 
-
-	/*struct HashData {
-		HashData() : _value(0), _depth(0), _flag(LOWER)  {};
-		HashData(const int& value, const int& depth, const NodeFlag& flag, const MoveIterator::Move& move) :
-			_value(value), _depth(depth), _flag(flag), _move(move)  {};
-
-		HashData(const HashData& hashData) : _value(hashData._value), _depth(hashData._depth),
-				_flag(hashData._flag), _move(hashData._move)  {};
-
-		int _value;
-		int _depth;
-		NodeFlag _flag;
-		MoveIterator::Move _move;
-
-		NodeFlag& flag() {
-			return _flag;
-		}
-		MoveIterator::Move& move() {
-			return _move;
-		}
-		int& depth() {
-			return _depth;
-		}
-		int& value() {
-			return _value;
-		}
-		void setValue(int value) {
-			_value=value;
-		}
-		inline void clear() {
-			_value=0;
-			_depth=0;
-			_flag=LOWER;
-		}
-
-	};*/
-
 	static SearchAgent* getInstance();
 
 	void newGame();

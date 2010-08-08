@@ -286,6 +286,7 @@ public:
 	const bool isAttackedBy(const Square from, const Square to);
 	const bool isDraw();
 	const bool isCastleDone(const PieceColor color);
+	const bool isCaptureMove(MoveIterator::Move& move);
 
 	const Bitboard getPiecesByColor(const PieceColor color) const;
 	const Bitboard getAllPieces() const;
@@ -690,7 +691,22 @@ inline const bool Board::isDraw() {
 // verify if castle has been made
 inline const bool Board::isCastleDone(const PieceColor color) {
 	return currentBoard.castleDone[color];
+}
 
+// verify if move is capture
+inline const bool Board::isCaptureMove(MoveIterator::Move& move) {
+
+	bool result=false;
+	if (this->getPieceBySquare(move.to)!=EMPTY) {
+		result=true;
+	} else if (this->getPieceTypeBySquare(move.from)==PAWN){
+		if (this->getEnPassant()!=NONE &&
+				getSquareFile(move.from)!=getSquareFile(move.to)) {
+			result=true;
+		}
+
+	}
+	return result;
 }
 
 // get all pieces of a given color
