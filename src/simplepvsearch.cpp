@@ -524,8 +524,8 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		SearchInfo newSi(si.eval,givingCheck);
 
 		//futility
-		if (okToPrune(board, move, hashMove,
-				isKingAttacked, givingCheck, nullMoveMateScore, depth)) {
+		if (okToPrune(board, move, isKingAttacked, givingCheck,
+				nullMoveMateScore, depth)) {
 
 			const int futilityScore = si.eval + futilityMargin(depth);
 			if (futilityScore < beta) {

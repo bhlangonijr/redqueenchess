@@ -1014,7 +1014,7 @@ inline void Board::generatePawnCaptures(MoveIterator& moves, const PieceColor si
 				moves.add(from,target,makePiece(side,BISHOP), MoveIterator::PROMO_CAPTURE);
 				moves.add(from,target,makePiece(side,KNIGHT), MoveIterator::PROMO_CAPTURE);
 			} else {
-				moves.add(from,target,EMPTY);
+				moves.add(from,target,EMPTY, MoveIterator::CAPTURE);
 			}
 			target = extractLSB(attacks);
 		}
