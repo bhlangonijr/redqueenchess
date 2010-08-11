@@ -448,6 +448,17 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		si.eval = evaluator.evaluate(board,beta-1,beta);
 	}
 
+	if (depth < razorDepth && hashMove.none() &&
+			!isKingAttacked && !isMateScore(beta) &&
+			!isPawnPromoting(board) &&
+			si.eval < beta - razorMargin(depth)) {
+		const int newBeta = beta - razorMargin(depth);
+		score = qSearch(board, si, newBeta-1, newBeta, 0, ply, pv);
+		if (score < newBeta) {
+			return score;
+		}
+	}
+
 	if (!isKingAttacked && allowNullMove && depth < nullMoveDepth &&
 			okToNullMove(board) && !isMateScore(beta) &&
 			si.eval >= beta+futilityMargin(depth)) {

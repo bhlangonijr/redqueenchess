@@ -697,10 +697,10 @@ inline const bool Board::isCastleDone(const PieceColor color) {
 inline const bool Board::isCaptureMove(MoveIterator::Move& move) {
 
 	bool result=false;
-	if (this->getPieceBySquare(move.to)!=EMPTY) {
+	if (getPieceBySquare(move.to)!=EMPTY) {
 		result=true;
-	} else if (this->getPieceTypeBySquare(move.from)==PAWN){
-		if (this->getEnPassant()!=NONE &&
+	} else if (getPieceTypeBySquare(move.from)==PAWN){
+		if (getEnPassant()!=NONE &&
 				getSquareFile(move.from)!=getSquareFile(move.to)) {
 			result=true;
 		}
@@ -1014,7 +1014,7 @@ inline void Board::generatePawnCaptures(MoveIterator& moves, const PieceColor si
 				moves.add(from,target,makePiece(side,BISHOP), MoveIterator::PROMO_CAPTURE);
 				moves.add(from,target,makePiece(side,KNIGHT), MoveIterator::PROMO_CAPTURE);
 			} else {
-				moves.add(from,target,EMPTY, MoveIterator::CAPTURE);
+				moves.add(from,target,EMPTY);
 			}
 			target = extractLSB(attacks);
 		}
