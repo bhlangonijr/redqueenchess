@@ -30,6 +30,8 @@ extern "C" void *threadStartup(void *);
 
 SearchAgent* SearchAgent::searchAgent = 0;
 
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
 SearchAgent* SearchAgent::getInstance ()
 {
 	if (searchAgent == 0) {
@@ -50,6 +52,7 @@ SearchAgent::SearchAgent() :
 
 // start a new game
 void SearchAgent::newGame() {
+	pthread_mutex_lock(&mutex);
 
 	board.setInitialPosition();
 
@@ -65,6 +68,8 @@ void SearchAgent::newGame() {
 	this->setMovesToGo(0);
 	this->setMoveTime(0);
 	this->setInfinite(false);
+
+	pthread_mutex_unlock(&mutex);
 
 }
 
@@ -90,6 +95,7 @@ void SearchAgent::setPositionFromFEN(std::string fenMoves) {
 
 // start search
 void* SearchAgent::startThreadSearch() {
+	pthread_mutex_lock(&mutex);
 
 	setSearchInProgress(true);
 
@@ -112,7 +118,7 @@ void* SearchAgent::startThreadSearch() {
 
 	setSearchInProgress(false);
 	setRequestStop(false);
-
+	pthread_mutex_unlock(&mutex);
 	return 0;
 }
 

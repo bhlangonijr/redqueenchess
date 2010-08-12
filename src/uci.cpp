@@ -112,6 +112,9 @@ bool Uci::execute()
 	case PERFT:
 		executePerft();
 		break;
+	case PONDERHIT:
+		executeStop();
+		break;
 	case TEST :
 		executeTest();
 		break;
@@ -134,9 +137,9 @@ void Uci::setCommand(Command cmd)
 
 // gets command
 Uci::Command Uci::getCommand() const
-		{
+{
 	return Uci::command;
-		}
+}
 
 // sets rawinput
 void Uci::setRawInput(const std::string input)
@@ -146,9 +149,9 @@ void Uci::setRawInput(const std::string input)
 
 // gets command
 std::string Uci::getRawInput() const
-		{
+{
 	return Uci::rawInput;
-		}
+}
 
 // sets uci options
 void Uci::setUciOption(std::vector< UciOption *> options) {
@@ -253,6 +256,11 @@ void Uci::executeGo() {
 
 		searchAgent->setSearchMode(SearchAgent::SEARCH_MOVES);
 		// TODO implement SEARCH MOVES mode
+
+	} else if (containsString(this->rawInput, "go ponder")) {
+
+		searchAgent->setSearchMode(SearchAgent::SEARCH_INFINITE);
+		searchAgent->setInfinite(true);
 
 	} else {
 		// in case of invalid parameters

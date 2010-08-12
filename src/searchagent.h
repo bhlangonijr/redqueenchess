@@ -69,7 +69,6 @@ public:
 	};
 
 	struct HashData {
-
 		HashData() : _value(0), _depth(0), _flag(LOWER),
 				_from(NONE), _to(NONE), _promotion(EMPTY), _generation(0) {};
 
@@ -247,13 +246,13 @@ public:
 			value += ply;
 		}
 		MoveIterator::Move ttMove(move.from,move.to,move.promotionPiece,MoveIterator::TT_MOVE);
-		return transTable->hashPut(HashKey(_key), HashData(value,depth,flag,ttMove));
+		return transTable->hashPut(HashKey(_key>>32), HashData(value,depth,flag,ttMove));
 
 	}
 
 	inline bool hashGet(const Key _key, HashData& hashData, const int ply) {
 
-		bool result = transTable->hashGet(HashKey(_key), hashData);
+		bool result = transTable->hashGet(HashKey(_key>>32), hashData);
 		if (result) {
 			int value = hashData.value();
 			if (value >= maxScore-100) {
@@ -271,13 +270,11 @@ public:
 	inline bool hashPruneGet(bool& okToPrune, const Key _key, HashData& hashData, const int ply,
 			const int depth, const bool allowNullMove, const int beta) {
 
-		const bool result = hashGet(HashKey(_key), hashData, ply);
+		const bool result = hashGet(_key, hashData, ply);
 
 		if (result) {
 			okToPrune =(((allowNullMove || !(hashData.flag() & NODE_NULL)) &&
-					hashData.depth()>=depth)) /*||
-					(hashData.value() >= MAX(maxScore-100,beta)) ||
-					(hashData.value() < MIN(-maxScore+100,beta)))*/ &&
+					hashData.depth()>=depth)) &&
 					(((hashData.flag() & LOWER) && hashData.value() >= beta) ||
 					((hashData.flag() & UPPER) && hashData.value() < beta));
 		} else {

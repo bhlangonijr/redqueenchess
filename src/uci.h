@@ -31,10 +31,10 @@
 #include <vector>
 #include "ucioption.h"
 
-#define NU_COMMANDS 12
+#define NU_COMMANDS 13
 
 static const std::string strCommand[NU_COMMANDS] =
-	{"none","quit","uci","ucinewgame","isready","position","setoption","go","stop","perft","test","unknow"};
+	{"none","quit","uci","ucinewgame","isready","position","setoption","go","stop","perft","ponderhit","test","unknow"};
 
 // Singleton to Handle Universal Chess Interface
 class Uci {
@@ -53,6 +53,7 @@ public:
 		GO,
 		STOP,
 		PERFT,
+		PONDERHIT,
 		TEST,
 		UNKNOW
 	};
