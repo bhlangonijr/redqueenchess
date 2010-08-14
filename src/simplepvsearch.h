@@ -78,21 +78,20 @@ public:
 	} PvLine;
 
 	typedef struct SearchInfo {
-
-		SearchInfo(): eval(-maxScore), inCheck(false){}
-		SearchInfo(const int _eval, const bool _inCheck): eval(_eval), inCheck(_inCheck){}
+		SearchInfo(): eval(-maxScore), inCheck(false), isPV(false) {}
+		SearchInfo(const int _eval, const bool _inCheck,  const bool _isPV, const MoveIterator::Move _move):
+			eval(_eval), inCheck(_inCheck), isPV(_isPV), move(_move) {}
 		int eval;
 		bool inCheck;
-
+		bool isPV;
+		MoveIterator::Move move;
 	} SearchInfo;
 
 	typedef struct SearchStats {
-
 		SearchStats():
 			ttHits(0), ttLower(0), ttUpper(0), ttExact(0), nullMoveHits(0),
 			pvChanges(0), searchTime(0), searchNodes(0), searchDepth(0),
 			bestMove(MoveIterator::Move()),ponderMove(MoveIterator::Move()) {}
-
 		SearchStats(const SearchStats& stats):
 			ttHits(stats.ttHits), ttLower(stats.ttLower),
 			ttUpper(stats.ttUpper), ttExact(stats.ttExact),
@@ -243,7 +242,8 @@ private:
 	const std::string pvLineToString(const PvLine* pv);
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves,
 			MoveIterator::Move& ttMove, bool isKingAttacked, int ply);
-	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves, bool isKingAttacked);
+	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves,
+			bool isKingAttacked, MoveIterator::Move& ttMove);
 	void scoreMoves(Board& board, MoveIterator& moves);
 	void scoreRootMoves(Board& board, MoveIterator& moves);
 	void filterLegalMoves(Board& board, MoveIterator& moves);
@@ -295,8 +295,12 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 	}
 
 	if (moves.getStage()==MoveIterator::ON_EVASION_STAGE) {
-		if (moves.hasNext()) {
-			return moves.selectBest();
+		while (moves.hasNext()) {
+			MoveIterator::Move& move=moves.selectBest();
+			if (move==ttMove) {
+				continue;
+			}
+			return move;
 		}
 		moves.setStage(MoveIterator::END_STAGE);
 		return emptyMove;
@@ -359,13 +363,17 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 }
 
 // select a move
-inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves, bool isKingAttacked) {
+inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves,
+		bool isKingAttacked, MoveIterator::Move& ttMove) {
 
 	if (moves.getStage()==MoveIterator::BEGIN_STAGE) {
 		if (!isKingAttacked) {
 			moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
 		} else {
 			moves.setStage(MoveIterator::INIT_EVASION_STAGE);
+		}
+		if (board.isMoveLegal(ttMove)) {
+			return ttMove;
 		}
 	}
 
@@ -377,8 +385,12 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 	}
 
 	if (moves.getStage()==MoveIterator::ON_EVASION_STAGE) {
-		if (moves.hasNext()) {
-			return moves.selectBest();
+		while (moves.hasNext()) {
+			MoveIterator::Move& move=moves.selectBest();
+			if (move==ttMove) {
+				continue;
+			}
+			return move;
 		}
 		moves.setStage(MoveIterator::END_STAGE);
 		return emptyMove;
@@ -393,7 +405,11 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::ON_CAPTURE_STAGE) {
 		while (moves.hasNext()) {
-			return moves.selectBest();
+			MoveIterator::Move& move=moves.selectBest();
+			if (move==ttMove) {
+				continue;
+			}
+			return move;
 		}
 		moves.setStage(MoveIterator::END_STAGE);
 	}
@@ -452,7 +468,7 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 
 		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
 
-		SearchInfo newSi(rootSearchInfo.eval,givingCheck);
+		SearchInfo newSi(rootSearchInfo.eval,givingCheck,true,move);
 		PvLine pv;
 		move.score = -pvSearch(board,newSi,-maxScore,maxScore,1,0,&pv);
 
@@ -542,7 +558,7 @@ inline bool SimplePVSearch::okToNullMove(Board& board) {
 // is mate score?
 inline bool SimplePVSearch::isMateScore(const int score) {
 	return score < -maxScore+maxSearchPly ||
-	score > maxScore-maxSearchPly;
+			score > maxScore-maxSearchPly;
 }
 
 // remains pawns & kings only?

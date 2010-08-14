@@ -52,6 +52,8 @@ const int timeTable [7][3] = {
 		{17, 1000, 0}
 };
 
+const int bucketSize=4;
+
 class SimplePVSearch;
 
 class SearchAgent {
@@ -109,6 +111,10 @@ public:
 		uint8_t _to;
 		uint8_t _promotion;
 		uint8_t _generation;
+	};
+
+	struct Bucket {
+		HashData data[bucketSize];
 	};
 
 	static SearchAgent* getInstance();
@@ -238,21 +244,31 @@ public:
 
 	}
 
-	inline bool hashPut(const Key _key, int value, const int depth, const int ply, const NodeFlag flag, const MoveIterator::Move& move) {
+	inline bool hashPut(const Key _key, int value, const int depth, const int ply,
+			const NodeFlag flag, MoveIterator::Move move) {
+
+		HashKey key = HashKey(_key>>32);
 
 		if (value >= maxScore-100) {
 			value -= ply;
 		} else if (value <= -maxScore+100) {
 			value += ply;
 		}
-		MoveIterator::Move ttMove(move.from,move.to,move.promotionPiece,MoveIterator::TT_MOVE);
-		return transTable->hashPut(HashKey(_key>>32), HashData(value,depth,flag,ttMove));
+
+		HashData hashData;
+		if (move.none() && transTable->hashGet(key, hashData)) {
+			move = hashData.move();
+		}
+		move.type=MoveIterator::TT_MOVE;
+		return transTable->hashPut(key, HashData(value,depth,flag,move));
 
 	}
 
 	inline bool hashGet(const Key _key, HashData& hashData, const int ply) {
 
-		bool result = transTable->hashGet(HashKey(_key>>32), hashData);
+		HashKey key = HashKey(_key>>32);
+
+		bool result = transTable->hashGet(key, hashData);
 		if (result) {
 			int value = hashData.value();
 			if (value >= maxScore-100) {
@@ -260,7 +276,7 @@ public:
 			} else if (value <= -maxScore+100) {
 				hashData.setValue(value+ply);
 			}
-		}else {
+		} else {
 			hashData.clear();
 		}
 
@@ -268,15 +284,18 @@ public:
 	}
 
 	inline bool hashPruneGet(bool& okToPrune, const Key _key, HashData& hashData, const int ply,
-			const int depth, const bool allowNullMove, const int beta) {
+			const int depth, const bool allowNullMove, const int alpha, const int beta) {
 
 		const bool result = hashGet(_key, hashData, ply);
 
 		if (result) {
-			okToPrune =(((allowNullMove || !(hashData.flag() & NODE_NULL)) &&
-					hashData.depth()>=depth)) &&
+			okToPrune =
+					(allowNullMove || !(hashData.flag() & NODE_NULL)) &&
+					(hashData.depth()>=depth ||
+							hashData.value() >= MAX(maxScore-100,beta) ||
+							hashData.value() < MIN(-maxScore+100,beta)) &&
 					(((hashData.flag() & LOWER) && hashData.value() >= beta) ||
-					((hashData.flag() & UPPER) && hashData.value() < beta));
+					((hashData.flag() & UPPER) && hashData.value() <= alpha));
 		} else {
 			okToPrune = false;
 		}

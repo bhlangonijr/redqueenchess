@@ -41,12 +41,9 @@ const int Evaluator::evaluate(Board& board, const int& alpha, const int& beta) {
 	const PieceColor other = board.flipSide(board.getSideToMove());
 
 	int value = board.getMaterial(side) - board.getMaterial(other);
-
-	if (value > alpha-lazyEvalMargin && value < beta+lazyEvalMargin) {
-		value += evalDevelopment(board, side) - evalDevelopment(board, other);
-		value += evalImbalances(board, side) - evalImbalances(board, other);
-		value += evalPieces(board, side) - evalPieces(board, other);
-	}
+	value += evalDevelopment(board, side) - evalDevelopment(board, other);
+	value += evalImbalances(board, side) - evalImbalances(board, other);
+	value += evalPieces(board, side) - evalPieces(board, other);
 
 	if (value > alpha-lazyEvalMargin && value < beta+lazyEvalMargin) {
 		int kingThreatSide=0;

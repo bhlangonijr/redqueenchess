@@ -71,6 +71,7 @@ public:
 	void clearHash();
 	bool hashPut(const HashKeyType key, const HashValueType value);
 	bool hashGet(const HashKeyType key, HashValueType& value);
+	bool hashGetAll(const HashKeyType key, HashValueType& value);
 	void resizeHash();
 	bool isHashFull();
 	const int hashFull();
@@ -137,6 +138,19 @@ inline bool TranspositionTable<HashKeyType, HashValueType>::hashGet(const HashKe
 	HashEntry *entry;
 	entry = transTable + (size_t(key) & _mask);
 	if (entry->key==key) {
+		value = entry->value;
+		return true;
+	}
+
+	return false;
+}
+
+template<class HashKeyType, class HashValueType>
+inline bool TranspositionTable<HashKeyType, HashValueType>::hashGetAll(const HashKeyType key, HashValueType& value) {
+
+	HashEntry *entry;
+	entry = transTable + (size_t(key) & _mask);
+	if (entry) {
 		value = entry->value;
 		return true;
 	}
