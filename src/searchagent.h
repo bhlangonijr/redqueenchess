@@ -254,12 +254,10 @@ public:
 		} else if (value <= -maxScore+100) {
 			value += ply;
 		}
-
 		HashData hashData;
 		if (move.none() && transTable->hashGet(key, hashData)) {
 			move = hashData.move();
 		}
-		move.type=MoveIterator::TT_MOVE;
 		return transTable->hashPut(key, HashData(value,depth,flag,move));
 
 	}

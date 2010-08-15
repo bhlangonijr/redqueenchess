@@ -515,13 +515,10 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	int bestScore=-maxScore;
 
 	while (true) {
-
 		MoveIterator::Move& move = selectMove(board, moves, hashMove, isKingAttacked, ply);
-
 		if (moves.end()) {
 			break;
 		}
-
 		MoveBackup backup;
 		board.doMove(move,backup);
 
@@ -628,19 +625,16 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 	const bool isKingAttacked = si.inCheck;
 
 	if (!isKingAttacked) {
-
 		if(standPat>=beta) {
 			return beta;
 		}
-
 		if( alpha < standPat) {
 			alpha = standPat;
 		}
-
-		/*const int delta =  deltaMargin + (isPawnPromoting(board) ? deltaMargin : 0);
+		const int delta =  deltaMargin + (isPawnPromoting(board) ? deltaMargin : 0);
 		if (standPat < alpha - delta && !pvNode) {
 			return alpha;
-		}*/
+		}
 	}
 
 	int moveCounter=0;
