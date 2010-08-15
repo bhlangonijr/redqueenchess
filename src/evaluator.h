@@ -42,7 +42,6 @@ public:
 	Evaluator();
 	virtual ~Evaluator();
 	const int evaluate(Board& board, const int& alpha, const int& beta);
-	const int quickEvaluate(Board& board);
 	const int evalMaterial(Board& board, PieceColor color);
 	const int evalPieces(Board& board, PieceColor color);
 	const int evalBoardControl(Board& board, PieceColor color, int& kingThreat);

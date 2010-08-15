@@ -613,32 +613,34 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 	MoveIterator::Move hashMove;
 	bool okToPruneWithHash=false;
 	bool pvNode = si.isPV;
-	const bool isKingAttacked = si.inCheck;
 
 	// tt retrieve & prunning
 	if (agent->hashPruneGet(okToPruneWithHash, board.getKey(), hashData, ply, depth, true, alpha, beta)) {
 		hashMove = hashData.move();
 		stats.ttHits++;
-		if (okToPruneWithHash && !pvNode && !isKingAttacked) {
+		if (okToPruneWithHash && !pvNode) {
 			return hashData.value();
 		}
 	}
 
 	int standPat = evaluator.evaluate(board,alpha,beta);
 
-	if(standPat>=beta) {
-		return beta;
-	}
-
-	if( alpha < standPat) {
-		alpha = standPat;
-	}
+	const bool isKingAttacked = si.inCheck;
 
 	if (!isKingAttacked) {
-		const int delta =  deltaMargin + (isPawnPromoting(board) ? deltaMargin : 0);
-		if (standPat < alpha - delta) {
-			return alpha;
+
+		if(standPat>=beta) {
+			return beta;
 		}
+
+		if( alpha < standPat) {
+			alpha = standPat;
+		}
+
+		/*const int delta =  deltaMargin + (isPawnPromoting(board) ? deltaMargin : 0);
+		if (standPat < alpha - delta && !pvNode) {
+			return alpha;
+		}*/
 	}
 
 	int moveCounter=0;
@@ -665,6 +667,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 
 		if (!isKingAttacked && !pvNode && depth < 0 &&
 				move.type==MoveIterator::BAD_CAPTURE &&
+				move != hashMove &&
 				!isPawnPromoting(board)) {
 			board.undoMove(backup);
 			continue;
@@ -681,7 +684,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 		}
 
 		if( score >= beta ) {
-			agent->hashPut(board.getKey(),score,depth,ply,SearchAgent::LOWER,move);
+			agent->hashPut(board.getKey(),score,depth<0?-1:0,ply,SearchAgent::LOWER,move);
 			return beta;
 		}
 
@@ -698,10 +701,10 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 	}
 
 	if (alpha>oldAlpha) {
-		agent->hashPut(board.getKey(),alpha,depth,ply,SearchAgent::EXACT,bestMove);
+		agent->hashPut(board.getKey(),alpha,depth<0?-1:0,ply,SearchAgent::EXACT,bestMove);
 		stats.ttExact++;
 	} else {
-		agent->hashPut(board.getKey(),alpha,depth,ply,SearchAgent::UPPER,emptyMove);
+		agent->hashPut(board.getKey(),alpha,depth<0?-1:0,ply,SearchAgent::UPPER,emptyMove);
 		stats.ttUpper++;
 	}
 

@@ -291,9 +291,7 @@ public:
 		if (result) {
 			okToPrune =
 					(allowNullMove || !(hashData.flag() & NODE_NULL)) &&
-					(hashData.depth()>=depth ||
-							hashData.value() >= MAX(maxScore-100,beta) ||
-							hashData.value() < MIN(-maxScore+100,beta)) &&
+					(hashData.depth()>=depth) &&
 					(((hashData.flag() & LOWER) && hashData.value() >= beta) ||
 					((hashData.flag() & UPPER) && hashData.value() <= alpha));
 		} else {
