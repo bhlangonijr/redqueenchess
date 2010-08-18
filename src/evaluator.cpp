@@ -70,7 +70,7 @@ const int Evaluator::evalPieces(Board& board, PieceColor color) {
 
 	// king
 	if (board.isCastleDone(color) &&
-			board.getGamePhase() <= MIDDLEGAME) {
+			board.getGamePhase() < ENDGAME) {
 		count+= DONE_CASTLE_BONUS +
 				board.getPiecesByType(board.makePiece(other,QUEEN)) ? 10 : 0;
 	}
@@ -84,21 +84,21 @@ const int Evaluator::evalPieces(Board& board, PieceColor color) {
 		while ( from!=NONE ) {
 			const Bitboard pawn = squareToBitboard[from];
 			const Bitboard allButThePawn =(pawns^pawn);
-
+			bool pawnProblem = true;
 			if (fileAttacks[squareFile[from]]&allButThePawn) {
 				count += DOUBLED_PAWN_PENALTY;
 			}
-
-			if (isPawnPassed(board,from)) {
-				count += passedPawnBonus[color][squareRank[from]];
-			}
-
 			if (!(neighborFiles[from]&allButThePawn)) {
 				count += ISOLATED_PAWN_PENALTY;
+			} else if (!(adjacentSquares[from]&allButThePawn)) {
+				count += BACKWARD_PAWN_PENALTY;
 			} else {
-				if (!(adjacentSquares[from]&allButThePawn)) {
-					count += BACKWARD_PAWN_PENALTY;
-				}
+				pawnProblem = false;
+			}
+			if (isPawnPassed(board,from)) {
+				count += (pawnProblem && board.getGamePhase()<ENDGAME?
+						passedPawnBonus2[color][squareRank[from]]:
+						passedPawnBonus1[color][squareRank[from]]);
 			}
 
 			from = extractLSB(pieces);
