@@ -52,7 +52,7 @@ const int allowIIDAtNormal = 7;
 const int iidMargin=260;
 const int easyMargin=500;
 const int deltaMargin=950;
-const int nullMoveMargin=450;
+const int nullMoveMargin=512;
 
 //depth prunning threshold
 const int aspirationDepth=6;
@@ -247,9 +247,6 @@ private:
 	void scoreMoves(Board& board, MoveIterator& moves);
 	void scoreRootMoves(Board& board, MoveIterator& moves);
 	void filterLegalMoves(Board& board, MoveIterator& moves);
-	bool okToPrune(Board& board, MoveIterator::Move& move, bool isKingAttacked,
-			const bool isGivingCheck, const bool nullMoveMateScore, const int depth);
-	bool okToNullMove(Board& board);
 	bool isMateScore(const int score);
 	bool isPawnFinal(Board& board);
 	bool isPawnPush(Board& board, Square& square);
@@ -492,29 +489,6 @@ inline void SimplePVSearch::filterLegalMoves(Board& board, MoveIterator& moves) 
 	moves.first();
 }
 
-// Checks if the given move can be prunned
-inline bool SimplePVSearch::okToPrune(Board& board, MoveIterator::Move& move,
-		bool isKingAttacked, const bool isGivingCheck, const bool nullMoveMateScore, const int depth) {
-
-	bool verify = (
-			move.type == MoveIterator::NON_CAPTURE &&
-			depth < futilityDepth &&
-			!isKingAttacked &&
-			!isGivingCheck &&
-			!isPawnPush(board,move.to) &&
-			!isPawnPromoting(board) &&
-			!nullMoveMateScore
-	);
-
-	return verify;
-
-}
-
-// Ok to do null move?
-inline bool SimplePVSearch::okToNullMove(Board& board) {
-	return !isPawnFinal(board);
-}
-
 // is mate score?
 inline bool SimplePVSearch::isMateScore(const int score) {
 	return score < -maxScore+maxSearchPly ||
@@ -558,7 +532,8 @@ inline bool SimplePVSearch::isPawnPromoting(const Board& board) {
 // depth reduction
 inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 		Board& board, MoveIterator::Move& move, int depth, int remainingMoves,
-		bool isKingAttacked, bool isGivingCheck, int ply, const bool nullMoveMateScore, const bool isPV) {
+		bool isKingAttacked, bool isGivingCheck, int ply,
+		const bool nullMoveMateScore, const bool isPV) {
 
 	extension=0;
 	reduction=0;

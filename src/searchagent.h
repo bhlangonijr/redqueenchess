@@ -72,11 +72,11 @@ public:
 
 	struct HashData {
 		HashData() : _value(0), _depth(0), _flag(LOWER),
-				_from(NONE), _to(NONE), _promotion(EMPTY), _generation(0) {};
+				_from(NONE), _to(NONE), _promotion(EMPTY) {};
 
 		HashData(const int& value, const int& depth, const NodeFlag& flag, const MoveIterator::Move& move) :
 			_value(int16_t(value)), _depth(int16_t(depth)), _flag(uint8_t(flag)),
-			_from(uint8_t(move.from)), _to(uint8_t(move.to)),_promotion(uint8_t(move.promotionPiece)), _generation (0)  {};
+			_from(uint8_t(move.from)), _to(uint8_t(move.to)),_promotion(uint8_t(move.promotionPiece))  {};
 
 		inline NodeFlag flag() {
 			return NodeFlag(_flag);
@@ -101,7 +101,6 @@ public:
 			_from=uint8_t(NONE);
 			_to=uint8_t(NONE);
 			_promotion=uint8_t(EMPTY);
-			_generation=0;
 		}
 
 		int16_t _value;
@@ -110,11 +109,7 @@ public:
 		uint8_t _from;
 		uint8_t _to;
 		uint8_t _promotion;
-		uint8_t _generation;
-	};
 
-	struct Bucket {
-		HashData data[bucketSize];
 	};
 
 	static SearchAgent* getInstance();
@@ -240,6 +235,7 @@ public:
 	}
 
 	inline void clearHash() {
+		generation=0;
 		transTable->clearHash();
 
 	}
@@ -248,7 +244,7 @@ public:
 			const NodeFlag flag, MoveIterator::Move move) {
 
 		HashKey key = HashKey(_key>>32);
-
+		const uint16_t relevance = generation*100 + depth;
 		if (value >= maxScore-100) {
 			value -= ply;
 		} else if (value <= -maxScore+100) {
@@ -258,7 +254,7 @@ public:
 		if (move.none() && transTable->hashGet(key, hashData)) {
 			move = hashData.move();
 		}
-		return transTable->hashPut(key, HashData(value,depth,flag,move));
+		return transTable->hashPut(key, HashData(value,depth,flag,move),relevance);
 
 	}
 
@@ -308,7 +304,7 @@ public:
 	}
 
 	void createHash() {
-		transTable = new TranspositionTable<HashKey,HashData>(mainHashName, getHashSize());
+		transTable = new TranspositionTable<HashKey,HashData,bucketSize>(mainHashName, getHashSize());
 	}
 
 	void destroyHash() {
@@ -318,6 +314,7 @@ public:
 	}
 
 	void newSearchHash() {
+		generation++;
 		return transTable->newSearch();
 	}
 
@@ -352,8 +349,8 @@ private:
 	int movesToGo;
 	long moveTime;
 	bool infinite;
-
-	TranspositionTable<HashKey,HashData>* transTable;
+	uint16_t generation;
+	TranspositionTable<HashKey,HashData,bucketSize>* transTable;
 
 	const long getTimeToSearch();
 

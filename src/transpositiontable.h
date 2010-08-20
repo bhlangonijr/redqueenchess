@@ -34,7 +34,7 @@
 
 #define DEFAULT_INITIAL_SIZE 64
 
-template<class _Key, class _Value>
+template<class _Key, class _Value, int _BucketSize>
 class TranspositionTable {
 public:
 
@@ -44,7 +44,12 @@ public:
 	typedef struct _Entry {
 		_Key key;
 		_Value value;
+		int16_t relevance;
 	} HashEntry;
+
+	typedef struct _Bucket {
+		HashEntry entry[_BucketSize];
+	} Bucket;
 
 	TranspositionTable(std::string id_) :
 		hashSize(DEFAULT_INITIAL_SIZE),
@@ -69,9 +74,8 @@ public:
 	const size_t getHashSize() const;
 	void setHashSize(const size_t _hashSize);
 	void clearHash();
-	bool hashPut(const HashKeyType key, const HashValueType value);
+	bool hashPut(const HashKeyType key, const HashValueType value, const int16_t age);
 	bool hashGet(const HashKeyType key, HashValueType& value);
-	bool hashGetAll(const HashKeyType key, HashValueType& value);
 	void resizeHash();
 	bool isHashFull();
 	const int hashFull();
@@ -82,11 +86,11 @@ private:
 
 	void init() {
 		for (_size = 2; _size<=hashSize; _size *= 2);
-		_size = ((_size/2)<<20)/sizeof(HashEntry);
+		_size = ((_size/2)<<20)/sizeof(Bucket);
 		_mask = _size - 1;
 
 		try {
-			transTable = new HashEntry[_size];
+			transTable = new Bucket[_size];
 		} catch (std::exception const& e) {
 			std::cerr << "Failed to allocate memory for transposition table: " << e.what() << std::endl;
 			exit(EXIT_FAILURE);
@@ -99,67 +103,70 @@ private:
 	std::string id;
 	size_t _size;
 	size_t _mask;
-	HashEntry* transTable;
+	Bucket* transTable;
 	size_t writes;
 
 };
 
-template<class HashKeyType, class HashValueType>
-inline const size_t TranspositionTable<HashKeyType, HashValueType>::getHashSize() const {
+template<class HashKeyType, class HashValueType, int _BucketSize>
+inline const size_t TranspositionTable<HashKeyType, HashValueType, _BucketSize>::getHashSize() const {
 	return hashSize;
 }
 
-template<class HashKeyType, class HashValueType>
-inline void TranspositionTable<HashKeyType, HashValueType>::setHashSize(const size_t _hashSize) {
+template<class HashKeyType, class HashValueType, int _BucketSize>
+inline void TranspositionTable<HashKeyType, HashValueType, _BucketSize>::setHashSize(const size_t _hashSize) {
 	hashSize = _hashSize;
 }
 
-template<class HashKeyType, class HashValueType>
-inline void TranspositionTable<HashKeyType, HashValueType>::clearHash() {
-	memset(transTable, 0, _size * sizeof(HashEntry));
+template<class HashKeyType, class HashValueType, int _BucketSize>
+inline void TranspositionTable<HashKeyType, HashValueType, _BucketSize>::clearHash() {
+	memset(transTable, 0, _size * sizeof(Bucket));
 }
 
-template<class HashKeyType, class HashValueType>
-inline bool TranspositionTable<HashKeyType, HashValueType>::hashPut(const HashKeyType key, const HashValueType value) {
+template<class HashKeyType, class HashValueType, int _BucketSize>
+inline bool TranspositionTable<HashKeyType, HashValueType, _BucketSize>::hashPut(const HashKeyType key, const HashValueType value, const int16_t relevance) {
 	HashEntry *entry;
-	entry = transTable + (size_t(key) & _mask);
-	if (!entry) {
-		return false;
+	HashEntry *replace;
+	entry = transTable[(size_t(key) & _mask)].entry;
+	replace = entry;
+	for (int x=0;x<_BucketSize;x++,entry++) {
+		if (!entry->key || entry->key==key) {
+			entry->key = key;
+			entry->value = value;
+			entry->relevance = relevance;
+			return true;
+		}
+		if (x==0) {
+			continue;
+		}
+		if (replace->relevance>=entry->relevance) {
+			replace=entry;
+		}
 	}
-	entry->key = key;
-	entry->value = value;
+	replace->key = key;
+	replace->value = value;
+	replace->relevance = relevance;
 	writes++;
-	return true;
+	return false;
 }
 
-template<class HashKeyType, class HashValueType>
-inline bool TranspositionTable<HashKeyType, HashValueType>::hashGet(const HashKeyType key, HashValueType& value) {
+template<class HashKeyType, class HashValueType, int _BucketSize>
+inline bool TranspositionTable<HashKeyType, HashValueType, _BucketSize>::hashGet(const HashKeyType key, HashValueType& value) {
 
 	HashEntry *entry;
-	entry = transTable + (size_t(key) & _mask);
-	if (entry->key==key) {
-		value = entry->value;
-		return true;
+	entry = transTable[(size_t(key) & _mask)].entry;
+	for (int x=0;x<_BucketSize;x++,entry++) {
+		if (entry->key==key) {
+			value = entry->value;
+			return true;
+		}
 	}
 
 	return false;
 }
 
-template<class HashKeyType, class HashValueType>
-inline bool TranspositionTable<HashKeyType, HashValueType>::hashGetAll(const HashKeyType key, HashValueType& value) {
-
-	HashEntry *entry;
-	entry = transTable + (size_t(key) & _mask);
-	if (entry) {
-		value = entry->value;
-		return true;
-	}
-
-	return false;
-}
-
-template<class HashKeyType, class HashValueType>
-inline void TranspositionTable<HashKeyType, HashValueType>::resizeHash() {
+template<class HashKeyType, class HashValueType, int _BucketSize>
+inline void TranspositionTable<HashKeyType, HashValueType, _BucketSize>::resizeHash() {
 	writes=0;
 	_size=0;
 	_mask=0;
@@ -170,24 +177,24 @@ inline void TranspositionTable<HashKeyType, HashValueType>::resizeHash() {
 
 }
 
-template<class HashKeyType, class HashValueType>
-inline bool TranspositionTable<HashKeyType, HashValueType>::isHashFull() {
+template<class HashKeyType, class HashValueType, int _BucketSize>
+inline bool TranspositionTable<HashKeyType, HashValueType, _BucketSize>::isHashFull() {
 	return false;
 }
 
-template<class HashKeyType, class HashValueType>
-inline const int TranspositionTable<HashKeyType, HashValueType>::hashFull() {
+template<class HashKeyType, class HashValueType, int _BucketSize>
+inline const int TranspositionTable<HashKeyType, HashValueType, _BucketSize>::hashFull() {
 	double n = double(_size);
 	return int(1000 * (1 - exp(writes * log(1.0 - 1.0/n))));
 }
 
-template<class HashKeyType, class HashValueType>
-inline const std::string TranspositionTable<HashKeyType, HashValueType>::getId() const {
+template<class HashKeyType, class HashValueType, int _BucketSize>
+inline const std::string TranspositionTable<HashKeyType, HashValueType, _BucketSize>::getId() const {
 	return id;
 }
 
-template<class HashKeyType, class HashValueType>
-inline void TranspositionTable<HashKeyType, HashValueType>::newSearch() {
+template<class HashKeyType, class HashValueType, int _BucketSize>
+inline void TranspositionTable<HashKeyType, HashValueType, _BucketSize>::newSearch() {
 	writes=0;
 }
 
