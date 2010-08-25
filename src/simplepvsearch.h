@@ -49,7 +49,7 @@ const int allowIIDAtNormal = 7;
 // margin constants
 #define futilityMargin(depth) (150 + depth * 250)
 #define razorMargin(depth) (512 + depth * 50)
-const int iidMargin=260;
+const int iidMargin=256;
 const int easyMargin=500;
 const int deltaMargin=950;
 const int nullMoveMargin=512;

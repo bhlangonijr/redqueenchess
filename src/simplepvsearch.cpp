@@ -626,15 +626,17 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 	const bool isKingAttacked = si.inCheck;
 	int bestScore = evaluator.evaluate(board,alpha,beta);
 	const bool pawnPromoting = isPawnPromoting(board);
-	if (!isKingAttacked) {
-		if(bestScore>=beta) {
-			return beta;
-		}
-		if( alpha < bestScore) {
-			alpha = bestScore;
-		}
+	const int oldAlpha = alpha;
+
+	if(bestScore>=beta) {
+		return beta;
+	}
+	if( alpha < bestScore) {
+		alpha = bestScore;
+	}
+	if (!(isKingAttacked || pvNode)) {
 		const int delta =  deltaMargin + (pawnPromoting ? deltaMargin : 0);
-		if (bestScore < alpha - delta && !pvNode) {
+		if (bestScore < alpha - delta) {
 			return alpha;
 		}
 	}
@@ -642,7 +644,6 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 	int moveCounter=0;
 	PvLine line = PvLine();
 	MoveIterator moves = MoveIterator();
-	const int oldAlpha = alpha;
 	MoveIterator::Move bestMove;
 
 	while (true)  {
@@ -680,17 +681,14 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 		}
 
 		if( score >= beta ) {
-			agent->hashPut(board.getKey(),score,depth!=0?-1:0,ply,SearchAgent::LOWER,move);
+			agent->hashPut(board.getKey(),score,depth,ply,SearchAgent::LOWER,move);
 			return beta;
 		}
 
-		if (score>bestScore) {
-			bestScore=score;
-			if( score>alpha ) {
-				alpha = score;
-				updatePv(pv, line, move);
-				bestMove=move;
-			}
+		if( score>alpha ) {
+			alpha = score;
+			updatePv(pv, line, move);
+			bestMove=move;
 		}
 
 	}
@@ -699,15 +697,15 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 		return -maxScore+ply;
 	}
 
-	if (bestScore>oldAlpha) {
-		agent->hashPut(board.getKey(),bestScore,depth!=0?-1:0,ply,SearchAgent::EXACT,bestMove);
+	if (alpha>oldAlpha) {
+		agent->hashPut(board.getKey(),alpha,depth,ply,SearchAgent::EXACT,bestMove);
 		stats.ttExact++;
 	} else {
-		agent->hashPut(board.getKey(),bestScore,depth!=0?-1:0,ply,SearchAgent::UPPER,emptyMove);
+		agent->hashPut(board.getKey(),alpha,depth,ply,SearchAgent::UPPER,emptyMove);
 		stats.ttUpper++;
 	}
 
-	return bestScore;
+	return alpha;
 }
 
 
