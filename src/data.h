@@ -53,8 +53,8 @@ const int minorKingZoneAttackBonus[maxGamePhase+1] = {2,2,2,2,3,3,3,3,3,3,3,3,4,
 const int majorKingZoneAttackBonus[maxGamePhase+1] = {4,4,4,4,5,5,5,5,5,6,6,6,6,6,7,7,7,8,8,8,9,9,10,10,10,10,10,10,10,10,10,10,10};
 
 const int passedPawnBonus1[ALL_PIECE_COLOR][ALL_RANK] = {
-		{0,25,40,50,60,70,90,0},
-		{0,90,70,60,50,40,25,0},
+		{0,30,40,50,70,80,90,0},
+		{0,90,80,70,50,40,30,0},
 		{0,0,0,0,0,0,0,0}
 };
 
