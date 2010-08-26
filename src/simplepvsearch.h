@@ -79,8 +79,9 @@ public:
 
 	typedef struct SearchInfo {
 		SearchInfo(): eval(-maxScore), inCheck(false), isPV(false) {}
-		SearchInfo(const int _eval, const bool _inCheck,  const bool _isPV, const MoveIterator::Move _move):
-			eval(_eval), inCheck(_inCheck), isPV(_isPV), move(_move) {}
+		SearchInfo(const int _eval, const bool _inCheck,
+				const bool _isPV, const MoveIterator::Move _move):
+			eval(_eval), inCheck(_inCheck), isPV(_isPV), move(_move)  {}
 		int eval;
 		bool inCheck;
 		bool isPV;
