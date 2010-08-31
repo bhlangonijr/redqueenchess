@@ -673,13 +673,8 @@ inline const bool Board::isDraw() {
 	const Bitboard pawns = this->getPiecesByType(WHITE_PAWN) |
 			this->getPiecesByType(BLACK_PAWN);
 	if (!pawns) {
-		const Bitboard pieces = this->getPiecesByType(WHITE_KNIGHT) |
-				this->getPiecesByType(BLACK_KNIGHT) |
-				this->getPiecesByType(WHITE_BISHOP) |
-				this->getPiecesByType(BLACK_BISHOP) |
-				this->getPiecesByType(WHITE_KING) |
-				this->getPiecesByType(BLACK_KING);
-		if (!(pieces^getAllPieces()) && (_BitCount(pieces)<4)) {
+		if (this->getMaterial(WHITE)<=kingValue+bishopValue &&
+				this->getMaterial(BLACK)<=kingValue+bishopValue) {
 			return true;
 		}
 	}
@@ -817,8 +812,9 @@ inline const Bitboard Board::getPawnMoves(const Square square) {
 // overload method - gets current occupied squares in the board
 inline const Bitboard Board::getPawnAttacks(const Square square) {
 
-	const Bitboard pawnAttacks = getPieceColorBySquare(square)==WHITE?whitePawnAttacks[square]:blackPawnAttacks[square];
-	const Bitboard captures = pawnAttacks & ~fileAttacks[square] ;
+	const Bitboard pawnAttacks = getPieceColorBySquare(square)==WHITE?
+			whitePawnAttacks[square]:blackPawnAttacks[square];
+	const Bitboard captures = pawnAttacks;
 
 	return captures;
 }
@@ -826,8 +822,9 @@ inline const Bitboard Board::getPawnAttacks(const Square square) {
 // return a bitboard with move squares by the pawn in the given square
 inline const Bitboard Board::getPawnAttacks(const Square square, const PieceColor color) {
 
-	const Bitboard pawnAttacks = color==WHITE?whitePawnAttacks[square]:blackPawnAttacks[square];
-	const Bitboard captures = (pawnAttacks) & ~fileAttacks[square];
+	const Bitboard pawnAttacks = color==WHITE?
+			whitePawnAttacks[square] : blackPawnAttacks[square];
+	const Bitboard captures = pawnAttacks;
 
 	return captures;
 }
@@ -836,7 +833,7 @@ inline const Bitboard Board::getPawnAttacks(const Square square, const PieceColo
 inline const Bitboard Board::getPawnMoves(const Square square, const Bitboard occupied) {
 
 	const PieceColor color = getPieceColorBySquare(square);
-	const Bitboard pawnAttacks = color==WHITE ? whitePawnAttacks[square] : blackPawnAttacks[square];
+	const Bitboard pawnMoves = color==WHITE ? whitePawnMoves[square] : blackPawnMoves[square];
 	Bitboard occ = occupied;
 
 	if (squareRank[square]==RANK_2 && color==WHITE) {
@@ -849,7 +846,7 @@ inline const Bitboard Board::getPawnMoves(const Square square, const Bitboard oc
 		}
 	}
 
-	return (fileAttacks[square] & pawnAttacks) & ~occ ;
+	return pawnMoves & ~occ ;
 }
 
 // overload method - gets current occupied squares in the board
@@ -868,7 +865,7 @@ inline const Bitboard Board::getPawnCaptures(const Square square, const Bitboard
 		occ |= (squareToBitboard[Square(getEnPassant() + (color==WHITE?8:-8))]); // en passant
 	}
 
-	return (pawnAttacks & occ) & ~fileAttacks[square]  ;
+	return pawnAttacks & occ;
 }
 
 // overload method - gets current occupied squares in the board

@@ -160,7 +160,7 @@ public:
 
 	bool goNextStage() {
 		if (_data.stage<END_STAGE) {
-			_data.stage = IteratorStage(int(_data.stage) + 1 );
+			_data.stage = IteratorStage(int(_data.stage)+1);
 			return true;
 		}
 		return false;

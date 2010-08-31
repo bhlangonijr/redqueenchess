@@ -35,7 +35,7 @@ Evaluator::~Evaluator() {
 }
 
 // main eval function
-const int Evaluator::evaluate(Board& board, const int& alpha, const int& beta) {
+const int Evaluator::evaluate(Board& board, const bool isPV, const int& beta) {
 
 	const PieceColor side = board.getSideToMove();
 	const PieceColor other = board.flipSide(board.getSideToMove());
@@ -43,8 +43,7 @@ const int Evaluator::evaluate(Board& board, const int& alpha, const int& beta) {
 	int value = board.getMaterial(side) - board.getMaterial(other);
 	value += evalDevelopment(board, side) - evalDevelopment(board, other);
 	value += evalImbalances(board, side) - evalImbalances(board, other);
-
-	if (value > alpha-lazyEvalMargin && value < beta+lazyEvalMargin) {
+	if (isPV || value < beta+lazyEvalMargin) {
 		value += evalPieces(board, side) - evalPieces(board, other);
 		int kingThreatSide=0;
 		int kingThreatOther=0;
@@ -84,7 +83,6 @@ const int Evaluator::evalPieces(Board& board, PieceColor color) {
 		while ( from!=NONE ) {
 			const Bitboard pawn = squareToBitboard[from];
 			const Bitboard allButThePawn =(pawns^pawn);
-			bool pawnProblem = true;
 			if (fileAttacks[squareFile[from]]&allButThePawn) {
 				count += DOUBLED_PAWN_PENALTY;
 			}
@@ -92,13 +90,9 @@ const int Evaluator::evalPieces(Board& board, PieceColor color) {
 				count += ISOLATED_PAWN_PENALTY;
 			} else if (!(adjacentSquares[from]&allButThePawn)) {
 				count += BACKWARD_PAWN_PENALTY;
-			} else {
-				pawnProblem = false;
 			}
 			if (isPawnPassed(board,from)) {
-				count += (pawnProblem && board.getGamePhase()<ENDGAME?
-						passedPawnBonus2[color][squareRank[from]]:
-						passedPawnBonus1[color][squareRank[from]]);
+				count += passedPawnBonus[color][squareRank[from]];
 			}
 
 			from = extractLSB(pieces);

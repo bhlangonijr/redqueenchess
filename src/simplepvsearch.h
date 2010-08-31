@@ -325,14 +325,18 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	if (moves.getStage()==MoveIterator::KILLER1_STAGE) {
 		moves.setStage(MoveIterator::KILLER2_STAGE);
-		if (killer1 != ttMove && board.isMoveLegal(killer1)) {
+		if (killer1 != ttMove &&
+				!board.isCaptureMove(killer1) &&
+				board.isMoveLegal(killer1)) {
 			return killer1;
 		}
 	}
 
 	if (moves.getStage()==MoveIterator::KILLER2_STAGE) {
 		moves.setStage(MoveIterator::INIT_QUIET_STAGE);
-		if (killer2 != ttMove && board.isMoveLegal(killer2)) {
+		if (killer2 != ttMove &&
+				!board.isCaptureMove(killer2) &&
+				board.isMoveLegal(killer2)) {
 			return killer2;
 		}
 	}
