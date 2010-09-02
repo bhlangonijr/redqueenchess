@@ -99,24 +99,25 @@ void* SearchAgent::startThreadSearch() {
 	pthread_mutex_lock(&mutex);
 
 	setSearchInProgress(true);
-
+	newSearchHash();
 	if (this->getSearchMode()==SearchAgent::SEARCH_DEPTH) {
+		simpleSearcher.setInfinite(false);
 		simpleSearcher.setSearchFixedDepth(true);
 		simpleSearcher.setDepth(this->getDepth());
 	} else if (this->getSearchMode()==SearchAgent::SEARCH_TIME ||
 			this->getSearchMode()==SearchAgent::SEARCH_MOVETIME) {
+		simpleSearcher.setInfinite(false);
 		simpleSearcher.setSearchFixedDepth(false);
 		simpleSearcher.setTimeToSearch(this->getTimeToSearch());
 	} else if (this->getSearchMode()==SearchAgent::SEARCH_INFINITE) {
 		simpleSearcher.setInfinite(true);
 		simpleSearcher.setDepth(maxSearchDepth);
 	} else {
+		simpleSearcher.setInfinite(false);
 		simpleSearcher.setSearchFixedDepth(true);
 		simpleSearcher.setDepth(defaultDepth);
 	}
-
 	simpleSearcher.search(board);
-
 	setSearchInProgress(false);
 	setRequestStop(false);
 	pthread_mutex_unlock(&mutex);
@@ -125,9 +126,6 @@ void* SearchAgent::startThreadSearch() {
 
 // start search
 void SearchAgent::startSearch() {
-
-	newSearchHash();
-
 	pthread_t executor;
 	int ret = 0;
 	ret = pthread_create( &executor, NULL, threadStartup, this);

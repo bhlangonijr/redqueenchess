@@ -61,7 +61,7 @@ int SimplePVSearch::idSearch(Board& board) {
 	int beta = maxScore;
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 	MoveIterator::Move easyMove;
-	rootSearchInfo.eval = evaluator.evaluate(board,true,beta);
+	rootSearchInfo.eval = evaluator.evaluate(board,beta);
 	rootSearchInfo.inCheck = isKingAttacked;
 
 	if (!isKingAttacked) {
@@ -441,10 +441,10 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	}
 
 	if (!isKingAttacked) {
-		si.eval = evaluator.evaluate(board,false,beta);
+		si.eval = evaluator.evaluate(board,beta);
 	}
 
-	/*if (depth < razorDepth && hashMove.none() &&
+	if (depth < razorDepth && hashMove.none() &&
 			!isKingAttacked && !isMateScore(beta) &&
 			!isPawnPromoting(board) && !si.move.none() &&
 			si.eval < beta - razorMargin(depth)) {
@@ -453,7 +453,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		if (score < newBeta) {
 			return score;
 		}
-	}*/
+	}
 
 	if (!isKingAttacked && allowNullMove && depth < nullMoveDepth &&
 			!isPawnFinal(board) && !isMateScore(beta) &&
@@ -610,7 +610,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 		}
 	}
 	const bool isKingAttacked = si.inCheck;
-	int standPat = evaluator.evaluate(board,pvNode,beta);
+	int standPat = evaluator.evaluate(board,beta);
 	const bool pawnPromoting = isPawnPromoting(board);
 	const int oldAlpha = alpha;
 

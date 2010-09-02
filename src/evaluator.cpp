@@ -35,7 +35,7 @@ Evaluator::~Evaluator() {
 }
 
 // main eval function
-const int Evaluator::evaluate(Board& board, const bool isPV, const int& beta) {
+const int Evaluator::evaluate(Board& board, const int& beta) {
 
 	const PieceColor side = board.getSideToMove();
 	const PieceColor other = board.flipSide(board.getSideToMove());
@@ -43,7 +43,7 @@ const int Evaluator::evaluate(Board& board, const bool isPV, const int& beta) {
 	int value = board.getMaterial(side) - board.getMaterial(other);
 	value += evalDevelopment(board, side) - evalDevelopment(board, other);
 	value += evalImbalances(board, side) - evalImbalances(board, other);
-	if (isPV || value < beta+lazyEvalMargin) {
+	if (value < beta+lazyEvalMargin) {
 		value += evalPieces(board, side) - evalPieces(board, other);
 		int kingThreatSide=0;
 		int kingThreatOther=0;
