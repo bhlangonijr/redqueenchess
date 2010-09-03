@@ -537,7 +537,6 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 				!givingCheck &&
 				!isPawnPush(board,move.to) &&
 				!pawnPromoting &&
-				!isMateScore(beta) &&
 				!nullMoveMateScore &&
 				!extension) {
 
