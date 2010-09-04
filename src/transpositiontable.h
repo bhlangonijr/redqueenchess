@@ -127,7 +127,7 @@ template<class HashKeyType, class HashValueType, int _BucketSize>
 inline bool TranspositionTable<HashKeyType, HashValueType, _BucketSize>::hashPut(const HashKeyType key, const HashValueType value, const int16_t relevance) {
 	HashEntry *entry;
 	HashEntry *replace;
-	entry = transTable[key & _mask].entry;
+	entry = transTable[size_t(key) & _mask].entry;
 	replace = entry;
 	for (int x=0;x<_BucketSize;x++,entry++) {
 		if (!entry->key || entry->key==key) {
@@ -152,7 +152,7 @@ template<class HashKeyType, class HashValueType, int _BucketSize>
 inline bool TranspositionTable<HashKeyType, HashValueType, _BucketSize>::hashGet(const HashKeyType key, HashValueType& value) {
 
 	HashEntry *entry;
-	entry = transTable[key & _mask].entry;
+	entry = transTable[size_t(key) & _mask].entry;
 	for (int x=0;x<_BucketSize;x++,entry++) {
 		if (entry->key==key) {
 			value = entry->value;
