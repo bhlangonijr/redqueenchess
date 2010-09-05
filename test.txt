@@ -142,3 +142,14 @@ position fen rn3rk1/pbppq1pp/1p2pb2/4N2Q/3PN3/3B4/PPP2PPP/R3K2R w KQ - 6 11
 go depth 15
 
 ;;; h5h7 mate!
+
+position startpos moves e2e4 c7c5 g1f3 e7e6 d2d4 c5d4 f3d4 b8c6 b1c3 a7a6 g2g3 d8c7 f1g2 d7d6 e1g1 c8d7 c1e3 e8c8 d4c6 d7c6 a2a4 c7a5 a1a3 d6d5 a3b3 d5e4 d1e2 f8c5 g2e4 c5e3 f2e3 g8f6 e4c6 b7c6 e2c4 d8d6 c3e4 f6e4 c4e4 f7f5 e4h4 c6c5 h4c4 h8e8 b3c3 d6d5 e3e4 d5e5 e4f5 e6f5 f1d1 c8b8 d1d5 e5e1 g1g2 e1e4 c3b3 b8a8 c4d3 e4e3 d3f5 e3b3 c2b3 a5b4 d5d6 b4b3 d6a6 a8b7 a6a5 e8e2 g2h3 b3e6 a5c5 e6f5 c5f5 e2b2 f5f7 b7b6 f7g7 h7h6 g7g6 b6a5 g6h6 a5a4 h6f6 a4b5 g3g4 b5c5 g4g5 b2b1 f6f4 b1b6 h3g4 c5d5 h2h4 d5e5 f4f5 e5e4 h4h5 b6b2 f5f3 b2g2 f3g3 g2g3 g4g3 e4f5 g3h4 f5e6 h4g4 e6e7 g4f5 e7f8 f5f6 f8g8 h5h6 g8h7 f6f7 h7h8
+go infinite
+;; mate in 9
+
+position startpos moves d2d4 d7d5 c2c4 e7e6 g1f3 g8f6 g2g3 f8b4 b1d2 d5c4 f1g2 c4c3 b2c3 b4c3 a1b1 b8c6 e2e3 e8g8 e1g1 f6d5 d2c4 a7a6 c1a3 c3b4 a3b4 c6b4 d1b3 b7b5 c4e5 f7f6 a2a3 f6e5 f3e5 c7c5 a3b4 c5c4 b3c2 d8e7 g2e4 g7g5 c2e2 d5c3 e2c2 c3e4 c2e4 c8b7 e4g4 a8d8 f2f4 b7e4 b1e1 h7h6 f4g5 e4f5 g4f3 e7g5 f3b7 d8a8 f1f4 g5g7 b7g7 g8g7 e3e4 f5g6 f4g4 f8f6 e1f1 a8g8 f1f3 h6h5 g4g5 g7h6 f3f6 h6g5 f6e6 g6e4 e6a6 g8a8 e5f7 g5g4 a6f6 a8a1 g1f2 a1a2 f2e3 e4a8 f6f4 g4h3 f4h4 h3g2 f7d6 a2a3 e3d2 a3d3 d2c2 a8c6 h4h5 d3d4 d6b5 c6b5 h5b5 g2h2 b5g5 d4d3 g5g4 d3f3 g4c4 f3f2 c2c3 f2f3 c3d4 f3g3 c4c2 h2g1 c2b2 g3g4 d4e3 g4g3 e3e4 g3g4 e4f5 g4g3 b4b5 g3f3 f5e4 f3a3 b5b6 a3a8 e4d5 a8d8 d5c5 d8c8 c5d6 c8a8 d6e6 a8e8 e6f7 e8e1 b6b7 e1f1 f7g8 g1h1 b7b8q f1g1 g8h8 g1g3
+go infinite
+;; mate in 3
+
+
+

@@ -241,7 +241,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int alpha, int beta
 		}
 
 		if( score >= beta) {
-			return beta;
+			return score;
 		}
 
 		if( score > alpha ) {
@@ -368,9 +368,9 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		if( score >= beta) {
 			updateKillers(board,move,ply);
 			updateHistory(board,move,depth);
-			agent->hashPut(board.getKey(),beta,depth,ply,SearchAgent::LOWER,move);
+			agent->hashPut(board.getKey(),score,depth,ply,SearchAgent::LOWER,move);
 			stats.ttLower++;
-			return beta;
+			return score;
 		}
 
 		if( score > alpha ) {
@@ -478,12 +478,12 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 			return 0;
 		}
 		if (score >= beta) {
-			/*if (score >= maxScore-maxSearchPly) {
+			if (score >= maxScore-maxSearchPly) {
 				score = beta;
-			}*/
-			agent->hashPut(key,beta,depth,ply,SearchAgent::NM_LOWER,emptyMove);
+			}
+			agent->hashPut(key,score,depth,ply,SearchAgent::NM_LOWER,emptyMove);
 			stats.nullMoveHits++;
-			return beta;
+			return score;
 		} else {
 			if (score < -maxScore-maxSearchPly) {
 				nullMoveMateScore=true;
@@ -565,9 +565,9 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 			updatePv(pv, line, move);
 			updateKillers(board,move,ply);
 			updateHistory(board,move,depth);
-			agent->hashPut(key,beta,depth,ply,SearchAgent::LOWER,move);
+			agent->hashPut(key,score,depth,ply,SearchAgent::LOWER,move);
 			stats.ttLower++;
-			return beta;
+			return score;
 		}
 
 	}
@@ -611,13 +611,12 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 	const bool isKingAttacked = si.inCheck;
 	const bool pawnPromoting = isPawnPromoting(board);
 	const int oldAlpha = alpha;
-
 	if (!isKingAttacked) {
 		int standPat = evaluator.evaluate(board,beta);
 		if(standPat>=beta) {
 			return beta;
 		}
-		if( alpha < standPat && !pvNode) {
+		if( alpha < standPat && pvNode) {
 			alpha = standPat;
 		}
 		const int delta =  deltaMargin + (pawnPromoting ? deltaMargin : 0);
@@ -666,8 +665,8 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 		}
 
 		if( score >= beta ) {
-			agent->hashPut(board.getKey(),beta,depth,ply,SearchAgent::LOWER,move);
-			return beta;
+			agent->hashPut(board.getKey(),score,depth,ply,SearchAgent::LOWER,move);
+			return score;
 		}
 
 		if( score>alpha ) {

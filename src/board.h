@@ -39,16 +39,12 @@
 #include "moveiterator.h"
 #include "magicmoves.h"
 
-//#include "Evaluator.h"
-
 namespace BoardTypes{
-
 
 //used for hashing
 typedef uint64_t Key;
 
-#define USE_MAGIC_MOVES true			  								// set to true to use magic moves
-
+#define USE_MAGIC_MOVES 				 true	 					    // set to true to use magic moves
 #define ALL_CASTLE_RIGHT				 4								// all castle rights
 #define MAX_GAME_LENGTH					 1024							// Max game lenght
 #define St2Sq(F,R)						 (((int)F-96)+((int)R-49)*8)-1	// encode String to Square enum
