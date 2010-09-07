@@ -534,7 +534,10 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 				!isPawnPush(board,move.to) &&
 				!pawnPromoting &&
 				!nullMoveMateScore) {
-
+			if (moveCountMargin(depth) < moveCounter) {
+				board.undoMove(backup);
+				continue;
+			}
 			const int futilityScore = si.eval + futilityMargin(depth);
 			if (futilityScore < beta) {
 				board.undoMove(backup);
