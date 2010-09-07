@@ -47,9 +47,9 @@ const int allowIIDAtPV = 5;
 const int allowIIDAtNormal = 7;
 
 // margin constants
-#define futilityMargin(depth) (150 + depth * 250)
+#define futilityMargin(depth) (150 + depth * 150)
 #define razorMargin(depth) (300 + depth * 175)
-#define moveCountMargin(depth) (depth * 4)
+#define moveCountMargin(depth) (4 + depth * 4)
 const int iidMargin=260;
 const int easyMargin=500;
 const int deltaMargin=950;
@@ -57,7 +57,7 @@ const int nullMoveMargin=512;
 
 //depth prunning threshold
 const int aspirationDepth=6;
-const int futilityDepth=4;
+const int futilityDepth=3;
 const int nullMoveDepth=4;
 const int razorDepth=4;
 const int lmrDepthThreshold=2;
@@ -557,8 +557,8 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 	if (remainingMoves>lateMoveThreshold &&
 			depth>lmrDepthThreshold) {
 		reduction= 1;
-		if (!isPV && depth > 7 && remainingMoves > 7) {
-			reduction+=depth/8;
+		if (!isPV && depth > 7 && remainingMoves > 8) {
+			reduction=depth/8;
 		}
 		return true;
 	}
