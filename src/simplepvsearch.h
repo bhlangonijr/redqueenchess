@@ -57,7 +57,7 @@ const int nullMoveMargin=512;
 
 //depth prunning threshold
 const int aspirationDepth=6;
-const int futilityDepth=3;
+const int futilityDepth=4;
 const int nullMoveDepth=4;
 const int razorDepth=4;
 const int lmrDepthThreshold=2;
@@ -557,9 +557,6 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 	if (remainingMoves>lateMoveThreshold &&
 			depth>lmrDepthThreshold) {
 		reduction= 1;
-		if (!isPV && depth > 7 && remainingMoves > 8) {
-			reduction=depth/8;
-		}
 		return true;
 	}
 

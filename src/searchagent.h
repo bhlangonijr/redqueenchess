@@ -284,7 +284,6 @@ public:
 
 		if (result) {
 			okToPrune =
-					(allowNullMove || !(hashData.flag() & NODE_NULL)) &&
 					(hashData.depth()>=depth) &&
 					(((hashData.flag() & LOWER) && hashData.value() >= beta) ||
 					((hashData.flag() & UPPER) && hashData.value() <= alpha));
