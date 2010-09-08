@@ -60,8 +60,10 @@ const int aspirationDepth=6;
 const int futilityDepth=4;
 const int nullMoveDepth=4;
 const int razorDepth=4;
-const int lmrDepthThreshold=2;
-const int lateMoveThreshold=2;
+const int lmrDepthThreshold1=2;
+const int lateMoveThreshold1=2;
+const int lmrDepthThreshold2=3;
+const int lateMoveThreshold2=5;
 
 const int scoreTable[11]={0,8000,6000,9500,9000,4500,4000,100,-900,5000};
 
@@ -554,9 +556,14 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 		return false;
 	}
 
-	if (remainingMoves>lateMoveThreshold &&
-			depth>lmrDepthThreshold) {
+	if (remainingMoves>lateMoveThreshold1 &&
+			depth>lmrDepthThreshold1) {
 		reduction= 1;
+		if (remainingMoves>lateMoveThreshold2 &&
+				depth>lmrDepthThreshold2 &&
+				!history[board.getPieceBySquare(move.to)][move.to]) {
+			reduction += depth/10;
+		}
 		return true;
 	}
 
