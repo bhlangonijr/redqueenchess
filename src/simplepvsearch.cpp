@@ -424,6 +424,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 
 	PvLine line = PvLine();
 	const bool isKingAttacked = si.inCheck;
+	const bool pawnPromoting = isPawnPromoting(board);
 	bool nullMoveMateScore=false;
 	bool okToPruneWithHash=false;
 	int score = 0;
@@ -446,18 +447,15 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 
 	if (depth < razorDepth && hashMove.none() &&
 			!isKingAttacked && !isMateScore(beta) &&
-			!isPawnPromoting(board) && !si.move.none() &&
-			si.eval < beta - razorMargin(depth)) {
-		const int newBeta = beta - razorMargin(depth);
-		score = qSearch(board, si, newBeta-1, newBeta, 0, ply, pv);
-		if (score < newBeta) {
-			return score;
-		}
+			!pawnPromoting && !si.move.none() &&
+			si.eval+razorMargin(depth) < beta) {
+		score = qSearch(board, si, beta-1, beta, 0, ply, pv);
+		return MAX(score,si.eval);
 	}
 
 	if (!isKingAttacked && allowNullMove && depth < nullMoveDepth &&
-			!isPawnFinal(board) && !isMateScore(beta) &&
-			si.eval >= beta+futilityMargin(depth)) {
+			!isPawnFinal(board) && !pawnPromoting && !isMateScore(beta) &&
+			si.eval >= beta+nullMoveMargin+futilityMargin(depth)) {
 		return si.eval-futilityMargin(depth);
 	}
 
@@ -508,7 +506,6 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	int remainingMoves=0;
 	int reduction=0;
 	int extension=0;
-	const bool pawnPromoting = isPawnPromoting(board);
 
 	while (true) {
 		MoveIterator::Move& move = selectMove(board, moves, hashMove, isKingAttacked, ply);
