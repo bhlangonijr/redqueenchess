@@ -290,7 +290,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 	}
 
 	alpha = MAX(-maxScore+ply, alpha);
-	beta = MIN(maxScore-(ply+1), beta);
+	beta = MIN(maxScore-ply, beta);
 
 	if (alpha>=beta) {
 		return alpha;
