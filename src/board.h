@@ -619,9 +619,7 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 					(move.from==E8 && move.to==C8))) {
 		const CastleRight castleRight = (move.to==C1 || move.to==C8) ? QUEEN_SIDE_CASTLE : KING_SIDE_CASTLE;
 
-		if (!canCastle(getSideToMove(), castleRight)) {
-			return false;
-		}
+		return canCastle(getSideToMove(), castleRight);
 	}
 
 	return isAttackedBy(move.from, move.to);

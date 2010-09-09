@@ -335,8 +335,16 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 			board.undoMove(backup);
 			continue; // not legal
 		}
-
 		moveCounter++;
+
+		if (move.promotionPiece!=EMPTY) {
+			if (board.getPiecesByType(move.promotionPiece)==ROOK ||
+					board.getPiecesByType(move.promotionPiece)==BISHOP) {
+				board.undoMove(backup);
+				continue; // useless
+			}
+		}
+
 		if (move.type == MoveIterator::NON_CAPTURE) {
 			remainingMoves++;
 		}
@@ -521,6 +529,15 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		}
 
 		moveCounter++;
+
+		if (move.promotionPiece!=EMPTY) {
+			if (board.getPiecesByType(move.promotionPiece)==ROOK ||
+					board.getPiecesByType(move.promotionPiece)==BISHOP) {
+				board.undoMove(backup);
+				continue; // useless
+			}
+		}
+
 		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
 
 		//futility
