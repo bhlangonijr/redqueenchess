@@ -458,8 +458,8 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 			!pawnPromoting && !si.move.none() &&
 			si.eval+razorMargin(depth) < beta) {
 		score = qSearch(board, si, beta-1, beta, 0, ply, pv);
-		if (score<beta || depth==1) {
-			return MAX(score,si.eval+razorMargin(depth));
+		if (score<beta) {
+			return score;
 		}
 	}
 
