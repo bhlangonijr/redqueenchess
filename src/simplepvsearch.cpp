@@ -290,7 +290,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 	}
 
 	alpha = MAX(-maxScore+ply, alpha);
-	beta = MIN(maxScore-ply, beta);
+	beta = MIN(maxScore-(ply+1), beta);
 
 	if (alpha>=beta) {
 		return alpha;
@@ -458,7 +458,9 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 			!pawnPromoting && !si.move.none() &&
 			si.eval+razorMargin(depth) < beta) {
 		score = qSearch(board, si, beta-1, beta, 0, ply, pv);
-		return MAX(score,si.eval);
+		if (score<beta || depth==1) {
+			return MAX(score,si.eval+razorMargin(depth));
+		}
 	}
 
 	if (!isKingAttacked && allowNullMove && depth < nullMoveDepth &&
