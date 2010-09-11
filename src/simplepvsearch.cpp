@@ -77,7 +77,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		easyMove=rootMoves.get(0);
 	}
 
-	for (int depth = 1; depth <= _depth; depth++) {
+	for (int depth = 3; depth <= _depth; depth++) {
 
 		PvLine pv = PvLine();
 		pv.index=0;
@@ -96,8 +96,7 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		score = rootSearch(board, rootSearchInfo, alpha, beta, depth, 0, &pv);
 
-		if((score <= alpha || score >= beta) &&
-				!stop(agent->shouldStop())) {
+		if((score <= alpha || score >= beta) &&	!stop(agent->shouldStop())) {
 			alpha=-maxScore;
 			beta=maxScore;
 			score = rootSearch(board, rootSearchInfo, alpha, beta, depth, 0, &pv);
@@ -217,11 +216,11 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int alpha, int beta
 
 		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
 		bool reduced = adjustDepth(extension, reduction, board, move, depth,
-				remainingMoves,isKingAttacked,givingCheck,ply,false,score > alpha);
+				remainingMoves,isKingAttacked,givingCheck,ply,false,true);
 		int newDepth=depth-1+extension;
 		SearchInfo newSi(si.eval,givingCheck,score>alpha,move);
 
-		if (score>alpha) {
+		if (score>alpha || depth < 4) {
 			score = -pvSearch(board, newSi, -beta, -alpha, newDepth-reduction, ply+1, &line);
 		} else {
 			reduced=true;

@@ -459,7 +459,7 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
 		SearchInfo newSi(rootSearchInfo.eval,givingCheck,true,move);
 		PvLine pv;
-		move.score = -pvSearch(board,newSi,-maxScore,maxScore,1,0,&pv);
+		move.score = -pvSearch(board,newSi,-maxScore,maxScore,5,0,&pv);
 		if (move.type==MoveIterator::UNKNOW) {
 			if (isCapture) {
 				move.type = value >= 0 ?
@@ -557,7 +557,7 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 	}
 
 	if (remainingMoves>lateMoveThreshold1 &&
-			depth>lmrDepthThreshold1) {
+			depth>(isPV?lmrDepthThreshold1+1:lmrDepthThreshold1)) {
 		reduction= 1;
 		if (remainingMoves>lateMoveThreshold2 &&
 				depth>lmrDepthThreshold2 &&
