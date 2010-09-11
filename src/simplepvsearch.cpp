@@ -77,7 +77,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		easyMove=rootMoves.get(0);
 	}
 
-	for (int depth = 3; depth <= _depth; depth++) {
+	for (int depth = 1; depth <= _depth; depth++) {
 
 		PvLine pv = PvLine();
 		pv.index=0;
@@ -216,7 +216,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int alpha, int beta
 
 		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
 		bool reduced = adjustDepth(extension, reduction, board, move, depth,
-				remainingMoves,isKingAttacked,givingCheck,ply,false,true);
+				remainingMoves,isKingAttacked,givingCheck,ply,false,true,true);
 		int newDepth=depth-1+extension;
 		SearchInfo newSi(si.eval,givingCheck,score>alpha,move);
 
@@ -349,7 +349,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		}
 		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
 		const bool reduced = adjustDepth(extension, reduction, board, move, depth, remainingMoves,
-				isKingAttacked,givingCheck,ply,false,moveCounter==1);
+				isKingAttacked,givingCheck,ply,false,moveCounter==1,false);
 		SearchInfo newSi(si.eval,givingCheck,moveCounter==1,move);
 		int newDepth=depth-1;
 		bool fullSearch=false;
@@ -562,7 +562,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 			remainingMoves++;
 		}
 		bool reduced = adjustDepth(extension, reduction, board, move, depth,remainingMoves,
-				isKingAttacked,givingCheck,ply,nullMoveMateScore,false);
+				isKingAttacked,givingCheck,ply,nullMoveMateScore,false,false);
 		SearchInfo newSi(si.eval,givingCheck,false,move);
 		int newDepth=depth-1+extension;
 

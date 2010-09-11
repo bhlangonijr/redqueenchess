@@ -60,7 +60,8 @@ const int aspirationDepth=6;
 const int futilityDepth=4;
 const int nullMoveDepth=4;
 const int razorDepth=4;
-const int lmrDepthThreshold1=2;
+const int lmrDepthThresholdRoot=3;
+const int lmrDepthThreshold1=1;
 const int lateMoveThreshold1=2;
 const int lmrDepthThreshold2=3;
 const int lateMoveThreshold2=5;
@@ -84,7 +85,7 @@ public:
 		SearchInfo(): eval(-maxScore), inCheck(false), isPV(false) {}
 		SearchInfo(const int _eval, const bool _inCheck,
 				const bool _isPV, const MoveIterator::Move _move):
-			eval(_eval), inCheck(_inCheck), isPV(_isPV), move(_move)  {}
+					eval(_eval), inCheck(_inCheck), isPV(_isPV), move(_move)  {}
 		int eval;
 		bool inCheck;
 		bool isPV;
@@ -257,7 +258,8 @@ private:
 	bool isCaptureOrPromotion(Board& board, MoveIterator::Move& move);
 	bool isPawnPromoting(const Board& board);
 	bool adjustDepth(int& extension, int& reduction, Board& board, MoveIterator::Move& move, int depth,
-			int remainingMoves, bool isKingAttacked, bool isGivingCheck, int ply, const bool nullMoveMateScore, const bool isPV);
+			int remainingMoves, bool isKingAttacked, bool isGivingCheck, int ply, const bool nullMoveMateScore,
+			const bool isPV, const bool isRoot);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
 	const bool stop(const bool shouldStop);
 	const bool timeIsUp();
@@ -429,7 +431,7 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 			if (board.isCaptureMove(move)) {
 				move.score = evaluator.see(board,move);
 				move.type = move.score >= 0 ?
-										MoveIterator::GOOD_CAPTURE : MoveIterator::BAD_CAPTURE;
+						MoveIterator::GOOD_CAPTURE : MoveIterator::BAD_CAPTURE;
 			} else {
 				move.type=MoveIterator::NON_CAPTURE;
 				const int hist = history[pieceFrom][move.to];
@@ -459,7 +461,7 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
 		SearchInfo newSi(rootSearchInfo.eval,givingCheck,true,move);
 		PvLine pv;
-		move.score = -pvSearch(board,newSi,-maxScore,maxScore,5,0,&pv);
+		move.score = -pvSearch(board,newSi,-maxScore,maxScore,3,0,&pv);
 		if (move.type==MoveIterator::UNKNOW) {
 			if (isCapture) {
 				move.type = value >= 0 ?
@@ -541,7 +543,7 @@ inline bool SimplePVSearch::isPawnPromoting(const Board& board) {
 inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 		Board& board, MoveIterator::Move& move, int depth, int remainingMoves,
 		bool isKingAttacked, bool isGivingCheck, int ply,
-		const bool nullMoveMateScore, const bool isPV) {
+		const bool nullMoveMateScore, const bool isPV, const bool isRoot) {
 
 	extension=0;
 	reduction=0;
@@ -557,16 +559,16 @@ inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
 	}
 
 	if (remainingMoves>lateMoveThreshold1 &&
-			depth>(isPV?lmrDepthThreshold1+1:lmrDepthThreshold1)) {
+			depth>(isRoot?lmrDepthThresholdRoot:lmrDepthThreshold1)) {
 		reduction= 1;
-		if (remainingMoves>lateMoveThreshold2 &&
+		if (!isPV && !isRoot &&
+				remainingMoves>lateMoveThreshold2 &&
 				depth>lmrDepthThreshold2 &&
 				!history[board.getPieceBySquare(move.to)][move.to]) {
 			reduction += depth/10;
 		}
 		return true;
 	}
-
 
 	return false;
 }
