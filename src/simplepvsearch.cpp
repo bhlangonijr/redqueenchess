@@ -220,7 +220,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int alpha, int beta
 		int newDepth=depth-1+extension;
 		SearchInfo newSi(si.eval,givingCheck,score>alpha,move);
 
-		if (score>alpha || depth < 4) {
+		if (score>alpha) {
 			score = -pvSearch(board, newSi, -beta, -alpha, newDepth-reduction, ply+1, &line);
 		} else {
 			reduced=true;
