@@ -432,7 +432,6 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 
 	PvLine line = PvLine();
 	const bool isKingAttacked = si.inCheck;
-	const bool pawnPromoting = isPawnPromoting(board);
 	bool nullMoveMateScore=false;
 	bool okToPruneWithHash=false;
 	int score = 0;
@@ -455,7 +454,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 
 	if (depth < razorDepth && hashMove.none() &&
 			!isKingAttacked && !isMateScore(beta) &&
-			!pawnPromoting && !si.move.none() &&
+			!isPawnPromoting(board) && allowNullMove &&
 			si.eval+razorMargin(depth) < beta) {
 		score = qSearch(board, si, beta-1, beta, 0, ply, pv);
 		if (score<beta) {
@@ -464,7 +463,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	}
 
 	if (!isKingAttacked && allowNullMove && depth < nullMoveDepth &&
-			!isPawnFinal(board) && !pawnPromoting && !isMateScore(beta) &&
+			!isPawnFinal(board) && !isPawnPromoting(board) && !isMateScore(beta) &&
 			si.eval >= beta+nullMoveMargin+futilityMargin(depth)) {
 		return si.eval-futilityMargin(depth);
 	}
@@ -548,7 +547,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 				!isKingAttacked &&
 				!givingCheck &&
 				!isPawnPush(board,move.to) &&
-				!pawnPromoting &&
+				!isPawnPromoting(board) &&
 				!nullMoveMateScore) {
 			if (moveCountMargin(depth) < moveCounter) {
 				board.undoMove(backup);
@@ -628,7 +627,6 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 		}
 	}
 	const bool isKingAttacked = si.inCheck;
-	const bool pawnPromoting = isPawnPromoting(board);
 	const int oldAlpha = alpha;
 	if (!isKingAttacked) {
 		int standPat = evaluator.evaluate(board,beta);
@@ -638,7 +636,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 		if( alpha < standPat && pvNode) {
 			alpha = standPat;
 		}
-		const int delta =  deltaMargin + (pawnPromoting ? deltaMargin : 0);
+		const int delta =  deltaMargin + (isPawnPromoting(board) ? deltaMargin : 0);
 		if (standPat < alpha - delta && !pvNode) {
 			return alpha;
 		}
@@ -668,7 +666,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 		if (!isKingAttacked && !pvNode && depth < 0 &&
 				move.type==MoveIterator::BAD_CAPTURE &&
 				move != hashMove &&
-				!pawnPromoting) {
+				!isPawnPromoting(board)) {
 			board.undoMove(backup);
 			continue;
 		}
