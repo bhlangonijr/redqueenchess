@@ -61,10 +61,10 @@ const int futilityDepth=4;
 const int nullMoveDepth=4;
 const int razorDepth=4;
 const int lmrDepthThresholdRoot=3;
-const int lmrDepthThreshold1=1;
+const int lmrDepthThreshold1=2;
 const int lateMoveThreshold1=2;
-const int lmrDepthThreshold2=3;
-const int lateMoveThreshold2=5;
+const int lmrDepthThreshold2=7;
+const int lateMoveThreshold2=3;
 
 const int scoreTable[11]={0,8000,6000,9500,9000,4500,4000,100,-900,5000};
 
@@ -257,9 +257,6 @@ private:
 	bool isPawnPush(Board& board, Square& square);
 	bool isCaptureOrPromotion(Board& board, MoveIterator::Move& move);
 	bool isPawnPromoting(const Board& board);
-	bool adjustDepth(int& extension, int& reduction, Board& board, MoveIterator::Move& move, int depth,
-			int remainingMoves, bool isKingAttacked, bool isGivingCheck, int ply, const bool nullMoveMateScore,
-			const bool isPV, const bool isRoot);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
 	const bool stop(const bool shouldStop);
 	const bool timeIsUp();
@@ -537,40 +534,6 @@ inline bool SimplePVSearch::isPawnPromoting(const Board& board) {
 	return (board.getPiecesByType(WHITE_PAWN) & rankBB[RANK_7]) ||
 			(board.getPiecesByType(BLACK_PAWN) & rankBB[RANK_2]);
 
-}
-
-// depth reduction
-inline bool SimplePVSearch::adjustDepth(int& extension, int& reduction,
-		Board& board, MoveIterator::Move& move, int depth, int remainingMoves,
-		bool isKingAttacked, bool isGivingCheck, int ply,
-		const bool nullMoveMateScore, const bool isPV, const bool isRoot) {
-
-	extension=0;
-	reduction=0;
-
-	if (isKingAttacked) {
-		extension=1;
-		return false;
-	}
-
-	if (move.type != MoveIterator::NON_CAPTURE || isGivingCheck ||
-			isPawnPush(board,move.to) || nullMoveMateScore) {
-		return false;
-	}
-
-	if (remainingMoves>lateMoveThreshold1 &&
-			depth>(isRoot?lmrDepthThresholdRoot:lmrDepthThreshold1)) {
-		reduction= 1;
-		if (!isPV && !isRoot &&
-				remainingMoves>lateMoveThreshold2 &&
-				depth>lmrDepthThreshold2 &&
-				!history[board.getPieceBySquare(move.to)][move.to]) {
-			reduction += depth/10;
-		}
-		return true;
-	}
-
-	return false;
 }
 
 inline const bool SimplePVSearch::stop(const bool shouldStop) {

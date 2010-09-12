@@ -215,18 +215,30 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int alpha, int beta
 		}
 
 		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
-		bool reduced = adjustDepth(extension, reduction, board, move, depth,
-				remainingMoves,isKingAttacked,givingCheck,ply,false,true,true);
+		extension=0;
+		reduction=0;
+		if (isKingAttacked) {
+			extension=1;
+		} else if (move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
+				!isPawnPush(board,move.to) && remainingMoves>lateMoveThreshold1 &&
+				depth>lmrDepthThresholdRoot) {
+			reduction=1;
+		}
 		int newDepth=depth-1+extension;
 		SearchInfo newSi(si.eval,givingCheck,score>alpha,move);
+		bool fullSearch = false;
 
 		if (score>alpha) {
 			score = -pvSearch(board, newSi, -beta, -alpha, newDepth-reduction, ply+1, &line);
+			fullSearch=(score > alpha && reduction);
 		} else {
-			reduced=true;
 			score = -zwSearch(board, newSi, -alpha, newDepth-reduction, ply+1, &line, true);
+			if (score>alpha && reduction) {
+				score = -zwSearch(board, newSi, -alpha, newDepth, ply+1, &line, true);
+			}
+			fullSearch=(score > alpha);
 		}
-		if (score > alpha && reduced) {
+		if (fullSearch) {
 			score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
 		}
 
@@ -348,22 +360,32 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 			remainingMoves++;
 		}
 		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
-		const bool reduced = adjustDepth(extension, reduction, board, move, depth, remainingMoves,
-				isKingAttacked,givingCheck,ply,false,moveCounter==1,false);
+		extension=0;
+		reduction=0;
+		if (isKingAttacked) {
+			extension=1;
+		} else if (move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
+				!isPawnPush(board,move.to) && remainingMoves>lateMoveThreshold1 &&
+				depth>lmrDepthThreshold1) {
+			reduction=1;
+		}
 		SearchInfo newSi(si.eval,givingCheck,moveCounter==1,move);
-		int newDepth=depth-1;
+		int newDepth=depth-1+extension;
 		bool fullSearch=false;
 
 		if (moveCounter==1) {
-			score = -pvSearch(board, newSi, -beta, -alpha, newDepth-reduction+extension, ply+1, &line);
-			fullSearch=(score > alpha && reduced);
+			score = -pvSearch(board, newSi, -beta, -alpha, newDepth-reduction, ply+1, &line);
+			fullSearch=(score > alpha && reduction);
 		} else {
-			score = -zwSearch(board, newSi, -alpha, newDepth-reduction+extension, ply+1, &line, true);
+			score = -zwSearch(board, newSi, -alpha, newDepth-reduction, ply+1, &line, true);
+			if (score>alpha && reduction) {
+				score = -zwSearch(board, newSi, -alpha, newDepth, ply+1, &line, true);
+			}
 			fullSearch=(score > alpha && score < beta);
 		}
 
 		if (fullSearch) {
-			score = -pvSearch(board, newSi, -beta, -alpha, newDepth+extension, ply+1, &line);
+			score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
 		}
 
 		board.undoMove(backup);
@@ -548,7 +570,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 				!isPawnPush(board,move.to) &&
 				!isPawnPromoting(board) &&
 				!nullMoveMateScore) {
-			if (moveCountMargin(depth) < moveCounter) {
+			if (moveCountMargin(depth) < moveCounter  && !isMateScore(beta) ) {
 				board.undoMove(backup);
 				continue;
 			}
@@ -561,14 +583,27 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		if (move.type == MoveIterator::NON_CAPTURE) {
 			remainingMoves++;
 		}
-		bool reduced = adjustDepth(extension, reduction, board, move, depth,remainingMoves,
-				isKingAttacked,givingCheck,ply,nullMoveMateScore,false,false);
+
+		//reductions
+		extension=0;
+		reduction=0;
+		if (isKingAttacked) {
+			extension=1;
+		} else if (move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
+				!isPawnPush(board,move.to) && !nullMoveMateScore &&
+				remainingMoves>lateMoveThreshold1 && depth>lmrDepthThreshold1) {
+			reduction=1;
+			if (remainingMoves>lateMoveThreshold2 && depth>lmrDepthThreshold2 &&
+					!history[board.getPieceBySquare(move.to)][move.to]) {
+				reduction += depth/6;
+			}
+		}
 		SearchInfo newSi(si.eval,givingCheck,false,move);
 		int newDepth=depth-1+extension;
 
 		score = -zwSearch(board, newSi, 1-beta, newDepth-reduction, ply+1, &line, true);
 
-		if (score >= beta && reduced) {
+		if (score >= beta && reduction) {
 			score = -zwSearch(board, newSi, 1-beta, newDepth, ply+1, &line, true);
 		}
 
