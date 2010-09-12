@@ -257,6 +257,7 @@ private:
 	bool isPawnPush(Board& board, Square& square);
 	bool isCaptureOrPromotion(Board& board, MoveIterator::Move& move);
 	bool isPawnPromoting(const Board& board);
+	bool isPawnOn7thRank(const Board& board, Square& square);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
 	const bool stop(const bool shouldStop);
 	const bool timeIsUp();
@@ -527,14 +528,21 @@ inline bool SimplePVSearch::isCaptureOrPromotion(Board& board, MoveIterator::Mov
 			move.promotionPiece != EMPTY;
 }
 
-
 // pawn promoting
 inline bool SimplePVSearch::isPawnPromoting(const Board& board) {
-
 	return (board.getPiecesByType(WHITE_PAWN) & rankBB[RANK_7]) ||
 			(board.getPiecesByType(BLACK_PAWN) & rankBB[RANK_2]);
-
 }
+
+// pawn on 7th rank
+inline bool SimplePVSearch::isPawnOn7thRank(const Board& board, Square& square) {
+	if (board.getPieceTypeBySquare(square)!=PAWN) {
+		return false;
+	}
+	const PieceColor color=board.getPieceColorBySquare(square);
+	return  (squareToBitboard[square] & (color==WHITE?rankBB[RANK_7]:rankBB[RANK_2]));
+}
+
 
 inline const bool SimplePVSearch::stop(const bool shouldStop) {
 
