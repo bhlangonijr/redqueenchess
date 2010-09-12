@@ -43,12 +43,12 @@ const int maxSearchDepth = 80;
 const int maxSearchPly = 100;
 
 // internal iterative deepening
-const int allowIIDAtPV = 5;
+const int allowIIDAtPV = 3;
 const int allowIIDAtNormal = 7;
 
 // margin constants
 #define futilityMargin(depth) (depth * 150)
-#define razorMargin(depth) (50 + depth * 175)
+#define razorMargin(depth) (150 + depth * 175)
 #define moveCountMargin(depth) (6 + depth * 4)
 const int iidMargin=260;
 const int easyMargin=500;
