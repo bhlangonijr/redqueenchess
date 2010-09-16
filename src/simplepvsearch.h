@@ -82,13 +82,10 @@ public:
 	} PvLine;
 
 	typedef struct SearchInfo {
-		SearchInfo(): eval(-maxScore), inCheck(false), isPV(false) {}
-		SearchInfo(const int _eval, const bool _inCheck,
-				const bool _isPV, const MoveIterator::Move _move):
-					eval(_eval), inCheck(_inCheck), isPV(_isPV), move(_move)  {}
-		int eval;
+		SearchInfo(): inCheck(false) {}
+		SearchInfo(const bool _inCheck,	const MoveIterator::Move _move):
+					inCheck(_inCheck), move(_move)  {}
 		bool inCheck;
-		bool isPV;
 		MoveIterator::Move move;
 	} SearchInfo;
 
@@ -239,7 +236,8 @@ private:
 	int rootSearch(Board& board, SearchInfo& si, int alpha, int beta, int depth, int ply, PvLine* pv);
 	int pvSearch(Board& board,  SearchInfo& si, int alpha, int beta, int depth, int ply, PvLine* pv);
 	int zwSearch(Board& board,  SearchInfo& si, int beta, int depth, int ply, PvLine* pv, const bool allowNullMove);
-	int qSearch(Board& board,  SearchInfo& si, int alpha, int beta, int depth, int ply, PvLine* pv);
+	int qSearch(Board& board,  SearchInfo& si,
+			int alpha, int beta, int depth, int ply, PvLine* pv, const bool isPV);
 	void uciOutput(PvLine* pv, MoveIterator::Move& bestMove, const int totalTime,
 			const int hashFull, const int depth, const int alpha, const int beta);
 	void uciOutput(MoveIterator::Move& bestMove, MoveIterator::Move& ponderMove);
@@ -457,8 +455,8 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 		const int value = isCapture ? evaluator.see(board,move) : 0;
 		board.doMove(move,backup);
 		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
-		SearchInfo newSi(rootSearchInfo.eval,givingCheck,true,move);
-		PvLine pv;
+		SearchInfo newSi(givingCheck,move);
+		PvLine pv = PvLine();
 		move.score = -pvSearch(board,newSi,-maxScore,maxScore,3,0,&pv);
 		if (move.type==MoveIterator::UNKNOW) {
 			if (isCapture) {

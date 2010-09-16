@@ -61,7 +61,6 @@ int SimplePVSearch::idSearch(Board& board) {
 	int beta = maxScore;
 	const bool isKingAttacked = board.isAttacked(board.getSideToMove(),KING);
 	MoveIterator::Move easyMove;
-	rootSearchInfo.eval = evaluator.evaluate(board,alpha,beta);
 	rootSearchInfo.inCheck = isKingAttacked;
 
 	if (!isKingAttacked) {
@@ -226,7 +225,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int alpha, int beta
 			reduction=1;
 		}
 		int newDepth=depth-1+extension;
-		SearchInfo newSi(si.eval,givingCheck,score>alpha,move);
+		SearchInfo newSi(givingCheck,move);
 		bool fullSearch = false;
 
 		if (score>alpha) {
@@ -287,7 +286,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 	}
 
 	if (depth<=0) {
-		return qSearch(board, si, alpha, beta, 0, ply, pv);
+		return qSearch(board, si, alpha, beta, 0, ply, pv, true);
 	}
 
 	PvLine line = PvLine();
@@ -342,7 +341,6 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		}
 		MoveBackup backup;
 		board.doMove(move,backup);
-		assert(move.from!=NONE);
 
 		if (board.isNotLegal()) {
 			board.undoMove(backup);
@@ -372,7 +370,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 				depth>lmrDepthThreshold1) {
 			reduction=1;
 		}
-		SearchInfo newSi(si.eval,givingCheck,moveCounter==1,move);
+		SearchInfo newSi(givingCheck,move);
 		int newDepth=depth-1+extension;
 		bool fullSearch=false;
 
@@ -440,7 +438,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	}
 
 	if (depth<=0) {
-		return qSearch(board, si, beta-1, beta, 0, ply, pv);
+		return qSearch(board, si, beta-1, beta, 0, ply, pv, false);
 	}
 
 	_nodes++;
@@ -462,6 +460,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	bool nullMoveMateScore=false;
 	bool okToPruneWithHash=false;
 	int score = 0;
+	int currentScore = -maxScore;
 	SearchAgent::HashData hashData;
 	MoveIterator::Move hashMove;
 	Key key = board.getKey();
@@ -476,15 +475,15 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	}
 
 	if (!isKingAttacked) {
-		si.eval = evaluator.evaluate(board,beta-1,beta);
+		currentScore = evaluator.evaluate(board,beta-1,beta);
 	}
 
 	if (depth < razorDepth && hashMove.none() &&
 			!isKingAttacked && !isMateScore(beta) &&
 			!isPawnPromoting(board) && !si.move.none() &&
-			si.eval < beta - razorMargin(depth)) {
+			currentScore < beta - razorMargin(depth)) {
 		const int newBeta = beta - razorMargin(depth);
-		score = qSearch(board, si, newBeta-1, newBeta, 0, ply, pv);
+		score = qSearch(board, si, newBeta-1, newBeta, 0, ply, pv, false);
 		if (score < newBeta) {
 			return score;
 		}
@@ -492,20 +491,20 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 
 	if (!isKingAttacked && allowNullMove && depth < nullMoveDepth &&
 			!isPawnFinal(board) && !isMateScore(beta) &&
-			si.eval >= beta+futilityMargin(depth)) {
-		return si.eval-futilityMargin(depth);
+			currentScore >= beta+futilityMargin(depth)) {
+		return currentScore-futilityMargin(depth);
 	}
 
 	// null move
 	if (depth>1 && !isKingAttacked && allowNullMove &&
 			!isPawnFinal(board) && !isMateScore(beta) &&
-			si.eval >= beta-(depth>=nullMoveDepth?nullMoveMargin:0)) {
+			currentScore >= beta-(depth>=nullMoveDepth?nullMoveMargin:0)) {
 
 		const int reduction = 3 + (depth > 4 ? depth/6 : 0);
 		MoveBackup backup;
 
 		board.doNullMove(backup);
-		SearchInfo newSi(si.eval,false,false,emptyMove);
+		SearchInfo newSi(false,emptyMove);
 		score = -zwSearch(board, si, 1-beta, depth-reduction, ply+1, &line, false);
 		board.undoNullMove(backup);
 
@@ -528,7 +527,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 
 	//iid
 	if (depth > allowIIDAtNormal &&	hashMove.none() &&
-			!isKingAttacked && si.eval >= beta-iidMargin) {
+			!isKingAttacked && currentScore >= beta-iidMargin) {
 		const int iidSearchDepth = depth/2;
 		score = zwSearch(board,si,beta,iidSearchDepth,ply,&line,false);
 		if (agent->hashGet(key, hashData, ply)) {
@@ -584,7 +583,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 				board.undoMove(backup);
 				continue;
 			}
-			const int futilityScore = si.eval + futilityMargin(depth);
+			const int futilityScore = currentScore + futilityMargin(depth);
 			if (futilityScore < beta) {
 				if (futilityScore>bestScore) {
 					bestScore=futilityScore;
@@ -611,7 +610,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 				reduction += depth/8;
 			}
 		}
-		SearchInfo newSi(si.eval,givingCheck,false,move);
+		SearchInfo newSi(givingCheck,move);
 		int newDepth=depth-1+extension;
 
 		score = -zwSearch(board, newSi, 1-beta, newDepth-reduction, ply+1, &line, true);
@@ -651,7 +650,8 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 }
 
 //quiescence search
-int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, int depth, int ply, PvLine* pv) {
+int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
+		int alpha, int beta, int depth, int ply, PvLine* pv, const bool isPV) {
 
 	_nodes++;
 
@@ -667,13 +667,12 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 	MoveIterator::Move hashMove;
 	bool okToPruneWithHash=false;
 	const bool oldAlpha=alpha;
-	bool pvNode = si.isPV;
 
 	// tt retrieve & prunning
 	if (agent->hashPruneGet(okToPruneWithHash, board.getKey(), hashData, ply, depth, true, alpha, beta)) {
 		hashMove = hashData.move();
 		stats.ttHits++;
-		if (okToPruneWithHash && !pvNode) {
+		if (okToPruneWithHash && !isPV) {
 			return hashData.value();
 		}
 	}
@@ -688,7 +687,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 		}
 
 		const int delta =  deltaMargin + (isPawnPromoting(board) ? deltaMargin : 0);
-		if (bestScore < alpha - delta && !pvNode) {
+		if (bestScore < alpha - delta && !isPV) {
 			return alpha;
 		}
 	}
@@ -714,7 +713,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 
 		moveCounter++;
 
-		if (!isKingAttacked && !pvNode && depth < 0 &&
+		if (!isKingAttacked && !isPV && depth < 0 &&
 				move.type==MoveIterator::BAD_CAPTURE &&
 				move != hashMove &&
 				!isPawnPromoting(board)) {
@@ -723,8 +722,8 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si, int alpha, int beta, i
 		}
 
 		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
-		SearchInfo newSi(bestScore,givingCheck,si.isPV,move);
-		int score = -qSearch(board, newSi, -beta, -alpha, depth-1, ply+1, &line);
+		SearchInfo newSi(givingCheck,move);
+		int score = -qSearch(board, newSi, -beta, -alpha, depth-1, ply+1, &line, isPV);
 
 		board.undoMove(backup);
 
