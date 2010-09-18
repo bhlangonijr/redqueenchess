@@ -414,10 +414,10 @@ const int winningScore = 2000;
 const int maxPieces=32;
 
 const int pawnValue 	= 100;
-const int knightValue 	= 320;
-const int bishopValue 	= 330;
-const int rookValue 	= 500;
-const int queenValue 	= 1000;
+const int knightValue 	= 415;
+const int bishopValue 	= 420;
+const int rookValue 	= 640;
+const int queenValue 	= 1280;
 const int kingValue 	= 20000;
 
 const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {

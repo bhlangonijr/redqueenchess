@@ -122,12 +122,12 @@ struct MoveBackup {
 struct Node {
 
 	Node () : key(0ULL), piece(), moveCounter(0), halfMoveCounter(0), gamePhase(OPENING)
-			{}
+	{}
 
 	Node (const Node& node) : key(node.key), piece( node.piece ), enPassant( node.enPassant ),
 			sideToMove( node.sideToMove ), moveCounter(node.moveCounter),
 			halfMoveCounter(node.halfMoveCounter), gamePhase(node.gamePhase)
-			{
+	{
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=node.square[x];
 		}
@@ -294,11 +294,13 @@ public:
 	const int getMaterial(const PieceColor color) const;
 
 	void generateCaptures(MoveIterator& moves, const PieceColor side);
+	void generateQuiesMoves(MoveIterator& moves, const PieceColor side);
 	void generateNonCaptures(MoveIterator& moves, const PieceColor side);
 	void generateEvasions(MoveIterator& moves, const PieceColor side);
 	void generateAllMoves(MoveIterator& moves, const PieceColor side);
 	void generatePawnCaptures(MoveIterator& moves, const PieceColor side, const Bitboard mask);
 	void generatePawnMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask);
+	void generatePromotion(MoveIterator& moves, const PieceColor side, const Bitboard mask);
 	void generateKnightMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask);
 	void generateBishopMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask);
 	void generateRookMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask);
@@ -617,7 +619,8 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 					(move.from==E1 && move.to==C1) ||
 					(move.from==E8 && move.to==G8) ||
 					(move.from==E8 && move.to==C8))) {
-		const CastleRight castleRight = (move.to==C1 || move.to==C8) ? QUEEN_SIDE_CASTLE : KING_SIDE_CASTLE;
+		const CastleRight castleRight =
+				(move.to==C1 || move.to==C8) ? QUEEN_SIDE_CASTLE : KING_SIDE_CASTLE;
 
 		return canCastle(getSideToMove(), castleRight);
 	}
@@ -902,6 +905,14 @@ inline void Board::generateNonCaptures(MoveIterator& moves, const PieceColor sid
 
 }
 
+//generate quiescence moves
+//TODO generate checks
+
+inline void Board::generateQuiesMoves(MoveIterator& moves, const PieceColor side){
+	generateCaptures(moves, side);
+	generatePromotion(moves, side, getEmptySquares());
+}
+
 // generate check evasions
 // Note: this method do not guarantee generation of only legal moves, although it might reduce the number of moves
 // it will be necessary to use doMove() and verify if king remains in check to validate legality
@@ -1037,6 +1048,30 @@ inline void Board::generatePawnMoves(MoveIterator& moves, const PieceColor side,
 			} else {
 				moves.add(from,target,EMPTY,MoveIterator::NON_CAPTURE);
 			}
+			target = extractLSB(attacks);
+		}
+		from = extractLSB(pieces);
+	}
+
+}
+
+// generate only quiet promotions
+inline void Board::generatePromotion(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
+
+	const Rank promoRank = side == WHITE?RANK_7:RANK_2;
+	Bitboard pieces = getPiecesByType(makePiece(side,PAWN)) & rankBB[promoRank];
+	Bitboard attacks = EMPTY_BB;
+	Square from = extractLSB(pieces);
+
+	while ( from!=NONE ) {
+		attacks = getPawnMoves(from) & mask;
+		Square target = extractLSB(attacks);
+
+		while ( target!=NONE ) {
+			moves.add(from,target,makePiece(side,QUEEN),MoveIterator::PROMO_NONCAPTURE);
+			moves.add(from,target,makePiece(side,ROOK),MoveIterator::PROMO_NONCAPTURE);
+			moves.add(from,target,makePiece(side,BISHOP),MoveIterator::PROMO_NONCAPTURE);
+			moves.add(from,target,makePiece(side,KNIGHT),MoveIterator::PROMO_NONCAPTURE);
 			target = extractLSB(attacks);
 		}
 		from = extractLSB(pieces);

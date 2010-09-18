@@ -84,7 +84,7 @@ public:
 	typedef struct SearchInfo {
 		SearchInfo(): inCheck(false) {}
 		SearchInfo(const bool _inCheck,	const MoveIterator::Move _move):
-					inCheck(_inCheck), move(_move)  {}
+			inCheck(_inCheck), move(_move)  {}
 		bool inCheck;
 		MoveIterator::Move move;
 	} SearchInfo;
@@ -376,6 +376,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 		if (board.isMoveLegal(ttMove)) {
 			return ttMove;
 		}
+
 	}
 	if (moves.getStage()==MoveIterator::INIT_EVASION_STAGE) {
 		board.generateEvasions(moves, board.getSideToMove());
@@ -395,7 +396,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 		return emptyMove;
 	}
 	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
-		board.generateCaptures(moves, board.getSideToMove());
+		board.generateQuiesMoves(moves, board.getSideToMove());
 		scoreMoves(board, moves);
 		moves.first();
 		moves.setStage(MoveIterator::ON_CAPTURE_STAGE);

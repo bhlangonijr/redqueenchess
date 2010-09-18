@@ -93,12 +93,14 @@ int SimplePVSearch::idSearch(Board& board) {
 			beta=maxScore;
 		}
 
-		score = rootSearch(board, rootSearchInfo, alpha, beta, depth, 0, &pv);
-
-		if((score <= alpha || score >= beta) &&	!stop(agent->shouldStop())) {
-			alpha=-maxScore;
-			beta=maxScore;
+		while (true) {
 			score = rootSearch(board, rootSearchInfo, alpha, beta, depth, 0, &pv);
+			if((score <= alpha || score >= beta) &&	!stop(agent->shouldStop())) {
+				alpha=-maxScore;
+				beta=maxScore;
+				continue;
+			}
+			break;
 		}
 
 		iterationScore[depth]=score;

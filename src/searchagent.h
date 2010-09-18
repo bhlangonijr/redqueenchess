@@ -71,12 +71,12 @@ public:
 	};
 
 	struct HashData {
-		HashData() : _value(0), _depth(0), _flag(LOWER),
+		HashData() : _value(0), _depth(0), _flag(NODE_NONE),
 				_from(NONE), _to(NONE), _promotion(EMPTY) {};
 
 		HashData(const int& value, const int& depth, const NodeFlag& flag, const MoveIterator::Move& move) :
-			_value(int16_t(value)), _depth(int16_t(depth)), _flag(uint8_t(flag)),
-			_from(uint8_t(move.from)), _to(uint8_t(move.to)),_promotion(uint8_t(move.promotionPiece))  {};
+			_value(value), _depth(depth), _flag(flag),
+			_from(move.from), _to(move.to),_promotion(move.promotionPiece)  {};
 
 		inline NodeFlag flag() {
 			return NodeFlag(_flag);
@@ -95,9 +95,9 @@ public:
 			_value=int16_t(value);
 		}
 		inline void clear() {
-			_value=0;
-			_depth=0;
-			_flag=uint8_t(LOWER);
+			_value=-maxScore;
+			_depth=-80;
+			_flag=uint8_t(NODE_NONE);
 			_from=uint8_t(NONE);
 			_to=uint8_t(NONE);
 			_promotion=uint8_t(EMPTY);
