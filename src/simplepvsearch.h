@@ -400,7 +400,10 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 		const bool isCapture = board.isCaptureMove(move);
 		const int value = isCapture ? evaluator.see(board,move) : 0;
 		board.doMove(move,backup);
-		move.score = -evaluator.evaluate(board,-maxScore,maxScore);
+		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
+		SearchInfo newSi(givingCheck,move);
+		PvLine pv = PvLine();
+		move.score = -pvSearch(board,newSi,-maxScore,maxScore,3,0,&pv);
 		if (move.type==MoveIterator::UNKNOW) {
 			if (isCapture) {
 				move.type = value >= 0 ?

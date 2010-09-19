@@ -316,9 +316,8 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 	const bool isKingAttacked = si.inCheck;
 
 	//iid
-	if (depth > allowIIDAtPV &&	hashMove.none()) {
-		const int iidSearchDepth = depth-2;
-		score = pvSearch(board,si,alpha,beta,iidSearchDepth,ply,&line);
+	if (depth > allowIIDAtPV &&	hashMove.none() && !isKingAttacked) {
+		score = pvSearch(board,si,alpha,beta,depth-2,ply,pv);
 		if (agent->hashGet(key, hashData, ply)) {
 			hashMove = hashData.move();
 		}
@@ -524,8 +523,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	//iid
 	if (depth > allowIIDAtNormal &&	hashMove.none() &&
 			!isKingAttacked && currentScore >= beta-iidMargin) {
-		const int iidSearchDepth = depth/2;
-		score = zwSearch(board,si,beta,iidSearchDepth,ply,&line,false);
+		score = zwSearch(board,si,beta,depth/2,ply,pv,false);
 		if (agent->hashGet(key, hashData, ply)) {
 			hashMove = hashData.move();
 		}
@@ -609,7 +607,12 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		score = -zwSearch(board, newSi, 1-beta, newDepth-reduction, ply+1, &line, true);
 
 		if (score >= beta && reduction>0) {
-			score = -zwSearch(board, newSi, 1-beta, newDepth, ply+1, &line, true);
+			reduction=reduction>2?1:0;
+			score = -zwSearch(board, newSi, 1-beta, newDepth-reduction, ply+1, &line, true);
+			if (score >= beta && reduction>0) {
+				score = -zwSearch(board, newSi, 1-beta, newDepth, ply+1, &line, true);
+			}
+
 		}
 
 		board.undoMove(backup);
@@ -681,13 +684,12 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		if(bestScore>=beta) {
 			return beta;
 		}
-		if( alpha < bestScore) {
-			alpha = bestScore;
-		}
-
 		const int delta =  deltaMargin + (isPawnPromoting(board) ? deltaMargin : 0);
 		if (bestScore < alpha - delta && !isPV) {
 			return alpha;
+		}
+		if( alpha < bestScore) {
+			alpha = bestScore;
 		}
 	}
 
@@ -759,7 +761,6 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 
 	return bestScore;
 }
-
 
 //perft
 long SimplePVSearch::perft(Board& board, int depth, int ply) {
