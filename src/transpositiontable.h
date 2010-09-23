@@ -263,7 +263,7 @@ inline const std::string TranspositionTable::getId() const {
 }
 
 inline void TranspositionTable::newSearch() {
-	generation=0;
+	generation++;
 	writes=0;
 }
 
