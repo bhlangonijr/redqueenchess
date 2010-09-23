@@ -64,13 +64,6 @@ const Bitboard castleSquare[ALL_PIECE_COLOR][ALL_CASTLE_RIGHT]={
 		/*NONE */{EMPTY_BB, EMPTY_BB, EMPTY_BB, EMPTY_BB }
 };
 
-// castle legal squares
-const Bitboard castleLegalSquare[ALL_PIECE_COLOR][ALL_CASTLE_RIGHT]={
-		/*WHITE*/{EMPTY_BB, Sq2Bb(F1)|Sq2Bb(G1), Sq2Bb(D1)|Sq2Bb(C1), Sq2Bb(F1)|Sq2Bb(G1)|Sq2Bb(D1)|Sq2Bb(C1)},
-		/*BLACK*/{EMPTY_BB, Sq2Bb(F8)|Sq2Bb(G8), Sq2Bb(D8)|Sq2Bb(C8), Sq2Bb(F8)|Sq2Bb(G8)|Sq2Bb(D8)|Sq2Bb(C8)},
-		/*NONE */{EMPTY_BB, EMPTY_BB, EMPTY_BB, EMPTY_BB }
-};
-
 // castle zobrist keys index table
 const int zobristCastleIndex[ALL_CASTLE_RIGHT][ALL_CASTLE_RIGHT]={
 		{0,1,2,3},
@@ -87,8 +80,11 @@ enum GamePhase {
 	MIDDLEGAME=		 5,
 	ENDGAME=		 26
 };
+
 //start FEN position
 const std::string startFENPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+const MoveIterator::Move empty;
 
 // Backup move
 struct MoveBackup {
@@ -276,7 +272,6 @@ public:
 	const File getSquareFile(const Square square) const;
 	const bool isAttacked(const PieceColor color, const PieceType type);
 	const bool isAttacked(const PieceColor color, const Square from);
-	const bool isAnyAttacked(const Bitboard occupation, const PieceColor attackingSide);
 	const bool isNotLegal();
 	const bool isMoveLegal(MoveIterator::Move& move);
 	const bool isAttackedBy(const Square from, const Square to);
@@ -440,7 +435,6 @@ inline bool Board::canCastle(const PieceColor color, const CastleRight castleRig
 		return false;
 	}
 
-
 	// squares through castle & king destination attacked?
 	if (castleRight==BOTH_SIDE_CASTLE || castleRight==KING_SIDE_CASTLE) {
 		if (color==WHITE) {
@@ -569,35 +563,10 @@ inline const bool Board::isAttacked(const PieceColor color, const Square from) {
 
 }
 
-// verify if the given bitboard occupation is attacked
-inline const bool Board::isAnyAttacked(const Bitboard occupation, const PieceColor attackingSide) {
-
-	Bitboard pieces = occupation;
-	Square from = extractLSB(pieces);
-
-	while ( from!=NONE ) {
-
-		bool result= (getBishopAttacks(from) & (getPiecesByType(makePiece(attackingSide,BISHOP)) |
-				getPiecesByType(makePiece(attackingSide,QUEEN)))) ||
-				(getRookAttacks(from) & (getPiecesByType(makePiece(attackingSide,ROOK)) |
-						getPiecesByType(makePiece(attackingSide,QUEEN)))) ||
-						(getKnightAttacks(from) & getPiecesByType(makePiece(attackingSide,KNIGHT))) ||
-						(getPawnAttacks(from,attackingSide) & getPiecesByType(makePiece(attackingSide,PAWN))) ||
-						(getKingAttacks(from) & getPiecesByType(makePiece(attackingSide,KING)));
-
-		if (result) {
-			return true;
-		}
-		from = extractLSB(pieces);
-	}
-
-	return false;
-}
-
 // verify board legality
 inline const bool Board::isNotLegal() {
-
-	return isAttacked(flipSide(getSideToMove()),KING);
+	const PieceColor color = flipSide(getSideToMove());
+	return isAttacked(color,KING);
 
 }
 
@@ -614,17 +583,16 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 		return false;
 	}
 
-	if ((getPieceType(fromPiece) == KING) &&
-			((move.from==E1 && move.to==G1) ||
-					(move.from==E1 && move.to==C1) ||
-					(move.from==E8 && move.to==G8) ||
-					(move.from==E8 && move.to==C8))) {
+	PieceColor color = this->getPieceColorBySquare(move.from);
+
+	if (getPieceType(fromPiece) == KING &&
+			(((color==WHITE && move.from==E1 && (move.to==G1 || move.to==C1)) ||
+					(color==BLACK && move.from==E8 && (move.to==G8 || move.to==C8))))) {
 		const CastleRight castleRight =
 				(move.to==C1 || move.to==C8) ? QUEEN_SIDE_CASTLE : KING_SIDE_CASTLE;
 
-		return canCastle(getSideToMove(), castleRight);
+		return canCastle(color, castleRight);
 	}
-
 	return isAttackedBy(move.from, move.to);
 
 }
@@ -670,7 +638,9 @@ inline const bool Board::isDraw() {
 	const Bitboard pawns = this->getPiecesByType(WHITE_PAWN) |
 			this->getPiecesByType(BLACK_PAWN);
 	if (!pawns) {
-		if (this->getMaterial(WHITE)<=kingValue+bishopValue &&
+		if (this->getPiecesByType(WHITE_KING) &&
+				this->getPiecesByType(BLACK_KING) &&
+				this->getMaterial(WHITE)<=kingValue+bishopValue &&
 				this->getMaterial(BLACK)<=kingValue+bishopValue) {
 			return true;
 		}
@@ -688,17 +658,15 @@ inline const bool Board::isCastleDone(const PieceColor color) {
 // verify if move is capture
 inline const bool Board::isCaptureMove(MoveIterator::Move& move) {
 
-	bool result=false;
 	if (getPieceBySquare(move.to)!=EMPTY) {
-		result=true;
+		return true;
 	} else if (getPieceTypeBySquare(move.from)==PAWN){
 		if (getEnPassant()!=NONE &&
 				getSquareFile(move.from)!=getSquareFile(move.to)) {
-			result=true;
+			return true;
 		}
-
 	}
-	return result;
+	return false;
 }
 
 // get all pieces of a given color

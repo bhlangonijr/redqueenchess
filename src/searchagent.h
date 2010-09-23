@@ -52,64 +52,14 @@ const int timeTable [7][3] = {
 		{17, 1000, 0}
 };
 
-const int bucketSize=4;
-
 class SimplePVSearch;
 
 class SearchAgent {
 
 public:
 
-	typedef uint32_t HashKey;
-
 	enum SearchMode {
 		SEARCH_TIME, SEARCH_DEPTH, SEARCH_MOVESTOGO, SEARCH_MOVETIME, SEARCH_MOVES, SEARCH_INFINITE
-	};
-
-	enum NodeFlag {
-		NODE_NONE=0, LOWER=1, UPPER=2, EXACT=4, NODE_NULL=8, NM_LOWER=LOWER|NODE_NULL
-	};
-
-	struct HashData {
-		HashData() : _value(0), _depth(0), _flag(NODE_NONE),
-				_from(NONE), _to(NONE), _promotion(EMPTY) {};
-
-		HashData(const int& value, const int& depth, const NodeFlag& flag, const MoveIterator::Move& move) :
-			_value(value), _depth(depth), _flag(flag),
-			_from(move.from), _to(move.to),_promotion(move.promotionPiece)  {};
-
-		inline NodeFlag flag() {
-			return NodeFlag(_flag);
-		}
-		inline MoveIterator::Move move() {
-			return MoveIterator::Move(Square(_from),Square(_to),
-					PieceTypeByColor(_promotion), MoveIterator::TT_MOVE);
-		}
-		inline int depth() {
-			return int(_depth);
-		}
-		inline int value() {
-			return int(_value);
-		}
-		inline void setValue(int value) {
-			_value=int16_t(value);
-		}
-		inline void clear() {
-			_value=-maxScore;
-			_depth=-80;
-			_flag=uint8_t(NODE_NONE);
-			_from=uint8_t(NONE);
-			_to=uint8_t(NONE);
-			_promotion=uint8_t(EMPTY);
-		}
-
-		int16_t _value;
-		int16_t _depth;
-		uint8_t _flag;
-		uint8_t _from;
-		uint8_t _to;
-		uint8_t _promotion;
-
 	};
 
 	static SearchAgent* getInstance();
@@ -235,32 +185,28 @@ public:
 	}
 
 	inline void clearHash() {
-		generation=0;
 		transTable->clearHash();
 
 	}
 
 	inline bool hashPut(const Key _key, int value, const int depth, const int ply,
-			const NodeFlag flag, MoveIterator::Move move) {
+			const TranspositionTable::NodeFlag flag, MoveIterator::Move move) {
 
-		HashKey key = HashKey(_key>>32);
-		const uint16_t relevance = generation*100 + depth;
+		TranspositionTable::HashKey key=TranspositionTable::HashKey(_key>>32);
+
 		if (value >= maxScore-100) {
 			value -= ply;
 		} else if (value <= -maxScore+100) {
 			value += ply;
 		}
-		HashData hashData;
-		if (move.none() && transTable->hashGet(key, hashData)) {
-			move = hashData.move();
-		}
-		return transTable->hashPut(key, HashData(value,depth,flag,move),relevance);
+
+		return transTable->hashPut(key,value,flag,move,depth);
 
 	}
 
-	inline bool hashGet(const Key _key, HashData& hashData, const int ply) {
+	inline bool hashGet(const Key _key, TranspositionTable::HashData& hashData, const int ply) {
 
-		HashKey key = HashKey(_key>>32);
+		TranspositionTable::HashKey key=TranspositionTable::HashKey(_key>>32);
 
 		bool result = transTable->hashGet(key, hashData);
 		if (result) {
@@ -277,17 +223,17 @@ public:
 		return result;
 	}
 
-	inline bool hashPruneGet(bool& okToPrune, const Key _key, HashData& hashData, const int ply,
+	inline bool hashPruneGet(bool& okToPrune, const Key _key, TranspositionTable::HashData& hashData, const int ply,
 			const int depth, const bool allowNullMove, const int alpha, const int beta) {
 
 		const bool result = hashGet(_key, hashData, ply);
 
 		if (result) {
 			okToPrune =
-					(allowNullMove || !(hashData.flag() & NODE_NULL)) &&
+					(allowNullMove || !(hashData.flag() & TranspositionTable::NODE_NULL)) &&
 					(hashData.depth()>=depth) &&
-					(((hashData.flag() & LOWER) && hashData.value() >= beta) ||
-					((hashData.flag() & UPPER) && hashData.value() <= alpha));
+					(((hashData.flag() & TranspositionTable::LOWER) && hashData.value() >= beta) ||
+					((hashData.flag() & TranspositionTable::UPPER) && hashData.value() <= alpha));
 		} else {
 			okToPrune = false;
 		}
@@ -304,7 +250,7 @@ public:
 	}
 
 	void createHash() {
-		transTable = new TranspositionTable<HashKey,HashData,bucketSize>(mainHashName, getHashSize());
+		transTable = new TranspositionTable(mainHashName, getHashSize());
 	}
 
 	void destroyHash() {
@@ -314,7 +260,6 @@ public:
 	}
 
 	void newSearchHash() {
-		generation++;
 		return transTable->newSearch();
 	}
 
@@ -349,8 +294,7 @@ private:
 	int movesToGo;
 	long moveTime;
 	bool infinite;
-	uint16_t generation;
-	TranspositionTable<HashKey,HashData,bucketSize>* transTable;
+	TranspositionTable* transTable;
 
 	const long getTimeToSearch();
 

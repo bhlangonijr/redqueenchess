@@ -33,29 +33,92 @@
 #include <stdlib.h>
 
 #define DEFAULT_INITIAL_SIZE 64
+#define BUCKET_SIZE 4
 
-template<class _Key, class _Value, int _BucketSize>
 class TranspositionTable {
 public:
 
-	typedef _Key HashKeyType;
-	typedef _Value HashValueType;
+	typedef uint32_t HashKey;
 
-	typedef struct _Entry {
-		_Key key;
-		_Value value;
-		int16_t relevance;
-	} HashEntry;
+	enum NodeFlag {
+		NODE_NONE=0,
+		LOWER=1,
+		UPPER=2,
+		EXACT=4,
+		NODE_NULL=8,
+		NM_LOWER=LOWER|NODE_NULL
+	};
 
-	typedef struct _Bucket {
-		HashEntry entry[_BucketSize];
-	} Bucket;
+	struct HashData {
+		HashData() : _value(0), _depth(0), _flag(NODE_NONE),
+				_from(NONE), _to(NONE), _promotion(EMPTY), _generation(0) {};
+
+		HashData(const int& value, const int& depth, const NodeFlag& flag,
+				const MoveIterator::Move& move, const int& generation) :
+					_value(value), _depth(depth), _flag(flag),	_from(move.from), _to(move.to),
+					_promotion(move.promotionPiece), _generation(generation)  {};
+
+		inline void update(const HashKey hashKey, const int& value, const int& depth, const NodeFlag& flag,
+				const MoveIterator::Move& move, const int& generation) {
+			key=hashKey;
+			_value=int16_t(value);
+			_depth=int16_t(depth);
+			_flag=int8_t(flag);
+			_from=int8_t(move.from);
+			_to=int8_t(move.to);
+			_promotion=int8_t(move.promotionPiece);
+			_generation=int16_t(generation);
+		}
+		inline NodeFlag flag() {
+			return NodeFlag(_flag);
+		}
+		inline MoveIterator::Move move() {
+			return MoveIterator::Move(Square(_from),Square(_to),
+					PieceTypeByColor(_promotion), MoveIterator::TT_MOVE);
+		}
+		inline int depth() {
+			return int(_depth);
+		}
+		inline int value() {
+			return int(_value);
+		}
+		inline int generation() {
+			return int(_generation);
+		}
+		inline void setValue(int value) {
+			_value=int16_t(value);
+		}
+		inline void clear() {
+			_value=-maxScore;
+			_depth=-80;
+			_flag=uint8_t(NODE_NONE);
+			_from=uint8_t(NONE);
+			_to=uint8_t(NONE);
+			_promotion=uint8_t(EMPTY);
+			_generation=0;
+		}
+
+		HashKey key;
+		int16_t _value;
+		int16_t _depth;
+		uint8_t _flag;
+		uint8_t _from;
+		uint8_t _to;
+		uint8_t _promotion;
+		uint16_t _generation;
+
+	};
+
+	struct Bucket {
+		HashData entry[BUCKET_SIZE];
+	};
 
 	TranspositionTable(std::string id_) :
 		hashSize(DEFAULT_INITIAL_SIZE),
 		id(id_),
 		transTable(0),
-		writes(0) {
+		writes(0),
+		generation(0) {
 		init();
 	}
 
@@ -63,7 +126,8 @@ public:
 		hashSize(initialSize),
 		id(id_),
 		transTable(0),
-		writes(0) {
+		writes(0),
+		generation(0) {
 		init();
 	}
 
@@ -74,8 +138,9 @@ public:
 	const size_t getHashSize() const;
 	void setHashSize(const size_t _hashSize);
 	void clearHash();
-	bool hashPut(const HashKeyType key, const HashValueType value, const int16_t age);
-	bool hashGet(const HashKeyType key, HashValueType& value);
+	bool hashPut(const HashKey key, const int value, const NodeFlag flag,
+			MoveIterator::Move&move, const int depth);
+	bool hashGet(const HashKey key, HashData& hashData);
 	void resizeHash();
 	bool isHashFull();
 	const int hashFull();
@@ -105,69 +170,78 @@ private:
 	size_t _mask;
 	Bucket* transTable;
 	size_t writes;
+	uint16_t generation;
 
 };
 
-template<class HashKeyType, class HashValueType, int _BucketSize>
-inline const size_t TranspositionTable<HashKeyType, HashValueType, _BucketSize>::getHashSize() const {
+inline const size_t TranspositionTable::getHashSize() const {
 	return hashSize;
 }
 
-template<class HashKeyType, class HashValueType, int _BucketSize>
-inline void TranspositionTable<HashKeyType, HashValueType, _BucketSize>::setHashSize(const size_t _hashSize) {
+inline void TranspositionTable::setHashSize(const size_t _hashSize) {
 	hashSize = _hashSize;
 }
 
-template<class HashKeyType, class HashValueType, int _BucketSize>
-inline void TranspositionTable<HashKeyType, HashValueType, _BucketSize>::clearHash() {
+inline void TranspositionTable::clearHash() {
+	generation=0;
 	memset(transTable, 0, _size * sizeof(Bucket));
 }
 
-template<class HashKeyType, class HashValueType, int _BucketSize>
-inline bool TranspositionTable<HashKeyType, HashValueType, _BucketSize>::hashPut(const HashKeyType key, const HashValueType value, const int16_t relevance) {
-	HashEntry *entry;
-	HashEntry *replace;
+inline bool TranspositionTable::hashPut(const HashKey key, const int value, const NodeFlag flag,
+		MoveIterator::Move&move, const int depth) {
+
+	HashData *entry;
+	HashData *replace;
 	entry = transTable[size_t(key) & _mask].entry;
 	replace = entry;
-	for (int x=0;x<_BucketSize;x++,entry++) {
+	for (int x=0;x<BUCKET_SIZE;x++,entry++) {
 		if (!entry->key || entry->key==key) {
+			if (move.none()) {
+				move=entry->move();
+			}
 			replace=entry;
 			break;
-		}
-		if (x==0) {
+		} else if (x==0) {
 			continue;
 		}
-		if (replace->relevance>=entry->relevance) {
+		const bool b1 = entry->_generation==generation;
+		const bool b2 = replace->_generation==generation;
+		const bool b3 = replace->_depth>entry->_depth;
+
+		if ((!b1 && b2) || (!(b1 ^ b2) && b3)) {
 			replace=entry;
 		}
+
 	}
-	replace->key = key;
-	replace->value = value;
-	replace->relevance = relevance;
+	replace->update(key,value,depth,flag,move,generation);
 	writes++;
 	return true;
 }
 
-template<class HashKeyType, class HashValueType, int _BucketSize>
-inline bool TranspositionTable<HashKeyType, HashValueType, _BucketSize>::hashGet(const HashKeyType key, HashValueType& value) {
-
-	HashEntry *entry;
+inline bool TranspositionTable::hashGet(const HashKey key, HashData& hashData) {
+	HashData *entry;
 	entry = transTable[size_t(key) & _mask].entry;
-	for (int x=0;x<_BucketSize;x++,entry++) {
+	for (int x=0;x<BUCKET_SIZE;x++,entry++) {
 		if (entry->key==key) {
-			value = entry->value;
+			hashData.key=entry->key;
+			hashData._value= entry->_value;
+			hashData._depth=entry->_depth;
+			hashData._flag=entry->_flag;
+			hashData._from=entry->_from;
+			hashData._to=entry->_to;
+			hashData._promotion=entry->_promotion;
+			hashData._generation=entry->_generation;
 			return true;
 		}
 	}
-
 	return false;
 }
 
-template<class HashKeyType, class HashValueType, int _BucketSize>
-inline void TranspositionTable<HashKeyType, HashValueType, _BucketSize>::resizeHash() {
+inline void TranspositionTable::resizeHash() {
 	writes=0;
 	_size=0;
 	_mask=0;
+	generation=0;
 	if (transTable) {
 		delete [] transTable;
 	}
@@ -175,24 +249,21 @@ inline void TranspositionTable<HashKeyType, HashValueType, _BucketSize>::resizeH
 
 }
 
-template<class HashKeyType, class HashValueType, int _BucketSize>
-inline bool TranspositionTable<HashKeyType, HashValueType, _BucketSize>::isHashFull() {
+inline bool TranspositionTable::isHashFull() {
 	return false;
 }
 
-template<class HashKeyType, class HashValueType, int _BucketSize>
-inline const int TranspositionTable<HashKeyType, HashValueType, _BucketSize>::hashFull() {
+inline const int TranspositionTable::hashFull() {
 	double n = double(_size);
 	return int(1000 * (1 - exp(writes * log(1.0 - 1.0/n))));
 }
 
-template<class HashKeyType, class HashValueType, int _BucketSize>
-inline const std::string TranspositionTable<HashKeyType, HashValueType, _BucketSize>::getId() const {
+inline const std::string TranspositionTable::getId() const {
 	return id;
 }
 
-template<class HashKeyType, class HashValueType, int _BucketSize>
-inline void TranspositionTable<HashKeyType, HashValueType, _BucketSize>::newSearch() {
+inline void TranspositionTable::newSearch() {
+	generation=0;
 	writes=0;
 }
 

@@ -40,15 +40,6 @@ const int Evaluator::evaluate(Board& board, const int& alpha, const int& beta) {
 	const PieceColor side = board.getSideToMove();
 	const PieceColor other = board.flipSide(board.getSideToMove());
 
-	const Bitboard pawns = board.getPiecesByType(WHITE_PAWN) |
-			board.getPiecesByType(BLACK_PAWN);
-	if (!pawns) {
-		if (board.getMaterial(WHITE)<=kingValue+bishopValue &&
-				board.getMaterial(BLACK)<=kingValue+bishopValue) {
-			return 0;
-		}
-	}
-
 	int value = board.getMaterial(side) - board.getMaterial(other);
 	value += evalDevelopment(board, side) - evalDevelopment(board, other);
 	value += evalImbalances(board, side) - evalImbalances(board, other);

@@ -298,7 +298,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 	PvLine line = PvLine();
 	const int oldAlpha = alpha;
 	int score = -maxScore;
-	SearchAgent::HashData hashData;
+	TranspositionTable::HashData hashData;
 	MoveIterator::Move hashMove;
 	const Key key = board.getKey();
 	alpha = MAX(-maxScore+ply, alpha);
@@ -390,7 +390,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		if( score >= beta) {
 			updateKillers(board,move,ply);
 			updateHistory(board,move,depth);
-			agent->hashPut(key,score,depth,ply,SearchAgent::LOWER,move);
+			agent->hashPut(key,score,depth,ply,TranspositionTable::LOWER,move);
 			return score;
 		}
 
@@ -410,9 +410,9 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 	}
 
 	if (bestScore>oldAlpha) {
-		agent->hashPut(key,bestScore,depth,ply,SearchAgent::EXACT,bestMove);
+		agent->hashPut(key,bestScore,depth,ply,TranspositionTable::EXACT,bestMove);
 	} else {
-		agent->hashPut(key,bestScore,depth,ply,SearchAgent::UPPER,emptyMove);
+		agent->hashPut(key,bestScore,depth,ply,TranspositionTable::UPPER,emptyMove);
 	}
 
 	return bestScore;
@@ -458,7 +458,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	bool okToPruneWithHash=false;
 	int score = 0;
 	int currentScore = -maxScore;
-	SearchAgent::HashData hashData;
+	TranspositionTable::HashData hashData;
 	MoveIterator::Move hashMove;
 	const Key key = board.getKey();
 
@@ -511,7 +511,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 			if (score >= maxScore-maxSearchPly) {
 				score = beta;
 			}
-			agent->hashPut(key,score,depth,ply,SearchAgent::NM_LOWER,emptyMove);
+			agent->hashPut(key,score,depth,ply,TranspositionTable::NM_LOWER,emptyMove);
 			return score;
 		} else {
 			if (score < -maxScore-maxSearchPly) {
@@ -627,7 +627,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 				updatePv(pv, line, move);
 				updateKillers(board,move,ply);
 				updateHistory(board,move,depth);
-				agent->hashPut(key,bestScore,depth,ply,SearchAgent::LOWER,move);
+				agent->hashPut(key,bestScore,depth,ply,TranspositionTable::LOWER,move);
 				return bestScore;
 			}
 		}
@@ -638,7 +638,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		return isKingAttacked ? -maxScore+ply : 0;
 	}
 
-	agent->hashPut(key,bestScore,depth,ply,SearchAgent::UPPER,emptyMove);
+	agent->hashPut(key,bestScore,depth,ply,TranspositionTable::UPPER,emptyMove);
 
 	return bestScore;
 }
@@ -665,7 +665,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		return evaluator.evaluate(board,alpha,beta);
 	}
 
-	SearchAgent::HashData hashData;
+	TranspositionTable::HashData hashData;
 	MoveIterator::Move hashMove;
 	const Key key = board.getKey();
 	bool okToPruneWithHash=false;
@@ -734,7 +734,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		}
 
 		if( score >= beta ) {
-			agent->hashPut(key,score,depth!=0?-1:0,ply,SearchAgent::LOWER,move);
+			agent->hashPut(key,score,depth!=0?-1:0,ply,TranspositionTable::LOWER,move);
 			return score;
 		}
 
@@ -754,9 +754,9 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 	}
 
 	if (bestScore>oldAlpha) {
-		agent->hashPut(key,bestScore,depth!=0?-1:0,ply,SearchAgent::EXACT,bestMove);
+		agent->hashPut(key,bestScore,depth!=0?-1:0,ply,TranspositionTable::EXACT,bestMove);
 	} else {
-		agent->hashPut(key,bestScore,depth!=0?-1:0,ply,SearchAgent::UPPER,emptyMove);
+		agent->hashPut(key,bestScore,depth!=0?-1:0,ply,TranspositionTable::UPPER,emptyMove);
 	}
 
 	return bestScore;

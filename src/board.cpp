@@ -39,7 +39,7 @@ Board::Board(const Board& board) : currentBoard( Node(board.currentBoard) ) {
 
 }
 
-Board::~Board(){
+Board::~Board() {
 }
 
 // print board for debug
