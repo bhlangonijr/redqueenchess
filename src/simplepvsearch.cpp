@@ -72,7 +72,7 @@ int SimplePVSearch::idSearch(Board& board) {
 	filterLegalMoves(board,rootMoves);
 	rootMoves.clearScore();
 	scoreRootMoves(board,rootMoves);
-	rootMoves.sort();
+	//rootMoves.sort();
 	if (rootMoves.get(0).score > rootMoves.get(1).score + easyMargin ) {
 		easyMove=rootMoves.get(0);
 	}
@@ -226,9 +226,6 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int alpha, int beta
 			score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
 		} else {
 			score = -zwSearch(board, newSi, -alpha, newDepth-reduction, ply+1, &line, true);
-			if (score>alpha && reduction>0) {
-				score = -zwSearch(board, newSi, -alpha, newDepth, ply+1, &line, true);
-			}
 			if (score>alpha) {
 				score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
 			}
@@ -344,14 +341,6 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		}
 		moveCounter++;
 
-		if (move.promotionPiece!=EMPTY) {
-			if (board.getPiecesByType(move.promotionPiece)==ROOK ||
-					board.getPiecesByType(move.promotionPiece)==BISHOP) {
-				board.undoMove(backup);
-				continue; // useless
-			}
-		}
-
 		if (move.type == MoveIterator::NON_CAPTURE) {
 			remainingMoves++;
 		}
@@ -373,9 +362,6 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 			score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
 		} else {
 			score = -zwSearch(board, newSi, -alpha, newDepth-reduction, ply+1, &line, true);
-			if (score>alpha && reduction) {
-				score = -zwSearch(board, newSi, -alpha, newDepth, ply+1, &line, true);
-			}
 			if (score > alpha && score < beta) {
 				score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
 			}
@@ -550,14 +536,6 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 
 		moveCounter++;
 
-		if (move.promotionPiece!=EMPTY) {
-			if (board.getPiecesByType(move.promotionPiece)==ROOK ||
-					board.getPiecesByType(move.promotionPiece)==BISHOP) {
-				board.undoMove(backup);
-				continue; // useless
-			}
-		}
-
 		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
 		const bool passedPawn = isPawnPush(board,move.to);
 		const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to);
@@ -607,12 +585,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		score = -zwSearch(board, newSi, 1-beta, newDepth-reduction, ply+1, &line, true);
 
 		if (score >= beta && reduction>0) {
-			reduction=reduction>2?1:0;
-			score = -zwSearch(board, newSi, 1-beta, newDepth-reduction, ply+1, &line, true);
-			if (score >= beta && reduction>0) {
-				score = -zwSearch(board, newSi, 1-beta, newDepth, ply+1, &line, true);
-			}
-
+			score = -zwSearch(board, newSi, 1-beta, newDepth, ply+1, &line, true);
 		}
 
 		board.undoMove(backup);

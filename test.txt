@@ -54,7 +54,7 @@ go infinite
 position fen 6k1/6p1/8/8/8/8/6K1/8 w - - 0 1
 go infinite
 
-position fen 8/8/8/6k1/1p6/8/6K1/8 w - - 0 1
+position fen 6K1/8/8/6k1/8/8/1p6/8 w - - 0 1
 go infinite
 
 position fen 6k1/6p1/7p/1P1P4/4q3/1r5P/6P1/3R1Q1K w - - 0 1
