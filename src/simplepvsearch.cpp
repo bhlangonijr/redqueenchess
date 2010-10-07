@@ -72,7 +72,7 @@ int SimplePVSearch::idSearch(Board& board) {
 	filterLegalMoves(board,rootMoves);
 	rootMoves.clearScore();
 	scoreRootMoves(board,rootMoves);
-	//rootMoves.sort();
+	rootMoves.sort();
 	if (rootMoves.get(0).score > rootMoves.get(1).score + easyMargin ) {
 		easyMove=rootMoves.get(0);
 	}
