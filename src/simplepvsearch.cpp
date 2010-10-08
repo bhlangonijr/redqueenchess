@@ -673,7 +673,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 
 	while (true)  {
 
-		MoveIterator::Move& move = selectMove(board,moves,isKingAttacked,hashMove);
+		MoveIterator::Move& move = selectMove(board,moves,isKingAttacked,hashMove,depth);
 		if (moves.end()) {
 			break;
 		}
@@ -695,7 +695,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 			continue;
 		}
 
-		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
+		const bool givingCheck = depth==0?board.isAttacked(board.getSideToMove(),KING):false;
 		SearchInfo newSi(givingCheck,move);
 
 		int score = -qSearch(board, newSi, -beta, -alpha, depth-1, ply+1, &line, isPV);

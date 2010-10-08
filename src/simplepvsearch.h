@@ -191,7 +191,7 @@ private:
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves,
 			MoveIterator::Move& ttMove, bool isKingAttacked, int ply);
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves,
-			bool isKingAttacked, MoveIterator::Move& ttMove);
+			bool isKingAttacked, MoveIterator::Move& ttMove, int depth);
 	void scoreMoves(Board& board, MoveIterator& moves);
 	void scoreRootMoves(Board& board, MoveIterator& moves);
 	void filterLegalMoves(Board& board, MoveIterator& moves);
@@ -310,10 +310,10 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 // select a move
 inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves,
-		bool isKingAttacked, MoveIterator::Move& ttMove) {
+		bool isKingAttacked, MoveIterator::Move& ttMove, int depth) {
 
 	if (moves.getStage()==MoveIterator::BEGIN_STAGE) {
-		if (!isKingAttacked) {
+		if (!isKingAttacked || depth>0) {
 			moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
 		} else {
 			moves.setStage(MoveIterator::INIT_EVASION_STAGE);
