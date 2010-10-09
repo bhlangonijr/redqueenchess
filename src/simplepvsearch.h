@@ -188,10 +188,9 @@ private:
 	void uciOutput(MoveIterator::Move& bestMove, MoveIterator::Move& ponderMove);
 	void uciOutput(MoveIterator::Move& move, const int moveCounter);
 	const std::string pvLineToString(const PvLine* pv);
+	template <bool quiescenceMoves>
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves,
-			MoveIterator::Move& ttMove, bool isKingAttacked, int ply);
-	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves,
-			bool isKingAttacked, MoveIterator::Move& ttMove, int depth);
+			MoveIterator::Move& ttMove, bool isKingAttacked, int ply, int depth);
 	void scoreMoves(Board& board, MoveIterator& moves);
 	void scoreRootMoves(Board& board, MoveIterator& moves);
 	void filterLegalMoves(Board& board, MoveIterator& moves);
@@ -213,14 +212,16 @@ private:
 
 };
 // select a move
+template <bool quiescenceMoves>
 inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves,
-		MoveIterator::Move& ttMove, bool isKingAttacked, int ply) {
+		MoveIterator::Move& ttMove, bool isKingAttacked, int ply, int depth) {
 
-	MoveIterator::Move& killer1 = killer[ply][0];
-	MoveIterator::Move& killer2 = killer[ply][1];
+	if (moves.getStage()==MoveIterator::END_STAGE) {
+		return emptyMove;
+	}
 
 	if (moves.getStage()==MoveIterator::BEGIN_STAGE) {
-		if (!isKingAttacked) {
+		if (!isKingAttacked/* || (quiescenceMoves && depth>0)*/) {
 			moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
 		} else {
 			moves.setStage(MoveIterator::INIT_EVASION_STAGE);
@@ -249,7 +250,11 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 	}
 
 	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
-		board.generateCaptures(moves, board.getSideToMove());
+		if (quiescenceMoves) {
+			board.generateQuiesMoves(moves, board.getSideToMove());
+		} else {
+			board.generateCaptures(moves, board.getSideToMove());
+		}
 		scoreMoves(board, moves);
 		moves.setStage(MoveIterator::ON_CAPTURE_STAGE);
 	}
@@ -260,101 +265,59 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			if (move==ttMove) {
 				continue;
 			}
-			if (move.type==MoveIterator::BAD_CAPTURE) {
+			if (!quiescenceMoves && move.type==MoveIterator::BAD_CAPTURE) {
 				moves.prior();
 				break;
 			}
 			return move;
 		}
-		moves.setStage(MoveIterator::KILLER1_STAGE);
-	}
-
-	if (moves.getStage()==MoveIterator::KILLER1_STAGE) {
-		moves.setStage(MoveIterator::KILLER2_STAGE);
-		if (killer1 != ttMove &&
-				!board.isCaptureMove(killer1) &&
-				board.isMoveLegal(killer1)) {
-			return killer1;
-		}
-	}
-
-	if (moves.getStage()==MoveIterator::KILLER2_STAGE) {
-		moves.setStage(MoveIterator::INIT_QUIET_STAGE);
-		if (killer2 != ttMove &&
-				!board.isCaptureMove(killer2) &&
-				board.isMoveLegal(killer2)) {
-			return killer2;
-		}
-	}
-
-	if (moves.getStage()==MoveIterator::INIT_QUIET_STAGE) {
-		board.generateNonCaptures(moves, board.getSideToMove());
-		scoreMoves(board, moves);
-		moves.setStage(MoveIterator::ON_QUIET_STAGE);
-	}
-
-	if (moves.getStage()==MoveIterator::ON_QUIET_STAGE) {
-		while (moves.hasNext()) {
-			MoveIterator::Move& move=moves.selectBest();
-			if (move==ttMove || move==killer1 || move==killer2) {
-				continue;
-			}
-			return move;
-		}
-		moves.setStage(MoveIterator::END_STAGE);
-	}
-
-	return emptyMove;
-
-}
-
-// select a move
-inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves,
-		bool isKingAttacked, MoveIterator::Move& ttMove, int depth) {
-
-	if (moves.getStage()==MoveIterator::BEGIN_STAGE) {
-		if (!isKingAttacked || depth>0) {
-			moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
+		if (quiescenceMoves) {
+			moves.setStage(MoveIterator::END_STAGE);
+			return emptyMove;
 		} else {
-			moves.setStage(MoveIterator::INIT_EVASION_STAGE);
+			moves.setStage(MoveIterator::KILLER1_STAGE);
 		}
-		if (board.isMoveLegal(ttMove)) {
-			return ttMove;
+	}
+
+	if (!quiescenceMoves) {
+
+		MoveIterator::Move& killer1 = killer[ply][0];
+		MoveIterator::Move& killer2 = killer[ply][1];
+
+		if (moves.getStage()==MoveIterator::KILLER1_STAGE) {
+			moves.setStage(MoveIterator::KILLER2_STAGE);
+			if (killer1 != ttMove &&
+					!board.isCaptureMove(killer1) &&
+					board.isMoveLegal(killer1)) {
+				return killer1;
+			}
 		}
 
-	}
-	if (moves.getStage()==MoveIterator::INIT_EVASION_STAGE) {
-		board.generateEvasions(moves, board.getSideToMove());
-		scoreMoves(board, moves);
-		moves.first();
-		moves.setStage(MoveIterator::ON_EVASION_STAGE);
-	}
-	if (moves.getStage()==MoveIterator::ON_EVASION_STAGE) {
-		while (moves.hasNext()) {
-			MoveIterator::Move& move=moves.selectBest();
-			if (move==ttMove) {
-				continue;
+		if (moves.getStage()==MoveIterator::KILLER2_STAGE) {
+			moves.setStage(MoveIterator::INIT_QUIET_STAGE);
+			if (killer2 != ttMove &&
+					!board.isCaptureMove(killer2) &&
+					board.isMoveLegal(killer2)) {
+				return killer2;
 			}
-			return move;
 		}
-		moves.setStage(MoveIterator::END_STAGE);
-		return emptyMove;
-	}
-	if (moves.getStage()==MoveIterator::INIT_CAPTURE_STAGE) {
-		board.generateQuiesMoves(moves, board.getSideToMove());
-		scoreMoves(board, moves);
-		moves.first();
-		moves.setStage(MoveIterator::ON_CAPTURE_STAGE);
-	}
-	if (moves.getStage()==MoveIterator::ON_CAPTURE_STAGE) {
-		while (moves.hasNext()) {
-			MoveIterator::Move& move=moves.selectBest();
-			if (move==ttMove) {
-				continue;
+
+		if (moves.getStage()==MoveIterator::INIT_QUIET_STAGE) {
+			board.generateNonCaptures(moves, board.getSideToMove());
+			scoreMoves(board, moves);
+			moves.setStage(MoveIterator::ON_QUIET_STAGE);
+		}
+
+		if (moves.getStage()==MoveIterator::ON_QUIET_STAGE) {
+			while (moves.hasNext()) {
+				MoveIterator::Move& move=moves.selectBest();
+				if (move==ttMove || move==killer1 || move==killer2) {
+					continue;
+				}
+				return move;
 			}
-			return move;
+			moves.setStage(MoveIterator::END_STAGE);
 		}
-		moves.setStage(MoveIterator::END_STAGE);
 	}
 
 	return emptyMove;
