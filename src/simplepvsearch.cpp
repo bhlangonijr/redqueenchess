@@ -329,7 +329,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 	while (true) {
 
 		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, isKingAttacked, ply);
-		if (moves.end()) {
+		if (move.none()) {
 			break;
 		}
 		MoveBackup backup;
@@ -523,7 +523,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 
 	while (true) {
 		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, isKingAttacked, ply);
-		if (moves.end()) {
+		if (move.none()) {
 			break;
 		}
 		MoveBackup backup;
@@ -675,7 +675,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 	while (true)  {
 
 		MoveIterator::Move& move = selectMove<true>(board, moves, hashMove, isKingAttacked, ply);
-		if (moves.end()) {
+		if (move.none()) {
 			break;
 		}
 		MoveBackup backup;
@@ -695,7 +695,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 			continue;
 		}
 
-		const bool givingCheck = depth>=0?board.isAttacked(board.getSideToMove(),KING):false;
+		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
 
 		SearchInfo newSi(givingCheck,move);
 
