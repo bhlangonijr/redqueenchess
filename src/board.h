@@ -583,14 +583,11 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 		return false;
 	}
 
-	PieceColor color = this->getPieceColorBySquare(move.from);
-
-	if (getPieceType(fromPiece) == KING &&
-			(((color==WHITE && move.from==E1 && (move.to==G1 || move.to==C1)) ||
-					(color==BLACK && move.from==E8 && (move.to==G8 || move.to==C8))))) {
+	if (((fromPiece==WHITE_KING && move.from==E1 && (move.to==G1 || move.to==C1)) ||
+			(fromPiece==BLACK_KING && move.from==E8 && (move.to==G8 || move.to==C8)))) {
 		const CastleRight castleRight =
 				(move.to==C1 || move.to==C8) ? QUEEN_SIDE_CASTLE : KING_SIDE_CASTLE;
-
+		const PieceColor color = getPieceColorBySquare(move.from);
 		return canCastle(color, castleRight);
 	}
 	return isAttackedBy(move.from, move.to);

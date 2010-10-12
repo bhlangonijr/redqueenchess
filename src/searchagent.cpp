@@ -48,6 +48,7 @@ SearchAgent::SearchAgent() :
 							blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), infinite(false) {
 	// creates initial hashtables
 	this->createHash();
+	simpleSearcher.setSearchAgent(this);
 }
 
 // start a new game

@@ -30,7 +30,6 @@
 // root search
 void SimplePVSearch::search(Board& _board) {
 
-	agent = SearchAgent::getInstance();
 	Board board(_board);
 	clearHistory();
 	initRootMovesOrder();
@@ -97,7 +96,7 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		while (true) {
 			score = rootSearch(board, rootSearchInfo, alpha, beta, depth, 0, &pv);
-			if((score <= alpha || score >= beta) &&	!stop(agent->shouldStop())) {
+			if((score <= alpha || score >= beta) &&	!stop()) {
 				alpha=-maxScore;
 				beta=maxScore;
 				continue;
@@ -108,7 +107,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		iterationScore[depth]=score;
 		iterationTime[depth]=getTickCount()-_startTime;
 
-		if (stop(agent->shouldStop()) && depth > 1) {
+		if (stop() && depth > 1) {
 			break;
 		}
 
@@ -236,7 +235,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int alpha, int beta
 		nodes = _nodes-nodes;
 		updateRootMovesScore(nodes);
 
-		if (stop(agent->shouldStop()) && depth>1) {
+		if (stop() && depth>1) {
 			return 0;
 		}
 
@@ -260,7 +259,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int alpha, int beta
 	rootMoves.first();
 
 	if (!moveCounter) {
-		return isKingAttacked ? -maxScore+ply : 0;
+		return isKingAttacked ? -maxScore+ply : drawScore;
 	}
 
 	return alpha;
@@ -270,7 +269,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int alpha, int beta
 // principal variation search
 int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	int depth, int ply, PvLine* pv) {
 
-	if (stop(agent->shouldStop())) {
+	if (stop()) {
 		return 0;
 	}
 
@@ -285,7 +284,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 	_nodes++;
 
 	if	(board.isDraw()) {
-		return 0;
+		return drawScore;
 	}
 
 	if	(ply >= maxSearchPly-1) {
@@ -369,7 +368,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 
 		board.undoMove(backup);
 
-		if (stop(agent->shouldStop())) {
+		if (stop()) {
 			return 0;
 		}
 
@@ -408,7 +407,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 // zero window search - non pv nodes
 int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, int ply, PvLine* pv, const bool allowNullMove) {
 
-	if (stop(agent->shouldStop())) {
+	if (stop()) {
 		return 0;
 	}
 
@@ -423,7 +422,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	_nodes++;
 
 	if	(board.isDraw()) {
-		return 0;
+		return drawScore;
 	}
 
 	if	(ply >= maxSearchPly-1) {
@@ -490,7 +489,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		score = -zwSearch(board, newSi, 1-beta, depth-reduction, ply+1, &line, false);
 		board.undoNullMove(backup);
 
-		if (stop(agent->shouldStop())) {
+		if (stop()) {
 			return 0;
 		}
 		if (score >= beta) {
@@ -590,7 +589,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 
 		board.undoMove(backup);
 
-		if (stop(agent->shouldStop())) {
+		if (stop()) {
 			return 0;
 		}
 
@@ -608,7 +607,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	}
 
 	if (!moveCounter) {
-		return isKingAttacked ? -maxScore+ply : 0;
+		return isKingAttacked ? -maxScore+ply : drawScore;
 	}
 
 	agent->hashPut(key,bestScore,depth,ply,TranspositionTable::UPPER,emptyMove);
@@ -626,12 +625,12 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		maxPlySearched=ply;
 	}
 
-	if (stop(agent->shouldStop())) {
+	if (stop()) {
 		return 0;
 	}
 
 	if	(board.isDraw()) {
-		return 0;
+		return drawScore;
 	}
 
 	if	(ply >= maxSearchPly-1) {
@@ -695,7 +694,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 			continue;
 		}
 
-		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
+		const bool givingCheck = depth>=0?board.isAttacked(board.getSideToMove(),KING):false;
 
 		SearchInfo newSi(givingCheck,move);
 
@@ -703,7 +702,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 
 		board.undoMove(backup);
 
-		if (stop(agent->shouldStop())) {
+		if (stop()) {
 			return 0;
 		}
 
@@ -734,6 +733,12 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 	}
 
 	return bestScore;
+}
+
+const bool SimplePVSearch::stop() {
+
+	return (timeIsUp() || agent->shouldStop());
+
 }
 
 //perft

@@ -155,6 +155,10 @@ public:
 		return _startTime;
 	}
 
+	inline void setSearchAgent(SearchAgent* _agent) {
+		this->agent=_agent;
+	}
+
 private:
 
 	int _depth;
@@ -201,7 +205,7 @@ private:
 	bool isPawnPromoting(const Board& board);
 	bool isPawnOn7thRank(const Board& board, Square& square);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
-	const bool stop(const bool shouldStop);
+	const bool stop();
 	const bool timeIsUp();
 	void clearHistory();
 	void updateHistory(Board& board, MoveIterator::Move& move, int depth);
@@ -448,13 +452,6 @@ inline bool SimplePVSearch::isPawnOn7thRank(const Board& board, Square& square) 
 	}
 	const PieceColor color=board.getPieceColorBySquare(square);
 	return  (squareToBitboard[square] & (color==WHITE?rankBB[RANK_7]:rankBB[RANK_2]));
-}
-
-
-inline const bool SimplePVSearch::stop(const bool shouldStop) {
-
-	return (timeIsUp() || shouldStop);
-
 }
 
 inline const bool SimplePVSearch::timeIsUp() {

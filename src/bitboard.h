@@ -410,6 +410,7 @@ const Bitboard neighborFiles[ALL_SQUARE]={
 
 
 const int maxScore = 20000;
+const int drawScore = 0;
 const int winningScore = 2000;
 const int maxPieces=32;
 
