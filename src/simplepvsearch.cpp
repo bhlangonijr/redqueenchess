@@ -206,21 +206,24 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 
 				const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
 				const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to);
-				int reduction=0;
+
 				int extension=0;
 				if (isKingAttacked || pawnOn7thExtension) {
 					extension++;
-				} else if (move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
-						!isPawnPush(board,move.to) && remainingMoves>lateMoveThreshold1 &&
-						depth>lmrDepthThresholdRoot) {
-					reduction++;
 				}
+
 				int newDepth=depth-1+extension;
 				SearchInfo newSi(givingCheck,move);
 
 				if (score>alpha || moveCounter==1) {
 					score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
 				} else {
+					int reduction=0;
+					if (!extension && move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
+							!isPawnPush(board,move.to) && remainingMoves>lateMoveThreshold1 &&
+							depth>lmrDepthThresholdRoot && !extension) {
+						reduction++;
+					}
 					score = -zwSearch(board, newSi, -alpha, newDepth-reduction, ply+1, &line, true);
 					if (score>alpha) {
 						score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
@@ -367,7 +370,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 			score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
 		} else {
 			int reduction=0;
-			if (move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
+			if (!extension && move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
 					!isPawnPush(board,move.to) && remainingMoves>lateMoveThreshold1 &&
 					depth>lmrDepthThreshold1) {
 				reduction++;
@@ -580,7 +583,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		int reduction=0;
 		int extension=0;
 		if (isKingAttacked || pawnOn7thExtension){
-			extension=1;
+			extension++;
 		} else if (move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
 				!passedPawn && !nullMoveMateScore &&
 				remainingMoves>lateMoveThreshold1 && depth>lmrDepthThreshold1) {
