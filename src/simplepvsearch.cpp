@@ -227,10 +227,9 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 					}
 				}
 
+				board.undoMove(backup);
 				nodes = _nodes-nodes;
 				updateRootMovesScore(nodes);
-
-				board.undoMove(backup);
 
 				if(score<beta || stop()) {
 					break;
