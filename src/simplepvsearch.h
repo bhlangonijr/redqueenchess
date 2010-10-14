@@ -180,17 +180,19 @@ private:
 	MoveIterator::Move emptyMove;
 	SearchInfo rootSearchInfo;
 	int maxPlySearched;
+	int aspirationDelta;
 
 	int idSearch(Board& board);
-	int rootSearch(Board& board, SearchInfo& si, int alpha, int beta, int depth, int ply, PvLine* pv);
+	int rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int* betaRoot, int depth, int ply, PvLine* pv);
 	int pvSearch(Board& board,  SearchInfo& si, int alpha, int beta, int depth, int ply, PvLine* pv);
 	int zwSearch(Board& board,  SearchInfo& si, int beta, int depth, int ply, PvLine* pv, const bool allowNullMove);
 	int qSearch(Board& board,  SearchInfo& si,
 			int alpha, int beta, int depth, int ply, PvLine* pv, const bool isPV);
-	void uciOutput(PvLine* pv, MoveIterator::Move& bestMove, const int totalTime,
+	void uciOutput(PvLine* pv, const int score, const int totalTime,
 			const int hashFull, const int depth, const int selDepth, const int alpha, const int beta);
 	void uciOutput(MoveIterator::Move& bestMove, MoveIterator::Move& ponderMove);
 	void uciOutput(MoveIterator::Move& move, const int moveCounter);
+	void uciOutput(const int depth);
 	const std::string pvLineToString(const PvLine* pv);
 	template <bool quiescenceMoves>
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves,
@@ -468,25 +470,26 @@ inline const bool SimplePVSearch::timeIsUp() {
 
 }
 
-inline void SimplePVSearch::uciOutput(PvLine* pv, MoveIterator::Move& bestMove,
-		const int totalTime, const int hashFull, const int depth, const int selDepth,
-		const int alpha, const int beta) {
+inline void SimplePVSearch::uciOutput(PvLine* pv, const int score, const int totalTime,
+		const int hashFull, const int depth, const int selDepth, const int alpha, const int beta) {
 
-	if (isUpdateUci() && !bestMove.none() && !pv->moves[0].none()) {
+	MoveIterator::Move& move = pv->moves[0];
 
-		std::string scoreString = "cp " + StringUtil::toStr(bestMove.score);
+	if (isUpdateUci() && !move.none()) {
 
-		if (abs(bestMove.score) > (maxScore-mateRangeScore)) {
-			if (bestMove.score>0) {
-				scoreString = "mate " +StringUtil::toStr((maxScore - (bestMove.score+1))/2);
+		std::string scoreString = "cp " + StringUtil::toStr(score);
+
+		if (abs(score) > (maxScore-mateRangeScore)) {
+			if (score>0) {
+				scoreString = "mate " +StringUtil::toStr((maxScore - (score+1))/2);
 			} else {
-				scoreString = "mate " +StringUtil::toStr(-(maxScore + bestMove.score)/2);
+				scoreString = "mate " +StringUtil::toStr(-(maxScore + score)/2);
 			}
 		}
 
-		if (bestMove.score >= beta) {
+		if (score >= beta) {
 			scoreString += " lowerbound";
-		} else if (bestMove.score <= alpha) {
+		} else if (score <= alpha) {
 			scoreString += " upperbound";
 		}
 
@@ -525,6 +528,17 @@ inline void SimplePVSearch::uciOutput(MoveIterator::Move& move, const int moveCo
 		}
 	}
 }
+
+inline void SimplePVSearch::uciOutput(const int depth) {
+
+	const long uciOutputSecs=1500;
+	if (isUpdateUci()) {
+		if (_startTime+uciOutputSecs < getTickCount()) {
+			std::cout << "info depth "<< depth << " seldepth " << maxPlySearched << " nodes " << _nodes << std::endl;
+		}
+	}
+}
+
 inline const std::string SimplePVSearch::pvLineToString(const PvLine* pv) {
 	std::string result="";
 	for(int x=0;x<pv->index;x++) {
