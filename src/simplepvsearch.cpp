@@ -193,20 +193,10 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 
 			MoveIterator::Move& move = rootMoves.next();
 			moveCounter++;
-			uciOutput(move, moveCounter);
-			const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
-			const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to);
-			int reduction=0;
-			int extension=0;
-			if (isKingAttacked || pawnOn7thExtension) {
-				extension++;
-			} else if (move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
-					!isPawnPush(board,move.to) && remainingMoves>lateMoveThreshold1 &&
-					depth>lmrDepthThresholdRoot) {
-				reduction++;
+			if (move.type == MoveIterator::NON_CAPTURE) {
+				remainingMoves++;
 			}
-			int newDepth=depth-1+extension;
-			SearchInfo newSi(givingCheck,move);
+			uciOutput(move, moveCounter);
 
 			while (true) {
 
@@ -214,9 +204,19 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 				long nodes=_nodes;
 				board.doMove(move,backup);
 
-				if (move.type == MoveIterator::NON_CAPTURE) {
-					remainingMoves++;
+				const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
+				const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to);
+				int reduction=0;
+				int extension=0;
+				if (isKingAttacked || pawnOn7thExtension) {
+					extension++;
+				} else if (move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
+						!isPawnPush(board,move.to) && remainingMoves>lateMoveThreshold1 &&
+						depth>lmrDepthThresholdRoot) {
+					reduction++;
 				}
+				int newDepth=depth-1+extension;
+				SearchInfo newSi(givingCheck,move);
 
 				if (score>alpha || moveCounter==1) {
 					score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
@@ -238,9 +238,9 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 				move.score=score;
 				bestMove=move;
 				updatePv(pv, line, bestMove);
+				uciOutput(pv, bestMove.score, getTickCount()-_startTime, agent->hashFull(), depth, maxPlySearched, alpha, beta);
 				beta =  MIN(beta+aspirationDelta*(1<<countFH),maxScore);
 				*betaRoot = beta;
-				uciOutput(pv, bestMove.score, getTickCount()-_startTime, agent->hashFull(), depth, maxPlySearched, alpha, beta);
 				countFH++;
 			}
 
