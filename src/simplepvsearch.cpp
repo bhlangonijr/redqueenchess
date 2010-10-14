@@ -185,7 +185,6 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 
 		rootMoves.sortOrderingBy(nodesPerMove);
 		rootMoves.first();
-		rootMoves.clearScore();
 		moveCounter=0;
 		int remainingMoves=0;
 		int score = -maxScore;
@@ -195,6 +194,19 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 			MoveIterator::Move& move = rootMoves.next();
 			moveCounter++;
 			uciOutput(move, moveCounter);
+			const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
+			const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to);
+			int reduction=0;
+			int extension=0;
+			if (isKingAttacked || pawnOn7thExtension) {
+				extension++;
+			} else if (move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
+					!isPawnPush(board,move.to) && remainingMoves>lateMoveThreshold1 &&
+					depth>lmrDepthThresholdRoot) {
+				reduction++;
+			}
+			int newDepth=depth-1+extension;
+			SearchInfo newSi(givingCheck,move);
 
 			while (true) {
 
@@ -205,20 +217,6 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 				if (move.type == MoveIterator::NON_CAPTURE) {
 					remainingMoves++;
 				}
-
-				const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
-				const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to);
-				int reduction=0;
-				int extension=0;
-				if (isKingAttacked || pawnOn7thExtension) {
-					extension++;
-				} else if (move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
-						!isPawnPush(board,move.to) && remainingMoves>lateMoveThreshold1 &&
-						depth>lmrDepthThresholdRoot) {
-					reduction++;
-				}
-				int newDepth=depth-1+extension;
-				SearchInfo newSi(givingCheck,move);
 
 				if (score>alpha || moveCounter==1) {
 					score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
@@ -250,11 +248,12 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 
 			if( score > alpha ) {
 				alpha = score;
-				rootMoves.clearScore();
 				move.score=score;
 				bestMove=move;
 				updatePv(pv, line, bestMove);
 				uciOutput(pv, bestMove.score, getTickCount()-_startTime, agent->hashFull(), depth, maxPlySearched, alpha, beta);
+			} else {
+				move.score=-maxScore;
 			}
 
 		}
@@ -358,21 +357,23 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		}
 		const bool givingCheck = board.isAttacked(board.getSideToMove(),KING);
 		const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to);
-		int reduction=0;
 		int extension=0;
 		if (isKingAttacked || pawnOn7thExtension) {
 			extension++;
-		} else if (move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
-				!isPawnPush(board,move.to) && remainingMoves>lateMoveThreshold1 &&
-				depth>lmrDepthThreshold1) {
-			reduction++;
 		}
+
 		SearchInfo newSi(givingCheck,move);
 		int newDepth=depth-1+extension;
 
 		if (moveCounter==1) {
 			score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
 		} else {
+			int reduction=0;
+			if (move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
+					!isPawnPush(board,move.to) && remainingMoves>lateMoveThreshold1 &&
+					depth>lmrDepthThreshold1) {
+				reduction++;
+			}
 			score = -zwSearch(board, newSi, -alpha, newDepth-reduction, ply+1, &line, true);
 			if (score > alpha && score < beta) {
 				score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
@@ -591,6 +592,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 				reduction+=depth/8;
 			}
 		}
+
 		SearchInfo newSi(givingCheck,move);
 		int newDepth=depth-1+extension;
 
