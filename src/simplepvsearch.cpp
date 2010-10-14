@@ -236,7 +236,6 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 					break;
 				}
 
-				rootMoves.clearScore();
 				move.score=score;
 				bestMove=move;
 				updatePv(pv, line, bestMove);
