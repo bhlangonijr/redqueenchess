@@ -276,14 +276,15 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 		}
 	}
 
-	if (getEnPassant()!=NONE) {
-		setKey(getKey()^zobrist.enPassant[getSquareFile(getEnPassant())]);
-	}
-
 	if (!enPassant && getEnPassant()!=NONE) {
 		setEnPassant(NONE);
 	}
 
+	if (getEnPassant()!=NONE) {
+		setKey(getKey()^zobrist.enPassant[getSquareFile(getEnPassant())]);
+	}
+
+	setKey(getKey()^zobrist.sideToMove[getSideToMove()]);
 	setSideToMove(otherSide);
 	setKey(getKey()^zobrist.sideToMove[otherSide]);
 
@@ -317,8 +318,9 @@ void Board::doNullMove(MoveBackup& backup){
 		setEnPassant(NONE);
 	}
 
-	setSideToMove(otherSide);
 	setKey(getKey()^zobrist.sideToMove[getSideToMove()]);
+	setSideToMove(otherSide);
+	setKey(getKey()^zobrist.sideToMove[otherSide]);
 
 	increaseMoveCounter();
 	updateKeyHistory();

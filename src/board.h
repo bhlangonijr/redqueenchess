@@ -31,7 +31,6 @@
 #include <vector>
 #include <inttypes.h>
 #include <time.h>
-#include <assert.h>
 
 #include "stringutil.h"
 #include "mersenne.h"
@@ -571,6 +570,7 @@ inline const bool Board::isAttacked(const PieceColor color, const Square from) {
 
 	PieceColor other = flipSide(color);
 
+	if (from!=NONE) {
 	return 	(getBishopAttacks(from) & (getPiecesByType(makePiece(other,BISHOP)) |
 			getPiecesByType(makePiece(other,QUEEN)))) ||
 			(getRookAttacks(from) & (getPiecesByType(makePiece(other,ROOK)) |
@@ -578,7 +578,9 @@ inline const bool Board::isAttacked(const PieceColor color, const Square from) {
 					(getKnightAttacks(from) & getPiecesByType(makePiece(other,KNIGHT))) ||
 					(getPawnAttacks(from,color) & getPiecesByType(makePiece(other,PAWN))) ||
 					(getKingAttacks(from) & getPiecesByType(makePiece(other,KING)));
+	}
 
+	return false;
 }
 
 inline const bool Board::isInCheck(const PieceColor color) {
@@ -596,15 +598,12 @@ inline const bool Board::isNotLegal() {
 inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 
 	const PieceTypeByColor fromPiece=getPieceBySquare(move.from);
-
 	if (move.none() || fromPiece==EMPTY) {
 		return false;
 	}
-
 	if (this->getPieceColorBySquare(move.from) == this->getPieceColorBySquare(move.to)) {
 		return false;
 	}
-
 	if (((fromPiece==WHITE_KING && move.from==E1 && (move.to==G1 || move.to==C1)) ||
 			(fromPiece==BLACK_KING && move.from==E8 && (move.to==G8 || move.to==C8)))) {
 		const CastleRight castleRight =
@@ -613,7 +612,6 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 		return canCastle(color, castleRight);
 	}
 	return isAttackedBy(move.from, move.to);
-
 }
 
 // Get attacks from a given square
