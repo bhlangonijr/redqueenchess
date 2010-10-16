@@ -278,6 +278,7 @@ public:
 	const File getSquareFile(const Square square) const;
 	const bool isAttacked(const PieceColor color, const PieceType type);
 	const bool isAttacked(const PieceColor color, const Square from);
+	const bool isInCheck(const PieceColor color);
 	const bool isNotLegal();
 	const bool isMoveLegal(MoveIterator::Move& move);
 	const bool isAttackedBy(const Square from, const Square to);
@@ -448,7 +449,7 @@ inline bool Board::canCastle(const PieceColor color, const CastleRight castleRig
 		return false;
 	}
 
-	if (isAttacked(color,KING)) {
+	if (isInCheck(color)) {
 		return false;
 	}
 
@@ -567,7 +568,7 @@ inline const bool Board::isAttacked(const PieceColor color, const PieceType type
 
 
 inline const bool Board::isAttacked(const PieceColor color, const Square from) {
-
+	assert(from!=NONE && color != COLOR_NONE);
 	PieceColor other = flipSide(color);
 
 	return 	(getBishopAttacks(from) & (getPiecesByType(makePiece(other,BISHOP)) |
@@ -580,10 +581,14 @@ inline const bool Board::isAttacked(const PieceColor color, const Square from) {
 
 }
 
+inline const bool Board::isInCheck(const PieceColor color) {
+	return isAttacked(color, getKingSquare(color));
+}
+
 // verify board legality
 inline const bool Board::isNotLegal() {
 	const PieceColor color = flipSide(getSideToMove());
-	return isAttacked(color,currentBoard.kingSquare[color]);
+	return isInCheck(color);
 
 }
 
