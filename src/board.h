@@ -77,8 +77,8 @@ const int maxGamePhase = 32;
 // game phase
 enum GamePhase {
 	OPENING=		 0,
-	MIDDLEGAME=		 5,
-	ENDGAME=		 26
+			MIDDLEGAME=		 5,
+			ENDGAME=		 26
 };
 
 //start FEN position
@@ -143,7 +143,9 @@ struct Node {
 		castleRight[BLACK]=node.castleRight[BLACK];
 		castleDone[WHITE]=node.castleDone[WHITE];
 		castleDone[BLACK]=node.castleDone[BLACK];
-
+		kingSquare[WHITE]=node.kingSquare[WHITE];
+		kingSquare[BLACK]=node.kingSquare[BLACK];
+		kingSquare[COLOR_NONE]=node.kingSquare[COLOR_NONE];
 	}
 
 	Key key;
@@ -181,6 +183,7 @@ struct Node {
 	int moveCounter;
 	int halfMoveCounter;
 	GamePhase gamePhase;
+	Square kingSquare[ALL_PIECE_COLOR];
 
 	// clear structure node
 	void clear()
@@ -213,6 +216,9 @@ struct Node {
 		castleDone[BLACK]=false;
 		enPassant=NONE;
 		sideToMove=COLOR_NONE;
+		kingSquare[WHITE]=NONE;
+		kingSquare[BLACK]=NONE;
+		kingSquare[COLOR_NONE]=NONE;
 
 	}
 
@@ -339,6 +345,8 @@ public:
 	const GamePhase getGamePhase();
 	void setGamePhase(const GamePhase phase);
 
+	Square getKingSquare(const PieceColor color);
+
 	const long getTickCount() {
 		return ((clock() * 1000) / CLOCKS_PER_SEC);
 	}
@@ -348,8 +356,8 @@ private:
 
 	Node& getBoard();
 	void clearBoard();
-	bool putPiece(const PieceTypeByColor piece, const Square square);
-	bool removePiece(const PieceTypeByColor piece, const Square square);
+	void putPiece(PieceTypeByColor piece, const Square square);
+	void removePiece(const PieceTypeByColor piece, const Square square);
 
 	Node currentBoard;
 	static NodeZobrist nodeZobrist;
@@ -363,24 +371,33 @@ inline void Board::clearBoard() {
 	currentBoard.clear();
 }
 // put a piece in the board and store piece info
-inline bool Board::putPiece(const PieceTypeByColor piece, const Square square) {
+inline void Board::putPiece(const PieceTypeByColor piece, const Square square) {
+	const PieceColor color = pieceColor[piece];
 	currentBoard.piece.array[piece] |= squareToBitboard[square];
-	currentBoard.pieceColor[pieceColor[piece]] |= squareToBitboard[square];
+	currentBoard.pieceColor[color] |= squareToBitboard[square];
 	currentBoard.square[square] = piece;
 	currentBoard.pieceCount[piece]++;
-	currentBoard.fullMaterial[pieceColor[piece]]+=defaultMaterialValues[piece];
-	currentBoard.pieceColorCount[pieceColor[piece]]++;
-	return true;
+	currentBoard.fullMaterial[color]+=defaultMaterialValues[piece];
+	currentBoard.pieceColorCount[color]++;
+
+	if (pieceType[piece]==KING) {
+		currentBoard.kingSquare[color]=square;
+	}
 }
 // remove a piece from the board and erase piece info
-inline bool Board::removePiece(const PieceTypeByColor piece, const Square square) {
+inline void Board::removePiece(const PieceTypeByColor piece, const Square square) {
+	const PieceColor color = pieceColor[piece];
 	currentBoard.piece.array[piece] ^= squareToBitboard[square];
-	currentBoard.pieceColor[pieceColor[piece]] ^= squareToBitboard[square];
+	currentBoard.pieceColor[color] ^= squareToBitboard[square];
 	currentBoard.square[square] = EMPTY;
 	currentBoard.pieceCount[piece]--;
-	currentBoard.fullMaterial[pieceColor[piece]]-=defaultMaterialValues[piece];
-	currentBoard.pieceColorCount[pieceColor[piece]]--;
-	return true;
+	currentBoard.fullMaterial[color]-=defaultMaterialValues[piece];
+	currentBoard.pieceColorCount[color]--;
+
+	if (pieceType[piece]==KING) {
+		currentBoard.kingSquare[color]=NONE;
+	}
+
 }
 
 inline const PieceTypeByColor Board::encodePieceChar(char piece) {
@@ -566,7 +583,7 @@ inline const bool Board::isAttacked(const PieceColor color, const Square from) {
 // verify board legality
 inline const bool Board::isNotLegal() {
 	const PieceColor color = flipSide(getSideToMove());
-	return isAttacked(color,KING);
+	return isAttacked(color,currentBoard.kingSquare[color]);
 
 }
 
@@ -606,17 +623,17 @@ inline const bool Board::isAttackedBy(const Square from, const Square to) {
 		if (getPawnCaptures(from) & attacked) {
 			return true;
 		}
-		attacks = this->getPawnMoves(from);
+		attacks = getPawnMoves(from);
 	} else if (pieceType==KNIGHT) {
-		attacks = this->getKnightAttacks(from);
+		attacks = getKnightAttacks(from);
 	} else if (pieceType==BISHOP) {
-		attacks = this->getBishopAttacks(from);
+		attacks = getBishopAttacks(from);
 	} else if (pieceType==ROOK) {
-		attacks = this->getRookAttacks(from);
+		attacks = getRookAttacks(from);
 	} else if (pieceType==QUEEN) {
-		attacks = this->getQueenAttacks(from);
+		attacks = getQueenAttacks(from);
 	} else if (pieceType==KING) {
-		attacks = this->getKingAttacks(from);
+		attacks = getKingAttacks(from);
 	}
 
 	return attacks & attacked;
@@ -627,18 +644,18 @@ inline const bool Board::isAttackedBy(const Square from, const Square to) {
 inline const bool Board::isDraw() {
 
 	for (int x=4;x<=getHalfMoveCounter();x+=2) {
-		if (currentBoard.keyHistory[getMoveCounter()-x]==this->getKey()) {
+		if (currentBoard.keyHistory[getMoveCounter()-x]==getKey()) {
 			return true;
 		}
 	}
 
 	const Bitboard pawns = this->getPiecesByType(WHITE_PAWN) |
-			this->getPiecesByType(BLACK_PAWN);
+			getPiecesByType(BLACK_PAWN);
 	if (!pawns) {
-		if (this->getPiecesByType(WHITE_KING) &&
-				this->getPiecesByType(BLACK_KING) &&
-				this->getMaterial(WHITE)<=kingValue+bishopValue &&
-				this->getMaterial(BLACK)<=kingValue+bishopValue) {
+		if (getPiecesByType(WHITE_KING) &&
+				getPiecesByType(BLACK_KING) &&
+				getMaterial(WHITE)<=kingValue+bishopValue &&
+				getMaterial(BLACK)<=kingValue+bishopValue) {
 			return true;
 		}
 	}
@@ -886,8 +903,7 @@ inline void Board::generateEvasions(MoveIterator& moves, const PieceColor side) 
 
 	const PieceColor otherSide = flipSide(side);
 	const Bitboard empty = getEmptySquares();
-	const Bitboard kingBB = getPiecesByType(makePiece(side,KING));
-	const Square kingSquare = bitboardToSquare(kingBB);
+	const Square kingSquare = getKingSquare(side);
 	const Bitboard otherPieces = getPiecesByColor(otherSide);
 
 	const Bitboard bishop = getPiecesByType(makePiece(otherSide,BISHOP));
@@ -1123,18 +1139,16 @@ inline void Board::generateQueenMoves(MoveIterator& moves, const PieceColor side
 // generate queen moves
 inline void Board::generateKingMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
 
-	Bitboard pieces = getPiecesByType(makePiece(side,KING));
 	Bitboard attacks = EMPTY_BB;
-	Square from = extractLSB(pieces);
+	Square from = getKingSquare(side);
 
-	while ( from!=NONE ) {
+	if ( from!=NONE ) {
 		attacks = getKingAttacks(from) & mask ;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
 			moves.add(from,target,EMPTY);
 			target = extractLSB(attacks);
 		}
-		from = extractLSB(pieces);
 	}
 
 }
@@ -1203,6 +1217,10 @@ inline const GamePhase Board::getGamePhase() {
 // set game phase
 inline void Board::setGamePhase(const GamePhase phase) {
 	currentBoard.gamePhase=phase;
+}
+
+inline Square Board::getKingSquare(const PieceColor color) {
+	return currentBoard.kingSquare[color];
 }
 
 #endif /* BOARD_H_ */

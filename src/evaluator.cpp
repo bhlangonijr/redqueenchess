@@ -111,8 +111,8 @@ const int Evaluator::evalPieces(Board& board, PieceColor color) {
 // mobility eval function
 const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingThreat) {
 
-	const Bitboard otherKingBB = board.getPiecesByType(board.makePiece(board.flipSide(color),KING));
-	const Square otherKingSq = bitboardToSquare(otherKingBB);
+	const PieceColor other = board.flipSide(color);
+	const Square otherKingSq = board.getKingSquare(other);
 	const Bitboard otherKingSquareBB = adjacentSquares[otherKingSq];
 	const Bitboard knights = board.getPiecesByType(board.makePiece(color,KNIGHT));
 	const Bitboard bishops = board.getPiecesByType(board.makePiece(color,BISHOP));
