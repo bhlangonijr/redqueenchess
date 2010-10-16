@@ -356,7 +356,7 @@ private:
 
 	Node& getBoard();
 	void clearBoard();
-	void putPiece(PieceTypeByColor piece, const Square square);
+	void putPiece(const PieceTypeByColor piece, const Square square);
 	void removePiece(const PieceTypeByColor piece, const Square square);
 
 	Node currentBoard;
