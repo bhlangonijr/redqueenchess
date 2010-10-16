@@ -568,7 +568,7 @@ inline const bool Board::isAttacked(const PieceColor color, const PieceType type
 
 
 inline const bool Board::isAttacked(const PieceColor color, const Square from) {
-	assert(from!=NONE && color != COLOR_NONE);
+
 	PieceColor other = flipSide(color);
 
 	return 	(getBishopAttacks(from) & (getPiecesByType(makePiece(other,BISHOP)) |
