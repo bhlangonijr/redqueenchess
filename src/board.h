@@ -601,7 +601,8 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 	if (move.none() || fromPiece==EMPTY) {
 		return false;
 	}
-	if (this->getPieceColorBySquare(move.from) == this->getPieceColorBySquare(move.to)) {
+	if (this->getPieceColorBySquare(move.from) == this->getPieceColorBySquare(move.to) ||
+			this->getPieceColorBySquare(move.from) != getSideToMove()) {
 		return false;
 	}
 	if (((fromPiece==WHITE_KING && move.from==E1 && (move.to==G1 || move.to==C1)) ||

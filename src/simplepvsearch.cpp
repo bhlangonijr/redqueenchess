@@ -234,7 +234,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 				nodes = _nodes-nodes;
 				updateRootMovesScore(nodes);
 
-				if(score<beta || stop()) {
+				if(score<beta || (stop() && ply)) {
 					break;
 				}
 
@@ -259,7 +259,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 
 		}
 		uciOutput(depth);
-		if (*alphaRoot!=alpha || stop()) {
+		if (*alphaRoot!=alpha || (stop() && ply)) {
 			break;
 		}
 
@@ -351,6 +351,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 			board.undoMove(backup);
 			continue; // not legal
 		}
+
 		moveCounter++;
 
 		if (move.type == MoveIterator::NON_CAPTURE) {
