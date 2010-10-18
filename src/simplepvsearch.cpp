@@ -221,7 +221,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 					int reduction=0;
 					if (!extension && move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
 							!isPawnPush(board,move.to) && remainingMoves>lateMoveThreshold1 &&
-							depth>lmrDepthThresholdRoot && !extension) {
+							depth>lmrDepthThresholdRoot) {
 						reduction++;
 					}
 					score = -zwSearch(board, newSi, -alpha, newDepth-reduction, ply+1, &line, true);
@@ -601,7 +601,14 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		score = -zwSearch(board, newSi, 1-beta, newDepth-reduction, ply+1, &line, true);
 
 		if (score >= beta && reduction>0) {
-			score = -zwSearch(board, newSi, 1-beta, newDepth, ply+1, &line, true);
+			bool research=true;
+			if (reduction>2) {
+				score = -zwSearch(board, newSi, 1-beta, newDepth-1, ply+1, &line, true);
+				research=(score >= beta);
+			}
+			if (research) {
+				score = -zwSearch(board, newSi, 1-beta, newDepth, ply+1, &line, true);
+			}
 		}
 
 		board.undoMove(backup);
