@@ -36,12 +36,12 @@ class MoveIterator {
 public:
 
 	enum MoveType {
-		UNKNOW, TT_MOVE, GOOD_CAPTURE, PROMO_CAPTURE, PROMO_NONCAPTURE,
-		KILLER1, KILLER2, NON_CAPTURE, BAD_CAPTURE, CASTLE
+		UNKNOW=0, TT_MOVE, GOOD_CAPTURE, PROMO_CAPTURE, PROMO_NONCAPTURE,
+		KILLER1, KILLER2, NON_CAPTURE, BAD_CAPTURE, CASTLE, UNKNOW_CAPTURE
 	};
 
 	enum IteratorStage {
-		BEGIN_STAGE, INIT_EVASION_STAGE, ON_EVASION_STAGE, TT_STAGE, INIT_CAPTURE_STAGE, ON_CAPTURE_STAGE,
+		BEGIN_STAGE=0, INIT_EVASION_STAGE, ON_EVASION_STAGE, TT_STAGE, INIT_CAPTURE_STAGE, ON_CAPTURE_STAGE,
 		KILLER1_STAGE, KILLER2_STAGE, INIT_QUIET_STAGE, ON_QUIET_STAGE, END_STAGE
 	};
 
@@ -269,7 +269,7 @@ inline MoveIterator::Move& MoveIterator::selectBest() {
 			}
 		}
 		if (idxMax != _data.idx) {
-			Move tmp=_data.list[_data.idx];
+			const Move tmp=_data.list[_data.idx];
 			_data.list[_data.idx]=_data.list[idxMax];
 			_data.list[idxMax]=tmp;
 		}

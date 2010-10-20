@@ -66,7 +66,7 @@ const int lateMoveThreshold1=2;
 const int lmrDepthThreshold2=7;
 const int lateMoveThreshold2=3;
 
-const int scoreTable[11]={0,8000,6000,9500,9000,4500,4000,100,-900,5000};
+const int scoreTable[11]={0,80000,60000,95000,90000,45000,40000,1000,-12000,50050,50000};
 
 class SearchAgent;
 
@@ -271,9 +271,24 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			if (move==ttMove) {
 				continue;
 			}
-			if (!quiescenceMoves && move.type==MoveIterator::BAD_CAPTURE) {
-				moves.prior();
-				break;
+			if (move.type==MoveIterator::UNKNOW_CAPTURE) {
+				move.score=evaluator.see(board,move);
+				if (move.score >= 0) {
+					move.type=MoveIterator::GOOD_CAPTURE;
+					move.score+=scoreTable[move.type];
+					return move;
+				} else {
+					move.type=MoveIterator::BAD_CAPTURE;
+					move.score+=scoreTable[move.type];
+					moves.prior();
+					continue;
+				}
+			}
+			if (!quiescenceMoves) {
+				if (move.type==MoveIterator::BAD_CAPTURE) {
+					moves.prior();
+					break;
+				}
 			}
 			return move;
 		}
@@ -338,11 +353,20 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 	while (moves.hasNext()) {
 		MoveIterator::Move& move = moves.next();
 		const PieceTypeByColor pieceFrom = board.getPieceBySquare(move.from);
+		const PieceTypeByColor pieceTo = board.getPieceBySquare(move.to);
 		if (move.type==MoveIterator::UNKNOW) {
-			if (board.isCaptureMove(move)) {
-				move.score = evaluator.see(board,move);
-				move.type = move.score >= 0 ?
-						MoveIterator::GOOD_CAPTURE : MoveIterator::BAD_CAPTURE;
+			move.score=-maxScore;
+			if (pieceTo!=EMPTY) {
+				move.score=(defaultMaterialValues[pieceTo]-defaultMaterialValues[pieceFrom]);
+			} else if (board.getPieceType(pieceFrom)==PAWN){
+				if (board.getEnPassant()!=NONE &&
+						board.getSquareFile(move.from)!=board.getSquareFile(move.to)) {
+					move.score=0;
+				}
+			}
+			if (move.score!=-maxScore) {
+				move.type = (move.score >= 0 ?
+						MoveIterator::GOOD_CAPTURE : MoveIterator::UNKNOW_CAPTURE);
 			} else {
 				move.type=MoveIterator::NON_CAPTURE;
 				const int hist = history[pieceFrom][move.to];
@@ -375,8 +399,8 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 		move.score = -qSearch(board,newSi,-maxScore,maxScore,0,0,&pv,true);
 		if (move.type==MoveIterator::UNKNOW) {
 			if (isCapture) {
-				move.type = value >= 0 ?
-						MoveIterator::GOOD_CAPTURE : MoveIterator::BAD_CAPTURE;
+				move.type = (value >= 0 ?
+						MoveIterator::GOOD_CAPTURE : MoveIterator::BAD_CAPTURE);
 			} else {
 				move.type=MoveIterator::NON_CAPTURE;
 
@@ -413,7 +437,7 @@ inline void SimplePVSearch::filterLegalMoves(Board& board, MoveIterator& moves) 
 // is mate score?
 inline bool SimplePVSearch::isMateScore(const int score) {
 	return score < -maxScore+maxSearchPly ||
-			score > maxScore-maxSearchPly;
+	score > maxScore-maxSearchPly;
 }
 
 // remains pawns & kings only?
