@@ -997,9 +997,9 @@ inline void Board::generatePawnCaptures(MoveIterator& moves, const PieceColor si
 		while ( target!=NONE ) {
 			if (promotion) {
 				moves.add(from,target,makePiece(side,QUEEN), MoveIterator::PROMO_CAPTURE);
+				moves.add(from,target,makePiece(side,KNIGHT), MoveIterator::PROMO_CAPTURE);
 				moves.add(from,target,makePiece(side,ROOK), MoveIterator::PROMO_CAPTURE);
 				moves.add(from,target,makePiece(side,BISHOP), MoveIterator::PROMO_CAPTURE);
-				moves.add(from,target,makePiece(side,KNIGHT), MoveIterator::PROMO_CAPTURE);
 			} else {
 				moves.add(from,target,EMPTY);
 			}
@@ -1027,9 +1027,9 @@ inline void Board::generatePawnMoves(MoveIterator& moves, const PieceColor side,
 		while ( target!=NONE ) {
 			if (promotion) {
 				moves.add(from,target,makePiece(side,QUEEN),MoveIterator::PROMO_NONCAPTURE);
+				moves.add(from,target,makePiece(side,KNIGHT),MoveIterator::PROMO_NONCAPTURE);
 				moves.add(from,target,makePiece(side,ROOK),MoveIterator::PROMO_NONCAPTURE);
 				moves.add(from,target,makePiece(side,BISHOP),MoveIterator::PROMO_NONCAPTURE);
-				moves.add(from,target,makePiece(side,KNIGHT),MoveIterator::PROMO_NONCAPTURE);
 			} else {
 				moves.add(from,target,EMPTY,MoveIterator::NON_CAPTURE);
 			}
@@ -1054,9 +1054,9 @@ inline void Board::generatePromotion(MoveIterator& moves, const PieceColor side,
 
 		while ( target!=NONE ) {
 			moves.add(from,target,makePiece(side,QUEEN),MoveIterator::PROMO_NONCAPTURE);
+			moves.add(from,target,makePiece(side,KNIGHT),MoveIterator::PROMO_NONCAPTURE);
 			moves.add(from,target,makePiece(side,ROOK),MoveIterator::PROMO_NONCAPTURE);
 			moves.add(from,target,makePiece(side,BISHOP),MoveIterator::PROMO_NONCAPTURE);
-			moves.add(from,target,makePiece(side,KNIGHT),MoveIterator::PROMO_NONCAPTURE);
 			target = extractLSB(attacks);
 		}
 		from = extractLSB(pieces);
