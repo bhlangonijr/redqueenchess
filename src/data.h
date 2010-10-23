@@ -95,7 +95,7 @@ const Bitboard passedMask[ALL_PIECE_COLOR][ALL_SQUARE]= {
 };
 
 // opening and middlegame piece square table
-const int defaultPieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
+static const int defaultPieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 
 		{ // white pawn
 				0,  0,  0,  0,  0,  0,  0,  0,
@@ -231,7 +231,7 @@ const int defaultPieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 };
 
 // end game piece square table
-const int endGamePieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
+static const int endGamePieceSquareTable[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE]={
 
 		{ // white pawn
 				0,  0,  0,  0,  0,  0,  0,  0,

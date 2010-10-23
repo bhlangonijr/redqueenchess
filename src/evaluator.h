@@ -52,25 +52,9 @@ public:
 	const int seeSign(Board& board, MoveIterator::Move& move);
 	const int see(Board& board, MoveIterator::Move& move);
 
-	inline const int getPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase) {
-		return pst[phase][piece][square];
-	}
-
 private:
 
-	inline const int interpolate(const int first, const int second, const int position) {
-		return (first*position)/maxGamePhase+(second*(maxGamePhase-position))/maxGamePhase;
-	}
-
-	inline const int calcPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase) {
-		const int egValue = endGamePieceSquareTable[piece][square];
-		const int mgValue = defaultPieceSquareTable[piece][square];
-		return interpolate(egValue,mgValue,phase);
-	}
-
-	void initializePst();
 	Bitboard getLeastValuablePiece(Board& board, Bitboard attackers, PieceColor& color, PieceTypeByColor& piece);
-	int pst[maxGamePhase+1][ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 };
 
 

@@ -37,6 +37,7 @@
 #include "bitboard.h"
 #include "moveiterator.h"
 #include "magicmoves.h"
+#include "data.h"
 
 namespace BoardTypes{
 
@@ -69,15 +70,6 @@ const int zobristCastleIndex[ALL_CASTLE_RIGHT][ALL_CASTLE_RIGHT]={
 		{4,5,6,7},
 		{8,9,10,11},
 		{12,13,14,15}
-};
-
-const int maxGamePhase = 32;
-
-// game phase
-enum GamePhase {
-	OPENING=		 0,
-			MIDDLEGAME=		 5,
-			ENDGAME=		 26
 };
 
 //start FEN position
@@ -132,6 +124,10 @@ struct Node {
 		for(register int x=0;x<ALL_PIECE_TYPE_BY_COLOR;x++){
 			pieceCount[x]=node.pieceCount[x];
 		}
+		egPsq[WHITE]=node.egPsq[WHITE];
+		egPsq[BLACK]=node.egPsq[BLACK];
+		mgPsq[WHITE]=node.mgPsq[WHITE];
+		mgPsq[BLACK]=node.mgPsq[BLACK];
 		fullMaterial[WHITE]=node.fullMaterial[WHITE];
 		fullMaterial[BLACK]=node.fullMaterial[BLACK];
 		pieceColorCount[WHITE]=node.pieceColorCount[WHITE];
@@ -178,6 +174,8 @@ struct Node {
 	int pieceCount[ALL_PIECE_TYPE_BY_COLOR];
 	int pieceColorCount[ALL_PIECE_COLOR];
 	int fullMaterial[ALL_PIECE_COLOR];
+	int egPsq[ALL_PIECE_COLOR];
+	int mgPsq[ALL_PIECE_COLOR];
 	Key keyHistory[MAX_GAME_LENGTH];
 	int moveCounter;
 	int halfMoveCounter;
@@ -204,6 +202,10 @@ struct Node {
 
 		fullMaterial[WHITE]=0;
 		fullMaterial[BLACK]=0;
+		egPsq[WHITE]=0;
+		egPsq[BLACK]=0;
+		mgPsq[WHITE]=0;
+		mgPsq[BLACK]=0;
 		pieceColorCount[WHITE]=0;
 		pieceColorCount[BLACK]=0;
 		pieceColor[WHITE]=0ULL;
@@ -293,6 +295,7 @@ public:
 	const int getPieceCountByType(const PieceTypeByColor piece) const;
 	const int getPieceCountByColor(const PieceColor color ) const;
 	const int getMaterial(const PieceColor color) const;
+	const int getPieceSquareValue(const PieceColor color) const;
 
 	void generateCaptures(MoveIterator& moves, const PieceColor side);
 	void generateQuiesMoves(MoveIterator& moves, const PieceColor side);
@@ -327,6 +330,8 @@ public:
 	const Bitboard getKingAttacks(const Square square, const Bitboard occupied);
 
 	static void initializeZobrist();
+	static void initializePst();
+	const GamePhase predictGamePhase();
 	const int getZobristCastleIndex();
 	const Key getKey() const;
 	void setKey(Key key);
@@ -351,6 +356,9 @@ public:
 		return ((clock() * 1000) / CLOCKS_PER_SEC);
 	}
 
+	static const int interpolate(const int first, const int second, const int position);
+	const int getPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase);
+	static const int calcPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase);
 
 private:
 
@@ -361,6 +369,7 @@ private:
 
 	Node currentBoard;
 	static NodeZobrist nodeZobrist;
+
 };
 // get the board structure
 inline Node& Board::getBoard() {
@@ -378,6 +387,8 @@ inline void Board::putPiece(const PieceTypeByColor piece, const Square square) {
 	currentBoard.square[square] = piece;
 	currentBoard.pieceCount[piece]++;
 	currentBoard.fullMaterial[color]+=defaultMaterialValues[piece];
+	currentBoard.egPsq[color]+=endGamePieceSquareTable[piece][square];
+	currentBoard.mgPsq[color]+=defaultPieceSquareTable[piece][square];
 	currentBoard.pieceColorCount[color]++;
 
 	if (pieceType[piece]==KING) {
@@ -392,6 +403,8 @@ inline void Board::removePiece(const PieceTypeByColor piece, const Square square
 	currentBoard.square[square] = EMPTY;
 	currentBoard.pieceCount[piece]--;
 	currentBoard.fullMaterial[color]-=defaultMaterialValues[piece];
+	currentBoard.egPsq[color]-=endGamePieceSquareTable[piece][square];
+	currentBoard.mgPsq[color]-=defaultPieceSquareTable[piece][square];
 	currentBoard.pieceColorCount[color]--;
 
 	if (pieceType[piece]==KING) {
@@ -571,13 +584,13 @@ inline const bool Board::isAttacked(const PieceColor color, const Square from) {
 	PieceColor other = flipSide(color);
 
 	if (from!=NONE) {
-	return 	(getBishopAttacks(from) & (getPiecesByType(makePiece(other,BISHOP)) |
-			getPiecesByType(makePiece(other,QUEEN)))) ||
-			(getRookAttacks(from) & (getPiecesByType(makePiece(other,ROOK)) |
-					getPiecesByType(makePiece(other,QUEEN)))) ||
-					(getKnightAttacks(from) & getPiecesByType(makePiece(other,KNIGHT))) ||
-					(getPawnAttacks(from,color) & getPiecesByType(makePiece(other,PAWN))) ||
-					(getKingAttacks(from) & getPiecesByType(makePiece(other,KING)));
+		return 	(getBishopAttacks(from) & (getPiecesByType(makePiece(other,BISHOP)) |
+				getPiecesByType(makePiece(other,QUEEN)))) ||
+				(getRookAttacks(from) & (getPiecesByType(makePiece(other,ROOK)) |
+						getPiecesByType(makePiece(other,QUEEN)))) ||
+						(getKnightAttacks(from) & getPiecesByType(makePiece(other,KNIGHT))) ||
+						(getPawnAttacks(from,color) & getPiecesByType(makePiece(other,PAWN))) ||
+						(getKingAttacks(from) & getPiecesByType(makePiece(other,KING)));
 	}
 
 	return false;
@@ -725,6 +738,11 @@ inline const int Board::getPieceCountByColor(const PieceColor color) const {
 // get full material by side
 inline const int Board::getMaterial(const PieceColor color) const {
 	return currentBoard.fullMaterial[color];
+}
+
+inline const int Board::getPieceSquareValue(const PieceColor color) const {
+	return ((currentBoard.egPsq[color]*currentBoard.gamePhase)/maxGamePhase)+
+			((currentBoard.mgPsq[color]*(maxGamePhase-currentBoard.gamePhase))/maxGamePhase);
 }
 
 // overload method - gets current occupied squares in the board
@@ -1220,7 +1238,7 @@ inline const GamePhase Board::getGamePhase() {
 
 // set game phase
 inline void Board::setGamePhase(const GamePhase phase) {
-	currentBoard.gamePhase=phase;
+	currentBoard.gamePhase=GamePhase(MAX(0,MIN(maxGamePhase,phase)));
 }
 
 inline Square Board::getKingSquare(const PieceColor color) {

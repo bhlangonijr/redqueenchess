@@ -51,6 +51,7 @@ int main() {
 	init_mersenne();
 	initializeBitboards();
 	Board::initializeZobrist();
+	Board::initializePst();
 	SearchAgent::getInstance();
 	Uci *uci = Uci::getInstance();
 

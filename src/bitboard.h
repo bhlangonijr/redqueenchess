@@ -408,6 +408,28 @@ const Bitboard neighborFiles[ALL_SQUARE]={
 		NFILE(A8), NFILE(B8), NFILE(C8), NFILE(D8), NFILE(E8), NFILE(F8), NFILE(G8), NFILE(H8)
 };
 
+// piece phase increment values
+enum PiecePhase {
+	PAWN_PHASE_INCREMENT=		0,
+	KNIGHT_PHASE_INCREMENT=		2,
+	BISHOP_PHASE_INCREMENT=		2,
+	ROOT_PHASE_INCREMENT= 		4,
+	QUEEN_PHASE_INCREMENT=		8,
+	KING_PHASE_INCREMENT=		0
+};
+
+//phase increment values
+const int phaseIncrement[ALL_PIECE_TYPE] = {PAWN_PHASE_INCREMENT,KNIGHT_PHASE_INCREMENT,BISHOP_PHASE_INCREMENT,
+		ROOT_PHASE_INCREMENT,QUEEN_PHASE_INCREMENT,KING_PHASE_INCREMENT};
+
+const int maxGamePhase = 32;
+
+// game phase
+enum GamePhase {
+	OPENING=		 2,
+	MIDDLEGAME=		 maxGamePhase/2,
+	ENDGAME=		 maxGamePhase
+};
 
 const int maxScore = 20000;
 const int drawScore = 0;

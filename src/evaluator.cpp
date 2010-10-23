@@ -27,7 +27,7 @@
 #include "evaluator.h"
 
 Evaluator::Evaluator() {
-	initializePst();
+
 }
 
 Evaluator::~Evaluator() {
@@ -41,7 +41,7 @@ const int Evaluator::evaluate(Board& board, const int& alpha, const int& beta) {
 	const PieceColor other = board.flipSide(board.getSideToMove());
 
 	int value = board.getMaterial(side) - board.getMaterial(other);
-	value += evalDevelopment(board, side) - evalDevelopment(board, other);
+	value += board.getPieceSquareValue(side)-board.getPieceSquareValue(other);/*evalDevelopment(board, side) - evalDevelopment(board, other);*/
 	value += evalImbalances(board, side) - evalImbalances(board, other);
 
 	if (value > alpha-lazyEvalMargin && value < beta+lazyEvalMargin) {
@@ -211,7 +211,7 @@ const int Evaluator::evalDevelopment(Board& board, PieceColor color) {
 		Bitboard pieces = board.getPiecesByType(PieceTypeByColor(pieceType));
 		Square from = extractLSB(pieces);
 		while ( from!=NONE ) {
-			bonus += getPieceSquareValue(PieceTypeByColor(pieceType),Square(from),board.getGamePhase());
+			bonus += board.getPieceSquareValue(PieceTypeByColor(pieceType),Square(from),board.getGamePhase());
 			from = extractLSB(pieces);
 		}
 	}
@@ -232,17 +232,4 @@ const int Evaluator::evalImbalances(Board& board, PieceColor color) {
 
 	// TODO implement more imbalances
 	return count;
-}
-
-void Evaluator::initializePst() {
-
-	for (int phase=0; phase<=maxGamePhase; phase++) {
-		for (int piece=0; piece<ALL_PIECE_TYPE_BY_COLOR; piece++) {
-			for (int square=0; square<ALL_SQUARE; square++) {
-				Evaluator::pst[phase][piece][square]=
-						calcPieceSquareValue(PieceTypeByColor(piece),Square(square),GamePhase(phase));
-			}
-		}
-	}
-
 }

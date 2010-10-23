@@ -372,8 +372,8 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 				const int hist = history[pieceFrom][move.to];
 				const GamePhase phase = board.getGamePhase();
 				const int gain =
-						evaluator.getPieceSquareValue(pieceFrom,move.to,phase)-
-						evaluator.getPieceSquareValue(pieceFrom,move.from,phase);
+						board.getPieceSquareValue(pieceFrom,move.to,phase)-
+						board.getPieceSquareValue(pieceFrom,move.from,phase);
 				move.score=hist+gain;
 
 			}

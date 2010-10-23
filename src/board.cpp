@@ -29,6 +29,7 @@
 using namespace BoardTypes;
 
 NodeZobrist zobrist;
+int pst[maxGamePhase+1][ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 
 Board::Board() : currentBoard()
 {
@@ -294,12 +295,19 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 		resetHalfMoveCounter();
 	}
 
+	if (backup.capturedPiece!=EMPTY) {
+		setGamePhase(GamePhase(currentBoard.gamePhase+
+				phaseIncrement[getPieceType(backup.capturedPiece)]));
+	}
+
+	if (backup.hasPromotion) {
+		setGamePhase(GamePhase(currentBoard.gamePhase-
+				phaseIncrement[getPieceType(move.promotionPiece)]));
+	}
+
 	setKey(getKey()^zobrist.sideToMove[getSideToMove()]);
 	setSideToMove(otherSide);
 	setKey(getKey()^zobrist.sideToMove[otherSide]);
-
-	setGamePhase(GamePhase(maxGamePhase-
-			getPieceCountByColor(WHITE)-getPieceCountByColor(BLACK)));
 
 	increaseMoveCounter();
 	updateKeyHistory();
@@ -531,6 +539,7 @@ void Board::loadFromFEN(const std::string startFENMoves) {
 
 	setKey(generateKey());
 	updateKeyHistory();
+	setGamePhase(predictGamePhase());
 
 }
 
@@ -615,6 +624,31 @@ void Board::initializeZobrist() {
 	}
 }
 
+// initialize pst
+void Board::initializePst() {
+	for (int phase=0; phase<=maxGamePhase; phase++) {
+		for (int piece=0; piece<ALL_PIECE_TYPE_BY_COLOR; piece++) {
+			for (int square=0; square<ALL_SQUARE; square++) {
+				pst[phase][piece][square]=
+							calcPieceSquareValue(PieceTypeByColor(piece),Square(square),GamePhase(phase));
+			}
+		}
+	}
+}
+
+const GamePhase Board::predictGamePhase() {
+
+	const int knights = getPieceCountByType(WHITE_KNIGHT)+getPieceCountByType(BLACK_KNIGHT);
+	const int bishops = getPieceCountByType(WHITE_BISHOP)+getPieceCountByType(BLACK_BISHOP);
+	const int rooks = getPieceCountByType(WHITE_ROOK)+getPieceCountByType(BLACK_ROOK);
+	const int queens = getPieceCountByType(WHITE_QUEEN)+getPieceCountByType(BLACK_QUEEN);
+
+	return GamePhase((4-knights)*phaseIncrement[KNIGHT]+
+			(4-bishops)*phaseIncrement[BISHOP]+
+			(4-rooks)*phaseIncrement[ROOK]+
+			(2-queens)*phaseIncrement[QUEEN]);
+}
+
 // get index for zobrist index
 const int Board::getZobristCastleIndex() {
 	return zobristCastleIndex[getCastleRights(WHITE)][getCastleRights(BLACK)];
@@ -650,7 +684,19 @@ const Key Board::generateKey() {
 	return key;
 }
 
+const int Board::getPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase) {
+	return pst[phase][piece][square];
+}
 
+const int Board::interpolate(const int first, const int second, const int position) {
+	return (first*position)/maxGamePhase+(second*(maxGamePhase-position))/maxGamePhase;
+}
+
+const int Board::calcPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase) {
+	const int egValue = endGamePieceSquareTable[piece][square];
+	const int mgValue = defaultPieceSquareTable[piece][square];
+	return interpolate(egValue,mgValue,phase);
+}
 
 
 
