@@ -129,6 +129,7 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	PieceTypeByColor toPiece=this->getPieceBySquare(move.to);
 	PieceColor otherSide = flipSide(getSideToMove());
 	bool enPassant=false;
+	bool reversible=true;
 
 	backup.key=getKey();
 	backup.from=move.from;
@@ -153,12 +154,11 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 		backup.hasCapture=true;
 		backup.capturedPiece=toPiece;
 		backup.capturedSquare=move.to;
-		resetHalfMoveCounter();
+		reversible=false;
 	} else {
 		backup.capturedPiece=EMPTY;
 		backup.capturedSquare=NONE;
 		backup.hasCapture=false;
-		increaseHalfMoveCounter();
 	}
 
 	if (move.promotionPiece==EMPTY) {
@@ -183,6 +183,7 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 					setKey(getKey()^zobrist.pieceSquare[WHITE_ROOK][F1]);
 					backup.hasWhiteKingCastle=true;
 					currentBoard.castleDone[WHITE]=true;
+					reversible=false;
 				} else if (move.to==C1) { // castle queen side
 					removePiece(WHITE_ROOK,A1);
 					putPiece(WHITE_ROOK,D1);
@@ -190,6 +191,7 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 					setKey(getKey()^zobrist.pieceSquare[WHITE_ROOK][D1]);
 					backup.hasWhiteQueenCastle=true;
 					currentBoard.castleDone[WHITE]=true;
+					reversible=false;
 				}
 			}
 			removeCastleRights(WHITE,BOTH_SIDE_CASTLE);
@@ -202,6 +204,7 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 					setKey(getKey()^zobrist.pieceSquare[BLACK_ROOK][F8]);
 					backup.hasBlackKingCastle=true;
 					currentBoard.castleDone[BLACK]=true;
+					reversible=false;
 				} else if (move.to==C8) { // castle queen side
 					removePiece(BLACK_ROOK,A8);
 					putPiece(BLACK_ROOK,D8);
@@ -209,6 +212,7 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 					setKey(getKey()^zobrist.pieceSquare[BLACK_ROOK][D8]);
 					backup.hasBlackQueenCastle=true;
 					currentBoard.castleDone[BLACK]=true;
+					reversible=false;
 				}
 			}
 			removeCastleRights(BLACK,BOTH_SIDE_CASTLE);
@@ -256,7 +260,7 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	}
 
 	if (fromPiece==makePiece(getSideToMove(),PAWN)){
-		resetHalfMoveCounter();
+		reversible=false;
 		if (getEnPassant()!=NONE) {
 			if (getSquareFile(move.from)!=getSquareFile(move.to)&&toPiece==EMPTY) { // en passant
 				removePiece(makePiece(otherSide,PAWN),getEnPassant());
@@ -282,6 +286,12 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 
 	if (getEnPassant()!=NONE) {
 		setKey(getKey()^zobrist.enPassant[getSquareFile(getEnPassant())]);
+	}
+
+	if (reversible) {
+		increaseHalfMoveCounter();
+	} else {
+		resetHalfMoveCounter();
 	}
 
 	setKey(getKey()^zobrist.sideToMove[getSideToMove()]);

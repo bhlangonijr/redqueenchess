@@ -127,9 +127,9 @@ int SimplePVSearch::idSearch(Board& board) {
 		if (!(_searchFixedDepth || _infinite)) {
 
 			if (repetition >= maxScoreRepetition ){
-				if ((abs(iterationScore[depth - 0]) >= -maxScore-maxSearchPly) ||
-						(abs(iterationScore[depth - 1]) >= -maxScore-maxSearchPly) ||
-						iterationScore[depth - 0] == 0) {
+				if ((abs(iterationScore[depth - 0]) >= maxScore-maxSearchPly) ||
+						(abs(iterationScore[depth - 1]) >= maxScore-maxSearchPly) ||
+						iterationScore[depth - 0] == drawScore) {
 					break;
 				}
 			}
