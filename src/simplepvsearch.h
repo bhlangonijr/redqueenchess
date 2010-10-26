@@ -385,7 +385,7 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 }
 
 inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
-
+	PvLine pv = PvLine();
 	moves.bookmark();
 	while (moves.hasNext()) {
 		MoveIterator::Move& move = moves.next();
@@ -395,7 +395,6 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 		board.doMove(move,backup);
 		const bool givingCheck = board.isInCheck(board.getSideToMove());
 		SearchInfo newSi(givingCheck,move);
-		PvLine pv = PvLine();
 		move.score = -qSearch(board,newSi,-maxScore,maxScore,0,0,&pv,true);
 		if (move.type==MoveIterator::UNKNOW) {
 			if (isCapture) {

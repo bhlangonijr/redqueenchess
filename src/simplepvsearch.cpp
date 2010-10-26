@@ -145,14 +145,15 @@ int SimplePVSearch::idSearch(Board& board) {
 			}
 
 			if (depth>7) {
-				if (easyMove==pv.moves[0] && nodesPerMove[0]>=(_nodes*85)/100 &&
+				if (!easyMove.none() && easyMove==bestMove && nodesPerMove[0]>=(_nodes*85)/100 &&
 						iterationTime[depth] > _timeToSearch/10) {
 					break;
 				}
 			}
 
 			if (depth>5) {
-				if (_timeToSearch <	predictTimeUse(iterationTime,_timeToSearch,depth+1)) {
+				if (_timeToSearch <	predictTimeUse(iterationTime,_timeToSearch,depth+1) &&
+						iterationTime[depth] > (_timeToSearch*80)/100) {
 					break;
 				}
 			}
