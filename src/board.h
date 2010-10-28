@@ -37,7 +37,7 @@
 #include "bitboard.h"
 #include "moveiterator.h"
 #include "magicmoves.h"
-#include "data.h"
+#include "psqt.h"
 
 namespace BoardTypes{
 
@@ -48,9 +48,6 @@ typedef uint64_t Key;
 #define ALL_CASTLE_RIGHT				 4								// all castle rights
 #define MAX_GAME_LENGTH					 1024							// Max game lenght
 #define St2Sq(F,R)						 (((int)F-96)+((int)R-49)*8)-1	// encode String to Square enum
-
-#define MAX(x,y)						 (x>y?x:y)
-#define MIN(x,y)						 (x<y?x:y)
 
 // castle types
 enum CastleRight {
@@ -86,14 +83,11 @@ struct MoveBackup {
 	bool hasWhiteQueenCastle;
 	bool hasBlackKingCastle;
 	bool hasBlackQueenCastle;
-
 	bool hasCapture;
 	bool hasPromotion;
-
 	Key key;
 	PieceTypeByColor capturedPiece;
 	Square capturedSquare;
-
 	CastleRight whiteCastleRight;
 	CastleRight blackCastleRight;
 	Square enPassant;
@@ -102,6 +96,8 @@ struct MoveBackup {
 	Square to;
 	int halfMoveCounter;
 	GamePhase phase;
+	int egPsq[ALL_PIECE_COLOR];
+	int mgPsq[ALL_PIECE_COLOR];
 
 };
 
@@ -224,14 +220,13 @@ struct Node {
 	}
 
 };
+
 // Zobrist keys for hashing
 struct NodeZobrist {
-
 	Key pieceSquare[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 	Key castleRight[ALL_CASTLE_RIGHT*ALL_CASTLE_RIGHT];
 	Key enPassant[ALL_FILE];
 	Key sideToMove[ALL_PIECE_COLOR];
-
 };
 
 }
@@ -329,9 +324,9 @@ public:
 	const Bitboard getKingAttacks(const Square square);
 	const Bitboard getKingAttacks(const Square square, const Bitboard occupied);
 
-	static void initializeZobrist();
-	static void initializePst();
+	static void initialize();
 	const GamePhase predictGamePhase();
+	const void calcFullPieceSquareValue();
 	const int getZobristCastleIndex();
 	const Key getKey() const;
 	void setKey(Key key);
@@ -368,7 +363,6 @@ private:
 	void removePiece(const PieceTypeByColor piece, const Square square);
 
 	Node currentBoard;
-	static NodeZobrist nodeZobrist;
 
 };
 // get the board structure
@@ -387,8 +381,6 @@ inline void Board::putPiece(const PieceTypeByColor piece, const Square square) {
 	currentBoard.square[square] = piece;
 	currentBoard.pieceCount[piece]++;
 	currentBoard.fullMaterial[color]+=defaultMaterialValues[piece];
-	currentBoard.egPsq[color]+=endGamePieceSquareTable[piece][square];
-	currentBoard.mgPsq[color]+=defaultPieceSquareTable[piece][square];
 	currentBoard.pieceColorCount[color]++;
 
 	if (pieceType[piece]==KING) {
@@ -403,8 +395,6 @@ inline void Board::removePiece(const PieceTypeByColor piece, const Square square
 	currentBoard.square[square] = EMPTY;
 	currentBoard.pieceCount[piece]--;
 	currentBoard.fullMaterial[color]-=defaultMaterialValues[piece];
-	currentBoard.egPsq[color]-=endGamePieceSquareTable[piece][square];
-	currentBoard.mgPsq[color]-=defaultPieceSquareTable[piece][square];
 	currentBoard.pieceColorCount[color]--;
 
 	if (pieceType[piece]==KING) {

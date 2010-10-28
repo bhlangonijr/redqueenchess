@@ -41,7 +41,7 @@ const int Evaluator::evaluate(Board& board, const int& alpha, const int& beta) {
 	const PieceColor other = board.flipSide(board.getSideToMove());
 
 	int value = board.getMaterial(side) - board.getMaterial(other);
-	value += board.getPieceSquareValue(side)-board.getPieceSquareValue(other);/*evalDevelopment(board, side) - evalDevelopment(board, other);*/
+	value += board.getPieceSquareValue(side)-board.getPieceSquareValue(other);
 	value += evalImbalances(board, side) - evalImbalances(board, other);
 
 	if (value > alpha-lazyEvalMargin && value < beta+lazyEvalMargin) {
@@ -198,25 +198,6 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 	}
 
 	return count;
-}
-
-// piece-square eval function
-const int Evaluator::evalDevelopment(Board& board, PieceColor color) {
-
-	const int first = board.makePiece(color,PAWN);
-	const int last = board.makePiece(color,KING);
-	int bonus = 0;
-
-	for(int pieceType = first; pieceType <= last; pieceType++) {
-		Bitboard pieces = board.getPiecesByType(PieceTypeByColor(pieceType));
-		Square from = extractLSB(pieces);
-		while ( from!=NONE ) {
-			bonus += board.getPieceSquareValue(PieceTypeByColor(pieceType),Square(from),board.getGamePhase());
-			from = extractLSB(pieces);
-		}
-	}
-
-	return bonus;
 }
 
 // imbalances eval function

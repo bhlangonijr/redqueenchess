@@ -28,8 +28,10 @@
 
 using namespace BoardTypes;
 
-NodeZobrist zobrist;
-int pst[maxGamePhase+1][ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
+static NodeZobrist zobrist;
+static int pst[maxGamePhase+1][ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
+static int mgPST[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
+static int egPST[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 
 Board::Board() : currentBoard()
 {
@@ -91,13 +93,10 @@ void Board::genericTest() {
 	for (int x=0;x<1000000;x++)
 	{
 		MoveIterator::Data moveData;
-
 		MoveIterator moves(moveData);
 		this->generateAllMoves(moves,color);
-
 		moves.first();
 		while (moves.hasNext()) {
-
 			MoveIterator::Move move = moves.next();
 			//std::cout << counter << " - " << move.toString() << std::endl;
 			MoveBackup backup;
@@ -105,9 +104,7 @@ void Board::genericTest() {
 			//printBoard();
 			undoMove(backup);
 			counter++;
-
 		}
-
 	}
 
 	//Evaluator evaluator;
@@ -120,15 +117,14 @@ void Board::genericTest() {
 	std::cout << "MoveCounter: " << getMoveCounter() << std::endl;
 	std::cout << "NPS:         " << (counter/((this->getTickCount()-start)/1000) ) << std::endl;
 
-
 }
 
 // do a move and set backup info into struct MoveBackup
 void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 
-	PieceTypeByColor fromPiece=this->getPieceBySquare(move.from);
-	PieceTypeByColor toPiece=this->getPieceBySquare(move.to);
-	PieceColor otherSide = flipSide(getSideToMove());
+	const PieceTypeByColor fromPiece=this->getPieceBySquare(move.from);
+	const PieceTypeByColor toPiece=this->getPieceBySquare(move.to);
+	const PieceColor otherSide = flipSide(getSideToMove());
 	bool enPassant=false;
 	bool reversible=true;
 
@@ -145,6 +141,10 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	backup.hasBlackQueenCastle=false;
 	backup.phase=getGamePhase();
 	backup.halfMoveCounter =  getHalfMoveCounter();
+	backup.mgPsq[WHITE] = currentBoard.mgPsq[WHITE];
+	backup.egPsq[WHITE] = currentBoard.egPsq[WHITE];
+	backup.mgPsq[BLACK] = currentBoard.mgPsq[BLACK];
+	backup.egPsq[BLACK] = currentBoard.egPsq[BLACK];
 
 	removePiece(fromPiece,move.from);
 	setKey(getKey()^zobrist.pieceSquare[fromPiece][move.from]);
@@ -152,6 +152,8 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	if (toPiece!=EMPTY) {
 		removePiece(toPiece,move.to);
 		setKey(getKey()^zobrist.pieceSquare[toPiece][move.to]);
+		currentBoard.egPsq[otherSide]-=egPST[toPiece][move.to];
+		currentBoard.mgPsq[otherSide]-=mgPST[toPiece][move.to];
 		backup.hasCapture=true;
 		backup.capturedPiece=toPiece;
 		backup.capturedSquare=move.to;
@@ -165,10 +167,14 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	if (move.promotionPiece==EMPTY) {
 		putPiece(fromPiece,move.to);
 		setKey(getKey()^zobrist.pieceSquare[fromPiece][move.to]);
+		currentBoard.egPsq[getSideToMove()]+=egPST[fromPiece][move.to]-egPST[fromPiece][move.from];
+		currentBoard.mgPsq[getSideToMove()]+=mgPST[fromPiece][move.to]-mgPST[fromPiece][move.from];
 		backup.hasPromotion=false;
 	} else {
 		putPiece(move.promotionPiece,move.to);
 		setKey(getKey()^zobrist.pieceSquare[move.promotionPiece][move.to]);
+		currentBoard.egPsq[getSideToMove()]+=egPST[move.promotionPiece][move.to]-egPST[fromPiece][move.from];
+		currentBoard.mgPsq[getSideToMove()]+=mgPST[move.promotionPiece][move.to]-mgPST[fromPiece][move.from];
 		backup.hasPromotion=true;
 	}
 
@@ -182,6 +188,8 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 					putPiece(WHITE_ROOK,F1);
 					setKey(getKey()^zobrist.pieceSquare[WHITE_ROOK][H1]);
 					setKey(getKey()^zobrist.pieceSquare[WHITE_ROOK][F1]);
+					currentBoard.egPsq[getSideToMove()]+=egPST[WHITE_ROOK][F1]-egPST[WHITE_ROOK][H1];
+					currentBoard.mgPsq[getSideToMove()]+=mgPST[WHITE_ROOK][F1]-mgPST[WHITE_ROOK][H1];
 					backup.hasWhiteKingCastle=true;
 					currentBoard.castleDone[WHITE]=true;
 					reversible=false;
@@ -190,6 +198,8 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 					putPiece(WHITE_ROOK,D1);
 					setKey(getKey()^zobrist.pieceSquare[WHITE_ROOK][A1]);
 					setKey(getKey()^zobrist.pieceSquare[WHITE_ROOK][D1]);
+					currentBoard.egPsq[getSideToMove()]+=egPST[WHITE_ROOK][D1]-egPST[WHITE_ROOK][A1];
+					currentBoard.mgPsq[getSideToMove()]+=mgPST[WHITE_ROOK][D1]-mgPST[WHITE_ROOK][A1];
 					backup.hasWhiteQueenCastle=true;
 					currentBoard.castleDone[WHITE]=true;
 					reversible=false;
@@ -203,6 +213,8 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 					putPiece(BLACK_ROOK,F8);
 					setKey(getKey()^zobrist.pieceSquare[BLACK_ROOK][H8]);
 					setKey(getKey()^zobrist.pieceSquare[BLACK_ROOK][F8]);
+					currentBoard.egPsq[getSideToMove()]+=egPST[BLACK_ROOK][F8]-egPST[BLACK_ROOK][H8];
+					currentBoard.mgPsq[getSideToMove()]+=mgPST[BLACK_ROOK][F8]-mgPST[BLACK_ROOK][H8];
 					backup.hasBlackKingCastle=true;
 					currentBoard.castleDone[BLACK]=true;
 					reversible=false;
@@ -211,6 +223,8 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 					putPiece(BLACK_ROOK,D8);
 					setKey(getKey()^zobrist.pieceSquare[BLACK_ROOK][A8]);
 					setKey(getKey()^zobrist.pieceSquare[BLACK_ROOK][D8]);
+					currentBoard.egPsq[getSideToMove()]+=egPST[BLACK_ROOK][D8]-egPST[BLACK_ROOK][A8];
+					currentBoard.mgPsq[getSideToMove()]+=mgPST[BLACK_ROOK][D8]-mgPST[BLACK_ROOK][A8];
 					backup.hasBlackQueenCastle=true;
 					currentBoard.castleDone[BLACK]=true;
 					reversible=false;
@@ -266,6 +280,8 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 			if (getSquareFile(move.from)!=getSquareFile(move.to)&&toPiece==EMPTY) { // en passant
 				removePiece(makePiece(otherSide,PAWN),getEnPassant());
 				setKey(getKey()^zobrist.pieceSquare[makePiece(otherSide,PAWN)][getEnPassant()]);
+				currentBoard.egPsq[otherSide]-=egPST[makePiece(otherSide,PAWN)][getEnPassant()];
+				currentBoard.mgPsq[otherSide]-=mgPST[makePiece(otherSide,PAWN)][getEnPassant()];
 				backup.hasCapture=true;
 				backup.capturedPiece=makePiece(otherSide,PAWN);
 				backup.capturedSquare=getEnPassant();
@@ -354,6 +370,10 @@ void Board::undoMove(MoveBackup& backup){
 	putPiece(piece,backup.from);
 	currentBoard.halfMoveCounter = backup.halfMoveCounter;
 	currentBoard.gamePhase=backup.phase;
+	currentBoard.mgPsq[WHITE] = backup.mgPsq[WHITE];
+	currentBoard.egPsq[WHITE] = backup.egPsq[WHITE];
+	currentBoard.mgPsq[BLACK] = backup.mgPsq[BLACK];
+	currentBoard.egPsq[BLACK] = backup.egPsq[BLACK];
 
 	if (backup.hasCapture) {
 		putPiece(backup.capturedPiece,backup.capturedSquare);
@@ -540,6 +560,7 @@ void Board::loadFromFEN(const std::string startFENMoves) {
 	setKey(generateKey());
 	updateKeyHistory();
 	setGamePhase(predictGamePhase());
+	calcFullPieceSquareValue();
 
 }
 
@@ -606,8 +627,8 @@ const std::string Board::getFEN() {
 	return fen;
 }
 
-// initialize zobrist keys
-void Board::initializeZobrist() {
+void Board::initialize() {
+	// initialize zobrist keys
 	for(int piece=0; piece<ALL_PIECE_TYPE_BY_COLOR; piece++) {
 		for(int square=0; square<ALL_SQUARE; square++) {
 			zobrist.pieceSquare[piece][square]=genrand_int64();
@@ -622,20 +643,30 @@ void Board::initializeZobrist() {
 	for(int castle=0; castle<ALL_CASTLE_RIGHT*ALL_CASTLE_RIGHT; castle++) {
 		zobrist.castleRight[castle]=genrand_int64();
 	}
-}
 
-// initialize pst
-void Board::initializePst() {
+	// initialize pst
+	for (int color=0; color<ALL_PIECE_COLOR; color++) {
+		for (int type=0; type<ALL_PIECE_TYPE; type++) {
+			for (int square=0; square<ALL_SQUARE; square++) {
+				PieceTypeByColor piece = pieceTypeByColor[color][type];
+				const int sq=color==WHITE?square:flip[square];
+				mgPST[piece][square]=defaultPieceSquareTable[type][sq];
+				egPST[piece][square]=endGamePieceSquareTable[type][sq];
+			}
+		}
+	}
 	for (int phase=0; phase<=maxGamePhase; phase++) {
 		for (int piece=0; piece<ALL_PIECE_TYPE_BY_COLOR; piece++) {
 			for (int square=0; square<ALL_SQUARE; square++) {
 				pst[phase][piece][square]=
-							calcPieceSquareValue(PieceTypeByColor(piece),Square(square),GamePhase(phase));
+						calcPieceSquareValue(PieceTypeByColor(piece),Square(square),GamePhase(phase));
 			}
 		}
 	}
+
 }
 
+// game phase full calculation
 const GamePhase Board::predictGamePhase() {
 
 	const int knights = getPieceCountByType(WHITE_KNIGHT)+getPieceCountByType(BLACK_KNIGHT);
@@ -647,6 +678,23 @@ const GamePhase Board::predictGamePhase() {
 			(4-bishops)*phaseIncrement[BISHOP]+
 			(4-rooks)*phaseIncrement[ROOK]+
 			(2-queens)*phaseIncrement[QUEEN]);
+}
+
+// piece-square full calculation
+const void Board::calcFullPieceSquareValue() {
+
+	currentBoard.mgPsq[WHITE] = 0;
+	currentBoard.egPsq[WHITE] = 0;
+	currentBoard.mgPsq[BLACK] = 0;
+	currentBoard.egPsq[BLACK] = 0;
+
+	Bitboard pieces = getAllPieces();
+	Square from = extractLSB(pieces);
+	while ( from!=NONE ) {
+		currentBoard.mgPsq[getPieceColorBySquare(from)]+= mgPST[getPieceBySquare(from)][from];
+		currentBoard.egPsq[getPieceColorBySquare(from)]+= egPST[getPieceBySquare(from)][from];
+		from = extractLSB(pieces);
+	}
 }
 
 // get index for zobrist index
@@ -693,8 +741,8 @@ const int Board::interpolate(const int first, const int second, const int positi
 }
 
 const int Board::calcPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase) {
-	const int egValue = endGamePieceSquareTable[piece][square];
-	const int mgValue = defaultPieceSquareTable[piece][square];
+	const int egValue = egPST[piece][square];
+	const int mgValue = mgPST[piece][square];
 	return interpolate(egValue,mgValue,phase);
 }
 

@@ -50,8 +50,7 @@ int main() {
 	initmagicmoves();
 	init_mersenne();
 	initializeBitboards();
-	Board::initializeZobrist();
-	Board::initializePst();
+	Board::initialize();
 	SearchAgent::getInstance();
 	Uci *uci = Uci::getInstance();
 

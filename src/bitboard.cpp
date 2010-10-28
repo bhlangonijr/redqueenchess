@@ -26,9 +26,6 @@
 
 #include "bitboard.h"
 
-#define MIN(x,y) (x<y?x:y)
-#define MAX(x,y) (x>y?x:y)
-
 const int DELTA_MAX = 7;
 static int squareDelta[ALL_SQUARE][ALL_SQUARE];
 static int inverseSquareDelta[ALL_SQUARE][ALL_SQUARE];
