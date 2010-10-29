@@ -47,8 +47,8 @@
 #define RK(POS) VI(3,5,POS)
 #define QK(POS) VI(3,6,POS)
 
-#define ZI(POS) VI(3,7,POS)
-#define ZA(POS) VI(5,10,POS)
+#define ZI(POS) VI(3,8,POS)
+#define ZA(POS) VI(5,11,POS)
 
 const int DONE_CASTLE_BONUS=       +10;
 const int DOUBLED_PAWN_PENALTY =   -10;
