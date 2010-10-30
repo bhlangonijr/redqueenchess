@@ -141,10 +141,6 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	backup.hasBlackQueenCastle=false;
 	backup.phase=getGamePhase();
 	backup.halfMoveCounter =  getHalfMoveCounter();
-	backup.mgPsq[WHITE] = currentBoard.mgPsq[WHITE];
-	backup.egPsq[WHITE] = currentBoard.egPsq[WHITE];
-	backup.mgPsq[BLACK] = currentBoard.mgPsq[BLACK];
-	backup.egPsq[BLACK] = currentBoard.egPsq[BLACK];
 
 	removePiece(fromPiece,move.from);
 	setKey(getKey()^zobrist.pieceSquare[fromPiece][move.from]);
@@ -152,8 +148,6 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	if (toPiece!=EMPTY) {
 		removePiece(toPiece,move.to);
 		setKey(getKey()^zobrist.pieceSquare[toPiece][move.to]);
-		currentBoard.egPsq[otherSide]-=egPST[toPiece][move.to];
-		currentBoard.mgPsq[otherSide]-=mgPST[toPiece][move.to];
 		backup.hasCapture=true;
 		backup.capturedPiece=toPiece;
 		backup.capturedSquare=move.to;
@@ -167,14 +161,10 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	if (move.promotionPiece==EMPTY) {
 		putPiece(fromPiece,move.to);
 		setKey(getKey()^zobrist.pieceSquare[fromPiece][move.to]);
-		currentBoard.egPsq[getSideToMove()]+=egPST[fromPiece][move.to]-egPST[fromPiece][move.from];
-		currentBoard.mgPsq[getSideToMove()]+=mgPST[fromPiece][move.to]-mgPST[fromPiece][move.from];
 		backup.hasPromotion=false;
 	} else {
 		putPiece(move.promotionPiece,move.to);
 		setKey(getKey()^zobrist.pieceSquare[move.promotionPiece][move.to]);
-		currentBoard.egPsq[getSideToMove()]+=egPST[move.promotionPiece][move.to]-egPST[fromPiece][move.from];
-		currentBoard.mgPsq[getSideToMove()]+=mgPST[move.promotionPiece][move.to]-mgPST[fromPiece][move.from];
 		backup.hasPromotion=true;
 	}
 
@@ -188,8 +178,6 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 					putPiece(WHITE_ROOK,F1);
 					setKey(getKey()^zobrist.pieceSquare[WHITE_ROOK][H1]);
 					setKey(getKey()^zobrist.pieceSquare[WHITE_ROOK][F1]);
-					currentBoard.egPsq[getSideToMove()]+=egPST[WHITE_ROOK][F1]-egPST[WHITE_ROOK][H1];
-					currentBoard.mgPsq[getSideToMove()]+=mgPST[WHITE_ROOK][F1]-mgPST[WHITE_ROOK][H1];
 					backup.hasWhiteKingCastle=true;
 					currentBoard.castleDone[WHITE]=true;
 					reversible=false;
@@ -198,8 +186,6 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 					putPiece(WHITE_ROOK,D1);
 					setKey(getKey()^zobrist.pieceSquare[WHITE_ROOK][A1]);
 					setKey(getKey()^zobrist.pieceSquare[WHITE_ROOK][D1]);
-					currentBoard.egPsq[getSideToMove()]+=egPST[WHITE_ROOK][D1]-egPST[WHITE_ROOK][A1];
-					currentBoard.mgPsq[getSideToMove()]+=mgPST[WHITE_ROOK][D1]-mgPST[WHITE_ROOK][A1];
 					backup.hasWhiteQueenCastle=true;
 					currentBoard.castleDone[WHITE]=true;
 					reversible=false;
@@ -213,8 +199,6 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 					putPiece(BLACK_ROOK,F8);
 					setKey(getKey()^zobrist.pieceSquare[BLACK_ROOK][H8]);
 					setKey(getKey()^zobrist.pieceSquare[BLACK_ROOK][F8]);
-					currentBoard.egPsq[getSideToMove()]+=egPST[BLACK_ROOK][F8]-egPST[BLACK_ROOK][H8];
-					currentBoard.mgPsq[getSideToMove()]+=mgPST[BLACK_ROOK][F8]-mgPST[BLACK_ROOK][H8];
 					backup.hasBlackKingCastle=true;
 					currentBoard.castleDone[BLACK]=true;
 					reversible=false;
@@ -223,8 +207,6 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 					putPiece(BLACK_ROOK,D8);
 					setKey(getKey()^zobrist.pieceSquare[BLACK_ROOK][A8]);
 					setKey(getKey()^zobrist.pieceSquare[BLACK_ROOK][D8]);
-					currentBoard.egPsq[getSideToMove()]+=egPST[BLACK_ROOK][D8]-egPST[BLACK_ROOK][A8];
-					currentBoard.mgPsq[getSideToMove()]+=mgPST[BLACK_ROOK][D8]-mgPST[BLACK_ROOK][A8];
 					backup.hasBlackQueenCastle=true;
 					currentBoard.castleDone[BLACK]=true;
 					reversible=false;
@@ -280,8 +262,6 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 			if (getSquareFile(move.from)!=getSquareFile(move.to)&&toPiece==EMPTY) { // en passant
 				removePiece(makePiece(otherSide,PAWN),getEnPassant());
 				setKey(getKey()^zobrist.pieceSquare[makePiece(otherSide,PAWN)][getEnPassant()]);
-				currentBoard.egPsq[otherSide]-=egPST[makePiece(otherSide,PAWN)][getEnPassant()];
-				currentBoard.mgPsq[otherSide]-=mgPST[makePiece(otherSide,PAWN)][getEnPassant()];
 				backup.hasCapture=true;
 				backup.capturedPiece=makePiece(otherSide,PAWN);
 				backup.capturedSquare=getEnPassant();
@@ -370,10 +350,6 @@ void Board::undoMove(MoveBackup& backup){
 	putPiece(piece,backup.from);
 	currentBoard.halfMoveCounter = backup.halfMoveCounter;
 	currentBoard.gamePhase=backup.phase;
-	currentBoard.mgPsq[WHITE] = backup.mgPsq[WHITE];
-	currentBoard.egPsq[WHITE] = backup.egPsq[WHITE];
-	currentBoard.mgPsq[BLACK] = backup.mgPsq[BLACK];
-	currentBoard.egPsq[BLACK] = backup.egPsq[BLACK];
 
 	if (backup.hasCapture) {
 		putPiece(backup.capturedPiece,backup.capturedSquare);
@@ -560,7 +536,6 @@ void Board::loadFromFEN(const std::string startFENMoves) {
 	setKey(generateKey());
 	updateKeyHistory();
 	setGamePhase(predictGamePhase());
-	calcFullPieceSquareValue();
 
 }
 
@@ -680,21 +655,16 @@ const GamePhase Board::predictGamePhase() {
 			(2-queens)*phaseIncrement[QUEEN]);
 }
 
-// piece-square full calculation
-const void Board::calcFullPieceSquareValue() {
 
-	currentBoard.mgPsq[WHITE] = 0;
-	currentBoard.egPsq[WHITE] = 0;
-	currentBoard.mgPsq[BLACK] = 0;
-	currentBoard.egPsq[BLACK] = 0;
-
-	Bitboard pieces = getAllPieces();
+const int Board::getPieceSquareValue(const PieceColor color) const {
+	Bitboard pieces = getPiecesByColor(color);
 	Square from = extractLSB(pieces);
+	int result=0;
 	while ( from!=NONE ) {
-		currentBoard.mgPsq[getPieceColorBySquare(from)]+= mgPST[getPieceBySquare(from)][from];
-		currentBoard.egPsq[getPieceColorBySquare(from)]+= egPST[getPieceBySquare(from)][from];
+		result+=pst[currentBoard.gamePhase][getPieceBySquare(from)][from];
 		from = extractLSB(pieces);
 	}
+	return result;
 }
 
 // get index for zobrist index
