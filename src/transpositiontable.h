@@ -110,7 +110,7 @@ public:
 	};
 
 	struct Bucket {
-		HashData entry[BUCKET_SIZE];
+		HashData entry[BUCKET_SIZE] __attribute__ ((aligned(64)));
 	};
 
 	TranspositionTable(std::string id_) :
