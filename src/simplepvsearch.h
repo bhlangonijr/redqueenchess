@@ -79,6 +79,10 @@ public:
 	typedef struct PvLine {
 		int index;
 		MoveIterator::Move moves[maxSearchPly+1];
+		void copy(const PvLine line) {
+			index=line.index;
+			memcpy(moves, line.moves, (maxSearchPly+1) * sizeof(MoveIterator::Move));
+		}
 	} PvLine;
 
 	typedef struct SearchInfo {

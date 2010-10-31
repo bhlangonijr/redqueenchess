@@ -108,7 +108,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		ponderMove=pv.moves[1];
 		searchTime=getTickCount()-_startTime;
 		searchNodes=_nodes;
-		pvLine=pv;
+		pvLine.copy(pv);
 
 		if (score > bestScore) {
 			bestScore = score;

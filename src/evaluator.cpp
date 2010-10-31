@@ -193,7 +193,7 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 	}
 
 	if (queenAttacks&otherKingSquareBB) {
-		int attackCount = _BitCount15(queenAttacks&otherKingSquareBB);
+		int attackCount = _BitCount(queenAttacks&otherKingSquareBB);
 		kingThreat += attackCount*majorKingZoneAttackBonus[phase];
 	}
 
