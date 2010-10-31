@@ -85,7 +85,6 @@ int SimplePVSearch::idSearch(Board& board) {
 		int score = 0;
 		maxPlySearched = 0;
 		lastDepth=depth;
-		bestMove=emptyMove;
 
 		// like in stockfish
 		if (depth >= aspirationDepth && abs(iterationScore[depth-1]) < winningScore)	{
@@ -101,21 +100,15 @@ int SimplePVSearch::idSearch(Board& board) {
 		iterationScore[depth]=score;
 		iterationTime[depth]=getTickCount()-_startTime;
 
+		if (stop() && depth > 1) {
+			break;
+		}
+
 		bestMove=pv.moves[0];
 		ponderMove=pv.moves[1];
 		searchTime=getTickCount()-_startTime;
 		searchNodes=_nodes;
 		pvLine=pv;
-
-		if (bestMove.none()) {
-			bestMove=rootMoves.get(0);
-			ponderMove=emptyMove;
-			bestMove.score=score;
-		}
-
-		if (stop() && depth > 1) {
-			break;
-		}
 
 		if (score > bestScore) {
 			bestScore = score;
@@ -167,6 +160,11 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		}
 
+	}
+
+	if (bestMove.none()) {
+		bestMove=rootMoves.get(0);
+		ponderMove=emptyMove;
 	}
 
 	uciOutput(&pvLine, bestMove.score, getTickCount()-_startTime, agent->hashFull(), lastDepth, maxPlySearched, alpha, beta);
