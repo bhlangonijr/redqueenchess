@@ -33,7 +33,7 @@
 #include <stdlib.h>
 
 #define DEFAULT_INITIAL_SIZE 64
-#define BUCKET_SIZE 4
+#define BUCKET_SIZE 5
 
 class TranspositionTable {
 public:
