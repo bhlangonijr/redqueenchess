@@ -135,7 +135,7 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 
 	while ( from!=NONE ) {
 		const Bitboard attacks = board.getKnightAttacks(from);
-		count+=(_BitCount(attacks&~allPieces)-4)*
+		count+=(_BitCount15(attacks&~allPieces)-4)*
 				knightMobilityBonus[phase];
 		knightAttacks |= attacks;
 		from = extractLSB(pieces);
@@ -147,7 +147,7 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 	while ( from!=NONE ) {
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getBishopAttacks(from);
-		count+=(_BitCount(attacks)-6)*
+		count+=(_BitCount15(attacks)-6)*
 				bishopMobilityBonus[phase];
 		bishopAttacks |= attacks;
 		kingThreat += delta*bishopKingBonus[phase];
@@ -161,7 +161,7 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getRookAttacks(from);
 		rookAttacks |= attacks;
-		count+=(_BitCount(attacks)-7)*rookMobilityBonus[phase];
+		count+=(_BitCount15(attacks)-7)*rookMobilityBonus[phase];
 		kingThreat += delta*rookKingBonus[phase];
 		from = extractLSB(pieces);
 	}
@@ -183,17 +183,17 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 	}
 
 	if (bishopAttacks&otherKingSquareBB) {
-		int attackCount = _BitCount(bishopAttacks&otherKingSquareBB);
+		int attackCount = _BitCount15(bishopAttacks&otherKingSquareBB);
 		kingThreat += attackCount*minorKingZoneAttackBonus[phase];
 	}
 
 	if (rookAttacks&otherKingSquareBB) {
-		int attackCount = _BitCount(rookAttacks&otherKingSquareBB);
+		int attackCount = _BitCount15(rookAttacks&otherKingSquareBB);
 		kingThreat += attackCount*minorKingZoneAttackBonus[phase];
 	}
 
 	if (queenAttacks&otherKingSquareBB) {
-		int attackCount = _BitCount(queenAttacks&otherKingSquareBB);
+		int attackCount = _BitCount15(queenAttacks&otherKingSquareBB);
 		kingThreat += attackCount*majorKingZoneAttackBonus[phase];
 	}
 
