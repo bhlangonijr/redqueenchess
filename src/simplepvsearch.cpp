@@ -211,7 +211,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 				board.doMove(move,backup);
 
 				const bool givingCheck = board.isInCheck(board.getSideToMove());
-				const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to);
+				const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to) && depth==1;
 
 				int extension=0;
 				if (isKingAttacked || pawnOn7thExtension) {
@@ -229,23 +229,9 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 							!isPawnPush(board,move.to) && remainingMoves>lateMoveThreshold1 &&
 							depth>lmrDepthThresholdRoot) {
 						reduction++;
-						if (remainingMoves>lateMoveThreshold2 && depth>lmrDepthThreshold2 &&
-								!history[board.getPieceBySquare(move.to)][move.to]) {
-							reduction+=depth/10;
-						}
 					}
-					score = -zwSearch(board, newSi, -alpha, newDepth-reduction, ply+1, &line, true);
 
-					if (score >= beta && reduction>0) {
-						bool research=true;
-						if (reduction>2) {
-							score = -zwSearch(board, newSi, 1-beta, newDepth-1, ply+1, &line, true);
-							research=(score >= beta);
-						}
-						if (research) {
-							score = -zwSearch(board, newSi, 1-beta, newDepth, ply+1, &line, true);
-						}
-					}
+					score = -zwSearch(board, newSi, -alpha, newDepth-reduction, ply+1, &line, true);
 
 					if (score>alpha) {
 						score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
@@ -380,7 +366,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 			remainingMoves++;
 		}
 		const bool givingCheck = board.isInCheck(board.getSideToMove());
-		const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to);
+		const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to) && depth==1;
 		int extension=0;
 		if (isKingAttacked || pawnOn7thExtension) {
 			extension++;
@@ -397,24 +383,9 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 					!isPawnPush(board,move.to) && remainingMoves>lateMoveThreshold1 &&
 					depth>lmrDepthThreshold1) {
 				reduction++;
-				if (remainingMoves>lateMoveThreshold2 && depth>lmrDepthThreshold2 &&
-						!history[board.getPieceBySquare(move.to)][move.to]) {
-					reduction+=depth/10;
-				}
 			}
 
 			score = -zwSearch(board, newSi, -alpha, newDepth-reduction, ply+1, &line, true);
-
-			if (score >= beta && reduction>0) {
-				bool research=true;
-				if (reduction>2) {
-					score = -zwSearch(board, newSi, 1-beta, newDepth-1, ply+1, &line, true);
-					research=(score >= beta);
-				}
-				if (research) {
-					score = -zwSearch(board, newSi, 1-beta, newDepth, ply+1, &line, true);
-				}
-			}
 
 			if (score > alpha && score < beta) {
 				score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
@@ -592,7 +563,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 
 		const bool givingCheck = board.isInCheck(board.getSideToMove());
 		const bool passedPawn = isPawnPush(board,move.to);
-		const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to);
+		const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to) && depth==1;
 
 		//futility
 		if  (	move.type == MoveIterator::NON_CAPTURE &&
