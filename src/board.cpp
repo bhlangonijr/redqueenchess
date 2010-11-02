@@ -30,8 +30,6 @@ using namespace BoardTypes;
 
 static NodeZobrist zobrist;
 static int pst[maxGamePhase+1][ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
-static int mgPST[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
-static int egPST[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 
 Board::Board() : currentBoard()
 {
@@ -94,7 +92,7 @@ void Board::genericTest() {
 	{
 		MoveIterator::Data moveData;
 		MoveIterator moves(moveData);
-		this->generateAllMoves(moves,color);
+		generateAllMoves(moves,color);
 		moves.first();
 		while (moves.hasNext()) {
 			MoveIterator::Move move = moves.next();
@@ -122,8 +120,8 @@ void Board::genericTest() {
 // do a move and set backup info into struct MoveBackup
 void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 
-	const PieceTypeByColor fromPiece=this->getPieceBySquare(move.from);
-	const PieceTypeByColor toPiece=this->getPieceBySquare(move.to);
+	const PieceTypeByColor fromPiece = getPieceBySquare(move.from);
+	const PieceTypeByColor toPiece = getPieceBySquare(move.to);
 	const PieceColor otherSide = flipSide(getSideToMove());
 	bool enPassant=false;
 	bool reversible=true;
@@ -620,16 +618,6 @@ void Board::initialize() {
 	}
 
 	// initialize pst
-	for (int color=0; color<ALL_PIECE_COLOR; color++) {
-		for (int type=0; type<ALL_PIECE_TYPE; type++) {
-			for (int square=0; square<ALL_SQUARE; square++) {
-				PieceTypeByColor piece = pieceTypeByColor[color][type];
-				const int sq=color==WHITE?square:flip[square];
-				mgPST[piece][square]=defaultPieceSquareTable[type][sq];
-				egPST[piece][square]=endGamePieceSquareTable[type][sq];
-			}
-		}
-	}
 	for (int phase=0; phase<=maxGamePhase; phase++) {
 		for (int piece=0; piece<ALL_PIECE_TYPE_BY_COLOR; piece++) {
 			for (int square=0; square<ALL_SQUARE; square++) {
@@ -653,18 +641,6 @@ const GamePhase Board::predictGamePhase() {
 			(4-bishops)*phaseIncrement[BISHOP]+
 			(4-rooks)*phaseIncrement[ROOK]+
 			(2-queens)*phaseIncrement[QUEEN]);
-}
-
-
-const int Board::getPieceSquareValue(const PieceColor color) const {
-	Bitboard pieces = getPiecesByColor(color);
-	Square from = extractLSB(pieces);
-	int result=0;
-	while ( from!=NONE ) {
-		result+=pst[currentBoard.gamePhase][getPieceBySquare(from)][from];
-		from = extractLSB(pieces);
-	}
-	return result;
 }
 
 // get index for zobrist index
@@ -711,8 +687,9 @@ const int Board::interpolate(const int first, const int second, const int positi
 }
 
 const int Board::calcPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase) {
-	const int egValue = egPST[piece][square];
-	const int mgValue = mgPST[piece][square];
+	const Square sq = pieceColor[piece]==WHITE?square:flip[square];
+	const int egValue = endGamePieceSquareTable[pieceType[piece]][sq];
+	const int mgValue = defaultPieceSquareTable[pieceType[piece]][sq];
 	return interpolate(egValue,mgValue,phase);
 }
 

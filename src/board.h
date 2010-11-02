@@ -117,7 +117,10 @@ struct Node {
 		for(register int x=0;x<ALL_PIECE_TYPE_BY_COLOR;x++){
 			pieceCount[x]=node.pieceCount[x];
 		}
-
+		egPsq[WHITE]=node.egPsq[WHITE];
+		egPsq[BLACK]=node.egPsq[BLACK];
+		mgPsq[WHITE]=node.mgPsq[WHITE];
+		mgPsq[BLACK]=node.mgPsq[BLACK];
 		fullMaterial[WHITE]=node.fullMaterial[WHITE];
 		fullMaterial[BLACK]=node.fullMaterial[BLACK];
 		pieceColorCount[WHITE]=node.pieceColorCount[WHITE];
@@ -164,6 +167,8 @@ struct Node {
 	int pieceCount[ALL_PIECE_TYPE_BY_COLOR];
 	int pieceColorCount[ALL_PIECE_COLOR];
 	int fullMaterial[ALL_PIECE_COLOR];
+	int egPsq[ALL_PIECE_COLOR];
+	int mgPsq[ALL_PIECE_COLOR];
 	Key keyHistory[MAX_GAME_LENGTH];
 	int moveCounter;
 	int halfMoveCounter;
@@ -190,6 +195,10 @@ struct Node {
 
 		fullMaterial[WHITE]=0;
 		fullMaterial[BLACK]=0;
+		egPsq[WHITE]=0;
+		egPsq[BLACK]=0;
+		mgPsq[WHITE]=0;
+		mgPsq[BLACK]=0;
 		pieceColorCount[WHITE]=0;
 		pieceColorCount[BLACK]=0;
 		pieceColor[WHITE]=0ULL;
@@ -364,28 +373,36 @@ inline void Board::clearBoard() {
 // put a piece in the board and store piece info
 inline void Board::putPiece(const PieceTypeByColor piece, const Square square) {
 	const PieceColor color = pieceColor[piece];
+	const Square pstSquare = color==WHITE?square:flip[square];
+	const PieceType tpPiece = pieceType[piece];
 	currentBoard.piece.array[piece] |= squareToBitboard[square];
 	currentBoard.pieceColor[color] |= squareToBitboard[square];
 	currentBoard.square[square] = piece;
 	currentBoard.pieceCount[piece]++;
 	currentBoard.fullMaterial[color]+=defaultMaterialValues[piece];
+	currentBoard.egPsq[color]+=endGamePieceSquareTable[tpPiece][pstSquare];
+	currentBoard.mgPsq[color]+=defaultPieceSquareTable[tpPiece][pstSquare];
 	currentBoard.pieceColorCount[color]++;
 
-	if (pieceType[piece]==KING) {
+	if (tpPiece==KING) {
 		currentBoard.kingSquare[color]=square;
 	}
 }
 // remove a piece from the board and erase piece info
 inline void Board::removePiece(const PieceTypeByColor piece, const Square square) {
 	const PieceColor color = pieceColor[piece];
+	const Square pstSquare = color==WHITE?square:flip[square];
+	const PieceType tpPiece = pieceType[piece];
 	currentBoard.piece.array[piece] ^= squareToBitboard[square];
 	currentBoard.pieceColor[color] ^= squareToBitboard[square];
 	currentBoard.square[square] = EMPTY;
 	currentBoard.pieceCount[piece]--;
 	currentBoard.fullMaterial[color]-=defaultMaterialValues[piece];
+	currentBoard.egPsq[color]-=endGamePieceSquareTable[tpPiece][pstSquare];
+	currentBoard.mgPsq[color]-=defaultPieceSquareTable[tpPiece][pstSquare];
 	currentBoard.pieceColorCount[color]--;
 
-	if (pieceType[piece]==KING) {
+	if (tpPiece==KING) {
 		currentBoard.kingSquare[color]=NONE;
 	}
 
@@ -716,6 +733,11 @@ inline const int Board::getPieceCountByColor(const PieceColor color) const {
 // get full material by side
 inline const int Board::getMaterial(const PieceColor color) const {
 	return currentBoard.fullMaterial[color];
+}
+
+inline const int Board::getPieceSquareValue(const PieceColor color) const {
+	return ((currentBoard.egPsq[color]*currentBoard.gamePhase)/maxGamePhase)+
+			((currentBoard.mgPsq[color]*(maxGamePhase-currentBoard.gamePhase))/maxGamePhase);
 }
 
 // overload method - gets current occupied squares in the board

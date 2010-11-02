@@ -100,7 +100,7 @@ const int Evaluator::evalPieces(Board& board, PieceColor color) {
 			} else if (!pawnProblem && !(backwardPawnMask[color][from]&allButThePawn)) {
 				const Bitboard otherPawns = board.getPiecesByType(board.makePiece(other,PAWN));
 				const Square stop = color==WHITE?Square(from+8):Square(from-8);
-				if (board.getPawnAttacks(stop) & otherPawns) {
+				if (board.getPawnAttacks(stop,color) & otherPawns) {
 					count += BACKWARD_PAWN_PENALTY;
 				}
 			}
@@ -139,7 +139,7 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 
 	while ( from!=NONE ) {
 		const Bitboard attacks = board.getKnightAttacks(from);
-		count+=(_BitCount15(attacks&~allPieces)-4)*
+		count+=(_BitCount(attacks&~allPieces)-4)*
 				knightMobilityBonus[phase];
 		knightAttacks |= attacks;
 		from = extractLSB(pieces);
@@ -151,7 +151,7 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 	while ( from!=NONE ) {
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getBishopAttacks(from);
-		count+=(_BitCount15(attacks)-6)*
+		count+=(_BitCount(attacks)-6)*
 				bishopMobilityBonus[phase];
 		bishopAttacks |= attacks;
 		kingThreat += delta*bishopKingBonus[phase];
@@ -165,7 +165,7 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getRookAttacks(from);
 		rookAttacks |= attacks;
-		count+=(_BitCount15(attacks)-7)*rookMobilityBonus[phase];
+		count+=(_BitCount(attacks)-7)*rookMobilityBonus[phase];
 		kingThreat += delta*rookKingBonus[phase];
 		from = extractLSB(pieces);
 	}
@@ -187,12 +187,12 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 	}
 
 	if (bishopAttacks&otherKingSquareBB) {
-		int attackCount = _BitCount15(bishopAttacks&otherKingSquareBB);
+		int attackCount = _BitCount(bishopAttacks&otherKingSquareBB);
 		kingThreat += attackCount*minorKingZoneAttackBonus[phase];
 	}
 
 	if (rookAttacks&otherKingSquareBB) {
-		int attackCount = _BitCount15(rookAttacks&otherKingSquareBB);
+		int attackCount = _BitCount(rookAttacks&otherKingSquareBB);
 		kingThreat += attackCount*minorKingZoneAttackBonus[phase];
 	}
 
