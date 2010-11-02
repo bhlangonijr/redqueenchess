@@ -84,21 +84,25 @@ const int Evaluator::evalPieces(Board& board, PieceColor color) {
 		while ( from!=NONE ) {
 			const Bitboard pawn = squareToBitboard[from];
 			const Bitboard allButThePawn =(pawns^pawn);
-			bool pawnProblem = true;
+			bool pawnProblem = false;
 			if (fileAttacks[squareFile[from]]&allButThePawn) {
 				count += DOUBLED_PAWN_PENALTY;
+				pawnProblem = true;
 			}
 			if (!(neighborFiles[from]&allButThePawn)) {
 				count += ISOLATED_PAWN_PENALTY;
-			} else if (!(adjacentSquares[from]&allButThePawn)) {
-				count += BACKWARD_PAWN_PENALTY;
-			} else {
-				pawnProblem = false;
+				pawnProblem = true;
 			}
 			if (isPawnPassed(board,from)) {
-				count += (pawnProblem && board.getGamePhase()<ENDGAME?
+				count += (pawnProblem || board.getGamePhase()<ENDGAME?
 						passedPawnBonus2[color][squareRank[from]]:
 						passedPawnBonus1[color][squareRank[from]]);
+			} else if (!pawnProblem && !(backwardPawnMask[color][from]&allButThePawn)) {
+				const Bitboard otherPawns = board.getPiecesByType(board.makePiece(other,PAWN));
+				const Square stop = color==WHITE?Square(from+8):Square(from-8);
+				if (board.getPawnAttacks(stop) & otherPawns) {
+					count += BACKWARD_PAWN_PENALTY;
+				}
 			}
 
 			from = extractLSB(pieces);
