@@ -152,8 +152,7 @@ int SimplePVSearch::idSearch(Board& board) {
 			}
 
 			if (depth>5) {
-				if (_timeToSearch <	predictTimeUse(iterationTime,_timeToSearch,depth+1) &&
-						iterationTime[depth] > (_timeToSearch*80)/100) {
+				if (_timeToSearch <	predictTimeUse(iterationTime,_timeToSearch,depth+1)) {
 					break;
 				}
 			}

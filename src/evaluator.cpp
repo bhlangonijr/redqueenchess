@@ -75,30 +75,62 @@ const int Evaluator::evalPieces(Board& board, PieceColor color) {
 				board.getPiecesByType(board.makePiece(other,QUEEN)) ? 10 : 0;
 	}
 
+	const Square otherKingSq = board.getKingSquare(other);
+	const Square myKingSq = board.getKingSquare(color);
+	const Bitboard all = board.getAllPieces();
 	const Bitboard pawns = board.getPiecesByType(board.makePiece(color,PAWN));
-
-	//pawns - penalyze doubled & isolated pawns
+	const Bitboard otherPawns = board.getPiecesByType(board.makePiece(other,PAWN));
+	const Bitboard pieces = pawns | otherPawns |
+			board.getPiecesByType(WHITE_KING) |	board.getPiecesByType(BLACK_KING);
+	const bool isPawnFinal = !(pieces^all);
+	//pawns - penalyze doubled, isolated and backward pawns
 	if (pawns) {
 		Bitboard pieces=pawns;
 		Square from = extractLSB(pieces);
 		while ( from!=NONE ) {
 			const Bitboard pawn = squareToBitboard[from];
 			const Bitboard allButThePawn =(pawns^pawn);
-			bool pawnProblem = false;
-			if (fileAttacks[squareFile[from]]&allButThePawn) {
+			const Bitboard chainSquares = backwardPawnMask[color][from]&adjacentSquares[from];
+			const Bitboard frontSquares = fileAttacks[squareFile[from]]&
+					(color==WHITE?upperMaskBitboard[from]:lowerMaskBitboard[from]);
+			const bool isDoubled = (fileAttacks[squareFile[from]]&allButThePawn);
+			const bool isPasser = !(passedMask[color][from]&otherPawns);
+			const bool isIsolated = !(neighborFiles[from]&allButThePawn);
+			const bool isChained = (chainSquares&allButThePawn);
+
+			if (isDoubled) {
 				count += DOUBLED_PAWN_PENALTY;
-				pawnProblem = true;
 			}
-			if (!(neighborFiles[from]&allButThePawn)) {
+			if (isIsolated) {
 				count += ISOLATED_PAWN_PENALTY;
-				pawnProblem = true;
+			} else if (isChained) {
+				count += CONNECTED_PAWN_BONUS;
 			}
-			if (isPawnPassed(board,from)) {
-				count += (pawnProblem || board.getGamePhase()<ENDGAME?
-						passedPawnBonus2[color][squareRank[from]]:
-						passedPawnBonus1[color][squareRank[from]]);
-			} else if (!pawnProblem && !(backwardPawnMask[color][from]&allButThePawn)) {
-				const Bitboard otherPawns = board.getPiecesByType(board.makePiece(other,PAWN));
+			if (isPasser && !(isDoubled && (frontSquares&allButThePawn))) {
+
+				count += (((isChained && !(frontSquares&(all^pawn))) || isPawnFinal)?
+						passedPawnBonus1[color][squareRank[from]]:
+						passedPawnBonus2[color][squareRank[from]]);
+
+				if (isPawnFinal) {
+					const Rank rank = color==WHITE?RANK_8:RANK_1;
+					const Square target = board.makeSquare(rank,squareFile[from]);
+
+					const int delta1 = squareDistance(from,target);
+					const int delta2 = squareDistance(otherKingSq,target);
+					const int delta3 = squareDistance(otherKingSq,from);
+					const int delta4 = squareDistance(myKingSq,target);
+					const int delta5 = squareDistance(myKingSq,from);
+
+					if ((delta1<delta2 && delta3>delta1) ||
+						(delta4<delta2 && delta5<3)	) {
+						count += rookValue;
+					}
+				}
+			}
+			if (!(isPasser | isIsolated | isChained) &&
+					!(backwardPawnMask[color][from]&allButThePawn) &&
+					!(board.getPawnAttacks(from,color) & otherPawns)) {
 				const Square stop = color==WHITE?Square(from+8):Square(from-8);
 				if (board.getPawnAttacks(stop,color) & otherPawns) {
 					count += BACKWARD_PAWN_PENALTY;

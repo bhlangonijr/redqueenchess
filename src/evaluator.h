@@ -41,8 +41,9 @@
 
 const int DONE_CASTLE_BONUS=       +10;
 const int DOUBLED_PAWN_PENALTY =   -10;
-const int ISOLATED_PAWN_PENALTY =  -20;
+const int ISOLATED_PAWN_PENALTY =  -15;
 const int BACKWARD_PAWN_PENALTY =  -10;
+const int CONNECTED_PAWN_BONUS =   +5;
 const int BISHOP_PAIR_BONUS = 	   +25;
 
 const int knightMobilityBonus[maxGamePhase+1] = {6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,4,3,3,3,3,3,2,2,2,1,1,1};
@@ -140,13 +141,10 @@ private:
 
 // verify if pawn is passer
 inline const bool Evaluator::isPawnPassed(Board& board, const Square from) {
-	const Bitboard pawns = board.getPiecesByType(WHITE_PAWN) |
-			board.getPiecesByType(BLACK_PAWN);
-
-	const Bitboard thePawn = squareToBitboard[from];
 	const PieceColor color = board.getPieceColorBySquare(from);
-
-	return !(passedMask[color][from]&(pawns^thePawn));
+	const PieceColor other = board.flipSide(color);
+	const Bitboard otherPawns = board.getPiecesByType(board.makePiece(other,PAWN));
+	return !(passedMask[color][from]&otherPawns);
 }
 
 // static exchange evaluation sign
