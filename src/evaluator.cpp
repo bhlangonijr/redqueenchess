@@ -76,7 +76,6 @@ const int Evaluator::evalPieces(Board& board, PieceColor color) {
 	}
 
 	const Square otherKingSq = board.getKingSquare(other);
-	const Square myKingSq = board.getKingSquare(color);
 	const Bitboard all = board.getAllPieces();
 	const Bitboard pawns = board.getPiecesByType(board.makePiece(color,PAWN));
 	const Bitboard otherPawns = board.getPiecesByType(board.makePiece(other,PAWN));
@@ -91,8 +90,6 @@ const int Evaluator::evalPieces(Board& board, PieceColor color) {
 			const Bitboard pawn = squareToBitboard[from];
 			const Bitboard allButThePawn =(pawns^pawn);
 			const Bitboard chainSquares = backwardPawnMask[color][from]&adjacentSquares[from];
-			const Bitboard frontSquares = fileAttacks[squareFile[from]]&
-					(color==WHITE?upperMaskBitboard[from]:lowerMaskBitboard[from]);
 			const bool isDoubled = (fileAttacks[squareFile[from]]&allButThePawn);
 			const bool isPasser = !(passedMask[color][from]&otherPawns);
 			const bool isIsolated = !(neighborFiles[from]&allButThePawn);
@@ -106,9 +103,9 @@ const int Evaluator::evalPieces(Board& board, PieceColor color) {
 			} else if (isChained) {
 				count += CONNECTED_PAWN_BONUS;
 			}
-			if (isPasser && !(isDoubled && (frontSquares&allButThePawn))) {
+			if (isPasser && !(isDoubled && (frontSquares[color][from]&allButThePawn))) {
 
-				count += (((isChained && !(frontSquares&(all^pawn))) || isPawnFinal)?
+				count += ((isChained && !(frontSquares[color][from]&all))?
 						passedPawnBonus1[color][squareRank[from]]:
 						passedPawnBonus2[color][squareRank[from]]);
 
@@ -118,12 +115,9 @@ const int Evaluator::evalPieces(Board& board, PieceColor color) {
 
 					const int delta1 = squareDistance(from,target);
 					const int delta2 = squareDistance(otherKingSq,target);
-					const int delta3 = squareDistance(otherKingSq,from);
-					const int delta4 = squareDistance(myKingSq,target);
-					const int delta5 = squareDistance(myKingSq,from);
+					const int otherMove=board.getSideToMove();
 
-					if ((delta1<delta2 && delta3>delta1) ||
-						(delta4<delta2 && delta5<3)	) {
+					if (MIN(5,delta1)<delta2-otherMove) {
 						count += rookValue;
 					}
 				}

@@ -53,8 +53,8 @@ void initializeBitboards() {
 		for (int y=0;y<ALL_SQUARE;y++) {
 			const int delta1 = abs(squareRank[x]-squareRank[y]);
 			const int delta2 = abs(squareFile[x]-squareFile[y]);
-			squareDelta[x][y]=(delta1+delta2)/2;
-			inverseSquareDelta[x][y]=DELTA_MAX-squareDelta[x][y];
+			squareDelta[x][y] = MAX(delta1, delta2);
+			inverseSquareDelta[x][y] = DELTA_MAX-squareDelta[x][y];
 		}
 	}
 

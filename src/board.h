@@ -661,13 +661,11 @@ inline const bool Board::isDraw() {
 		}
 	}
 
-	const Bitboard pawns = this->getPiecesByType(WHITE_PAWN) |
+	const Bitboard pawns = getPiecesByType(WHITE_PAWN) |
 			getPiecesByType(BLACK_PAWN);
 	if (!pawns) {
-		if (getPiecesByType(WHITE_KING) &&
-				getPiecesByType(BLACK_KING) &&
-				getMaterial(WHITE)<=kingValue+bishopValue &&
-				getMaterial(BLACK)<=kingValue+bishopValue) {
+		if (getMaterial(WHITE)+getMaterial(BLACK)<=
+				kingValue*2+bishopValue) {
 			return true;
 		}
 	}
