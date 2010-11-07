@@ -37,7 +37,7 @@
 #include "evaluator.h"
 
 // game constants
-const int maxScoreRepetition = 8;
+const int maxScoreRepetition = 25;
 const int mateRangeScore = 300;
 const int maxSearchDepth = 80;
 const int maxSearchPly = 100;

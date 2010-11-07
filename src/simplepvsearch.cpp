@@ -126,12 +126,16 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		if (!(_searchFixedDepth || _infinite)) {
 
-			if (repetition >= maxScoreRepetition ){
-				if ((abs(iterationScore[depth - 0]) >= maxScore-maxSearchPly) ||
-						(abs(iterationScore[depth - 1]) >= maxScore-maxSearchPly) ||
-						iterationScore[depth - 0] == drawScore) {
-					break;
-				}
+			if (abs(iterationScore[depth - 0]) >= maxScore-maxSearchPly ||
+					abs(iterationScore[depth - 1]) >= maxScore-maxSearchPly ||
+					abs(iterationScore[depth - 2]) >= maxScore-maxSearchPly ||
+					abs(iterationScore[depth - 3]) >= maxScore-maxSearchPly) {
+				break;
+			}
+
+			if (repetition >= maxScoreRepetition &&
+					iterationScore[depth - 0] == drawScore) {
+				break;
 			}
 
 			if (depth>1) {
@@ -146,13 +150,14 @@ int SimplePVSearch::idSearch(Board& board) {
 
 			if (depth>7) {
 				if (!easyMove.none() && easyMove==bestMove && nodesPerMove[0]>=(_nodes*85)/100 &&
-						iterationTime[depth] > _timeToSearch/10) {
+						iterationTime[depth] > _timeToSearch/2) {
 					break;
 				}
 			}
 
 			if (depth>5) {
-				if (_timeToSearch <	predictTimeUse(iterationTime,_timeToSearch,depth+1)) {
+				if (_timeToSearch <	predictTimeUse(iterationTime,_timeToSearch,depth+1) &&
+						iterationTime[depth] > (_timeToSearch*80)/100) {
 					break;
 				}
 			}

@@ -166,7 +166,8 @@ const long SearchAgent::getTimeToSearch() {
 
 		for (int x=0;x<timeTableSize;x++) {
 			if (time<timeTable[x][1] && time >= timeTable[x][2]) {
-				movesLeft=timeTable[x][0];
+				movesLeft=timeTable[x][0]+
+						(maxGamePhase-board.getGamePhase())/2;
 				break;
 			}
 		}
