@@ -44,8 +44,10 @@ const int DONE_CASTLE_BONUS=       +10;
 const int DOUBLED_PAWN_PENALTY =   -10;
 const int ISOLATED_PAWN_PENALTY =  -15;
 const int BACKWARD_PAWN_PENALTY =  -10;
+const int LACK_PAWN_PENALTY =      -17;
 const int CONNECTED_PAWN_BONUS =   +5;
 const int BISHOP_PAIR_BONUS = 	   +25;
+const int TEMPO_BONUS = 		   +10;
 
 const int knightMobilityBonus[maxGamePhase+1] = {6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,4,3,3,3,3,3,2,2,2,1,1,1};
 const int bishopMobilityBonus[maxGamePhase+1] = {4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,1,1,1};
@@ -149,9 +151,10 @@ public:
 	virtual ~Evaluator();
 	const int evaluate(Board& board, const int alpha, const int beta);
 	const int evalMaterial(Board& board, PieceColor color);
-	const int evalPieces(Board& board, PieceColor color);
+	const int evalKing(Board& board, PieceColor color);
+	const int evalPawns(Board& board, PieceColor color);
+	const int evalBishops(Board& board, PieceColor color);
 	const int evalBoardControl(Board& board, PieceColor color, int& kingThreat);
-	const int evalImbalances(Board& board, PieceColor color);
 	const bool isPawnPassed(Board& board, const Square from);
 	const void setGameStage(const GamePhase phase);
 	const int seeSign(Board& board, MoveIterator::Move& move);
