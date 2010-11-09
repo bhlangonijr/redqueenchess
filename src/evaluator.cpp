@@ -35,7 +35,7 @@ Evaluator::~Evaluator() {
 }
 
 // main eval function
-const int Evaluator::evaluate(Board& board, const int& alpha, const int& beta) {
+const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 
 	const PieceColor side = board.getSideToMove();
 	const PieceColor other = board.flipSide(board.getSideToMove());
@@ -43,15 +43,12 @@ const int Evaluator::evaluate(Board& board, const int& alpha, const int& beta) {
 	int value = board.getMaterial(side) - board.getMaterial(other);
 	value += board.getPieceSquareValue(side)-board.getPieceSquareValue(other);
 	value += evalImbalances(board, side) - evalImbalances(board, other);
-
-	if (value > alpha-lazyEvalMargin && value < beta+lazyEvalMargin) {
-		value += evalPieces(board, side) - evalPieces(board, other);
-		int kingThreatSide=0;
-		int kingThreatOther=0;
-		value += evalBoardControl(board, side, kingThreatSide) -
-				evalBoardControl(board, other, kingThreatOther);
-		value += kingThreatSide-kingThreatOther;
-	}
+	value += evalPieces(board, side) - evalPieces(board, other);
+	int kingThreatSide=0;
+	int kingThreatOther=0;
+	value += evalBoardControl(board, side, kingThreatSide) -
+			evalBoardControl(board, other, kingThreatOther);
+	value += kingThreatSide-kingThreatOther;
 
 	if (value>maxScore) {
 		value=maxScore;

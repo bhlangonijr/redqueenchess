@@ -142,14 +142,12 @@ const Bitboard frontSquares[ALL_PIECE_COLOR][ALL_SQUARE]= {
 		{}
 };
 
-const int lazyEvalMargin=200;
-
 class Evaluator {
 public:
 
 	Evaluator();
 	virtual ~Evaluator();
-	const int evaluate(Board& board, const int& alpha, const int& beta);
+	const int evaluate(Board& board, const int alpha, const int beta);
 	const int evalMaterial(Board& board, PieceColor color);
 	const int evalPieces(Board& board, PieceColor color);
 	const int evalBoardControl(Board& board, PieceColor color, int& kingThreat);
