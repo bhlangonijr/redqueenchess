@@ -169,13 +169,13 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 
 	const PieceColor other = board.flipSide(color);
 	const Square otherKingSq = board.getKingSquare(other);
+	const Bitboard otherKingBB = squareToBitboard[otherKingSq];
 	const Bitboard otherKingSquareBB = adjacentSquares[otherKingSq];
 	const Bitboard knights = board.getPiecesByType(board.makePiece(color,KNIGHT));
 	const Bitboard bishops = board.getPiecesByType(board.makePiece(color,BISHOP));
 	const Bitboard rooks = board.getPiecesByType(board.makePiece(color,ROOK));
 	const Bitboard queens = board.getPiecesByType(board.makePiece(color,QUEEN));
-	const Bitboard allPieces = board.getAllPieces();
-	const Bitboard notFriends = allPieces^board.getPiecesByColor(color);
+	const Bitboard notFriends = ~board.getPiecesByColor(color);
 	const int phase = int(board.getGamePhase());
 
 	Bitboard pieces = EMPTY_BB;
@@ -193,6 +193,9 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 		if (attacks&otherKingSquareBB) {
 			kingThreat += minorKingZoneAttackBonus[phase];
 		}
+		if (attacks&otherKingBB) {
+			kingThreat += minorKingZoneAttackBonus[phase];
+		}
 		from = extractLSB(pieces);
 	}
 
@@ -205,6 +208,9 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 		count+=(_BitCount(attacks&notFriends)-6)*
 				bishopMobilityBonus[phase];
 		if (attacks&otherKingSquareBB) {
+			kingThreat += minorKingZoneAttackBonus[phase];
+		}
+		if (attacks&otherKingBB) {
 			kingThreat += minorKingZoneAttackBonus[phase];
 		}
 		kingThreat += delta*bishopKingBonus[phase];
@@ -221,6 +227,9 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 		if (attacks&otherKingSquareBB) {
 			kingThreat += minorKingZoneAttackBonus[phase];
 		}
+		if (attacks&otherKingBB) {
+			kingThreat += majorKingZoneAttackBonus[phase];
+		}
 		kingThreat += delta*rookKingBonus[phase];
 		from = extractLSB(pieces);
 	}
@@ -233,6 +242,9 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 		const Bitboard attacks = board.getQueenAttacks(from);
 		count+=(_BitCount(attacks&notFriends)-10);
 		if (attacks&otherKingSquareBB) {
+			kingThreat += majorKingZoneAttackBonus[phase];
+		}
+		if (attacks&otherKingBB) {
 			kingThreat += majorKingZoneAttackBonus[phase];
 		}
 		kingThreat += delta*queenKingBonus[phase];
