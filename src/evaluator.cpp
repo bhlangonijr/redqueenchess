@@ -43,14 +43,16 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 	int value = board.getMaterial(side) - board.getMaterial(other);
 	value += board.getPieceSquareValue(side)-board.getPieceSquareValue(other);
 	value += evalKing(board, side) - evalKing(board, other);
-	value += evalPawns(board, side) - evalPawns(board, other);
 	value += evalBishops(board, side) - evalBishops(board, other);
 
-	int kingThreatSide=0;
-	int kingThreatOther=0;
-	value += evalBoardControl(board, side, kingThreatSide) -
-			evalBoardControl(board, other, kingThreatOther);
-	value += kingThreatSide-kingThreatOther;
+	if (value > alpha-lazyEvalMargin && value < beta+lazyEvalMargin) {
+		int kingThreatSide=0;
+		int kingThreatOther=0;
+		value += evalBoardControl(board, side, kingThreatSide) -
+				evalBoardControl(board, other, kingThreatOther);
+		value += kingThreatSide-kingThreatOther;
+		value += evalPawns(board, side) - evalPawns(board, other);
+	}
 
 	if (value>maxScore) {
 		value=maxScore;
@@ -167,7 +169,6 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 
 	const PieceColor other = board.flipSide(color);
 	const Square otherKingSq = board.getKingSquare(other);
-	const Bitboard otherKingBB = squareToBitboard[otherKingSq];
 	const Bitboard otherKingSquareBB = adjacentSquares[otherKingSq];
 	const Bitboard knights = board.getPiecesByType(board.makePiece(color,KNIGHT));
 	const Bitboard bishops = board.getPiecesByType(board.makePiece(color,BISHOP));
@@ -192,9 +193,6 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 		if (attacks&otherKingSquareBB) {
 			kingThreat += minorKingZoneAttackBonus[phase];
 		}
-		if (attacks&otherKingBB) {
-			kingThreat += minorKingZoneAttackBonus[phase];
-		}
 		from = extractLSB(pieces);
 	}
 
@@ -207,9 +205,6 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 		count+=(_BitCount(attacks&notFriends)-6)*
 				bishopMobilityBonus[phase];
 		if (attacks&otherKingSquareBB) {
-			kingThreat += minorKingZoneAttackBonus[phase];
-		}
-		if (attacks&otherKingBB) {
 			kingThreat += minorKingZoneAttackBonus[phase];
 		}
 		kingThreat += delta*bishopKingBonus[phase];
@@ -226,9 +221,6 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 		if (attacks&otherKingSquareBB) {
 			kingThreat += minorKingZoneAttackBonus[phase];
 		}
-		if (attacks&otherKingBB) {
-			kingThreat += majorKingZoneAttackBonus[phase];
-		}
 		kingThreat += delta*rookKingBonus[phase];
 		from = extractLSB(pieces);
 	}
@@ -241,9 +233,6 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 		const Bitboard attacks = board.getQueenAttacks(from);
 		count+=(_BitCount(attacks&notFriends)-10);
 		if (attacks&otherKingSquareBB) {
-			kingThreat += majorKingZoneAttackBonus[phase];
-		}
-		if (attacks&otherKingBB) {
 			kingThreat += majorKingZoneAttackBonus[phase];
 		}
 		kingThreat += delta*queenKingBonus[phase];

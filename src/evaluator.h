@@ -144,6 +144,8 @@ const Bitboard frontSquares[ALL_PIECE_COLOR][ALL_SQUARE]= {
 		{}
 };
 
+const int lazyEvalMargin=200;
+
 class Evaluator {
 public:
 
