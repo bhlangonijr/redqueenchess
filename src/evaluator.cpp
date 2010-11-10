@@ -46,12 +46,12 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 	value += evalBishops(board, side) - evalBishops(board, other);
 
 	if (value > alpha-lazyEvalMargin && value < beta+lazyEvalMargin) {
+		value += evalPawns(board, side) - evalPawns(board, other);
 		int kingThreatSide=0;
 		int kingThreatOther=0;
 		value += evalBoardControl(board, side, kingThreatSide) -
 				evalBoardControl(board, other, kingThreatOther);
 		value += kingThreatSide-kingThreatOther;
-		value += evalPawns(board, side) - evalPawns(board, other);
 	}
 
 	if (value>maxScore) {
@@ -60,7 +60,7 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 		value=-maxScore;
 	}
 
-	return value + (side==WHITE?TEMPO_BONUS:-TEMPO_BONUS);
+	return value + TEMPO_BONUS;
 }
 
 // king eval function
@@ -169,8 +169,8 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 
 	const PieceColor other = board.flipSide(color);
 	const Square otherKingSq = board.getKingSquare(other);
-	const Bitboard otherKingBB = squareToBitboard[otherKingSq];
-	const Bitboard otherKingSquareBB = adjacentSquares[otherKingSq];
+	const Bitboard otherKingSquareBB = adjacentSquares[otherKingSq] |
+			squareToBitboard[otherKingSq];
 	const Bitboard knights = board.getPiecesByType(board.makePiece(color,KNIGHT));
 	const Bitboard bishops = board.getPiecesByType(board.makePiece(color,BISHOP));
 	const Bitboard rooks = board.getPiecesByType(board.makePiece(color,ROOK));
@@ -190,12 +190,9 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 		const Bitboard attacks = board.getKnightAttacks(from);
 		count+=(_BitCount(attacks&notFriends)-4)*
 				knightMobilityBonus[phase];
-		if (attacks&otherKingSquareBB) {
-			kingThreat += minorKingZoneAttackBonus[phase];
-		}
-		if (attacks&otherKingBB) {
-			kingThreat += minorKingZoneAttackBonus[phase];
-		}
+		const Bitboard kingZoneAttack=attacks&otherKingSquareBB;
+		kingThreat += _BitCount(kingZoneAttack)*
+				minorKingZoneAttackBonus[phase];
 		from = extractLSB(pieces);
 	}
 
@@ -207,12 +204,9 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 		const Bitboard attacks = board.getBishopAttacks(from);
 		count+=(_BitCount(attacks&notFriends)-6)*
 				bishopMobilityBonus[phase];
-		if (attacks&otherKingSquareBB) {
-			kingThreat += minorKingZoneAttackBonus[phase];
-		}
-		if (attacks&otherKingBB) {
-			kingThreat += minorKingZoneAttackBonus[phase];
-		}
+		const Bitboard kingZoneAttack=attacks&otherKingSquareBB;
+		kingThreat += _BitCount(kingZoneAttack)*
+				minorKingZoneAttackBonus[phase];
 		kingThreat += delta*bishopKingBonus[phase];
 		from = extractLSB(pieces);
 	}
@@ -224,12 +218,9 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getRookAttacks(from);
 		count+=(_BitCount(attacks&notFriends)-7)*rookMobilityBonus[phase];
-		if (attacks&otherKingSquareBB) {
-			kingThreat += minorKingZoneAttackBonus[phase];
-		}
-		if (attacks&otherKingBB) {
-			kingThreat += majorKingZoneAttackBonus[phase];
-		}
+		const Bitboard kingZoneAttack=attacks&otherKingSquareBB;
+		kingThreat += _BitCount(kingZoneAttack)*
+				minorKingZoneAttackBonus[phase];
 		kingThreat += delta*rookKingBonus[phase];
 		from = extractLSB(pieces);
 	}
@@ -241,12 +232,9 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getQueenAttacks(from);
 		count+=(_BitCount(attacks&notFriends)-10);
-		if (attacks&otherKingSquareBB) {
-			kingThreat += majorKingZoneAttackBonus[phase];
-		}
-		if (attacks&otherKingBB) {
-			kingThreat += majorKingZoneAttackBonus[phase];
-		}
+		const Bitboard kingZoneAttack=attacks&otherKingSquareBB;
+		kingThreat += _BitCount(kingZoneAttack)*
+				majorKingZoneAttackBonus[phase];
 		kingThreat += delta*queenKingBonus[phase];
 		from = extractLSB(pieces);
 	}

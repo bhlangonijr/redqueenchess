@@ -40,11 +40,11 @@
 #define BP(COLOR, X) ((FSQUARE((COLOR==WHITE?BLACK:WHITE), (neighborFiles[X]), X)) | (rankBB[squareRank[X]] & adjacentSquares[X]))
 #define FQ(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]]), X))
 
-const int DONE_CASTLE_BONUS=       +10;
 const int DOUBLED_PAWN_PENALTY =   -10;
 const int ISOLATED_PAWN_PENALTY =  -15;
 const int BACKWARD_PAWN_PENALTY =  -10;
 const int LACK_PAWN_PENALTY =      -17;
+const int DONE_CASTLE_BONUS=       +10;
 const int CONNECTED_PAWN_BONUS =   +5;
 const int BISHOP_PAIR_BONUS = 	   +25;
 const int TEMPO_BONUS = 		   +10;
