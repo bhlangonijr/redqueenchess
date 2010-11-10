@@ -169,7 +169,6 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 
 	const PieceColor other = board.flipSide(color);
 	const Square otherKingSq = board.getKingSquare(other);
-	const Bitboard otherKingBB = squareToBitboard[otherKingSq];
 	const Bitboard otherKingSquareBB = adjacentSquares[otherKingSq];
 	const Bitboard knights = board.getPiecesByType(board.makePiece(color,KNIGHT));
 	const Bitboard bishops = board.getPiecesByType(board.makePiece(color,BISHOP));

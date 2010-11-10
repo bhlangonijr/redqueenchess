@@ -359,11 +359,6 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		MoveBackup backup;
 		board.doMove(move,backup);
 
-		if (board.isNotLegal()) {
-			board.undoMove(backup);
-			continue; // not legal
-		}
-
 		moveCounter++;
 
 		if (move.type == MoveIterator::NON_CAPTURE) {
@@ -558,11 +553,6 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		MoveBackup backup;
 		board.doMove(move,backup);
 
-		if (board.isNotLegal()) {
-			board.undoMove(backup);
-			continue; // not legal
-		}
-
 		moveCounter++;
 
 		const bool givingCheck = board.isInCheck(board.getSideToMove());
@@ -718,11 +708,6 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		MoveBackup backup;
 		board.doMove(move,backup);
 
-		if (board.isNotLegal()) {
-			board.undoMove(backup);
-			continue; // not legal
-		}
-
 		moveCounter++;
 
 		if (!isKingAttacked && !isPV && depth < 0 &&
@@ -802,10 +787,6 @@ long SimplePVSearch::perft(Board& board, int depth, int ply) {
 		}
 		MoveBackup backup;
 		board.doMove(move,backup);
-		if (board.isNotLegal()) {
-			board.undoMove(backup);
-			continue; // not legal
-		}
 		nodes += perft(board, depth-1, ply+1);
 		board.undoMove(backup);
 

@@ -243,7 +243,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			} else {
 				moves.setStage(MoveIterator::INIT_EVASION_STAGE);
 			}
-			if (!ttMove.none() && board.isMoveLegal(ttMove)) {
+			if (!ttMove.none() && board.isMoveLegal<true>(ttMove)) {
 				return ttMove;
 			}
 			break;
@@ -257,7 +257,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 		case MoveIterator::ON_EVASION_STAGE:
 			while (moves.hasNext()) {
 				MoveIterator::Move& move=moves.selectBest();
-				if (move==ttMove) {
+				if (move==ttMove || !board.isMoveLegal<false>(move)) {
 					continue;
 				}
 				return move;
@@ -278,7 +278,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 		case MoveIterator::ON_CAPTURE_STAGE:
 			while (moves.hasNext()) {
 				MoveIterator::Move& move=moves.selectBest();
-				if (move==ttMove) {
+				if (move==ttMove || !board.isMoveLegal<false>(move)) {
 					continue;
 				}
 				if (move.type==MoveIterator::UNKNOW_CAPTURE) {
@@ -314,7 +314,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			moves.setStage(MoveIterator::KILLER2_STAGE);
 			if (killer1 != ttMove &&
 					!board.isCaptureMove(killer1) &&
-					board.isMoveLegal(killer1)) {
+					board.isMoveLegal<true>(killer1)) {
 				return killer1;
 			}
 			break;
@@ -323,7 +323,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			moves.setStage(MoveIterator::INIT_QUIET_STAGE);
 			if (killer2 != ttMove &&
 					!board.isCaptureMove(killer2) &&
-					board.isMoveLegal(killer2)) {
+					board.isMoveLegal<true>(killer2)) {
 				return killer2;
 			}
 			break;
@@ -337,7 +337,8 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 		case MoveIterator::ON_QUIET_STAGE:
 			while (moves.hasNext()) {
 				MoveIterator::Move& move=moves.selectBest();
-				if (move==ttMove || move==killer1 || move==killer2) {
+				if (move==ttMove || move==killer1 ||
+						move==killer2 || !board.isMoveLegal<false>(move)) {
 					continue;
 				}
 				return move;

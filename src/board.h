@@ -254,7 +254,9 @@ public:
 	const CastleRight getCastleRights(PieceColor color) const;
 	void removeCastleRights(const PieceColor color, const CastleRight castle);
 	void setCastleRights(const PieceColor color, const CastleRight castle);
+	template <bool checkForLegal>
 	bool canCastle(const PieceColor color);
+	template <bool checkForLegal>
 	bool canCastle(const PieceColor color, const CastleRight castleRight);
 	const PieceColor getSideToMove() const;
 	void setSideToMove(const PieceColor color);
@@ -273,6 +275,7 @@ public:
 	const bool isAttacked(const PieceColor color, const Square from);
 	const bool isInCheck(const PieceColor color);
 	const bool isNotLegal();
+	template <bool isMoveFromCache>
 	const bool isMoveLegal(MoveIterator::Move& move);
 	const bool isAttackedBy(const Square from, const Square to);
 	const bool isDraw();
@@ -434,17 +437,20 @@ inline void Board::setCastleRights(const PieceColor color, const CastleRight cas
 }
 
 // can castle?
+template <bool checkForLegal>
 inline bool Board::canCastle(const PieceColor color) {
 
-	return canCastle(color, BOTH_SIDE_CASTLE);
+	return checkForLegal?canCastle<true>(color, BOTH_SIDE_CASTLE) :
+			canCastle<false>(color, BOTH_SIDE_CASTLE);
 }
 
 // can castle specific?
+template <bool checkForLegal>
 inline bool Board::canCastle(const PieceColor color, const CastleRight castleRight) {
 
 	// lost the right to castle?
 
-	if (this->isCastleDone(color)) {
+	if (isCastleDone(color)) {
 		return false;
 	} else if (currentBoard.castleRight[color]!=BOTH_SIDE_CASTLE &&
 			currentBoard.castleRight[color]!=castleRight) {
@@ -456,35 +462,36 @@ inline bool Board::canCastle(const PieceColor color, const CastleRight castleRig
 		return false;
 	}
 
-	if (isInCheck(color)) {
-		return false;
-	}
+	if (checkForLegal) {
+		if (isInCheck(color)) {
+			return false;
+		}
 
-	// squares through castle & king destination attacked?
-	if (castleRight==BOTH_SIDE_CASTLE || castleRight==KING_SIDE_CASTLE) {
-		if (color==WHITE) {
-			if (isAttacked(color,F1) || isAttacked(color,G1)) {
-				return false;
+		// squares through castle & king destination attacked?
+		if (castleRight==BOTH_SIDE_CASTLE || castleRight==KING_SIDE_CASTLE) {
+			if (color==WHITE) {
+				if (isAttacked(color,F1) || isAttacked(color,G1)) {
+					return false;
+				}
+			} else {
+				if (isAttacked(color,F8) || isAttacked(color,G8)) {
+					return false;
+				}
 			}
-		} else {
-			if (isAttacked(color,F8) || isAttacked(color,G8)) {
-				return false;
+		}
+
+		if (castleRight==BOTH_SIDE_CASTLE || castleRight==QUEEN_SIDE_CASTLE) {
+			if (color==WHITE) {
+				if (isAttacked(color,D1) || isAttacked(color,C1)) {
+					return false;
+				}
+			} else {
+				if (isAttacked(color,D8) || isAttacked(color,C8)) {
+					return false;
+				}
 			}
 		}
 	}
-
-	if (castleRight==BOTH_SIDE_CASTLE || castleRight==QUEEN_SIDE_CASTLE) {
-		if (color==WHITE) {
-			if (isAttacked(color,D1) || isAttacked(color,C1)) {
-				return false;
-			}
-		} else {
-			if (isAttacked(color,D8) || isAttacked(color,C8)) {
-				return false;
-			}
-		}
-	}
-
 	return true;
 }
 
@@ -603,24 +610,64 @@ inline const bool Board::isNotLegal() {
 }
 
 // verify board legality
+template <bool isMoveFromCache>
 inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 
 	const PieceTypeByColor fromPiece=getPieceBySquare(move.from);
-	if (move.none() || fromPiece==EMPTY) {
-		return false;
-	}
-	if (this->getPieceColorBySquare(move.from) == this->getPieceColorBySquare(move.to) ||
-			this->getPieceColorBySquare(move.from) != getSideToMove()) {
-		return false;
+	const PieceColor color = getPieceColorBySquare(move.from);
+	if (isMoveFromCache) {
+		if (move.none() || fromPiece==EMPTY) {
+			return false;
+		}
+		if (getPieceColorBySquare(move.from) == getPieceColorBySquare(move.to) ||
+				getPieceColorBySquare(move.from) != getSideToMove()) {
+			return false;
+		}
 	}
 	if (((fromPiece==WHITE_KING && move.from==E1 && (move.to==G1 || move.to==C1)) ||
 			(fromPiece==BLACK_KING && move.from==E8 && (move.to==G8 || move.to==C8)))) {
 		const CastleRight castleRight =
 				(move.to==C1 || move.to==C8) ? QUEEN_SIDE_CASTLE : KING_SIDE_CASTLE;
-		const PieceColor color = getPieceColorBySquare(move.from);
-		return canCastle(color, castleRight);
+		return canCastle<true>(color, castleRight);
 	}
-	return isAttackedBy(move.from, move.to);
+	if (isMoveFromCache) {
+		if (!isAttackedBy(move.from, move.to)) {
+			return false;
+		}
+	}
+
+	const PieceColor other = flipSide(color);
+	const PieceType t = pieceType[fromPiece];
+	Bitboard testBoard = getAllPieces()^squareToBitboard[move.from];
+	testBoard |= squareToBitboard[move.to];
+	const Square kingLocation = (t==KING?move.to:getKingSquare(color));
+	Bitboard otherPieces = getPiecesByColor(other);
+
+	if (getPieceBySquare(move.to)!=EMPTY) {
+		otherPieces^=squareToBitboard[move.to];
+	} else if (getPieceTypeBySquare(move.from)==PAWN){
+		if (getEnPassant()!=NONE &&
+				getSquareFile(move.from)!=getSquareFile(move.to)) {
+			otherPieces^=squareToBitboard[getEnPassant()];
+			testBoard^=squareToBitboard[getEnPassant()];
+		}
+	}
+
+	const Bitboard bishopAndQueens = (getPiecesByType(makePiece(other,BISHOP)) |
+			getPiecesByType(makePiece(other,QUEEN)))&otherPieces;
+	const Bitboard rookAndQueens = (getPiecesByType(makePiece(other,ROOK)) |
+			getPiecesByType(makePiece(other,QUEEN)))&otherPieces;
+	const Bitboard knights = getPiecesByType(makePiece(other,KNIGHT))&otherPieces;
+	const Bitboard pawns = getPiecesByType(makePiece(other,PAWN))&otherPieces;
+	const Bitboard kings = getPiecesByType(makePiece(other,KING))&otherPieces;
+
+	const bool result = !((getBishopAttacks(kingLocation,testBoard) & bishopAndQueens) ||
+			(getRookAttacks(kingLocation,testBoard) & rookAndQueens) ||
+			(getKnightAttacks(kingLocation,testBoard) & knights) ||
+			(getPawnAttacks(kingLocation,color) & pawns) ||
+			(getKingAttacks(kingLocation,testBoard) & kings));
+
+	return result;
 }
 
 // Get attacks from a given square
@@ -1171,7 +1218,7 @@ inline void Board::generateKingMoves(MoveIterator& moves, const PieceColor side,
 // generate castle moves
 inline void Board::generateCastleMoves(MoveIterator& moves, const PieceColor side) {
 
-	if (canCastle(side, KING_SIDE_CASTLE)) {
+	if (canCastle<false>(side, KING_SIDE_CASTLE)) {
 		if (side==WHITE) {
 			moves.add(E1,G1,EMPTY,MoveIterator::CASTLE);
 		} else {
@@ -1179,7 +1226,7 @@ inline void Board::generateCastleMoves(MoveIterator& moves, const PieceColor sid
 		}
 	}
 
-	if (canCastle(side, QUEEN_SIDE_CASTLE)) {
+	if (canCastle<false>(side, QUEEN_SIDE_CASTLE)) {
 		if (side==WHITE) {
 			moves.add(E1,C1,EMPTY,MoveIterator::CASTLE);
 		} else {
