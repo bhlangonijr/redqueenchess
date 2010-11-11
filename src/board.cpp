@@ -266,8 +266,8 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 			}
 		}
 
-		Rank doubleInitialRank = getSideToMove()==WHITE?RANK_2:RANK_7;
-		Rank doubleFinalRank = getSideToMove()==WHITE?RANK_4:RANK_5;
+		const Rank doubleInitialRank = getSideToMove()==WHITE?RANK_2:RANK_7;
+		const Rank doubleFinalRank = getSideToMove()==WHITE?RANK_4:RANK_5;
 
 		if (getSquareRank(move.to)==doubleFinalRank&&getSquareRank(move.from)==doubleInitialRank) {
 			setEnPassant(move.to);

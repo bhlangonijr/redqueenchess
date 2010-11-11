@@ -615,21 +615,35 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 
 	const PieceTypeByColor fromPiece=getPieceBySquare(move.from);
 	const PieceColor color = getPieceColorBySquare(move.from);
+	const PieceType fromType = pieceType[fromPiece];
+
 	if (isMoveFromCache) {
 		if (move.none() || fromPiece==EMPTY) {
 			return false;
 		}
-		if (getPieceColorBySquare(move.from) == getPieceColorBySquare(move.to) ||
-				getPieceColorBySquare(move.from) != getSideToMove()) {
+		if (color == getPieceColorBySquare(move.to) ||
+				color != getSideToMove()) {
 			return false;
 		}
+		if (move.promotionPiece!=EMPTY) {
+			if (fromType!=PAWN) {
+				return false;
+			}
+			const Rank promoRank = color == WHITE?RANK_7:RANK_2;
+			if (!(squareToBitboard[move.from] & rankBB[promoRank])) {
+				return false;
+			}
+		}
 	}
-	if (((fromPiece==WHITE_KING && move.from==E1 && (move.to==G1 || move.to==C1)) ||
-			(fromPiece==BLACK_KING && move.from==E8 && (move.to==G8 || move.to==C8)))) {
+
+	if ( move.type==MoveIterator::CASTLE ||
+			((fromPiece==WHITE_KING && move.from==E1 && (move.to==G1 || move.to==C1)) ||
+					(fromPiece==BLACK_KING && move.from==E8 && (move.to==G8 || move.to==C8)))) {
 		const CastleRight castleRight =
 				(move.to==C1 || move.to==C8) ? QUEEN_SIDE_CASTLE : KING_SIDE_CASTLE;
 		return canCastle<true>(color, castleRight);
 	}
+
 	if (isMoveFromCache) {
 		if (!isAttackedBy(move.from, move.to)) {
 			return false;
@@ -637,35 +651,37 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 	}
 
 	const PieceColor other = flipSide(color);
-	const PieceType t = pieceType[fromPiece];
 	Bitboard testBoard = getAllPieces()^squareToBitboard[move.from];
 	testBoard |= squareToBitboard[move.to];
-	const Square kingLocation = (t==KING?move.to:getKingSquare(color));
-	Bitboard otherPieces = getPiecesByColor(other);
+	const Square kingLocation = (fromType==KING?move.to:getKingSquare(color));
+	bool result = true;
 
-	if (getPieceBySquare(move.to)!=EMPTY) {
-		otherPieces^=squareToBitboard[move.to];
-	} else if (getPieceTypeBySquare(move.from)==PAWN){
-		if (getEnPassant()!=NONE &&
-				getSquareFile(move.from)!=getSquareFile(move.to)) {
-			otherPieces^=squareToBitboard[getEnPassant()];
-			testBoard^=squareToBitboard[getEnPassant()];
+	if (kingLocation!=NONE) {
+		Bitboard otherPieces = getPiecesByColor(other);
+		if (getPieceBySquare(move.to)!=EMPTY) {
+			otherPieces^=squareToBitboard[move.to];
+		} else if (getPieceTypeBySquare(move.from)==PAWN){
+			if (getEnPassant()!=NONE &&
+					getSquareFile(move.from)!=getSquareFile(move.to)) {
+				otherPieces^=squareToBitboard[getEnPassant()];
+				testBoard^=squareToBitboard[getEnPassant()];
+			}
 		}
+
+		const Bitboard bishopAndQueens = (getPiecesByType(makePiece(other,BISHOP)) |
+				getPiecesByType(makePiece(other,QUEEN)))&otherPieces;
+		const Bitboard rookAndQueens = (getPiecesByType(makePiece(other,ROOK)) |
+				getPiecesByType(makePiece(other,QUEEN)))&otherPieces;
+		const Bitboard knights = getPiecesByType(makePiece(other,KNIGHT))&otherPieces;
+		const Bitboard pawns = getPiecesByType(makePiece(other,PAWN))&otherPieces;
+		const Bitboard kings = getPiecesByType(makePiece(other,KING))&otherPieces;
+
+		result = !((getBishopAttacks(kingLocation,testBoard) & bishopAndQueens) ||
+				(getRookAttacks(kingLocation,testBoard) & rookAndQueens) ||
+				(getKnightAttacks(kingLocation,testBoard) & knights) ||
+				(getPawnAttacks(kingLocation,color) & pawns) ||
+				(getKingAttacks(kingLocation,testBoard) & kings));
 	}
-
-	const Bitboard bishopAndQueens = (getPiecesByType(makePiece(other,BISHOP)) |
-			getPiecesByType(makePiece(other,QUEEN)))&otherPieces;
-	const Bitboard rookAndQueens = (getPiecesByType(makePiece(other,ROOK)) |
-			getPiecesByType(makePiece(other,QUEEN)))&otherPieces;
-	const Bitboard knights = getPiecesByType(makePiece(other,KNIGHT))&otherPieces;
-	const Bitboard pawns = getPiecesByType(makePiece(other,PAWN))&otherPieces;
-	const Bitboard kings = getPiecesByType(makePiece(other,KING))&otherPieces;
-
-	const bool result = !((getBishopAttacks(kingLocation,testBoard) & bishopAndQueens) ||
-			(getRookAttacks(kingLocation,testBoard) & rookAndQueens) ||
-			(getKnightAttacks(kingLocation,testBoard) & knights) ||
-			(getPawnAttacks(kingLocation,color) & pawns) ||
-			(getKingAttacks(kingLocation,testBoard) & kings));
 
 	return result;
 }
