@@ -102,12 +102,11 @@ struct MoveBackup {
 struct Node {
 
 	Node () : key(0ULL), piece(), moveCounter(0), halfMoveCounter(0), gamePhase(OPENING)
-	{}
+									{}
 
 	Node (const Node& node) : key(node.key), piece( node.piece ), enPassant( node.enPassant ),
 			sideToMove( node.sideToMove ), moveCounter(node.moveCounter),
-			halfMoveCounter(node.halfMoveCounter), gamePhase(node.gamePhase)
-	{
+			halfMoveCounter(node.halfMoveCounter), gamePhase(node.gamePhase) {
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=node.square[x];
 		}
@@ -634,56 +633,51 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 				return false;
 			}
 		}
-	}
-
-	if ( move.type==MoveIterator::CASTLE ||
-			((fromPiece==WHITE_KING && move.from==E1 && (move.to==G1 || move.to==C1)) ||
-					(fromPiece==BLACK_KING && move.from==E8 && (move.to==G8 || move.to==C8)))) {
-		const CastleRight castleRight =
-				(move.to==C1 || move.to==C8) ? QUEEN_SIDE_CASTLE : KING_SIDE_CASTLE;
-		return canCastle<true>(color, castleRight);
-	}
-
-	if (isMoveFromCache) {
+		if (((fromPiece==WHITE_KING && move.from==E1 && (move.to==G1 || move.to==C1)) ||
+				(fromPiece==BLACK_KING && move.from==E8 && (move.to==G8 || move.to==C8)))) {
+			const CastleRight castleRight =
+					(move.to==C1 || move.to==C8) ? QUEEN_SIDE_CASTLE : KING_SIDE_CASTLE;
+			return canCastle<true>(color, castleRight);
+		}
 		if (!isAttackedBy(move.from, move.to)) {
 			return false;
 		}
 	}
-
+	const Square kingLocation = (fromType==KING?move.to:getKingSquare(color));
+	if (kingLocation==NONE) {
+		std::cout << " *** FATAL ERROR " << move.toString() << std::endl;
+		printBoard();
+		return false;
+	}
 	const PieceColor other = flipSide(color);
 	Bitboard testBoard = getAllPieces()^squareToBitboard[move.from];
 	testBoard |= squareToBitboard[move.to];
-	const Square kingLocation = (fromType==KING?move.to:getKingSquare(color));
-	bool result = true;
 
-	if (kingLocation!=NONE) {
-		Bitboard otherPieces = getPiecesByColor(other);
-		if (getPieceBySquare(move.to)!=EMPTY) {
-			otherPieces^=squareToBitboard[move.to];
-		} else if (getPieceTypeBySquare(move.from)==PAWN){
-			if (getEnPassant()!=NONE &&
-					getSquareFile(move.from)!=getSquareFile(move.to)) {
-				otherPieces^=squareToBitboard[getEnPassant()];
-				testBoard^=squareToBitboard[getEnPassant()];
-			}
+	Bitboard otherPieces = getPiecesByColor(other);
+	if (getPieceBySquare(move.to)!=EMPTY) {
+		otherPieces^=squareToBitboard[move.to];
+	} else if (getPieceTypeBySquare(move.from)==PAWN){
+		if (getEnPassant()!=NONE &&
+				getSquareFile(move.from)!=getSquareFile(move.to)) {
+			otherPieces^=squareToBitboard[getEnPassant()];
+			testBoard^=squareToBitboard[getEnPassant()];
 		}
-
-		const Bitboard bishopAndQueens = (getPiecesByType(makePiece(other,BISHOP)) |
-				getPiecesByType(makePiece(other,QUEEN)))&otherPieces;
-		const Bitboard rookAndQueens = (getPiecesByType(makePiece(other,ROOK)) |
-				getPiecesByType(makePiece(other,QUEEN)))&otherPieces;
-		const Bitboard knights = getPiecesByType(makePiece(other,KNIGHT))&otherPieces;
-		const Bitboard pawns = getPiecesByType(makePiece(other,PAWN))&otherPieces;
-		const Bitboard kings = getPiecesByType(makePiece(other,KING))&otherPieces;
-
-		result = !((getBishopAttacks(kingLocation,testBoard) & bishopAndQueens) ||
-				(getRookAttacks(kingLocation,testBoard) & rookAndQueens) ||
-				(getKnightAttacks(kingLocation,testBoard) & knights) ||
-				(getPawnAttacks(kingLocation,color) & pawns) ||
-				(getKingAttacks(kingLocation,testBoard) & kings));
 	}
 
-	return result;
+	const Bitboard bishopAndQueens = (getPiecesByType(makePiece(other,BISHOP)) |
+			getPiecesByType(makePiece(other,QUEEN)))&otherPieces;
+	const Bitboard rookAndQueens = (getPiecesByType(makePiece(other,ROOK)) |
+			getPiecesByType(makePiece(other,QUEEN)))&otherPieces;
+	const Bitboard knights = getPiecesByType(makePiece(other,KNIGHT))&otherPieces;
+	const Bitboard pawns = getPiecesByType(makePiece(other,PAWN))&otherPieces;
+	const Bitboard kings = getPiecesByType(makePiece(other,KING))&otherPieces;
+
+	return !((getBishopAttacks(kingLocation,testBoard) & bishopAndQueens) ||
+			(getRookAttacks(kingLocation,testBoard) & rookAndQueens) ||
+			(getKnightAttacks(kingLocation,testBoard) & knights) ||
+			(getPawnAttacks(kingLocation,color) & pawns) ||
+			(getKingAttacks(kingLocation,testBoard) & kings));
+
 }
 
 // Get attacks from a given square
@@ -1234,7 +1228,7 @@ inline void Board::generateKingMoves(MoveIterator& moves, const PieceColor side,
 // generate castle moves
 inline void Board::generateCastleMoves(MoveIterator& moves, const PieceColor side) {
 
-	if (canCastle<false>(side, KING_SIDE_CASTLE)) {
+	if (canCastle<true>(side, KING_SIDE_CASTLE)) {
 		if (side==WHITE) {
 			moves.add(E1,G1,EMPTY,MoveIterator::CASTLE);
 		} else {
@@ -1242,7 +1236,7 @@ inline void Board::generateCastleMoves(MoveIterator& moves, const PieceColor sid
 		}
 	}
 
-	if (canCastle<false>(side, QUEEN_SIDE_CASTLE)) {
+	if (canCastle<true>(side, QUEEN_SIDE_CASTLE)) {
 		if (side==WHITE) {
 			moves.add(E1,C1,EMPTY,MoveIterator::CASTLE);
 		} else {
