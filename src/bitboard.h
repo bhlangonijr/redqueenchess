@@ -423,6 +423,8 @@ const Bitboard neighborFiles[ALL_SQUARE]={
 		NFILE(A8), NFILE(B8), NFILE(C8), NFILE(D8), NFILE(E8), NFILE(F8), NFILE(G8), NFILE(H8)
 };
 
+const Bitboard promoRank[ALL_PIECE_COLOR]={rankBB[RANK_7],rankBB[RANK_2],EMPTY_BB};
+
 // piece phase increment values
 enum PiecePhase {
 	PAWN_PHASE_INCREMENT=		0,

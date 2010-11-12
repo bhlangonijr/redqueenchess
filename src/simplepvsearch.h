@@ -226,10 +226,6 @@ template <bool quiescenceMoves>
 inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves,
 		MoveIterator::Move& ttMove, bool isKingAttacked, int ply) {
 
-
-	MoveIterator::Move& killer1 = killer[ply][0];
-	MoveIterator::Move& killer2 = killer[ply][1];
-
 	while (true) {
 
 		switch (moves.getStage()) {
@@ -312,19 +308,19 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 		case MoveIterator::KILLER1_STAGE:
 			moves.setStage(MoveIterator::KILLER2_STAGE);
-			if (killer1 != ttMove &&
-					!board.isCaptureMove(killer1) &&
-					board.isMoveLegal<true>(killer1)) {
-				return killer1;
+			if (killer[ply][0] != ttMove &&
+					!board.isCaptureMove(killer[ply][0]) &&
+					board.isMoveLegal<true>(killer[ply][0])) {
+				return killer[ply][0];
 			}
 			break;
 
 		case MoveIterator::KILLER2_STAGE:
 			moves.setStage(MoveIterator::INIT_QUIET_STAGE);
-			if (killer2 != ttMove &&
-					!board.isCaptureMove(killer2) &&
-					board.isMoveLegal<true>(killer2)) {
-				return killer2;
+			if (killer[ply][1] != ttMove &&
+					!board.isCaptureMove(killer[ply][1]) &&
+					board.isMoveLegal<true>(killer[ply][1])) {
+				return killer[ply][1];
 			}
 			break;
 
@@ -337,8 +333,8 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 		case MoveIterator::ON_QUIET_STAGE:
 			while (moves.hasNext()) {
 				MoveIterator::Move& move=moves.selectBest();
-				if (move==ttMove || move==killer1 ||
-						move==killer2 || !board.isMoveLegal<false>(move)) {
+				if (move==ttMove || move==killer[ply][0] ||
+						move==killer[ply][1] || !board.isMoveLegal<false>(move)) {
 					continue;
 				}
 				return move;

@@ -102,7 +102,7 @@ struct MoveBackup {
 struct Node {
 
 	Node () : key(0ULL), piece(), moveCounter(0), halfMoveCounter(0), gamePhase(OPENING)
-									{}
+	{}
 
 	Node (const Node& node) : key(node.key), piece( node.piece ), enPassant( node.enPassant ),
 			sideToMove( node.sideToMove ), moveCounter(node.moveCounter),
@@ -615,21 +615,16 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 	const PieceTypeByColor fromPiece=getPieceBySquare(move.from);
 	const PieceColor color = getPieceColorBySquare(move.from);
 	const PieceType fromType = pieceType[fromPiece];
-
+	if (color == getPieceColorBySquare(move.to) ||
+			color != getSideToMove()) {
+		return false;
+	}
 	if (isMoveFromCache) {
 		if (move.none() || fromPiece==EMPTY) {
 			return false;
 		}
-		if (color == getPieceColorBySquare(move.to) ||
-				color != getSideToMove()) {
-			return false;
-		}
 		if (move.promotionPiece!=EMPTY) {
-			if (fromType!=PAWN) {
-				return false;
-			}
-			const Rank promoRank = color == WHITE?RANK_7:RANK_2;
-			if (!(squareToBitboard[move.from] & rankBB[promoRank])) {
+			if (!(fromType==PAWN && (squareToBitboard[move.from] & promoRank[color]))) {
 				return false;
 			}
 		}
@@ -642,27 +637,26 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 		if (!isAttackedBy(move.from, move.to)) {
 			return false;
 		}
+	} else {
+		if (move.type==MoveIterator::CASTLE) {
+			return true;
+		}
 	}
 	const Square kingLocation = (fromType==KING?move.to:getKingSquare(color));
-	if (kingLocation==NONE) {
-		std::cout << " *** FATAL ERROR " << move.toString() << std::endl;
-		printBoard();
-		return false;
-	}
 	const PieceColor other = flipSide(color);
-	Bitboard testBoard = getAllPieces()^squareToBitboard[move.from];
-	testBoard |= squareToBitboard[move.to];
-
 	Bitboard otherPieces = getPiecesByColor(other);
 	if (getPieceBySquare(move.to)!=EMPTY) {
 		otherPieces^=squareToBitboard[move.to];
-	} else if (getPieceTypeBySquare(move.from)==PAWN){
+	} else if (fromType==PAWN){
 		if (getEnPassant()!=NONE &&
 				getSquareFile(move.from)!=getSquareFile(move.to)) {
 			otherPieces^=squareToBitboard[getEnPassant()];
-			testBoard^=squareToBitboard[getEnPassant()];
 		}
 	}
+	Bitboard testBoard = getPiecesByColor(color);
+	testBoard ^= squareToBitboard[move.from];
+	testBoard |= squareToBitboard[move.to];
+	testBoard |= otherPieces;
 
 	const Bitboard bishopAndQueens = (getPiecesByType(makePiece(other,BISHOP)) |
 			getPiecesByType(makePiece(other,QUEEN)))&otherPieces;
@@ -677,7 +671,6 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 			(getKnightAttacks(kingLocation,testBoard) & knights) ||
 			(getPawnAttacks(kingLocation,color) & pawns) ||
 			(getKingAttacks(kingLocation,testBoard) & kings));
-
 }
 
 // Get attacks from a given square
@@ -1053,14 +1046,13 @@ inline void Board::generatePawnCaptures(MoveIterator& moves, const PieceColor si
 
 	Bitboard pieces = getPiecesByType(makePiece(side,PAWN));
 	Bitboard attacks = EMPTY_BB;
-	const Rank promoRank = side == WHITE?RANK_7:RANK_2;
 	Square from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
 		attacks = getPawnCaptures(from,mask) ;
 		Square target = extractLSB(attacks);
 
-		bool promotion= squareToBitboard[from] & rankBB[promoRank];
+		bool promotion= squareToBitboard[from] & promoRank[side];
 
 		while ( target!=NONE ) {
 			if (promotion) {
@@ -1083,14 +1075,13 @@ inline void Board::generatePawnMoves(MoveIterator& moves, const PieceColor side,
 
 	Bitboard pieces = getPiecesByType(makePiece(side,PAWN));
 	Bitboard attacks = EMPTY_BB;
-	const Rank promoRank = side == WHITE?RANK_7:RANK_2;
 	Square from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
 		attacks = getPawnMoves(from) & mask;
 		Square target = extractLSB(attacks);
 
-		bool promotion= squareToBitboard[from] & rankBB[promoRank];
+		bool promotion= squareToBitboard[from] & promoRank[side];
 
 		while ( target!=NONE ) {
 			if (promotion) {
@@ -1111,8 +1102,7 @@ inline void Board::generatePawnMoves(MoveIterator& moves, const PieceColor side,
 // generate only quiet promotions
 inline void Board::generatePromotion(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
 
-	const Rank promoRank = side == WHITE?RANK_7:RANK_2;
-	Bitboard pieces = getPiecesByType(makePiece(side,PAWN)) & rankBB[promoRank];
+	Bitboard pieces = getPiecesByType(makePiece(side,PAWN)) & promoRank[side];
 	Bitboard attacks = EMPTY_BB;
 	Square from = extractLSB(pieces);
 
