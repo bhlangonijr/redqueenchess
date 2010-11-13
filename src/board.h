@@ -647,12 +647,12 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 	Bitboard otherPieces = getPiecesByColor(other);
 	if (getPieceBySquare(move.to)!=EMPTY) {
 		otherPieces^=squareToBitboard[move.to];
-	} else if (fromType==PAWN){
-		if (getEnPassant()!=NONE &&
-				getSquareFile(move.from)!=getSquareFile(move.to)) {
-			otherPieces^=squareToBitboard[getEnPassant()];
-		}
+	} else if (fromType==PAWN && getEnPassant()!=NONE &&
+			getSquareFile(move.from)!=getSquareFile(move.to) &&
+			(squareToBitboard[move.to] & fileBB[squareFile[getEnPassant()]])) {
+		otherPieces^=squareToBitboard[getEnPassant()];
 	}
+
 	Bitboard testBoard = getPiecesByColor(color);
 	testBoard ^= squareToBitboard[move.from];
 	testBoard |= squareToBitboard[move.to];
