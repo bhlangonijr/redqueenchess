@@ -43,11 +43,9 @@
 const int DOUBLED_PAWN_PENALTY =   -10;
 const int ISOLATED_PAWN_PENALTY =  -15;
 const int BACKWARD_PAWN_PENALTY =  -10;
-const int LACK_PAWN_PENALTY =      -10;
 const int DONE_CASTLE_BONUS=       +10;
 const int CONNECTED_PAWN_BONUS =   +5;
 const int BISHOP_PAIR_BONUS = 	   +25;
-const int TEMPO_BONUS = 		   +7;
 
 const int knightMobilityBonus[maxGamePhase+1] = {6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,4,3,3,3,3,3,2,2,2,1,1,1};
 const int bishopMobilityBonus[maxGamePhase+1] = {4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,1,1,1};

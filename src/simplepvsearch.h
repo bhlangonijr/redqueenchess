@@ -489,6 +489,7 @@ inline const bool SimplePVSearch::timeIsUp() {
 		return false;
 	}
 	return clock()>=timeToStop;
+
 }
 
 inline void SimplePVSearch::uciOutput(PvLine* pv, const int score, const int totalTime,
@@ -551,6 +552,7 @@ inline void SimplePVSearch::uciOutput(MoveIterator::Move& move, const int moveCo
 }
 
 inline void SimplePVSearch::uciOutput(const int depth) {
+
 	const long uciOutputSecs=1500;
 	if (isUpdateUci()) {
 		if (_startTime+uciOutputSecs < getTickCount()) {
@@ -582,17 +584,22 @@ inline void SimplePVSearch::clearHistory() {
 
 // update history
 inline void SimplePVSearch::updateHistory(Board& board, MoveIterator::Move& move, int depth) {
+
 	if (isCaptureOrPromotion(board,move) || move.none()) {
 		return;
 	}
+
 	history[board.getPieceBySquare(move.from)][move.to]+=depth*depth;
+
 }
 
 // update killers
 inline void SimplePVSearch::updateKillers(Board& board, MoveIterator::Move& move, int ply) {
+
 	if (isCaptureOrPromotion(board,move) || move.none()) {
 		return;
 	}
+
 	if (move != killer[ply][0]) {
 		killer[ply][1] = killer[ply][0];
 		killer[ply][0] = move;

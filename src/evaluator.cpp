@@ -60,7 +60,7 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 		value=-maxScore;
 	}
 
-	return value + (side==WHITE?TEMPO_BONUS:-TEMPO_BONUS);
+	return value;
 }
 
 // king eval function
@@ -143,8 +143,6 @@ const int Evaluator::evalPawns(Board& board, PieceColor color) {
 
 			from = extractLSB(pieces);
 		}
-	} else  {
-		count += LACK_PAWN_PENALTY;
 	}
 
 	return count;
