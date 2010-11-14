@@ -26,11 +26,7 @@
 
 #include "moveiterator.h"
 
-MoveIterator::MoveIterator(Data& data) : _data(data) {
-
-}
-
-MoveIterator::MoveIterator() : _data(internal) {
+MoveIterator::MoveIterator() {
 
 }
 

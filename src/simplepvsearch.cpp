@@ -28,9 +28,8 @@
 #include "simplepvsearch.h"
 
 // root search
-void SimplePVSearch::search(Board& _board) {
+void SimplePVSearch::search(Board board) {
 
-	Board board(_board);
 	clearHistory();
 	initRootMovesOrder();
 	rootMoves.clear();
@@ -126,10 +125,10 @@ int SimplePVSearch::idSearch(Board& board) {
 
 		if (!(_searchFixedDepth || _infinite)) {
 
-			if (abs(iterationScore[depth - 0]) >= maxScore-maxSearchPly ||
+			if (depth>5 && (abs(iterationScore[depth - 0]) >= maxScore-maxSearchPly ||
 					abs(iterationScore[depth - 1]) >= maxScore-maxSearchPly ||
 					abs(iterationScore[depth - 2]) >= maxScore-maxSearchPly ||
-					abs(iterationScore[depth - 3]) >= maxScore-maxSearchPly) {
+					abs(iterationScore[depth - 3]) >= maxScore-maxSearchPly)) {
 				break;
 			}
 
@@ -759,7 +758,6 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 }
 
 const bool SimplePVSearch::stop() {
-
 	return (timeIsUp() || agent->shouldStop());
 
 }

@@ -44,7 +44,7 @@ namespace BoardTypes{
 //used for hashing
 typedef uint64_t Key;
 
-#define USE_MAGIC_MOVES 				 true	 					    // set to true to use magic moves
+#define USE_MAGIC_MOVES 				     	 					    // uncomment to use magic moves
 #define ALL_CASTLE_RIGHT				 4								// all castle rights
 #define MAX_GAME_LENGTH					 1024							// Max game lenght
 #define St2Sq(F,R)						 (((int)F-96)+((int)R-49)*8)-1	// encode String to Square enum
@@ -253,9 +253,7 @@ public:
 	const CastleRight getCastleRights(PieceColor color) const;
 	void removeCastleRights(const PieceColor color, const CastleRight castle);
 	void setCastleRights(const PieceColor color, const CastleRight castle);
-	template <bool checkForLegal>
 	bool canCastle(const PieceColor color);
-	template <bool checkForLegal>
 	bool canCastle(const PieceColor color, const CastleRight castleRight);
 	const PieceColor getSideToMove() const;
 	void setSideToMove(const PieceColor color);
@@ -436,15 +434,12 @@ inline void Board::setCastleRights(const PieceColor color, const CastleRight cas
 }
 
 // can castle?
-template <bool checkForLegal>
 inline bool Board::canCastle(const PieceColor color) {
 
-	return checkForLegal?canCastle<true>(color, BOTH_SIDE_CASTLE) :
-			canCastle<false>(color, BOTH_SIDE_CASTLE);
+	return canCastle(color, BOTH_SIDE_CASTLE);
 }
 
 // can castle specific?
-template <bool checkForLegal>
 inline bool Board::canCastle(const PieceColor color, const CastleRight castleRight) {
 
 	// lost the right to castle?
@@ -461,33 +456,31 @@ inline bool Board::canCastle(const PieceColor color, const CastleRight castleRig
 		return false;
 	}
 
-	if (checkForLegal) {
-		if (isInCheck(color)) {
-			return false;
-		}
+	if (isInCheck(color)) {
+		return false;
+	}
 
-		// squares through castle & king destination attacked?
-		if (castleRight==BOTH_SIDE_CASTLE || castleRight==KING_SIDE_CASTLE) {
-			if (color==WHITE) {
-				if (isAttacked(color,F1) || isAttacked(color,G1)) {
-					return false;
-				}
-			} else {
-				if (isAttacked(color,F8) || isAttacked(color,G8)) {
-					return false;
-				}
+	// squares through castle & king destination attacked?
+	if (castleRight==BOTH_SIDE_CASTLE || castleRight==KING_SIDE_CASTLE) {
+		if (color==WHITE) {
+			if (isAttacked(color,F1) || isAttacked(color,G1)) {
+				return false;
+			}
+		} else {
+			if (isAttacked(color,F8) || isAttacked(color,G8)) {
+				return false;
 			}
 		}
+	}
 
-		if (castleRight==BOTH_SIDE_CASTLE || castleRight==QUEEN_SIDE_CASTLE) {
-			if (color==WHITE) {
-				if (isAttacked(color,D1) || isAttacked(color,C1)) {
-					return false;
-				}
-			} else {
-				if (isAttacked(color,D8) || isAttacked(color,C8)) {
-					return false;
-				}
+	if (castleRight==BOTH_SIDE_CASTLE || castleRight==QUEEN_SIDE_CASTLE) {
+		if (color==WHITE) {
+			if (isAttacked(color,D1) || isAttacked(color,C1)) {
+				return false;
+			}
+		} else {
+			if (isAttacked(color,D8) || isAttacked(color,C8)) {
+				return false;
 			}
 		}
 	}
@@ -632,7 +625,7 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 				(fromPiece==BLACK_KING && move.from==E8 && (move.to==G8 || move.to==C8)))) {
 			const CastleRight castleRight =
 					(move.to==C1 || move.to==C8) ? QUEEN_SIDE_CASTLE : KING_SIDE_CASTLE;
-			return canCastle<true>(color, castleRight);
+			return canCastle(color, castleRight);
 		}
 		if (!isAttackedBy(move.from, move.to)) {
 			return false;
@@ -1218,7 +1211,7 @@ inline void Board::generateKingMoves(MoveIterator& moves, const PieceColor side,
 // generate castle moves
 inline void Board::generateCastleMoves(MoveIterator& moves, const PieceColor side) {
 
-	if (canCastle<true>(side, KING_SIDE_CASTLE)) {
+	if (canCastle(side, KING_SIDE_CASTLE)) {
 		if (side==WHITE) {
 			moves.add(E1,G1,EMPTY,MoveIterator::CASTLE);
 		} else {
@@ -1226,7 +1219,7 @@ inline void Board::generateCastleMoves(MoveIterator& moves, const PieceColor sid
 		}
 	}
 
-	if (canCastle<true>(side, QUEEN_SIDE_CASTLE)) {
+	if (canCastle(side, QUEEN_SIDE_CASTLE)) {
 		if (side==WHITE) {
 			moves.add(E1,C1,EMPTY,MoveIterator::CASTLE);
 		} else {

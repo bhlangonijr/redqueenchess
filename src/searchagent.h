@@ -267,6 +267,8 @@ public:
 
 	void *startThreadSearch();
 
+	void initThreads();
+
 protected:
 
 	SearchAgent();

@@ -90,8 +90,7 @@ void Board::genericTest() {
 	int counter=0;
 	for (int x=0;x<1000000;x++)
 	{
-		MoveIterator::Data moveData;
-		MoveIterator moves(moveData);
+		MoveIterator moves;
 		generateAllMoves(moves,color);
 		moves.first();
 		while (moves.hasNext()) {
