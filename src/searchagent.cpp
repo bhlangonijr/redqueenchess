@@ -57,20 +57,17 @@ SearchAgent::SearchAgent() : searchMode(SEARCH_TIME), searchInProgress(false), r
 
 // start a new game
 void SearchAgent::newGame() {
-	pthread_mutex_lock(&mutex);
 	board.setInitialPosition();
-	this->clearHash();
-	this->setSearchMode(SEARCH_TIME);
-	this->setWhiteTime(0);
-	this->setWhiteIncrement(0);
-	this->setBlackTime(0);
-	this->setBlackIncrement(0);
-	this->setDepth(defaultDepth);
-	this->setMovesToGo(0);
-	this->setMoveTime(0);
-	this->setInfinite(false);
-	pthread_mutex_unlock(&mutex);
-
+	clearHash();
+	setSearchMode(SEARCH_TIME);
+	setWhiteTime(0);
+	setWhiteIncrement(0);
+	setBlackTime(0);
+	setBlackIncrement(0);
+	setDepth(defaultDepth);
+	setMovesToGo(0);
+	setMoveTime(0);
+	setInfinite(false);
 }
 
 // get board
@@ -97,7 +94,6 @@ void SearchAgent::setPositionFromFEN(std::string fenMoves) {
 void* SearchAgent::startThreadSearch() {
 
 	while (true) {
-		pthread_mutex_lock(&mutex);
 		pthread_cond_wait(&waitCond, &mutex);
 		setSearchInProgress(true);
 		newSearchHash();
@@ -120,9 +116,6 @@ void* SearchAgent::startThreadSearch() {
 		}
 		simpleSearcher.search(board);
 		setSearchInProgress(false);
-		setRequestStop(false);
-		pthread_mutex_unlock(&mutex);
-
 	}
 
 	return 0;
@@ -131,6 +124,7 @@ void* SearchAgent::startThreadSearch() {
 // start search
 void SearchAgent::startSearch() {
 	pthread_mutex_lock(&mutex);
+	setRequestStop(false);
 	pthread_cond_signal(&waitCond);
 	pthread_mutex_unlock(&mutex);
 }
@@ -146,17 +140,19 @@ void SearchAgent::doPerft() {
 
 // stop search
 void SearchAgent::stopSearch() {
+
 	if (getSearchInProgress()) {
+		pthread_mutex_lock(&mutex);
 		setRequestStop(true);
+		pthread_mutex_unlock(&mutex);
 	}
+
 }
 
 const long SearchAgent::getTimeToSearch() {
-
 	if (getSearchMode()==SearchAgent::SEARCH_MOVETIME) {
 		return getMoveTime();
 	}
-
 	long time=board.getSideToMove()==WHITE? getWhiteTime():getBlackTime();
 	long incTime=board.getSideToMove()==WHITE?getWhiteIncrement():getBlackIncrement();
 	int movesLeft = defaultGameSize;
@@ -173,9 +169,7 @@ const long SearchAgent::getTimeToSearch() {
 		}
 
 	}
-
 	return time/(long(movesLeft))+incTime;
-
 }
 
 void SearchAgent::initThreads() {
