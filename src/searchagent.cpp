@@ -92,8 +92,9 @@ void SearchAgent::setPositionFromFEN(std::string fenMoves) {
 
 // start search
 void* SearchAgent::startThreadSearch() {
-
+	pthread_mutex_lock(&mutex);
 	while (true) {
+		setRequestStop(false);
 		pthread_cond_wait(&waitCond, &mutex);
 		setSearchInProgress(true);
 		newSearchHash();
@@ -117,14 +118,13 @@ void* SearchAgent::startThreadSearch() {
 		simpleSearcher.search(board);
 		setSearchInProgress(false);
 	}
-
+	pthread_mutex_unlock(&mutex);
 	return 0;
 }
 
 // start search
 void SearchAgent::startSearch() {
 	pthread_mutex_lock(&mutex);
-	setRequestStop(false);
 	pthread_cond_signal(&waitCond);
 	pthread_mutex_unlock(&mutex);
 }
@@ -140,13 +140,9 @@ void SearchAgent::doPerft() {
 
 // stop search
 void SearchAgent::stopSearch() {
-
 	if (getSearchInProgress()) {
-		pthread_mutex_lock(&mutex);
 		setRequestStop(true);
-		pthread_mutex_unlock(&mutex);
 	}
-
 }
 
 const long SearchAgent::getTimeToSearch() {

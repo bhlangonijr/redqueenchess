@@ -49,7 +49,8 @@ const int BISHOP_PAIR_BONUS = 	   +25;
 
 const int knightMobilityBonus[maxGamePhase+1] = {6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,4,3,3,3,3,3,2,2,2,1,1,1};
 const int bishopMobilityBonus[maxGamePhase+1] = {4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,1,1,1};
-const int rookMobilityBonus[maxGamePhase+1] =   {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1};
+const int rookMobilityBonus[maxGamePhase+1] =   {3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1};
+const int queenMobilityBonus[maxGamePhase+1] =   {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1};
 
 const int bishopKingBonus[maxGamePhase+1] = {1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3};
 const int rookKingBonus[maxGamePhase+1] =   {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4};
@@ -157,7 +158,6 @@ public:
 	const int evalBoardControl(Board& board, PieceColor color, int& kingThreat);
 	const bool isPawnPassed(Board& board, const Square from);
 	const void setGameStage(const GamePhase phase);
-	const int seeSign(Board& board, MoveIterator::Move& move);
 	const int see(Board& board, MoveIterator::Move& move);
 
 private:
@@ -171,19 +171,6 @@ inline const bool Evaluator::isPawnPassed(Board& board, const Square from) {
 	const PieceColor other = board.flipSide(color);
 	const Bitboard otherPawns = board.getPiecesByType(board.makePiece(other,PAWN));
 	return !(passedMask[color][from]&otherPawns);
-}
-
-// static exchange evaluation sign
-inline const int Evaluator::seeSign(Board& board, MoveIterator::Move& move) {
-
-	const int value = defaultMaterialValues[board.getPieceBySquare(move.to)]-
-			defaultMaterialValues[board.getPieceBySquare(move.from)];
-
-	if ( value >= 0	&&	board.getPieceType(board.getPieceBySquare(move.from)) != KING) {
-		return value;
-	}
-
-	return this->see(board,move);
 }
 
 // static exchange evaluation

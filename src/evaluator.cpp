@@ -227,7 +227,7 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getQueenAttacks(from);
 		queenAttacks |= attacks;
-		count+=(_BitCount(attacks&notFriends)-10);
+		count+=(_BitCount(attacks&notFriends)-10)*queenMobilityBonus[phase];
 		kingThreat += delta*queenKingBonus[phase];
 		from = extractLSB(pieces);
 	}
