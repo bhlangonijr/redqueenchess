@@ -40,8 +40,7 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 	const PieceColor side = board.getSideToMove();
 	const PieceColor other = board.flipSide(board.getSideToMove());
 
-	int value = board.getMaterial(side) - board.getMaterial(other);
-	value += board.getPieceSquareValue(side)-board.getPieceSquareValue(other);
+	int value = board.getMaterialPst(side) - board.getMaterialPst(other);
 	value += evalKing(board, side) - evalKing(board, other);
 	value += evalBishops(board, side) - evalBishops(board, other);
 
@@ -227,7 +226,7 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getQueenAttacks(from);
 		queenAttacks |= attacks;
-		count+=(_BitCount(attacks&notFriends)-10)*queenMobilityBonus[phase];
+		count+=(_BitCount(attacks&notFriends)-10);
 		kingThreat += delta*queenKingBonus[phase];
 		from = extractLSB(pieces);
 	}

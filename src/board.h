@@ -116,10 +116,8 @@ struct Node {
 		for(register int x=0;x<ALL_PIECE_TYPE_BY_COLOR;x++){
 			pieceCount[x]=node.pieceCount[x];
 		}
-		egPsq[WHITE]=node.egPsq[WHITE];
-		egPsq[BLACK]=node.egPsq[BLACK];
-		mgPsq[WHITE]=node.mgPsq[WHITE];
-		mgPsq[BLACK]=node.mgPsq[BLACK];
+		psq[WHITE]=node.psq[WHITE];
+		psq[BLACK]=node.psq[BLACK];
 		fullMaterial[WHITE]=node.fullMaterial[WHITE];
 		fullMaterial[BLACK]=node.fullMaterial[BLACK];
 		pieceColorCount[WHITE]=node.pieceColorCount[WHITE];
@@ -166,8 +164,7 @@ struct Node {
 	int pieceCount[ALL_PIECE_TYPE_BY_COLOR];
 	int pieceColorCount[ALL_PIECE_COLOR];
 	int fullMaterial[ALL_PIECE_COLOR];
-	int egPsq[ALL_PIECE_COLOR];
-	int mgPsq[ALL_PIECE_COLOR];
+	int psq[ALL_PIECE_COLOR];
 	Key keyHistory[MAX_GAME_LENGTH];
 	int moveCounter;
 	int halfMoveCounter;
@@ -194,10 +191,8 @@ struct Node {
 
 		fullMaterial[WHITE]=0;
 		fullMaterial[BLACK]=0;
-		egPsq[WHITE]=0;
-		egPsq[BLACK]=0;
-		mgPsq[WHITE]=0;
-		mgPsq[BLACK]=0;
+		psq[WHITE]=0;
+		psq[BLACK]=0;
 		pieceColorCount[WHITE]=0;
 		pieceColorCount[BLACK]=0;
 		pieceColor[WHITE]=0ULL;
@@ -228,6 +223,8 @@ struct NodeZobrist {
 }
 
 using namespace BoardTypes;
+
+static int fullPst[ALL_PIECE_TYPE][ALL_SQUARE];
 
 class Board
 {
@@ -288,6 +285,7 @@ public:
 	const int getPieceCountByColor(const PieceColor color ) const;
 	const int getMaterial(const PieceColor color) const;
 	const int getPieceSquareValue(const PieceColor color) const;
+	const int getMaterialPst(const PieceColor color) const;
 
 	void generateCaptures(MoveIterator& moves, const PieceColor side);
 	void generateQuiesMoves(MoveIterator& moves, const PieceColor side);
@@ -379,9 +377,8 @@ inline void Board::putPiece(const PieceTypeByColor piece, const Square square) {
 	currentBoard.pieceColor[color] |= squareToBitboard[square];
 	currentBoard.square[square] = piece;
 	currentBoard.pieceCount[piece]++;
-	currentBoard.fullMaterial[color]+=defaultMaterialValues[piece];
-	currentBoard.egPsq[color]+=endGamePieceSquareTable[tpPiece][pstSquare];
-	currentBoard.mgPsq[color]+=defaultPieceSquareTable[tpPiece][pstSquare];
+	currentBoard.fullMaterial[color]+=materialValues[piece];
+	currentBoard.psq[color]+=fullPst[tpPiece][pstSquare];
 	currentBoard.pieceColorCount[color]++;
 
 	if (tpPiece==KING) {
@@ -397,9 +394,8 @@ inline void Board::removePiece(const PieceTypeByColor piece, const Square square
 	currentBoard.pieceColor[color] ^= squareToBitboard[square];
 	currentBoard.square[square] = EMPTY;
 	currentBoard.pieceCount[piece]--;
-	currentBoard.fullMaterial[color]-=defaultMaterialValues[piece];
-	currentBoard.egPsq[color]-=endGamePieceSquareTable[tpPiece][pstSquare];
-	currentBoard.mgPsq[color]-=defaultPieceSquareTable[tpPiece][pstSquare];
+	currentBoard.fullMaterial[color]-=materialValues[piece];
+	currentBoard.psq[color]-=fullPst[tpPiece][pstSquare];
 	currentBoard.pieceColorCount[color]--;
 
 	if (tpPiece==KING) {
@@ -707,8 +703,7 @@ inline const bool Board::isDraw() {
 	const Bitboard pawns = getPiecesByType(WHITE_PAWN) |
 			getPiecesByType(BLACK_PAWN);
 	if (!pawns) {
-		if (getMaterial(WHITE)+getMaterial(BLACK)<=
-				kingValue*2+bishopValue) {
+		if (getMaterial(WHITE)+getMaterial(BLACK)<=bishopValue) {
 			return true;
 		}
 	}
@@ -773,12 +768,21 @@ inline const int Board::getPieceCountByColor(const PieceColor color) const {
 
 // get full material by side
 inline const int Board::getMaterial(const PieceColor color) const {
-	return currentBoard.fullMaterial[color];
+	return ((lowerScore(currentBoard.fullMaterial[color])*currentBoard.gamePhase)/maxGamePhase)+
+			((upperScore(currentBoard.fullMaterial[color])*(maxGamePhase-currentBoard.gamePhase))/maxGamePhase);
+}
+// get pst value
+inline const int Board::getPieceSquareValue(const PieceColor color) const {
+	return ((lowerScore(currentBoard.psq[color])*currentBoard.gamePhase)/maxGamePhase)+
+			((upperScore(currentBoard.psq[color])*(maxGamePhase-currentBoard.gamePhase))/maxGamePhase);
 }
 
-inline const int Board::getPieceSquareValue(const PieceColor color) const {
-	return ((currentBoard.egPsq[color]*currentBoard.gamePhase)/maxGamePhase)+
-			((currentBoard.mgPsq[color]*(maxGamePhase-currentBoard.gamePhase))/maxGamePhase);
+// get eval
+inline const int Board::getMaterialPst(const PieceColor color) const {
+	const int egValue=lowerScore(currentBoard.psq[color])+lowerScore(currentBoard.fullMaterial[color]);
+	const int mgValue=upperScore(currentBoard.psq[color])+upperScore(currentBoard.fullMaterial[color]);
+	return ((egValue*currentBoard.gamePhase)/maxGamePhase)+
+			((mgValue*(maxGamePhase-currentBoard.gamePhase))/maxGamePhase);
 }
 
 // overload method - gets current occupied squares in the board

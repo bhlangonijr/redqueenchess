@@ -615,14 +615,21 @@ void Board::initialize() {
 	for(int castle=0; castle<ALL_CASTLE_RIGHT*ALL_CASTLE_RIGHT; castle++) {
 		zobrist.castleRight[castle]=genrand_int64();
 	}
-
-	// initialize pst
+	// initialize incremental pst
 	for (int phase=0; phase<=maxGamePhase; phase++) {
 		for (int piece=0; piece<ALL_PIECE_TYPE_BY_COLOR; piece++) {
 			for (int square=0; square<ALL_SQUARE; square++) {
 				pst[phase][piece][square]=
 						calcPieceSquareValue(PieceTypeByColor(piece),Square(square),GamePhase(phase));
 			}
+		}
+	}
+	// initialize pst
+	for (int piece=0; piece<ALL_PIECE_TYPE_BY_COLOR; piece++) {
+		for (int square=0; square<ALL_SQUARE; square++) {
+			const int upperValue = defaultPieceSquareTable[piece][square];
+			const int lowerValue = endGamePieceSquareTable[piece][square];
+			fullPst[piece][square]=makeScore(upperValue,lowerValue);
 		}
 	}
 

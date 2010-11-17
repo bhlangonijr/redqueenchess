@@ -67,6 +67,9 @@ typedef uint64_t Bitboard;
 #define NFILE(X) ((squareFile[X]!=FILE_H ? fileBB[squareFile[X]+1] : EMPTY_BB) | \
 		(squareFile[X]!=FILE_A ? fileBB[squareFile[X]-1] : EMPTY_BB))
 
+#define MS(X,Y) (Y+(X<<16))
+#define AVG(X,Y) ((X+Y)/2)
+
 // squares
 enum Square {
 	A1, B1, C1, D1, E1, F1, G1, H1,
@@ -457,13 +460,26 @@ const int pawnValue 	= 100;
 const int knightValue 	= 415;
 const int bishopValue 	= 420;
 const int rookValue 	= 640;
-const int queenValue 	= 1280;
-const int kingValue 	= 20000;
+const int queenValue 	= 1275;
+
+const int egPawnValue 	= 125;
+const int egKnightValue = 420;
+const int egBishopValue = 425;
+const int egRookValue 	= 650;
+const int egQueenValue 	= 1290;
 
 const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {
-		pawnValue, knightValue, bishopValue, rookValue, queenValue, kingValue,
-		pawnValue, knightValue, bishopValue, rookValue, queenValue, kingValue,
-		0
+		AVG(pawnValue,egPawnValue), AVG(knightValue,egKnightValue), AVG(bishopValue,egBishopValue),
+		AVG(rookValue,egRookValue), AVG(queenValue,egQueenValue), 2000,
+		AVG(pawnValue,egPawnValue), AVG(knightValue,egKnightValue),	AVG(bishopValue,egBishopValue),
+		AVG(rookValue,egRookValue), AVG(queenValue,egQueenValue), 2000,0
+};
+
+const int materialValues[ALL_PIECE_TYPE_BY_COLOR] = {
+		MS(pawnValue,egPawnValue), MS(knightValue,egKnightValue), MS(bishopValue,egBishopValue),
+		MS(rookValue,egRookValue), MS(queenValue,egQueenValue), 0,
+		MS(pawnValue,egPawnValue), MS(knightValue,egKnightValue), MS(bishopValue,egBishopValue),
+		MS(rookValue,egRookValue), MS(queenValue,egQueenValue), 0,0
 };
 
 extern void printBitboard(Bitboard bb);
@@ -533,6 +549,18 @@ inline Square extractLSB(Bitboard& bitboard) {
 
 	return Square( square );
 
+}
+
+inline const int upperScore(const int value) {
+	return (((value >> 15) & 1) + short((value) >> 16));
+}
+
+inline const int lowerScore(const int value) {
+	return  short(value & 0xFFFF);
+}
+
+inline const int makeScore(const int upperValue, const int lowerValue) {
+	return  lowerValue+(upperValue<<16);
 }
 
 #endif /* BITBOARD_H_ */
