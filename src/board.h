@@ -703,7 +703,9 @@ inline const bool Board::isDraw() {
 	const Bitboard pawns = getPiecesByType(WHITE_PAWN) |
 			getPiecesByType(BLACK_PAWN);
 	if (!pawns) {
-		if (getMaterial(WHITE)+getMaterial(BLACK)<=bishopValue) {
+		const int material=lowerScore(currentBoard.fullMaterial[WHITE])+
+				lowerScore(currentBoard.fullMaterial[BLACK]);
+		if (material<=egBishopValue+kingValue*2) {
 			return true;
 		}
 	}
@@ -958,8 +960,8 @@ inline void Board::generateQuiesMoves(MoveIterator& moves, const PieceColor side
 }
 
 // generate check evasions
-// Note: this method do not guarantee generation of only legal moves, although it might reduce the number of moves
-// it will be necessary to use doMove() and verify if king remains in check to validate legality
+// Note: this method does not guarantee generation of only legal moves, although it might reduce the number of moves
+// it will be necessary to use isLegalMove() to validate legality
 // FIXME generate only legal moves
 inline void Board::generateEvasions(MoveIterator& moves, const PieceColor side) {
 

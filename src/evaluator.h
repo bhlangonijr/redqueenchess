@@ -47,6 +47,12 @@ const int DONE_CASTLE_BONUS=       +10;
 const int CONNECTED_PAWN_BONUS =   +5;
 const int BISHOP_PAIR_BONUS = 	   +25;
 
+
+const int knightMobility[9] = {MS(-4,-3)};
+const int bishopMobility[16] = {};
+const int rookMobility[16] =   {};
+
+
 const int knightMobilityBonus[maxGamePhase+1] = {6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,4,3,3,3,3,3,2,2,2,1,1,1};
 const int bishopMobilityBonus[maxGamePhase+1] = {4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,1,1,1};
 const int rookMobilityBonus[maxGamePhase+1] =   {3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1};

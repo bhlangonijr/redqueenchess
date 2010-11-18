@@ -460,26 +460,27 @@ const int pawnValue 	= 100;
 const int knightValue 	= 415;
 const int bishopValue 	= 420;
 const int rookValue 	= 640;
-const int queenValue 	= 1275;
+const int queenValue 	= 1283;
+const int kingValue		= 20000;
 
 const int egPawnValue 	= 125;
 const int egKnightValue = 420;
 const int egBishopValue = 425;
 const int egRookValue 	= 650;
-const int egQueenValue 	= 1290;
+const int egQueenValue 	= 1305;
 
 const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {
 		AVG(pawnValue,egPawnValue), AVG(knightValue,egKnightValue), AVG(bishopValue,egBishopValue),
-		AVG(rookValue,egRookValue), AVG(queenValue,egQueenValue), 2000,
+		AVG(rookValue,egRookValue), AVG(queenValue,egQueenValue), kingValue,
 		AVG(pawnValue,egPawnValue), AVG(knightValue,egKnightValue),	AVG(bishopValue,egBishopValue),
-		AVG(rookValue,egRookValue), AVG(queenValue,egQueenValue), 2000,0
+		AVG(rookValue,egRookValue), AVG(queenValue,egQueenValue), kingValue,0
 };
 
 const int materialValues[ALL_PIECE_TYPE_BY_COLOR] = {
 		MS(pawnValue,egPawnValue), MS(knightValue,egKnightValue), MS(bishopValue,egBishopValue),
-		MS(rookValue,egRookValue), MS(queenValue,egQueenValue), 0,
+		MS(rookValue,egRookValue), MS(queenValue,egQueenValue), kingValue,
 		MS(pawnValue,egPawnValue), MS(knightValue,egKnightValue), MS(bishopValue,egBishopValue),
-		MS(rookValue,egRookValue), MS(queenValue,egQueenValue), 0,0
+		MS(rookValue,egRookValue), MS(queenValue,egQueenValue), kingValue,0
 };
 
 extern void printBitboard(Bitboard bb);
@@ -552,11 +553,11 @@ inline Square extractLSB(Bitboard& bitboard) {
 }
 
 inline const int upperScore(const int value) {
-	return (((value >> 15) & 1) + short((value) >> 16));
+	return ((int16_t(value >> 15) & 1) + int16_t(value >> 16));
 }
 
 inline const int lowerScore(const int value) {
-	return  short(value & 0xFFFF);
+	return  int16_t(value & 0xFFFF);
 }
 
 inline const int makeScore(const int upperValue, const int lowerValue) {

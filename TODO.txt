@@ -5,10 +5,14 @@ Ben-Hur Langoni Junior
 
 1) Try Monte Carlo & Boltzmann in search
 2) Improve Evaluator class with more imbalances & piece evaluation
+	+ Create space evaluation
+	+ Improve pawns evaluation
+	+ Improve concept of mobility
 3) Create pawn hashtable
 4) Improve move generation & mobility on evaluation - account for pins on king and good mobility
 5) Improve SEE function - verify for possible bugs
 6) Implement SMP search
+7) Generate checks in the first ply of the quiescence search
 
 
 
