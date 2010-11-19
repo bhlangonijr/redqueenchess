@@ -89,6 +89,10 @@ public:
 		return requestStop;
 	}
 
+	void setQuit(bool shouldQuit) {
+		quit = shouldQuit;
+	}
+
 	const SearchMode getSearchMode() const {
 		return searchMode;
 	}
@@ -233,7 +237,7 @@ public:
 					(allowNullMove || !(hashData.flag() & TranspositionTable::NODE_NULL)) &&
 					(hashData.depth()>=depth) &&
 					(((hashData.flag() & TranspositionTable::LOWER) && hashData.value() >= beta) ||
-					((hashData.flag() & TranspositionTable::UPPER) && hashData.value() <= alpha));
+							((hashData.flag() & TranspositionTable::UPPER) && hashData.value() <= alpha));
 		} else {
 			okToPrune = false;
 		}
@@ -285,6 +289,7 @@ private:
 
 	volatile bool searchInProgress;
 	volatile bool requestStop;
+	volatile bool quit;
 
 	size_t hashSize;
 	int threadNumber;

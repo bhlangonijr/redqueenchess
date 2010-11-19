@@ -627,8 +627,9 @@ void Board::initialize() {
 	// initialize pst
 	for (int piece=0; piece<ALL_PIECE_TYPE_BY_COLOR; piece++) {
 		for (int square=0; square<ALL_SQUARE; square++) {
-			const int upperValue = defaultPieceSquareTable[piece][square];
-			const int lowerValue = endGamePieceSquareTable[piece][square];
+			const Square sq = pieceColor[piece]==WHITE?Square(square):flip[square];
+			const int upperValue = defaultPieceSquareTable[pieceType[piece]][sq];
+			const int lowerValue = endGamePieceSquareTable[pieceType[piece]][sq];
 			fullPst[piece][square]=makeScore(upperValue,lowerValue);
 		}
 	}

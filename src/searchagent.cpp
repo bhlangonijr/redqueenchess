@@ -46,7 +46,7 @@ SearchAgent* SearchAgent::getInstance ()
 
 SimplePVSearch simpleSearcher;
 
-SearchAgent::SearchAgent() : searchMode(SEARCH_TIME), searchInProgress(false), requestStop(false),
+SearchAgent::SearchAgent() : searchMode(SEARCH_TIME), searchInProgress(false), requestStop(false), quit(false),
 		hashSize(defaultHashSize),	threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
 		blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), infinite(false) {
 	// creates initial hashtables
@@ -93,9 +93,12 @@ void SearchAgent::setPositionFromFEN(std::string fenMoves) {
 // start search
 void* SearchAgent::startThreadSearch() {
 	pthread_mutex_lock(&mutex);
-	while (true) {
+	while (!quit) {
 		setRequestStop(false);
 		pthread_cond_wait(&waitCond, &mutex);
+		if (quit) {
+			break;
+		}
 		setSearchInProgress(true);
 		newSearchHash();
 		if (getSearchMode()==SearchAgent::SEARCH_DEPTH) {
@@ -119,6 +122,7 @@ void* SearchAgent::startThreadSearch() {
 		setSearchInProgress(false);
 	}
 	pthread_mutex_unlock(&mutex);
+	pthread_exit(NULL);
 	return 0;
 }
 
@@ -185,4 +189,5 @@ void *threadRun(void *_object) {
 
 void SearchAgent::shutdown() {
 	destroyHash();
+	setQuit(true);
 }

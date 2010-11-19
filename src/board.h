@@ -224,7 +224,7 @@ struct NodeZobrist {
 
 using namespace BoardTypes;
 
-static int fullPst[ALL_PIECE_TYPE][ALL_SQUARE];
+static int fullPst[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 
 class Board
 {
@@ -371,34 +371,30 @@ inline void Board::clearBoard() {
 // put a piece in the board and store piece info
 inline void Board::putPiece(const PieceTypeByColor piece, const Square square) {
 	const PieceColor color = pieceColor[piece];
-	const Square pstSquare = color==WHITE?square:flip[square];
-	const PieceType tpPiece = pieceType[piece];
 	currentBoard.piece.array[piece] |= squareToBitboard[square];
 	currentBoard.pieceColor[color] |= squareToBitboard[square];
 	currentBoard.square[square] = piece;
 	currentBoard.pieceCount[piece]++;
 	currentBoard.fullMaterial[color]+=materialValues[piece];
-	currentBoard.psq[color]+=fullPst[tpPiece][pstSquare];
+	currentBoard.psq[color]+=fullPst[piece][square];
 	currentBoard.pieceColorCount[color]++;
 
-	if (tpPiece==KING) {
+	if (piece==WHITE_KING || piece==BLACK_KING) {
 		currentBoard.kingSquare[color]=square;
 	}
 }
 // remove a piece from the board and erase piece info
 inline void Board::removePiece(const PieceTypeByColor piece, const Square square) {
 	const PieceColor color = pieceColor[piece];
-	const Square pstSquare = color==WHITE?square:flip[square];
-	const PieceType tpPiece = pieceType[piece];
 	currentBoard.piece.array[piece] ^= squareToBitboard[square];
 	currentBoard.pieceColor[color] ^= squareToBitboard[square];
 	currentBoard.square[square] = EMPTY;
 	currentBoard.pieceCount[piece]--;
 	currentBoard.fullMaterial[color]-=materialValues[piece];
-	currentBoard.psq[color]-=fullPst[tpPiece][pstSquare];
+	currentBoard.psq[color]-=fullPst[piece][square];
 	currentBoard.pieceColorCount[color]--;
 
-	if (tpPiece==KING) {
+	if (piece==WHITE_KING || piece==BLACK_KING) {
 		currentBoard.kingSquare[color]=NONE;
 	}
 
