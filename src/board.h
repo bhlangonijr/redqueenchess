@@ -705,7 +705,7 @@ inline const bool Board::isDraw() {
 	if (!pawns) {
 		const int material=lowerScore(currentBoard.fullMaterial[WHITE])+
 				lowerScore(currentBoard.fullMaterial[BLACK]);
-		if (material<=egBishopValue+kingValue*2) {
+		if (material<=egBishopValue) {
 			return true;
 		}
 	}
