@@ -110,7 +110,7 @@ public:
 		size_t saveIdx;
 		IteratorStage stage;
 
-	} __attribute__ ((aligned(64))) ;
+	};
 
 	const void add(const Move& move);
 

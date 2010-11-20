@@ -40,39 +40,52 @@
 #define BP(COLOR, X) ((FSQUARE((COLOR==WHITE?BLACK:WHITE), (neighborFiles[X]), X)) | (rankBB[squareRank[X]] & adjacentSquares[X]))
 #define FQ(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]]), X))
 
-const int DOUBLED_PAWN_PENALTY =   -10;
-const int ISOLATED_PAWN_PENALTY =  -15;
-const int BACKWARD_PAWN_PENALTY =  -10;
-const int DONE_CASTLE_BONUS=       +10;
-const int CONNECTED_PAWN_BONUS =   +5;
-const int BISHOP_PAIR_BONUS = 	   +25;
+const int DOUBLED_PAWN_PENALTY =   MS(-10,-20);
+const int ISOLATED_PAWN_PENALTY =  MS(-10,-17);
+const int BACKWARD_PAWN_PENALTY =  MS(-10,-12);
+const int DONE_CASTLE_BONUS=       MS(+20,+1);
+const int CONNECTED_PAWN_BONUS =   MS(+5,+7);
+const int BISHOP_PAIR_BONUS = 	   MS(+25,+30);
+const int CONNECTED_PASSER_BONUS = MS(+20,+25);
 
 
-const int knightMobility[9] = {MS(-4,-3)};
-const int bishopMobility[16] = {};
-const int rookMobility[16] =   {};
-
-
-const int knightMobilityBonus[maxGamePhase+1] = {6,6,6,6,6,6,6,6,6,6,6,5,5,5,5,5,5,4,4,4,4,4,3,3,3,3,3,2,2,2,1,1,1};
-const int bishopMobilityBonus[maxGamePhase+1] = {4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,1,1,1};
-const int rookMobilityBonus[maxGamePhase+1] =   {3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1};
-
-const int bishopKingBonus[maxGamePhase+1] = {1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3};
-const int rookKingBonus[maxGamePhase+1] =   {2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4};
-const int queenKingBonus[maxGamePhase+1] =  {3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5};
-
-const int minorKingZoneAttackBonus[maxGamePhase+1] = {2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,6,6,6,6,6,7,7,7,7,7,7};
-const int majorKingZoneAttackBonus[maxGamePhase+1] = {4,4,4,4,5,5,5,5,5,6,6,6,6,6,7,7,7,8,8,8,9,9,10,10,10,10,10,10,10,10,10,10,10};
-
-const int passedPawnBonus1[ALL_PIECE_COLOR][ALL_RANK] = {
-		{0,25,40,50,60,100,150,0},
-		{0,150,80,60,50,40,25,0},
-		{}
+const int knightMobility[9] = {
+		MS(-8,-6),MS(-6,-4),MS(-4,-2),MS(-2,-1),MS(+0,+0),MS(+2,+1),MS(+4,+2),MS(+6,+3),MS(+8,+4)
 };
 
-const int passedPawnBonus2[ALL_PIECE_COLOR][ALL_RANK] = {
-		{0,25,30,35,40,50,70,0},
-		{0,70,50,40,35,30,25,0},
+const int bishopMobility[16] = {
+		MS(-30,-15),MS(-25,-12),MS(-20,-10),MS(-15,-7),MS(-10,+5),MS(-5,+2),MS(+0,+1),MS(+5,+2),
+		MS(+10,+5),MS(+15,+7),MS(+20,+10),MS(+25,+12),MS(+30,+15),MS(+35,+17),MS(+35,+17),MS(+40,+20)
+};
+
+const int rookMobility[16] = {
+		MS(-14,-28),MS(-12,-24),MS(-10,-20),MS(-8,-16),MS(-6,-12),MS(-4,-8),MS(-2,-4),MS(+0,+1),
+		MS(+2,+4),MS(+4,+8),MS(+6,+12),MS(+8,+16),MS(+10,+20),MS(+12,+24),MS(+12,+24),MS(+16,+26)
+};
+
+const int bishopKingBonus[8] = {
+		MS(+1,+2),MS(+2,+4),MS(+3,+6),MS(+4,+8),MS(+5,+10),MS(+6,+12),MS(+7,+14),MS(+8,+16)
+};
+
+const int rookKingBonus[8] = {
+		MS(+2,+4),MS(+4,+8),MS(+6,+12),MS(+8,+16),MS(+10,+20),MS(+12,+24),MS(+14,+28),MS(+16,+28)
+};
+
+const int queenKingBonus[8] = {
+		MS(+3,+6),MS(+6,+12),MS(+9,+18),MS(+12,+24),MS(+15,+30),MS(+18,+32),MS(+21,+36),MS(+24,+38)
+};
+
+const int minorKingZoneAttackBonus[10] = {
+		1*MS(+2,+7),2*MS(+2,+7),3*MS(+2,+7),4*MS(+2,+7),5*MS(+2,+7),6*MS(+2,+7),7*MS(+2,+7),8*MS(+2,+7),9*MS(+2,+7),10*MS(+2,+7)
+};
+
+const int majorKingZoneAttackBonus[10] = {
+		1*MS(+2,+10),2*MS(+2,+10),3*MS(+2,+10),4*MS(+2,+10),5*MS(+2,+10),6*MS(+2,+10),7*MS(+2,+10),8*MS(+2,+10),9*MS(+2,+10),10*MS(+2,+10)
+};
+
+const int passedPawnBonus[ALL_PIECE_COLOR][ALL_RANK] = {
+		{0,MS(+25,+25),MS(+30,+40),MS(+35,+50),MS(+40,+60),MS(+50,+100),MS(+70,+150),0},
+		{0,MS(+70,+150),MS(+50,+100),MS(+40,+60),MS(+35,+50),MS(+30,+40),MS(+25,+25),0},
 		{}
 };
 

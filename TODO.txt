@@ -8,6 +8,7 @@ Ben-Hur Langoni Junior
 	+ Create space evaluation
 	+ Improve pawns evaluation
 	+ Improve concept of mobility
+	+ Pre-compute mobility score
 3) Create pawn hashtable
 4) Improve move generation & mobility on evaluation - account for pins on king and good mobility
 5) Improve SEE function - verify for possible bugs

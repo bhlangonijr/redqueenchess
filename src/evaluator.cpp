@@ -53,11 +53,8 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 		value += evalPawns(board, side) - evalPawns(board, other);
 	}
 
-	if (value>maxScore) {
-		value=maxScore;
-	} else if (value<-maxScore) {
-		value=-maxScore;
-	}
+	value=((lowerScore(value)*board.getGamePhase())/maxGamePhase)+
+				((upperScore(value)*(maxGamePhase-board.getGamePhase()))/maxGamePhase);
 
 	return value;
 }
@@ -65,14 +62,12 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 // king eval function
 const int Evaluator::evalKing(Board& board, PieceColor color) {
 
-	const PieceColor other = board.flipSide(color);
 	int count=0;
 
 	// king
 	if (board.isCastleDone(color) &&
 			board.getGamePhase() < ENDGAME) {
-		count+= DONE_CASTLE_BONUS +
-				board.getPiecesByType(board.makePiece(other,QUEEN)) ? 10 : 0;
+		count+= DONE_CASTLE_BONUS;
 	}
 
 	return count;
@@ -114,9 +109,8 @@ const int Evaluator::evalPawns(Board& board, PieceColor color) {
 			}
 			if (isPasser && !(isDoubled && (frontSquares[color][from]&allButThePawn))) {
 
-				count += ((isChained && !(frontSquares[color][from]&all))?
-						passedPawnBonus1[color][squareRank[from]]:
-						passedPawnBonus2[color][squareRank[from]]);
+				count += passedPawnBonus[color][squareRank[from]]+
+						isChained?CONNECTED_PASSER_BONUS:0;
 
 				if (isPawnFinal) {
 					const Rank rank = color==WHITE?RANK_8:RANK_1;
@@ -172,7 +166,6 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 	const Bitboard rooks = board.getPiecesByType(board.makePiece(color,ROOK));
 	const Bitboard queens = board.getPiecesByType(board.makePiece(color,QUEEN));
 	const Bitboard notFriends = ~board.getPiecesByColor(color);
-	const int phase = int(board.getGamePhase());
 
 	Bitboard pieces = EMPTY_BB;
 	Bitboard knightAttacks = EMPTY_BB;
@@ -188,8 +181,7 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 
 	while ( from!=NONE ) {
 		const Bitboard attacks = board.getKnightAttacks(from);
-		count+=(_BitCount(attacks&notFriends)-4)*
-				knightMobilityBonus[phase];
+		count+=knightMobility[_BitCount(attacks&notFriends)];
 		knightAttacks |= attacks;
 		from = extractLSB(pieces);
 	}
@@ -200,10 +192,9 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 	while ( from!=NONE ) {
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getBishopAttacks(from);
-		count+=(_BitCount(attacks&notFriends)-6)*
-				bishopMobilityBonus[phase];
+		count+=bishopMobility[_BitCount(attacks&notFriends)];
 		bishopAttacks |= attacks;
-		kingThreat += delta*bishopKingBonus[phase];
+		kingThreat += bishopKingBonus[delta];
 		from = extractLSB(pieces);
 	}
 
@@ -214,8 +205,8 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getRookAttacks(from);
 		rookAttacks |= attacks;
-		count+=(_BitCount(attacks&notFriends)-7)*rookMobilityBonus[phase];
-		kingThreat += delta*rookKingBonus[phase];
+		count+=rookMobility[_BitCount(attacks&notFriends)];
+		kingThreat += rookKingBonus[delta];
 		from = extractLSB(pieces);
 	}
 
@@ -226,28 +217,28 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getQueenAttacks(from);
 		queenAttacks |= attacks;
-		count+=(_BitCount(attacks&notFriends)-10);
-		kingThreat += delta*queenKingBonus[phase];
+		count+=_BitCount(attacks&notFriends)-10;
+		kingThreat += queenKingBonus[delta];
 		from = extractLSB(pieces);
 	}
 
 	if (knightAttacks&otherKingSquareBB) {
-		kingThreat += minorKingZoneAttackBonus[phase];
+		kingThreat += minorKingZoneAttackBonus[0];
 	}
 
 	if (bishopAttacks&otherKingSquareBB) {
 		int attackCount = _BitCount(bishopAttacks&otherKingSquareBB);
-		kingThreat += attackCount*minorKingZoneAttackBonus[phase];
+		kingThreat += minorKingZoneAttackBonus[attackCount];
 	}
 
 	if (rookAttacks&otherKingSquareBB) {
 		int attackCount = _BitCount(rookAttacks&otherKingSquareBB);
-		kingThreat += attackCount*minorKingZoneAttackBonus[phase];
+		kingThreat += minorKingZoneAttackBonus[attackCount];
 	}
 
 	if (queenAttacks&otherKingSquareBB) {
 		int attackCount = _BitCount(queenAttacks&otherKingSquareBB);
-		kingThreat += attackCount*majorKingZoneAttackBonus[phase];
+		kingThreat += majorKingZoneAttackBonus[attackCount];
 	}
 
 	return count;

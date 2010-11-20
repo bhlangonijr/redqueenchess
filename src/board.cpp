@@ -126,6 +126,7 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	bool reversible=true;
 
 	backup.key=getKey();
+	backup.pawnKey=getPawnKey();
 	backup.from=move.from;
 	backup.to=move.to;
 	backup.movingPiece=fromPiece;
@@ -162,6 +163,7 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	} else {
 		putPiece(move.promotionPiece,move.to);
 		setKey(getKey()^zobrist.pieceSquare[move.promotionPiece][move.to]);
+		setPawnKey(getPawnKey()^zobrist.pieceSquare[makePiece(getSideToMove(),PAWN)][move.from]);
 		backup.hasPromotion=true;
 	}
 
@@ -255,6 +257,8 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 
 	if (fromPiece==makePiece(getSideToMove(),PAWN)){
 		reversible=false;
+		setPawnKey(getPawnKey()^zobrist.pieceSquare[fromPiece][move.from]^
+				zobrist.pieceSquare[fromPiece][move.to]);
 		if (getEnPassant()!=NONE) {
 			if (getSquareFile(move.from)!=getSquareFile(move.to)&&toPiece==EMPTY) { // en passant
 				removePiece(makePiece(otherSide,PAWN),getEnPassant());
@@ -289,6 +293,9 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	}
 
 	if (backup.capturedPiece!=EMPTY) {
+		if (pieceType[backup.capturedPiece]==PAWN) {
+			setPawnKey(getPawnKey()^zobrist.pieceSquare[backup.capturedPiece][move.to]);
+		}
 		setGamePhase(GamePhase(currentBoard.gamePhase+
 				phaseIncrement[getPieceType(backup.capturedPiece)]));
 	}
@@ -313,6 +320,7 @@ void Board::doNullMove(MoveBackup& backup){
 	PieceColor otherSide = flipSide(getSideToMove());
 
 	backup.key=getKey();
+	backup.pawnKey=getPawnKey();
 	backup.enPassant=getEnPassant();
 	backup.whiteCastleRight=getCastleRights(WHITE);
 	backup.blackCastleRight=getCastleRights(BLACK);
@@ -374,6 +382,7 @@ void Board::undoMove(MoveBackup& backup){
 	setEnPassant(backup.enPassant);
 	decreaseMoveCounter();
 	setSideToMove(sideToMove);
+	setPawnKey(backup.pawnKey);
 	setKey(backup.key);
 
 }
@@ -389,8 +398,8 @@ void Board::undoNullMove(MoveBackup& backup){
 	currentBoard.gamePhase=backup.phase;
 	decreaseMoveCounter();
 	setSideToMove(sideToMove);
+	setPawnKey(backup.pawnKey);
 	setKey(backup.key);
-
 }
 
 // set initial classic position to the board
@@ -531,6 +540,7 @@ void Board::loadFromFEN(const std::string startFENMoves) {
 	this->currentBoard.moveCounter = StringUtil::toInt(tokens);
 
 	setKey(generateKey());
+	setPawnKey(generatePawnKey());
 	updateKeyHistory();
 	setGamePhase(predictGamePhase());
 
@@ -661,9 +671,19 @@ const Key Board::getKey() const {
 	return currentBoard.key;
 }
 
+// get pawn zobrist key
+const Key Board::getPawnKey() const {
+	return currentBoard.pawnKey;
+}
+
 // set board zobrist key
 void Board::setKey(Key _key) {
 	currentBoard.key = _key;
+}
+
+// set pawn zobrist key
+void Board::setPawnKey(Key _key) {
+	currentBoard.pawnKey = _key;
 }
 
 // generate board zobrist key
@@ -681,6 +701,19 @@ const Key Board::generateKey() {
 		key ^= zobrist.enPassant[getSquareFile(currentBoard.enPassant)];
 	}
 	key ^= zobrist.sideToMove[getSideToMove()];
+
+	return key;
+}
+
+// generate pawn zobrist key
+const Key Board::generatePawnKey() {
+	Key key=Key(0x0ULL);
+
+	for(int square=A1; square<=H8; square++) {
+		if (pieceType[currentBoard.square[square]]==PAWN) {
+			key ^= zobrist.pieceSquare[currentBoard.square[square]][square];
+		}
+	}
 
 	return key;
 }

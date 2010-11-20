@@ -111,7 +111,7 @@ public:
 
 	struct Bucket {
 		HashData entry[BUCKET_SIZE];
-	};
+	} __attribute__ ((aligned(64)));
 
 	TranspositionTable(std::string id_) :
 		hashSize(DEFAULT_INITIAL_SIZE),
