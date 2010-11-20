@@ -53,8 +53,11 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 		value += evalPawns(board, side) - evalPawns(board, other);
 	}
 
-	value=((lowerScore(value)*board.getGamePhase())/maxGamePhase)+
-				((upperScore(value)*(maxGamePhase-board.getGamePhase()))/maxGamePhase);
+	const int egValue=lowerScore(value);
+	const int mgValue=upperScore(value);
+
+	value=((egValue*board.getGamePhase())/maxGamePhase)+
+				((mgValue*(maxGamePhase-board.getGamePhase()))/maxGamePhase);
 
 	if (value>maxScore) {
 		value=maxScore;
@@ -229,21 +232,21 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 	}
 
 	if (knightAttacks&otherKingSquareBB) {
-		kingThreat += minorKingZoneAttackBonus[0];
+		kingThreat += minorKingZoneAttackBonus[1];
 	}
 
 	if (bishopAttacks&otherKingSquareBB) {
-		int attackCount = _BitCount(bishopAttacks&otherKingSquareBB);
+		const int attackCount = _BitCount(bishopAttacks&otherKingSquareBB);
 		kingThreat += minorKingZoneAttackBonus[attackCount];
 	}
 
 	if (rookAttacks&otherKingSquareBB) {
-		int attackCount = _BitCount(rookAttacks&otherKingSquareBB);
+		const int attackCount = _BitCount(rookAttacks&otherKingSquareBB);
 		kingThreat += minorKingZoneAttackBonus[attackCount];
 	}
 
 	if (queenAttacks&otherKingSquareBB) {
-		int attackCount = _BitCount(queenAttacks&otherKingSquareBB);
+		const int attackCount = _BitCount(queenAttacks&otherKingSquareBB);
 		kingThreat += majorKingZoneAttackBonus[attackCount];
 	}
 
