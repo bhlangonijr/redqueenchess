@@ -181,6 +181,11 @@ public:
 	const void setGameStage(const GamePhase phase);
 	const int see(Board& board, MoveIterator::Move& move);
 
+	inline const int interpolate(const int mgValue, const int egValue, const int gamePhase) {
+		return ((egValue*gamePhase)/maxGamePhase)+
+				((mgValue*(maxGamePhase-gamePhase))/maxGamePhase);
+	}
+
 private:
 
 	Bitboard getLeastValuablePiece(Board& board, Bitboard attackers, PieceColor& color, PieceTypeByColor& piece);

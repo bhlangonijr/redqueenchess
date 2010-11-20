@@ -44,28 +44,26 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 	value += evalKing(board, side) - evalKing(board, other);
 	value += evalBishops(board, side) - evalBishops(board, other);
 
-	if (value > alpha-lazyEvalMargin && value < beta+lazyEvalMargin) {
+	int currentEval=interpolate(upperScore(value),lowerScore(value),board.getGamePhase());
+
+	if (currentEval > alpha-lazyEvalMargin && currentEval < beta+lazyEvalMargin) {
 		int kingThreatSide=0;
 		int kingThreatOther=0;
 		value += evalBoardControl(board, side, kingThreatSide) -
 				evalBoardControl(board, other, kingThreatOther);
 		value += kingThreatSide-kingThreatOther;
 		value += evalPawns(board, side) - evalPawns(board, other);
+
+		currentEval=interpolate(upperScore(value),lowerScore(value),board.getGamePhase());
 	}
 
-	const int egValue=lowerScore(value);
-	const int mgValue=upperScore(value);
-
-	value=((egValue*board.getGamePhase())/maxGamePhase)+
-				((mgValue*(maxGamePhase-board.getGamePhase()))/maxGamePhase);
-
-	if (value>maxScore) {
-		value=maxScore;
-	} else if (value<-maxScore) {
-		value=-maxScore;
+	if (currentEval>maxScore) {
+		currentEval=maxScore;
+	} else if (currentEval<-maxScore) {
+		currentEval=-maxScore;
 	}
-	
-	return value;
+
+	return currentEval;
 }
 
 // king eval function
