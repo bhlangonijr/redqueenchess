@@ -478,9 +478,9 @@ const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {
 
 const int materialValues[ALL_PIECE_TYPE_BY_COLOR] = {
 		MS(pawnValue,egPawnValue), MS(knightValue,egKnightValue), MS(bishopValue,egBishopValue),
-		MS(rookValue,egRookValue), MS(queenValue,egQueenValue), 0,
+		MS(rookValue,egRookValue), MS(queenValue,egQueenValue), kingValue,
 		MS(pawnValue,egPawnValue), MS(knightValue,egKnightValue), MS(bishopValue,egBishopValue),
-		MS(rookValue,egRookValue), MS(queenValue,egQueenValue), 0,0
+		MS(rookValue,egRookValue), MS(queenValue,egQueenValue), kingValue,0
 };
 
 extern void printBitboard(Bitboard bb);

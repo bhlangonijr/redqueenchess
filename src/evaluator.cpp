@@ -56,6 +56,12 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 	value=((lowerScore(value)*board.getGamePhase())/maxGamePhase)+
 				((upperScore(value)*(maxGamePhase-board.getGamePhase()))/maxGamePhase);
 
+	if (value>maxScore) {
+		value=maxScore;
+	} else if (value<-maxScore) {
+		value=-maxScore;
+	}
+	
 	return value;
 }
 

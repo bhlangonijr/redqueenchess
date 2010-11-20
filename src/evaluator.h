@@ -40,52 +40,54 @@
 #define BP(COLOR, X) ((FSQUARE((COLOR==WHITE?BLACK:WHITE), (neighborFiles[X]), X)) | (rankBB[squareRank[X]] & adjacentSquares[X]))
 #define FQ(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]]), X))
 
-const int DOUBLED_PAWN_PENALTY =   MS(-10,-20);
-const int ISOLATED_PAWN_PENALTY =  MS(-10,-17);
+const int DOUBLED_PAWN_PENALTY =   MS(-10,-12);
+const int ISOLATED_PAWN_PENALTY =  MS(-14,-16);
 const int BACKWARD_PAWN_PENALTY =  MS(-10,-12);
-const int DONE_CASTLE_BONUS=       MS(+20,+1);
-const int CONNECTED_PAWN_BONUS =   MS(+5,+7);
-const int BISHOP_PAIR_BONUS = 	   MS(+25,+30);
-const int CONNECTED_PASSER_BONUS = MS(+20,+25);
+const int DONE_CASTLE_BONUS=       MS(+20,+0);
+const int CONNECTED_PAWN_BONUS =   MS(+4,+6);
+const int BISHOP_PAIR_BONUS = 	   MS(+25,+25);
+const int CONNECTED_PASSER_BONUS = MS(+10,+35);
 
 
 const int knightMobility[9] = {
-		MS(-8,-6),MS(-6,-4),MS(-4,-2),MS(-2,-1),MS(+0,+0),MS(+2,+1),MS(+4,+2),MS(+6,+3),MS(+8,+4)
+		MS(-8,-6),MS(-6,-4),MS(-4,-2),MS(-2,-1),MS(+0,+0),MS(+2,+1),MS(+4,+2),MS(+6,+3),MS(+6,+3)
 };
 
 const int bishopMobility[16] = {
 		MS(-30,-15),MS(-25,-12),MS(-20,-10),MS(-15,-7),MS(-10,+5),MS(-5,+2),MS(+0,+1),MS(+5,+2),
-		MS(+10,+5),MS(+15,+7),MS(+20,+10),MS(+25,+12),MS(+30,+15),MS(+35,+17),MS(+35,+17),MS(+40,+20)
+		MS(+10,+5),MS(+15,+7),MS(+20,+10),MS(+25,+12),MS(+30,+15),MS(+35,+17),MS(+35,+17),MS(+35,+17)
 };
 
 const int rookMobility[16] = {
 		MS(-14,-28),MS(-12,-24),MS(-10,-20),MS(-8,-16),MS(-6,-12),MS(-4,-8),MS(-2,-4),MS(+0,+1),
-		MS(+2,+4),MS(+4,+8),MS(+6,+12),MS(+8,+16),MS(+10,+20),MS(+12,+24),MS(+12,+24),MS(+16,+26)
+		MS(+2,+4),MS(+4,+8),MS(+6,+12),MS(+8,+16),MS(+10,+20),MS(+12,+24),MS(+12,+24),MS(+12,+24)
 };
 
 const int bishopKingBonus[8] = {
-		MS(+1,+2),MS(+2,+4),MS(+3,+6),MS(+4,+8),MS(+5,+10),MS(+6,+12),MS(+7,+14),MS(+8,+16)
+		MS(+0,+0),MS(+1,+2),MS(+2,+4),MS(+3,+6),MS(+4,+8),MS(+5,+10),MS(+6,+12),MS(+7,+14)
 };
 
 const int rookKingBonus[8] = {
-		MS(+2,+4),MS(+4,+8),MS(+6,+12),MS(+8,+16),MS(+10,+20),MS(+12,+24),MS(+14,+28),MS(+16,+28)
+		MS(+0,+0),MS(+2,+4),MS(+4,+8),MS(+6,+12),MS(+8,+16),MS(+10,+20),MS(+12,+24),MS(+14,+28)
 };
 
 const int queenKingBonus[8] = {
-		MS(+3,+6),MS(+6,+12),MS(+9,+18),MS(+12,+24),MS(+15,+30),MS(+18,+32),MS(+21,+36),MS(+24,+38)
+		MS(+0,+0),MS(+3,+6),MS(+6,+12),MS(+9,+18),MS(+12,+24),MS(+15,+30),MS(+18,+32),MS(+21,+36)
 };
 
 const int minorKingZoneAttackBonus[10] = {
-		1*MS(+2,+7),2*MS(+2,+7),3*MS(+2,+7),4*MS(+2,+7),5*MS(+2,+7),6*MS(+2,+7),7*MS(+2,+7),8*MS(+2,+7),9*MS(+2,+7),10*MS(+2,+7)
+		0*MS(+2,+8),1*MS(+2,+8),2*MS(+2,+8),3*MS(+2,+8),4*MS(+2,+8),
+		5*MS(+2,+8),6*MS(+2,+8),7*MS(+2,+8),8*MS(+2,+8),9*MS(+2,+8)
 };
 
 const int majorKingZoneAttackBonus[10] = {
-		1*MS(+2,+10),2*MS(+2,+10),3*MS(+2,+10),4*MS(+2,+10),5*MS(+2,+10),6*MS(+2,+10),7*MS(+2,+10),8*MS(+2,+10),9*MS(+2,+10),10*MS(+2,+10)
+		0*MS(+4,+11),1*MS(+4,+11),2*MS(+4,+11),3*MS(+4,+11),4*MS(+4,+11),
+		5*MS(+4,+11),6*MS(+4,+11),7*MS(+4,+11),8*MS(+4,+11),9*MS(+4,+11)
 };
 
 const int passedPawnBonus[ALL_PIECE_COLOR][ALL_RANK] = {
-		{0,MS(+25,+25),MS(+30,+40),MS(+35,+50),MS(+40,+60),MS(+50,+100),MS(+70,+150),0},
-		{0,MS(+70,+150),MS(+50,+100),MS(+40,+60),MS(+35,+50),MS(+30,+40),MS(+25,+25),0},
+		{0,MS(+25,+25),MS(+30,+40),MS(+35,+40),MS(+40,+45),MS(+50,+60),MS(+70,+90),MS(+70,+90)},
+		{MS(+70,+90),MS(+70,+90),MS(+50,+60),MS(+40,+45),MS(+35,+40),MS(+30,+40),MS(+25,+25),0},
 		{}
 };
 
