@@ -65,15 +65,15 @@ const int rookMobility[16] = {
 };
 
 const int bishopKingBonus[8] = {
-		MS(+0,+0),MS(+1,+2),MS(+2,+4),MS(+3,+6),MS(+4,+8),MS(+5,+10),MS(+6,+12),MS(+7,+14)
+		MS(+7,+14),MS(+6,+12),MS(+5,+10),MS(+4,+8),MS(+3,+6),MS(+2,+4),MS(+1,+2),MS(+0,+0)
 };
 
 const int rookKingBonus[8] = {
-		MS(+0,+0),MS(+2,+4),MS(+4,+8),MS(+6,+12),MS(+8,+16),MS(+10,+20),MS(+12,+24),MS(+14,+28)
+		MS(+14,+28),MS(+12,+24),MS(+10,+20),MS(+8,+16),MS(+6,+12),MS(+4,+8),MS(+2,+4),MS(+0,+0)
 };
 
 const int queenKingBonus[8] = {
-		MS(+0,+0),MS(+3,+6),MS(+6,+12),MS(+9,+18),MS(+12,+24),MS(+15,+30),MS(+18,+32),MS(+21,+36)
+		MS(+21,+36),MS(+18,+32),MS(+15,+30),MS(+12,+24),MS(+9,+18),MS(+6,+12),MS(+3,+6),MS(+0,+0)
 };
 
 const int minorKingZoneAttackBonus[10] = {

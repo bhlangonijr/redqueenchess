@@ -125,7 +125,6 @@ const int Evaluator::evalPawns(Board& board, PieceColor color) {
 				if (isPawnFinal) {
 					const Rank rank = color==WHITE?RANK_8:RANK_1;
 					const Square target = board.makeSquare(rank,squareFile[from]);
-
 					const int delta1 = squareDistance(from,target);
 					const int delta2 = squareDistance(otherKingSq,target);
 					const int otherMove=board.getSideToMove();
@@ -200,11 +199,10 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getBishopAttacks(from);
 		count+=bishopMobility[_BitCount(attacks&notFriends)];
 		bishopAttacks |= attacks;
-		kingThreat += bishopKingBonus[delta];
+		kingThreat += bishopKingBonus[squareDistance(from,otherKingSq)];
 		from = extractLSB(pieces);
 	}
 
@@ -212,11 +210,10 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getRookAttacks(from);
 		rookAttacks |= attacks;
 		count+=rookMobility[_BitCount(attacks&notFriends)];
-		kingThreat += rookKingBonus[delta];
+		kingThreat += rookKingBonus[squareDistance(from,otherKingSq)];
 		from = extractLSB(pieces);
 	}
 
@@ -224,12 +221,11 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
-		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getQueenAttacks(from);
 		queenAttacks |= attacks;
 		const int queenMobility = _BitCount(attacks&notFriends)-10;
 		count+= MS(queenMobility,queenMobility);
-		kingThreat += queenKingBonus[delta];
+		kingThreat += queenKingBonus[squareDistance(from,otherKingSq)];
 		from = extractLSB(pieces);
 	}
 

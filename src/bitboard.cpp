@@ -28,7 +28,6 @@
 
 const int DELTA_MAX = 7;
 static int squareDelta[ALL_SQUARE][ALL_SQUARE];
-static int inverseSquareDelta[ALL_SQUARE][ALL_SQUARE];
 
 // print a bitboard in a readble form
 void printBitboard(Bitboard bb) {
@@ -54,7 +53,6 @@ void initializeBitboards() {
 			const int delta1 = abs(squareRank[x]-squareRank[y]);
 			const int delta2 = abs(squareFile[x]-squareFile[y]);
 			squareDelta[x][y] = MAX(delta1, delta2);
-			inverseSquareDelta[x][y] = DELTA_MAX-squareDelta[x][y];
 		}
 	}
 
@@ -63,8 +61,3 @@ void initializeBitboards() {
 int squareDistance(const Square from, const Square to) {
 	return squareDelta[from][to];
 }
-
-int inverseSquareDistance(const Square from, const Square to) {
-	return inverseSquareDelta[from][to];
-}
-
