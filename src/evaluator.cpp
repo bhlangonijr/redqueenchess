@@ -118,8 +118,11 @@ const int Evaluator::evalPawns(Board& board, PieceColor color) {
 			}
 			if (isPasser && !(isDoubled && (frontSquares[color][from]&allButThePawn))) {
 
-				count += passedPawnBonus[color][squareRank[from]]+
-						isChained?CONNECTED_PASSER_BONUS:0;
+				count += passedPawnBonus[color][squareRank[from]];
+
+				if ((isChained && !(frontSquares[color][from]&all))) {
+					count+=CONNECTED_PASSER_BONUS;
+				}
 
 				if (isPawnFinal) {
 					const Rank rank = color==WHITE?RANK_8:RANK_1;
@@ -130,7 +133,7 @@ const int Evaluator::evalPawns(Board& board, PieceColor color) {
 					const int otherMove=board.getSideToMove();
 
 					if (MIN(5,delta1)<delta2-otherMove) {
-						count += rookValue;
+						count += UNSTOPPABLE_PAWN_BONUS;
 					}
 				}
 			}
@@ -226,7 +229,8 @@ const int Evaluator::evalBoardControl(Board& board, PieceColor color, int& kingT
 		const int delta = inverseSquareDistance(from,otherKingSq);
 		const Bitboard attacks = board.getQueenAttacks(from);
 		queenAttacks |= attacks;
-		count+=_BitCount(attacks&notFriends)-10;
+		const int queenMobility = _BitCount(attacks&notFriends)-10;
+		count+= MS(queenMobility,queenMobility);
 		kingThreat += queenKingBonus[delta];
 		from = extractLSB(pieces);
 	}

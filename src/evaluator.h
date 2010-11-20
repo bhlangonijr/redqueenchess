@@ -46,7 +46,8 @@ const int BACKWARD_PAWN_PENALTY =  MS(-10,-12);
 const int DONE_CASTLE_BONUS=       MS(+20,+0);
 const int CONNECTED_PAWN_BONUS =   MS(+4,+6);
 const int BISHOP_PAIR_BONUS = 	   MS(+25,+25);
-const int CONNECTED_PASSER_BONUS = MS(+10,+35);
+const int CONNECTED_PASSER_BONUS = MS(+30,+70);
+const int UNSTOPPABLE_PAWN_BONUS = MS(+700,+700);
 
 
 const int knightMobility[9] = {
