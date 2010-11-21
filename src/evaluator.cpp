@@ -52,8 +52,14 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 		value += evalBoardControl(board, side, kingThreatSide) -
 				evalBoardControl(board, other, kingThreatOther);
 		value += kingThreatSide-kingThreatOther;
-		value += evalPawns(board, side) - evalPawns(board, other);
 
+		const uint32_t pawnKey = uint32_t(board.getPawnKey()>>32);
+		PawnInfo info;
+		if (getPawnInfo(pawnKey,info)) {
+			value += evalPawnsFromCache(board, side, info) - evalPawnsFromCache(board, other, info);
+		} else {
+			value += evalPawns(board, side) - evalPawns(board, other);
+		}
 		currentEval=interpolate(upperScore(value),lowerScore(value),board.getGamePhase());
 	}
 
@@ -80,6 +86,32 @@ const int Evaluator::evalKing(Board& board, PieceColor color) {
 	return count;
 }
 
+const int Evaluator::evalPawnsFromCache(Board& board, PieceColor color, PawnInfo& info) {
+	const PieceColor other = board.flipSide(color);
+	const Bitboard all = board.getAllPieces();
+	const Bitboard pawns = board.getPiecesByType(board.makePiece(color,PAWN));
+	const Bitboard otherPawns = board.getPiecesByType(board.makePiece(other,PAWN));
+	int count=0;
+	count+=info.value[color];
+	Bitboard passed=info.passers[color];
+	if (passed) {
+		const Bitboard pawnsAndKings = pawns | otherPawns |
+				board.getPiecesByType(WHITE_KING) |	board.getPiecesByType(BLACK_KING);
+		const bool isPawnFinal = !(pawnsAndKings^all);
+		Square from = extractLSB(passed);
+		while ( from!=NONE ) {
+			const Bitboard pawn = squareToBitboard[from];
+			const Bitboard allButThePawn =(pawns^pawn);
+			const Bitboard chainSquares = backwardPawnMask[color][from]&adjacentSquares[from];
+			const bool isChained = (chainSquares&allButThePawn);
+			count += passedPawnBonus[color][squareRank[from]]+
+					evalPassedPawn(board,color,from,isPawnFinal,isChained);
+			from = extractLSB(passed);
+		}
+	}
+	return count;
+}
+
 // pawns eval function
 const int Evaluator::evalPawns(Board& board, PieceColor color) {
 
@@ -88,36 +120,12 @@ const int Evaluator::evalPawns(Board& board, PieceColor color) {
 	const Bitboard pawns = board.getPiecesByType(board.makePiece(color,PAWN));
 	const Bitboard otherPawns = board.getPiecesByType(board.makePiece(other,PAWN));
 	const uint32_t pawnKey = uint32_t(board.getPawnKey()>>32);
-	int count=0;
-
-	PawnInfo info;
-	if (getPawnInfo(pawnKey,info)) {
-		count+=info.value[color];
-		Bitboard passed=info.passers[color];
-		if (passed) {
-			const Bitboard pawnsAndKings = pawns | otherPawns |
-					board.getPiecesByType(WHITE_KING) |	board.getPiecesByType(BLACK_KING);
-			const bool isPawnFinal = !(pawnsAndKings^all);
-			Square from = extractLSB(passed);
-			while ( from!=NONE ) {
-				const Bitboard pawn = squareToBitboard[from];
-				const Bitboard allButThePawn =(pawns^pawn);
-				const Bitboard chainSquares = backwardPawnMask[color][from]&adjacentSquares[from];
-				const bool isChained = (chainSquares&allButThePawn);
-				count += passedPawnBonus[color][squareRank[from]]+
-										evalPassedPawn(board,color,from,isPawnFinal,isChained);
-				from = extractLSB(passed);
-			}
-		}
-
-		return count;
-	}
-
 	Bitboard passers=EMPTY_BB;
 	int passedBonus=0;
+	int count=0;
+
 	//pawns - penalyze doubled, isolated and backward pawns
 	if (pawns) {
-
 		const Bitboard pawnsAndKings = pawns | otherPawns |
 				board.getPiecesByType(WHITE_KING) |	board.getPiecesByType(BLACK_KING);
 		const bool isPawnFinal = !(pawnsAndKings^all);

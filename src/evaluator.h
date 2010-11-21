@@ -186,6 +186,7 @@ public:
 	const int evaluate(Board& board, const int alpha, const int beta);
 	const int evalMaterial(Board& board, PieceColor color);
 	const int evalKing(Board& board, PieceColor color);
+	const int evalPawnsFromCache(Board& board, PieceColor color, PawnInfo& info);
 	const int evalPawns(Board& board, PieceColor color);
 	const int evalPassedPawn(Board& board, PieceColor color, const Square from,
 			const bool isPawnFinal, const bool isChained);
