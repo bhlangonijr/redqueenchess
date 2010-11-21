@@ -164,7 +164,7 @@ const Bitboard frontSquares[ALL_PIECE_COLOR][ALL_SQUARE]= {
 		{}
 };
 
-const int lazyEvalMargin=300;
+const int lazyEvalMargin=200;
 const size_t pawnHashSize=1<<16;
 
 class Evaluator {

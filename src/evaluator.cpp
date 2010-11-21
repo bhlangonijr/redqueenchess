@@ -114,6 +114,7 @@ const int Evaluator::evalPawns(Board& board, PieceColor color) {
 	}
 
 	Bitboard passers=EMPTY_BB;
+	int passedBonus=0;
 	//pawns - penalyze doubled, isolated and backward pawns
 	if (pawns) {
 
@@ -141,7 +142,7 @@ const int Evaluator::evalPawns(Board& board, PieceColor color) {
 			}
 			if (isPasser && !(isDoubled && (frontSquares[color][from]&allButThePawn))) {
 
-				count += evalPassedPawn(board,color,from,isPawnFinal,isChained);
+				passedBonus += evalPassedPawn(board,color,from,isPawnFinal,isChained);
 				passers|=squareToBitboard[from];
 
 			}
@@ -160,7 +161,7 @@ const int Evaluator::evalPawns(Board& board, PieceColor color) {
 
 	setPawnInfo(pawnKey,count,color,passers);
 
-	return count;
+	return count+passedBonus;
 }
 
 // Eval passed pawns
