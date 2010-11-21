@@ -198,8 +198,7 @@ public:
 	const int see(Board& board, MoveIterator::Move& move);
 
 	inline const int interpolate(const int mgValue, const int egValue, const int gamePhase) {
-		return ((egValue*gamePhase)/maxGamePhase)+
-				((mgValue*(maxGamePhase-gamePhase))/maxGamePhase);
+		return ((mgValue*(maxGamePhase-gamePhase))+(egValue*gamePhase))/maxGamePhase;
 	}
 
 	inline bool getPawnInfo(const uint32_t key, PawnInfo& pawnHash) {

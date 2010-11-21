@@ -44,9 +44,9 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 	value += evalKing(board, side) - evalKing(board, other);
 	value += evalBishops(board, side) - evalBishops(board, other);
 
-	int currentEval=interpolate(upperScore(value),lowerScore(value),board.getGamePhase());
+	//int currentEval=interpolate(upperScore(value),lowerScore(value),board.getGamePhase());
 
-	if (currentEval > alpha-lazyEvalMargin && currentEval < beta+lazyEvalMargin) {
+	//if (currentEval > alpha-lazyEvalMargin && currentEval < beta+lazyEvalMargin) {
 		int kingThreatSide=0;
 		int kingThreatOther=0;
 		value += evalBoardControl(board, side, kingThreatSide) -
@@ -60,8 +60,8 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 		} else {
 			value += evalPawns(board, side) - evalPawns(board, other);
 		}
-		currentEval=interpolate(upperScore(value),lowerScore(value),board.getGamePhase());
-	}
+		int currentEval=interpolate(upperScore(value),lowerScore(value),board.getGamePhase());
+	//}
 
 	if (currentEval>maxScore) {
 		currentEval=maxScore;

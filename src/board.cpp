@@ -722,8 +722,8 @@ const int Board::getPieceSquareValue(const PieceTypeByColor piece, const Square 
 	return pst[phase][piece][square];
 }
 
-const int Board::interpolate(const int first, const int second, const int position) {
-	return (first*position)/maxGamePhase+(second*(maxGamePhase-position))/maxGamePhase;
+const int Board::interpolate(const int egValue, const int mgValue, const int gamePhase) {
+	return ((mgValue*(maxGamePhase-gamePhase))+(egValue*gamePhase))/maxGamePhase;
 }
 
 const int Board::calcPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase) {

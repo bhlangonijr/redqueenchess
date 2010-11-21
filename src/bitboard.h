@@ -67,7 +67,7 @@ typedef uint64_t Bitboard;
 #define NFILE(X) ((squareFile[X]!=FILE_H ? fileBB[squareFile[X]+1] : EMPTY_BB) | \
 		(squareFile[X]!=FILE_A ? fileBB[squareFile[X]-1] : EMPTY_BB))
 
-#define MS(X,Y) (Y+(X<<16))
+#define MS(X,Y) ((Y)+(X<<16))
 #define AVG(X,Y) ((X+Y)/2)
 
 // squares
@@ -553,14 +553,14 @@ inline Square extractLSB(Bitboard& bitboard) {
 }
 
 inline const int upperScore(const int value) {
-	return ((int16_t(value >> 15) & 1) + int16_t(value >> 16));
+	return (((value >> 15) & 1) + int16_t((value) >> 16));
 }
 
 inline const int lowerScore(const int value) {
 	return  int16_t(value & 0xFFFF);
 }
 
-inline const int makeScore(const int upperValue, const int lowerValue) {
+inline const int makeScore(const int16_t upperValue, const int16_t lowerValue) {
 	return  lowerValue+(upperValue<<16);
 }
 

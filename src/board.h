@@ -353,7 +353,7 @@ public:
 		return ((clock() * 1000) / CLOCKS_PER_SEC);
 	}
 
-	static const int interpolate(const int first, const int second, const int position);
+	static const int interpolate(const int egValue, const int mgValue, const int gamePhase);
 	const int getPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase);
 	static const int calcPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase);
 
