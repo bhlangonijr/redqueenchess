@@ -46,7 +46,6 @@ const int BACKWARD_PAWN_PENALTY =  MS(-10,-12);
 const int DONE_CASTLE_BONUS=       MS(+20,+0);
 const int CONNECTED_PAWN_BONUS =   MS(+4,+6);
 const int BISHOP_PAIR_BONUS = 	   MS(+25,+25);
-const int CONNECTED_PASSER_BONUS = MS(+30,+70);
 const int UNSTOPPABLE_PAWN_BONUS = MS(+700,+700);
 
 
@@ -88,8 +87,14 @@ const int majorKingZoneAttackBonus[10] = {
 };
 
 const int passedPawnBonus[ALL_PIECE_COLOR][ALL_RANK] = {
-		{0,MS(+25,+25),MS(+30,+40),MS(+35,+40),MS(+40,+45),MS(+50,+60),MS(+70,+90),MS(+70,+90)},
-		{MS(+70,+90),MS(+70,+90),MS(+50,+60),MS(+40,+45),MS(+35,+40),MS(+30,+40),MS(+25,+25),0},
+		{0,MS(+20,+25),MS(+25,+35),MS(+30,+40),MS(+35,+50),MS(+40,+60),MS(+50,+70),0},
+		{0,MS(+50,+70),MS(+40,+60),MS(+35,+50),MS(+30,+40),MS(+25,+35),MS(+20,+25),0},
+		{}
+};
+
+const int connectedPasserBonus[ALL_PIECE_COLOR][ALL_RANK] = {
+		{0,MS(+5,+10),MS(+15,+25),MS(+25,+35),MS(+35,+40),MS(+40,+50),MS(+40,+70),0},
+		{0,MS(+40,+70),MS(+40,+50),MS(+35,+40),MS(+25,+35),MS(+15,+25),MS(+5,+10),0},
 		{}
 };
 

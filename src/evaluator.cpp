@@ -171,19 +171,16 @@ const int Evaluator::evalPawns(Board& board, PieceColor color) {
 }
 
 // Eval passed pawns
-const int Evaluator::evalPassedPawn(Board& board, PieceColor color, const Square from, const bool isPawnFinal, const bool isChained) {
+const int Evaluator::evalPassedPawn(Board& board, PieceColor color, const Square from,
+		const bool isPawnFinal, const bool isChained) {
 
 	int count=0;
-
-	if (board.getPieceBySquare(from)!=board.makePiece(color,PAWN)) {
-		return 0;
-	}
 
 	const Bitboard all = board.getAllPieces();
 	count+=passedPawnBonus[color][squareRank[from]];
 
 	if ((isChained && !(frontSquares[color][from]&all))) {
-		count+=CONNECTED_PASSER_BONUS;
+		count+=connectedPasserBonus[color][squareRank[from]];
 	}
 
 	if (isPawnFinal) {

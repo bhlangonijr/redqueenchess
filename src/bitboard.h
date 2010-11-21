@@ -555,14 +555,14 @@ inline Square extractLSB(Bitboard& bitboard) {
 }
 
 inline const int upperScore(const int value) {
-	return (((value >> 15) & 1) + int16_t((value) >> 16));
+	return ((int16_t(value >> 15) & 1) + int16_t(value >> 16));
 }
 
 inline const int lowerScore(const int value) {
 	return  int16_t(value & 0xFFFF);
 }
 
-inline const int makeScore(const int16_t upperValue, const int16_t lowerValue) {
+inline const int makeScore(const int upperValue, const int lowerValue) {
 	return  lowerValue+(upperValue<<16);
 }
 
