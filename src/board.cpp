@@ -163,7 +163,6 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	} else {
 		putPiece(move.promotionPiece,move.to);
 		setKey(getKey()^zobrist.pieceSquare[move.promotionPiece][move.to]);
-		setPawnKey(getPawnKey()^zobrist.pieceSquare[makePiece(getSideToMove(),PAWN)][move.from]);
 		backup.hasPromotion=true;
 	}
 
@@ -257,8 +256,7 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 
 	if (fromPiece==makePiece(getSideToMove(),PAWN)){
 		reversible=false;
-		setPawnKey(getPawnKey()^zobrist.pieceSquare[fromPiece][move.from]^
-				zobrist.pieceSquare[fromPiece][move.to]);
+		setPawnKey(getPawnKey()^zobrist.pieceSquare[fromPiece][move.from]);
 		if (getEnPassant()!=NONE) {
 			if (getSquareFile(move.from)!=getSquareFile(move.to)&&toPiece==EMPTY) { // en passant
 				removePiece(makePiece(otherSide,PAWN),getEnPassant());
@@ -303,6 +301,8 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	if (backup.hasPromotion) {
 		setGamePhase(GamePhase(currentBoard.gamePhase-
 				phaseIncrement[getPieceType(move.promotionPiece)]));
+	} else {
+		setPawnKey(getPawnKey()^zobrist.pieceSquare[fromPiece][move.to]);
 	}
 
 	setKey(getKey()^zobrist.sideToMove[getSideToMove()]);

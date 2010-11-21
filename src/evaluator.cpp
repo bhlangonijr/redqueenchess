@@ -44,24 +44,23 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 	value += evalKing(board, side) - evalKing(board, other);
 	value += evalBishops(board, side) - evalBishops(board, other);
 
-	//int currentEval=interpolate(upperScore(value),lowerScore(value),board.getGamePhase());
+	int currentEval=interpolate(value,board.getGamePhase());
 
-	//if (currentEval > alpha-lazyEvalMargin && currentEval < beta+lazyEvalMargin) {
+	if (currentEval > alpha-lazyEvalMargin && currentEval < beta+lazyEvalMargin) {
 		int kingThreatSide=0;
 		int kingThreatOther=0;
-		value += evalBoardControl(board, side, kingThreatSide) -
+		int control = evalBoardControl(board, side, kingThreatSide) -
 				evalBoardControl(board, other, kingThreatOther);
-		value += kingThreatSide-kingThreatOther;
+		control += kingThreatSide-kingThreatOther;
 
-		const uint32_t pawnKey = uint32_t(board.getPawnKey()>>32);
 		PawnInfo info;
-		if (getPawnInfo(pawnKey,info)) {
-			value += evalPawnsFromCache(board, side, info) - evalPawnsFromCache(board, other, info);
+		if (getPawnInfo(board.getPawnKey(),info)) {
+			control += evalPawnsFromCache(board, side, info) - evalPawnsFromCache(board, other, info);
 		} else {
-			value += evalPawns(board, side) - evalPawns(board, other);
+			control += evalPawns(board, side) - evalPawns(board, other);
 		}
-		int currentEval=interpolate(upperScore(value),lowerScore(value),board.getGamePhase());
-	//}
+		currentEval+=interpolate(control,board.getGamePhase());
+	}
 
 	if (currentEval>maxScore) {
 		currentEval=maxScore;
@@ -93,7 +92,7 @@ const int Evaluator::evalPawnsFromCache(Board& board, PieceColor color, PawnInfo
 	const Bitboard otherPawns = board.getPiecesByType(board.makePiece(other,PAWN));
 	int count=0;
 	count+=info.value[color];
-	Bitboard passed=info.passers[color];
+	Bitboard passed=info.passers[color] & pawns;
 	if (passed) {
 		const Bitboard pawnsAndKings = pawns | otherPawns |
 				board.getPiecesByType(WHITE_KING) |	board.getPiecesByType(BLACK_KING);
@@ -104,8 +103,7 @@ const int Evaluator::evalPawnsFromCache(Board& board, PieceColor color, PawnInfo
 			const Bitboard allButThePawn =(pawns^pawn);
 			const Bitboard chainSquares = backwardPawnMask[color][from]&adjacentSquares[from];
 			const bool isChained = (chainSquares&allButThePawn);
-			count += passedPawnBonus[color][squareRank[from]]+
-					evalPassedPawn(board,color,from,isPawnFinal,isChained);
+			count +=evalPassedPawn(board,color,from,isPawnFinal,isChained);
 			from = extractLSB(passed);
 		}
 	}
@@ -119,7 +117,6 @@ const int Evaluator::evalPawns(Board& board, PieceColor color) {
 	const Bitboard all = board.getAllPieces();
 	const Bitboard pawns = board.getPiecesByType(board.makePiece(color,PAWN));
 	const Bitboard otherPawns = board.getPiecesByType(board.makePiece(other,PAWN));
-	const uint32_t pawnKey = uint32_t(board.getPawnKey()>>32);
 	Bitboard passers=EMPTY_BB;
 	int passedBonus=0;
 	int count=0;
@@ -136,7 +133,8 @@ const int Evaluator::evalPawns(Board& board, PieceColor color) {
 			const Bitboard allButThePawn =(pawns^pawn);
 			const Bitboard chainSquares = backwardPawnMask[color][from]&adjacentSquares[from];
 			const bool isDoubled = (fileAttacks[squareFile[from]]&allButThePawn);
-			const bool isPasser = !(passedMask[color][from]&otherPawns);
+			const bool isPasser = !(passedMask[color][from]&otherPawns) ||
+					 	 	 	   (squareToBitboard[from] & promoRank[color]);
 			const bool isIsolated = !(neighborFiles[from]&allButThePawn);
 			const bool isChained = (chainSquares&allButThePawn);
 
@@ -167,7 +165,7 @@ const int Evaluator::evalPawns(Board& board, PieceColor color) {
 		}
 	}
 
-	setPawnInfo(pawnKey,count,color,passers);
+	setPawnInfo(board.getPawnKey(),count,color,passers);
 
 	return count+passedBonus;
 }

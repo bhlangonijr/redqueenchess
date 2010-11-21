@@ -59,6 +59,8 @@ typedef uint64_t Bitboard;
 #define EMPTY_BB				0x0ULL
 #define WHITE_SQUARES 			0x55AA55AA55AA55AAULL
 #define BLACK_SQUARES 			0xAA55AA55AA55AA55ULL
+#define St2Sq(F,R)				(((int)F-96)+((int)R-49)*8)-1	// encode String to Square enum
+
 
 #define MIN(x,y) (x<y?x:y)
 #define MAX(x,y) (x>y?x:y)

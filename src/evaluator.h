@@ -177,7 +177,7 @@ public:
 	};
 
 	struct PawnInfo {
-		uint32_t key;
+		Key key;
 		int value[ALL_PIECE_COLOR];
 		Bitboard passers[ALL_PIECE_COLOR];
 	}__attribute__ ((aligned(64)));
@@ -197,11 +197,13 @@ public:
 	const void setGameStage(const GamePhase phase);
 	const int see(Board& board, MoveIterator::Move& move);
 
-	inline const int interpolate(const int mgValue, const int egValue, const int gamePhase) {
+	inline const int interpolate(const int value, const int gamePhase) {
+		const int mgValue = upperScore(value);
+		const int egValue = lowerScore(value);
 		return ((mgValue*(maxGamePhase-gamePhase))+(egValue*gamePhase))/maxGamePhase;
 	}
 
-	inline bool getPawnInfo(const uint32_t key, PawnInfo& pawnHash) {
+	inline bool getPawnInfo(const Key key, PawnInfo& pawnHash) {
 		PawnInfo& entry = pawnInfo[key & (pawnHashSize-1)];
 		if (entry.key==key) {
 			pawnHash.key=entry.key;
@@ -214,7 +216,7 @@ public:
 		return false;
 	}
 
-	inline void setPawnInfo(const uint32_t key, const int value, const PieceColor color, const Bitboard passers) {
+	inline void setPawnInfo(const Key key, const int value, const PieceColor color, const Bitboard passers) {
 		PawnInfo& entry = pawnInfo[key & (pawnHashSize-1)];
 		entry.key=key;
 		entry.value[color]=value;
@@ -232,6 +234,9 @@ private:
 // verify if pawn is passer
 inline const bool Evaluator::isPawnPassed(Board& board, const Square from) {
 	const PieceColor color = board.getPieceColorBySquare(from);
+	if (squareToBitboard[from] & promoRank[color]) {
+		return true;
+	}
 	const PieceColor other = board.flipSide(color);
 	const Bitboard otherPawns = board.getPiecesByType(board.makePiece(other,PAWN));
 	return !(passedMask[color][from]&otherPawns);
