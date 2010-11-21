@@ -51,17 +51,17 @@ const int UNSTOPPABLE_PAWN_BONUS = MS(+700,+700);
 
 
 const int knightMobility[9] = {
-		MS(-8,-6),MS(-6,-4),MS(-4,-2),MS(-2,-1),MS(+0,+0),MS(+2,+1),MS(+4,+2),MS(+6,+3),MS(+6,+3)
+		MS(-8,-6),MS(-4,-2),MS(+0,+0),MS(+2,+1),MS(+4,+2),MS(+6,+3),MS(+12,+6),MS(+14,+8),MS(+14,+8)
 };
 
 const int bishopMobility[16] = {
 		MS(-30,-15),MS(-25,-12),MS(-20,-10),MS(-15,-7),MS(-10,+5),MS(-5,+2),MS(+0,+1),MS(+5,+2),
-		MS(+10,+5),MS(+15,+7),MS(+20,+10),MS(+25,+12),MS(+30,+15),MS(+35,+17),MS(+35,+17),MS(+35,+17)
+		MS(+10,+5),MS(+15,+7),MS(+20,+10),MS(+25,+12),MS(+30,+15),MS(+35,+17),MS(+40,+19),MS(+40,+19)
 };
 
 const int rookMobility[16] = {
 		MS(-14,-28),MS(-12,-24),MS(-10,-20),MS(-8,-16),MS(-6,-12),MS(-4,-8),MS(-2,-4),MS(+0,+1),
-		MS(+2,+4),MS(+4,+8),MS(+6,+12),MS(+8,+16),MS(+10,+20),MS(+12,+24),MS(+12,+24),MS(+12,+24)
+		MS(+4,+8),MS(+6,+12),MS(+8,+16),MS(+10,+20),MS(+12,+24),MS(+14,+28),MS(+16,+32),MS(+16,+32)
 };
 
 const int bishopKingBonus[8] = {
@@ -164,10 +164,22 @@ const Bitboard frontSquares[ALL_PIECE_COLOR][ALL_SQUARE]= {
 		{}
 };
 
-const int lazyEvalMargin=200;
+const int lazyEvalMargin=300;
+const size_t pawnHashSize=1<<16;
 
 class Evaluator {
 public:
+
+	struct EvalInfo {
+		int kingThreat[ALL_PIECE_COLOR];
+		Bitboard attackers[ALL_PIECE_COLOR];
+	};
+
+	struct PawnInfo {
+		uint32_t key;
+		int value[ALL_PIECE_COLOR];
+		Bitboard passers[ALL_PIECE_COLOR];
+	}__attribute__ ((aligned(64)));
 
 	Evaluator();
 	virtual ~Evaluator();
@@ -175,6 +187,8 @@ public:
 	const int evalMaterial(Board& board, PieceColor color);
 	const int evalKing(Board& board, PieceColor color);
 	const int evalPawns(Board& board, PieceColor color);
+	const int evalPassedPawn(Board& board, PieceColor color, const Square from,
+			const bool isPawnFinal, const bool isChained);
 	const int evalBishops(Board& board, PieceColor color);
 	const int evalBoardControl(Board& board, PieceColor color, int& kingThreat);
 	const bool isPawnPassed(Board& board, const Square from);
@@ -186,9 +200,32 @@ public:
 				((mgValue*(maxGamePhase-gamePhase))/maxGamePhase);
 	}
 
+	inline bool getPawnInfo(const uint32_t key, PawnInfo& pawnHash) {
+		PawnInfo& entry = pawnInfo[key & (pawnHashSize-1)];
+		if (entry.key==key) {
+			pawnHash.key=entry.key;
+			pawnHash.passers[WHITE]=entry.passers[WHITE];
+			pawnHash.passers[BLACK]=entry.passers[BLACK];
+			pawnHash.value[WHITE]=entry.value[WHITE];
+			pawnHash.value[BLACK]=entry.value[BLACK];
+			return true;
+		}
+		return false;
+	}
+
+	inline void setPawnInfo(const uint32_t key, const int value, const PieceColor color, const Bitboard passers) {
+		PawnInfo& entry = pawnInfo[key & (pawnHashSize-1)];
+		entry.key=key;
+		entry.value[color]=value;
+		entry.passers[color]=passers;
+	}
+
 private:
 
 	Bitboard getLeastValuablePiece(Board& board, Bitboard attackers, PieceColor& color, PieceTypeByColor& piece);
+
+	PawnInfo pawnInfo[pawnHashSize];
+
 };
 
 // verify if pawn is passer
