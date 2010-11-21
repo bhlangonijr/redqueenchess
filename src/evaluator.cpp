@@ -182,8 +182,6 @@ const int Evaluator::evalPassedPawn(Board& board, PieceColor color, const Square
 	}
 
 	const Bitboard all = board.getAllPieces();
-	const Square otherKingSq = board.getKingSquare(board.flipSide(color));
-
 	count+=passedPawnBonus[color][squareRank[from]];
 
 	if ((isChained && !(frontSquares[color][from]&all))) {
@@ -191,6 +189,7 @@ const int Evaluator::evalPassedPawn(Board& board, PieceColor color, const Square
 	}
 
 	if (isPawnFinal) {
+		const Square otherKingSq = board.getKingSquare(board.flipSide(color));
 		const Rank rank = color==WHITE?RANK_8:RANK_1;
 		const Square target = board.makeSquare(rank,squareFile[from]);
 		const int delta1 = squareDistance(from,target);
