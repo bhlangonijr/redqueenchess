@@ -180,14 +180,19 @@ public:
 		EvalInfo(Board& _board) : board(_board) {
 			side = board.getSideToMove();
 			other = board.flipSide(side);
-			value[side] = board.getMaterialPst(side);
-			value[other] = board.getMaterialPst(other);
+			all = board.getAllPieces();
+			value[WHITE] = board.getMaterialPst(WHITE);
+			value[BLACK] = board.getMaterialPst(BLACK);
+			pawns[WHITE] = board.getPiecesByType(board.makePiece(WHITE,PAWN));
+			pawns[BLACK] = board.getPiecesByType(board.makePiece(BLACK,PAWN));
 			kingThreat[side]=0;
 			kingThreat[other]=0;
 			eval=0;
 		}
 
 		Board& board;
+		Bitboard all;
+		Bitboard pawns[ALL_PIECE_COLOR];
 		PieceColor side;
 		PieceColor other;
 		int kingThreat[ALL_PIECE_COLOR];
@@ -227,13 +232,13 @@ public:
 	Evaluator();
 	virtual ~Evaluator();
 	const int evaluate(Board& board, const int alpha, const int beta);
-	void evalKing(Board& board, PieceColor color, EvalInfo& evalInfo);
-	void evalPawnsFromCache(Board& board, PieceColor color, PawnInfo& info, EvalInfo& evalInfo);
-	void evalPawns(Board& board, PieceColor color, EvalInfo& evalInfo);
+	void evalKing(PieceColor color, EvalInfo& evalInfo);
+	void evalPawnsFromCache(PieceColor color, PawnInfo& info, EvalInfo& evalInfo);
+	void evalPawns(PieceColor color, EvalInfo& evalInfo);
 	const int evalPassedPawn(Board& board, PieceColor color, const Square from,
 			const bool isPawnFinal, const bool isChained);
-	void evalBishops(Board& board, PieceColor color, EvalInfo& evalInfo);
-	void evalBoardControl(Board& board, PieceColor color, EvalInfo& evalInfo);
+	void evalBishops(PieceColor color, EvalInfo& evalInfo);
+	void evalBoardControl(PieceColor color, EvalInfo& evalInfo);
 	const bool isPawnPassed(Board& board, const Square from);
 	const void setGameStage(const GamePhase phase);
 	const int see(Board& board, MoveIterator::Move& move);
@@ -275,9 +280,6 @@ private:
 // verify if pawn is passer
 inline const bool Evaluator::isPawnPassed(Board& board, const Square from) {
 	const PieceColor color = board.getPieceColorBySquare(from);
-	if (squareToBitboard[from] & promoRank[color]) {
-		return true;
-	}
 	const PieceColor other = board.flipSide(color);
 	const Bitboard otherPawns = board.getPiecesByType(board.makePiece(other,PAWN));
 	return !(passedMask[color][from]&otherPawns);
