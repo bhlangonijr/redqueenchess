@@ -177,8 +177,45 @@ class Evaluator {
 public:
 
 	struct EvalInfo {
+		EvalInfo(Board& _board) : board(_board) {
+			side = board.getSideToMove();
+			other = board.flipSide(side);
+			value[side] = board.getMaterialPst(side);
+			value[other] = board.getMaterialPst(other);
+			kingThreat[side]=0;
+			kingThreat[other]=0;
+			eval=0;
+		}
+
+		Board& board;
+		PieceColor side;
+		PieceColor other;
 		int kingThreat[ALL_PIECE_COLOR];
-		Bitboard attackers[ALL_PIECE_COLOR];
+		Bitboard attackers[ALL_PIECE_TYPE_BY_COLOR];
+		int value[ALL_PIECE_COLOR];
+		int eval;
+
+		inline const int getScore() {
+			return (value[side]-value[other]) +
+					(kingThreat[side]-kingThreat[other]);
+		}
+
+		inline const int getEval() {
+			return eval;
+		}
+
+		inline void computeEval() {
+			eval = interpolate(getScore(),board.getGamePhase());
+			normalize();
+		}
+
+		inline void normalize() {
+			if (eval>maxScore) {
+				eval=maxScore;
+			} else if (eval<-maxScore) {
+				eval=-maxScore;
+			}
+		}
 	};
 
 	struct PawnInfo {
@@ -190,19 +227,18 @@ public:
 	Evaluator();
 	virtual ~Evaluator();
 	const int evaluate(Board& board, const int alpha, const int beta);
-	const int evalMaterial(Board& board, PieceColor color);
-	const int evalKing(Board& board, PieceColor color);
-	const int evalPawnsFromCache(Board& board, PieceColor color, PawnInfo& info);
-	const int evalPawns(Board& board, PieceColor color);
+	void evalKing(Board& board, PieceColor color, EvalInfo& evalInfo);
+	void evalPawnsFromCache(Board& board, PieceColor color, PawnInfo& info, EvalInfo& evalInfo);
+	void evalPawns(Board& board, PieceColor color, EvalInfo& evalInfo);
 	const int evalPassedPawn(Board& board, PieceColor color, const Square from,
 			const bool isPawnFinal, const bool isChained);
-	const int evalBishops(Board& board, PieceColor color);
-	const int evalBoardControl(Board& board, PieceColor color, int& kingThreat);
+	void evalBishops(Board& board, PieceColor color, EvalInfo& evalInfo);
+	void evalBoardControl(Board& board, PieceColor color, EvalInfo& evalInfo);
 	const bool isPawnPassed(Board& board, const Square from);
 	const void setGameStage(const GamePhase phase);
 	const int see(Board& board, MoveIterator::Move& move);
 
-	inline const int interpolate(const int value, const int gamePhase) {
+	inline const static int interpolate(const int value, const int gamePhase) {
 		const int mgValue = upperScore(value);
 		const int egValue = lowerScore(value);
 		return (egValue*gamePhase)/maxGamePhase+(mgValue*(maxGamePhase-gamePhase))/maxGamePhase;

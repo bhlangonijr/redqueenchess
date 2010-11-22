@@ -99,18 +99,18 @@ public:
 			}
 			return result;
 		}
-	} __attribute__ ((aligned(64)));
+	};
 
 	struct Data {
 		Data(): size(0), idx(0), saveIdx(0), stage(BEGIN_STAGE) {};
 		Data(Data& data) : list(data.list), size(data.size), idx(data.idx), saveIdx(data.saveIdx), stage(BEGIN_STAGE){};
-		Move list[MOVE_LIST_MAX_SIZE];
+		Move list[MOVE_LIST_MAX_SIZE] __attribute__ ((aligned(64)));
 		size_t size;
 		size_t idx;
 		size_t saveIdx;
 		IteratorStage stage;
 
-	};
+	} __attribute__ ((aligned(64))) ;
 
 	const void add(const Move& move);
 

@@ -453,7 +453,7 @@ enum GamePhase {
 	ENDGAME=		 maxGamePhase
 };
 
-const int maxScore = 20000;
+const int maxScore = 15000;
 const int drawScore = 0;
 const int winningScore = 2000;
 const int maxPieces=32;
@@ -463,7 +463,7 @@ const int knightValue 	= 415;
 const int bishopValue 	= 420;
 const int rookValue 	= 640;
 const int queenValue 	= 1283;
-const int kingValue		= 20000;
+const int kingValue		= 15000;
 
 const int egPawnValue 	= 125;
 const int egKnightValue = 420;
