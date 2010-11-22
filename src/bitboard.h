@@ -563,7 +563,7 @@ inline const int lowerScore(const int value) {
 }
 
 inline const int makeScore(const int upperValue, const int lowerValue) {
-	return  lowerValue+(upperValue<<16);
+	return MS(upperValue,lowerValue);
 }
 
 #endif /* BITBOARD_H_ */

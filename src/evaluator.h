@@ -43,7 +43,7 @@
 const int DOUBLED_PAWN_PENALTY =   MS(-10,-12);
 const int ISOLATED_PAWN_PENALTY =  MS(-14,-16);
 const int BACKWARD_PAWN_PENALTY =  MS(-10,-12);
-const int DONE_CASTLE_BONUS=       MS(+20,+0);
+const int DONE_CASTLE_BONUS=       MS(+20,+1);
 const int CONNECTED_PAWN_BONUS =   MS(+4,+6);
 const int BISHOP_PAIR_BONUS = 	   MS(+25,+25);
 const int UNSTOPPABLE_PAWN_BONUS = MS(+700,+700);
@@ -205,7 +205,7 @@ public:
 	inline const int interpolate(const int value, const int gamePhase) {
 		const int mgValue = upperScore(value);
 		const int egValue = lowerScore(value);
-		return ((mgValue*(maxGamePhase-gamePhase))+(egValue*gamePhase))/maxGamePhase;
+		return (egValue*gamePhase)/maxGamePhase+(mgValue*(maxGamePhase-gamePhase))/maxGamePhase;
 	}
 
 	inline bool getPawnInfo(const Key key, PawnInfo& pawnHash) {
