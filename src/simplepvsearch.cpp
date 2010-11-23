@@ -149,7 +149,7 @@ int SimplePVSearch::idSearch(Board& board) {
 
 			if (depth>7) {
 				if (!easyMove.none() && easyMove==bestMove && nodesPerMove[0]>=(_nodes*85)/100 &&
-						iterationTime[depth] > _timeToSearch/5) {
+						iterationTime[depth] > _timeToSearch/2) {
 					break;
 				}
 			}

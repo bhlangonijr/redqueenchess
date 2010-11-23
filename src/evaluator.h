@@ -181,8 +181,8 @@ public:
 			side = board.getSideToMove();
 			other = board.flipSide(side);
 			all = board.getAllPieces();
-			value[WHITE] = board.getMaterialPst(WHITE);
-			value[BLACK] = board.getMaterialPst(BLACK);
+			value[WHITE] = board.getPieceSquareValue(WHITE);
+			value[BLACK] = board.getPieceSquareValue(BLACK);
 			pawns[WHITE] = board.getPiecesByType(board.makePiece(WHITE,PAWN));
 			pawns[BLACK] = board.getPiecesByType(board.makePiece(BLACK,PAWN));
 			kingThreat[side]=0;
@@ -210,7 +210,8 @@ public:
 		}
 
 		inline void computeEval() {
-			eval = interpolate(getScore(),board.getGamePhase());
+			eval = interpolate(getScore(),board.getGamePhase())+
+				   board.getMaterial(side)-board.getMaterial(other);
 			normalize();
 		}
 
@@ -341,7 +342,7 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 	PieceColor sideToMove = side;
 	Bitboard allAttackers = EMPTY_BB;
 
-	gain[idx] = defaultMaterialValues[secondPiece];
+	gain[idx] = materialValues[secondPiece];
 
 	if (board.getPieceType(secondPiece)==KING) {
 		return queenValue*10;
@@ -351,7 +352,7 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 
 		allAttackers |= attackers;
 		idx++;
-		gain[idx]  = defaultMaterialValues[firstPiece] - gain[idx-1];
+		gain[idx]  = materialValues[firstPiece] - gain[idx-1];
 		attackers ^= fromPiece;
 		occupied  ^= fromPiece;
 		Bitboard moreAttackers = (bishopAndQueen | rookAndQueen) & (~allAttackers);

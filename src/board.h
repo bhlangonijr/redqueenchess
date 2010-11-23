@@ -44,7 +44,7 @@ namespace BoardTypes{
 //used for hashing
 typedef uint64_t Key;
 
-#define USE_MAGIC_MOVES 				     	 					    // uncomment to use magic moves
+#define USE_MAGIC_MOVES 				     	 					    // comment it out to not use magics
 #define ALL_CASTLE_RIGHT				 4								// all castle rights
 #define MAX_GAME_LENGTH					 1024							// Max game lenght
 
@@ -606,11 +606,12 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 	const PieceTypeByColor fromPiece=getPieceBySquare(move.from);
 	const PieceColor color = getPieceColorBySquare(move.from);
 	const PieceType fromType = pieceType[fromPiece];
-	if (color == getPieceColorBySquare(move.to) ||
-			color != getSideToMove()) {
-		return false;
-	}
+
 	if (isMoveFromCache) {
+		if (color == getPieceColorBySquare(move.to) ||
+				color != getSideToMove()) {
+			return false;
+		}
 		if (move.none() || fromPiece==EMPTY) {
 			return false;
 		}
@@ -707,7 +708,7 @@ inline const bool Board::isDraw() {
 	if (!pawns) {
 		const int material=lowerScore(currentBoard.fullMaterial[WHITE])+
 				lowerScore(currentBoard.fullMaterial[BLACK]);
-		if (material<=egBishopValue) {
+		if (material<=bishopValue+kingValue*2) {
 			return true;
 		}
 	}
@@ -794,9 +795,7 @@ inline const Bitboard Board::getRookAttacks(const Square square) {
 inline const Bitboard Board::getRookAttacks(const Square square, const Bitboard occupied) {
 
 #if defined(USE_MAGIC_MOVES)
-
 	return R_MAGIC(square, occupied);
-
 #else
 	const Bitboard file = getSliderAttacks(fileAttacks[square], occupied, square);
 	const Bitboard rank = getSliderAttacks(rankAttacks[square], occupied, square);
@@ -814,9 +813,7 @@ inline const Bitboard Board::getBishopAttacks(const Square square) {
 // return a bitboard with attacked squares by the bishop in the given square
 inline const Bitboard Board::getBishopAttacks(const Square square, const Bitboard occupied) {
 #if defined(USE_MAGIC_MOVES)
-
 	return B_MAGIC(square, occupied);
-
 #else
 
 	const Bitboard diagA1H8 = getSliderAttacks(diagA1H8Attacks[square], occupied, square);
@@ -833,7 +830,12 @@ inline const Bitboard Board::getQueenAttacks(const Square square) {
 
 // return a bitboard with attacked squares by the queen in the given square
 inline const Bitboard Board::getQueenAttacks(const Square square, const Bitboard occupied) {
+#if defined(USE_MAGIC_MOVES)
+	return Q_MAGIC(square, occupied);
+#else
 	return getBishopAttacks(square, occupied) | getRookAttacks(square, occupied);
+#endif
+
 }
 
 // overload method - gets current occupied squares in the board

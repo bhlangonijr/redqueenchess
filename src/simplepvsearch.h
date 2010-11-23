@@ -362,7 +362,7 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 		if (move.type==MoveIterator::UNKNOW) {
 			move.score=-maxScore;
 			if (pieceTo!=EMPTY) {
-				move.score=(defaultMaterialValues[pieceTo]-defaultMaterialValues[pieceFrom]);
+				move.score=(materialValues[pieceTo]-materialValues[pieceFrom]);
 			} else if (board.getPieceType(pieceFrom)==PAWN){
 				if (board.getEnPassant()!=NONE &&
 						board.getSquareFile(move.from)!=board.getSquareFile(move.to)) {

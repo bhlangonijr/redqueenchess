@@ -169,7 +169,7 @@ const long SearchAgent::getTimeToSearch() {
 		}
 
 	}
-	return (time+incTime*long(movesLeft))/long(movesLeft);
+	return time/(long(movesLeft))+incTime;
 }
 
 void SearchAgent::initThreads() {

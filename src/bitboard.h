@@ -462,27 +462,12 @@ const int pawnValue 	= 100;
 const int knightValue 	= 415;
 const int bishopValue 	= 420;
 const int rookValue 	= 640;
-const int queenValue 	= 1283;
+const int queenValue 	= 1280;
 const int kingValue		= 15000;
 
-const int egPawnValue 	= 125;
-const int egKnightValue = 420;
-const int egBishopValue = 425;
-const int egRookValue 	= 650;
-const int egQueenValue 	= 1305;
-
-const int defaultMaterialValues[ALL_PIECE_TYPE_BY_COLOR] = {
-		AVG(pawnValue,egPawnValue), AVG(knightValue,egKnightValue), AVG(bishopValue,egBishopValue),
-		AVG(rookValue,egRookValue), AVG(queenValue,egQueenValue), kingValue,
-		AVG(pawnValue,egPawnValue), AVG(knightValue,egKnightValue),	AVG(bishopValue,egBishopValue),
-		AVG(rookValue,egRookValue), AVG(queenValue,egQueenValue), kingValue,0
-};
-
 const int materialValues[ALL_PIECE_TYPE_BY_COLOR] = {
-		MS(pawnValue,egPawnValue), MS(knightValue,egKnightValue), MS(bishopValue,egBishopValue),
-		MS(rookValue,egRookValue), MS(queenValue,egQueenValue), 0,
-		MS(pawnValue,egPawnValue), MS(knightValue,egKnightValue), MS(bishopValue,egBishopValue),
-		MS(rookValue,egRookValue), MS(queenValue,egQueenValue), 0,0
+		pawnValue, knightValue, bishopValue, rookValue, queenValue, kingValue,
+		pawnValue, knightValue, bishopValue, rookValue, queenValue, kingValue,0
 };
 
 extern void printBitboard(Bitboard bb);

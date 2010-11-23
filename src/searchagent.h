@@ -40,7 +40,7 @@
 const std::string mainHashName 		= "DefaultHashTable";
 const size_t defaultDepth			= 5;
 const size_t defaultHashSize		= 128;
-const int defaultGameSize			= 35;
+const int defaultGameSize			= 30;
 const int timeTableSize=7;
 
 const int timeTable [7][3] = {
@@ -237,7 +237,7 @@ public:
 					(allowNullMove || !(hashData.flag() & TranspositionTable::NODE_NULL)) &&
 					(hashData.depth()>=depth) &&
 					(((hashData.flag() & TranspositionTable::LOWER) && hashData.value() >= beta) ||
-							((hashData.flag() & TranspositionTable::UPPER) && hashData.value() <= alpha));
+					((hashData.flag() & TranspositionTable::UPPER) && hashData.value() <= alpha));
 		} else {
 			okToPrune = false;
 		}
