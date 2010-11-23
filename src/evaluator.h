@@ -170,8 +170,8 @@ const Bitboard frontSquares[ALL_PIECE_COLOR][ALL_SQUARE]= {
 		{}
 };
 
-const int lazyEvalMargin=200;
-const size_t pawnHashSize=1<<16;
+const int lazyEvalMargin=100;
+const size_t pawnHashSize=1<<18;
 
 class Evaluator {
 public:
@@ -192,11 +192,11 @@ public:
 
 		Board& board;
 		Bitboard all;
-		Bitboard pawns[ALL_PIECE_COLOR];
 		PieceColor side;
 		PieceColor other;
 		int kingThreat[ALL_PIECE_COLOR];
 		Bitboard attackers[ALL_PIECE_TYPE_BY_COLOR];
+		Bitboard pawns[ALL_PIECE_COLOR];
 		int value[ALL_PIECE_COLOR];
 		int eval;
 

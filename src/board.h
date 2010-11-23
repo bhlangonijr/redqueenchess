@@ -650,19 +650,13 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 	testBoard |= squareToBitboard[move.to];
 	testBoard |= otherPieces;
 
-	const Bitboard bishopAndQueens = (getPiecesByType(makePiece(other,BISHOP)) |
-			getPiecesByType(makePiece(other,QUEEN)))&otherPieces;
-	const Bitboard rookAndQueens = (getPiecesByType(makePiece(other,ROOK)) |
-			getPiecesByType(makePiece(other,QUEEN)))&otherPieces;
-	const Bitboard knights = getPiecesByType(makePiece(other,KNIGHT))&otherPieces;
-	const Bitboard pawns = getPiecesByType(makePiece(other,PAWN))&otherPieces;
-	const Bitboard kings = getPiecesByType(makePiece(other,KING))&otherPieces;
-
-	return !((getBishopAttacks(kingLocation,testBoard) & bishopAndQueens) ||
-			(getRookAttacks(kingLocation,testBoard) & rookAndQueens) ||
-			(getKnightAttacks(kingLocation,testBoard) & knights) ||
-			(getPawnAttacks(kingLocation,color) & pawns) ||
-			(getKingAttacks(kingLocation,testBoard) & kings));
+	return !((getBishopAttacks(kingLocation,testBoard) & ((getPiecesByType(makePiece(other,BISHOP)) |
+			getPiecesByType(makePiece(other,QUEEN)))&otherPieces)) ||
+			(getRookAttacks(kingLocation,testBoard) & ((getPiecesByType(makePiece(other,ROOK)) |
+					getPiecesByType(makePiece(other,QUEEN)))&otherPieces)) ||
+					(getKnightAttacks(kingLocation,testBoard) & (getPiecesByType(makePiece(other,KNIGHT))&otherPieces)) ||
+					(getPawnAttacks(kingLocation,color) & (getPiecesByType(makePiece(other,PAWN))&otherPieces)) ||
+					(getKingAttacks(kingLocation,testBoard) & (getPiecesByType(makePiece(other,KING))&otherPieces)));
 }
 
 // Get attacks from a given square
@@ -673,21 +667,30 @@ inline const bool Board::isAttackedBy(const Square from, const Square to) {
 	const Bitboard attacked = squareToBitboard[to];
 	Bitboard attacks = EMPTY_BB;
 
-	if (pieceType==PAWN) {
+	switch (pieceType) {
+	case PAWN:
 		if (getPawnCaptures(from) & attacked) {
 			return true;
 		}
 		attacks = getPawnMoves(from);
-	} else if (pieceType==KNIGHT) {
+		break;
+	case KNIGHT:
 		attacks = getKnightAttacks(from);
-	} else if (pieceType==BISHOP) {
+		break;
+	case BISHOP:
 		attacks = getBishopAttacks(from);
-	} else if (pieceType==ROOK) {
+		break;
+	case ROOK:
 		attacks = getRookAttacks(from);
-	} else if (pieceType==QUEEN) {
+		break;
+	case QUEEN:
 		attacks = getQueenAttacks(from);
-	} else if (pieceType==KING) {
+		break;
+	case KING:
 		attacks = getKingAttacks(from);
+		break;
+	default:
+		return false;
 	}
 
 	return attacks & attacked;
@@ -706,9 +709,8 @@ inline const bool Board::isDraw() {
 	const Bitboard pawns = getPiecesByType(WHITE_PAWN) |
 			getPiecesByType(BLACK_PAWN);
 	if (!pawns) {
-		const int material=lowerScore(currentBoard.fullMaterial[WHITE])+
-				lowerScore(currentBoard.fullMaterial[BLACK]);
-		if (material<=bishopValue+kingValue*2) {
+		if (getMaterial(WHITE)+getMaterial(BLACK)<=
+				kingValue*2+bishopValue) {
 			return true;
 		}
 	}
