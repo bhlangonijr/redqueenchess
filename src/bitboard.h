@@ -59,6 +59,7 @@ typedef uint64_t Bitboard;
 #define EMPTY_BB				0x0ULL
 #define WHITE_SQUARES 			0x55AA55AA55AA55AAULL
 #define BLACK_SQUARES 			0xAA55AA55AA55AA55ULL
+#define MID_BOARD				0x00FFFFFFFFFFFF00ULL
 #define St2Sq(F,R)				(((int)F-96)+((int)R-49)*8)-1	// encode String to Square enum
 
 
@@ -328,6 +329,10 @@ const Bitboard diagH1A8Attacks[ALL_SQUARE]={
 
 // center squares
 const Bitboard centerSquares = squareToBitboard[D4] | squareToBitboard[E4] | squareToBitboard[D5] | squareToBitboard[E5];
+
+const Bitboard midBoardNoFileA = MID_BOARD ^ fileBB[FILE_A];
+
+const Bitboard midBoardNoFileH = MID_BOARD ^ fileBB[FILE_H];
 
 // bitboard for all knight attacks
 const Bitboard knightAttacks[ALL_SQUARE]={

@@ -47,6 +47,10 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 	evalInfo.computeEval();
 
 	if (evalInfo.eval > alpha-lazyEvalMargin && evalInfo.eval < beta+lazyEvalMargin) {
+		evalInfo.attackers[WHITE_PAWN] = ((evalInfo.pawns[WHITE] & midBoardNoFileA) << 7) |
+				((evalInfo.pawns[WHITE] & midBoardNoFileH) << 9);
+		evalInfo.attackers[BLACK_PAWN] = ((evalInfo.pawns[BLACK] & midBoardNoFileA) >> 9) |
+				((evalInfo.pawns[BLACK] & midBoardNoFileH) >> 7);
 		evalBoardControl(evalInfo.side, evalInfo);
 		evalBoardControl(evalInfo.other, evalInfo);
 		PawnInfo info;
@@ -206,11 +210,13 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 	const Square otherKingSq = evalInfo.board.getKingSquare(other);
 	const Bitboard otherKingSquareBB = adjacentSquares[otherKingSq];
 
+	const PieceTypeByColor pawnOther = evalInfo.board.makePiece(other,PAWN);
 	const PieceTypeByColor knight = evalInfo.board.makePiece(color,KNIGHT);
 	const PieceTypeByColor bishop = evalInfo.board.makePiece(color,BISHOP);
 	const PieceTypeByColor rook = evalInfo.board.makePiece(color,ROOK);
 	const PieceTypeByColor queen = evalInfo.board.makePiece(color,QUEEN);
-	const Bitboard notFriends = ~evalInfo.board.getPiecesByColor(color);
+	const Bitboard freeArea = ~(evalInfo.board.getPiecesByColor(color) |
+			evalInfo.attackers[pawnOther]);
 
 	Bitboard pieces = EMPTY_BB;
 	evalInfo.attackers[knight] = EMPTY_BB;
@@ -225,7 +231,7 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 
 	while ( from!=NONE ) {
 		const Bitboard attacks = evalInfo.board.getKnightAttacks(from);
-		evalInfo.value[color] += knightMobility[_BitCount(attacks&notFriends)];
+		evalInfo.value[color] += knightMobility[_BitCount(attacks&freeArea)];
 		evalInfo.attackers[knight] |= attacks;
 		from = extractLSB(pieces);
 	}
@@ -236,7 +242,7 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 	while ( from!=NONE ) {
 		const Bitboard attacks = evalInfo.board.getBishopAttacks(from);
 		evalInfo.attackers[bishop] |= attacks;
-		evalInfo.value[color] += bishopMobility[_BitCount(attacks&notFriends)];
+		evalInfo.value[color] += bishopMobility[_BitCount(attacks&freeArea)];
 		evalInfo.kingThreat[color] += bishopKingBonus[squareDistance(from,otherKingSq)];
 		from = extractLSB(pieces);
 	}
@@ -247,7 +253,7 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 	while ( from!=NONE ) {
 		const Bitboard attacks = evalInfo.board.getRookAttacks(from);
 		evalInfo.attackers[rook] |= attacks;
-		evalInfo.value[color] += rookMobility[_BitCount(attacks&notFriends)];
+		evalInfo.value[color] += rookMobility[_BitCount(attacks&freeArea)];
 		evalInfo.kingThreat[color] += rookKingBonus[squareDistance(from,otherKingSq)];
 		from = extractLSB(pieces);
 	}
@@ -257,7 +263,7 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 
 	while ( from!=NONE ) {
 		const Bitboard attacks = evalInfo.board.getQueenAttacks(from);
-		const int queenMobility = _BitCount(attacks&notFriends)-10;
+		const int queenMobility = _BitCount(attacks&freeArea)-10;
 		evalInfo.attackers[queen] |= attacks;
 		evalInfo.value[color] += MS(queenMobility,queenMobility);
 		evalInfo.kingThreat[color] += queenKingBonus[squareDistance(from,otherKingSq)];

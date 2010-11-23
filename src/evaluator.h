@@ -50,18 +50,18 @@ const int UNSTOPPABLE_PAWN_BONUS = MS(+700,+700);
 
 
 const int knightMobility[9] = {
-		-4*MS(+6,+1),-3*MS(+6,+1),-2*MS(+6,+1),-1*MS(+6,+1),+0*MS(+6,+1),
-		+1*MS(+6,+1),+2*MS(+6,+1),+3*MS(+6,+1),+4*MS(+6,+1)
+		-4*MS(+6,+1),-2*MS(+6,+1),+0*MS(+6,+1),+1*MS(+6,+1),+2*MS(+6,+1),
+		+3*MS(+6,+1),+4*MS(+6,+1),+5*MS(+6,+1),+6*MS(+6,+1)
 };
 
 const int bishopMobility[16] = {
-		-7*MS(+4,+1),-6*MS(+4,+1),-5*MS(+4,+1),-4*MS(+4,+1),-3*MS(+4,+1),-2*MS(+4,+1),-1*MS(+4,+1),+0*MS(+4,+1),
-		+1*MS(+4,+1),+2*MS(+4,+1),+3*MS(+4,+1),+4*MS(+4,+1),+5*MS(+4,+1),+6*MS(+4,+1),+7*MS(+4,+1),+8*MS(+4,+1)
+		-7*MS(+4,+1),-4*MS(+4,+1),-2*MS(+4,+1),+0*MS(+4,+1),+1*MS(+4,+1),+2*MS(+4,+1),+3*MS(+4,+1),+4*MS(+4,+1),
+		+5*MS(+4,+1),+6*MS(+4,+1),+7*MS(+4,+1),+8*MS(+4,+1),+9*MS(+4,+1),+10*MS(+4,+1),+10*MS(+4,+1),+10*MS(+4,+1)
 };
 
 const int rookMobility[16] = {
-		-7*MS(+3,+1),-6*MS(+3,+1),-5*MS(+3,+1),-4*MS(+3,+1),-3*MS(+3,+1),-2*MS(+3,+1),-1*MS(+3,+1),+0*MS(+3,+1),
-		+1*MS(+3,+1),+2*MS(+3,+1),+3*MS(+3,+1),+4*MS(+3,+1),+5*MS(+3,+1),+6*MS(+3,+1),+7*MS(+3,+1),+8*MS(+3,+1)
+		-8*MS(+3,+1),-6*MS(+3,+1),-3*MS(+3,+1),-1*MS(+3,+1),+1*MS(+3,+1),+2*MS(+3,+1),+3*MS(+3,+1),+4*MS(+3,+1),
+		+5*MS(+3,+1),+6*MS(+3,+1),+7*MS(+3,+1),+8*MS(+3,+1),+9*MS(+3,+1),+10*MS(+3,+1),+11*MS(+3,+1),+12*MS(+3,+1)
 };
 
 const int bishopKingBonus[8] = {
@@ -177,14 +177,15 @@ class Evaluator {
 public:
 
 	struct EvalInfo {
+
 		EvalInfo(Board& _board) : board(_board) {
 			side = board.getSideToMove();
 			other = board.flipSide(side);
 			all = board.getAllPieces();
-			value[WHITE] = board.getPieceSquareValue(WHITE);
-			value[BLACK] = board.getPieceSquareValue(BLACK);
 			pawns[WHITE] = board.getPiecesByType(board.makePiece(WHITE,PAWN));
 			pawns[BLACK] = board.getPiecesByType(board.makePiece(BLACK,PAWN));
+			value[WHITE] = board.getPieceSquareValue(WHITE);
+			value[BLACK] = board.getPieceSquareValue(BLACK);
 			kingThreat[side]=0;
 			kingThreat[other]=0;
 			eval=0;
