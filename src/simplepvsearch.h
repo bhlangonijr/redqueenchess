@@ -163,6 +163,11 @@ public:
 		this->agent=_agent;
 	}
 
+	inline void cleanUp() {
+		evaluator.cleanPawnInfo();
+		clearHistory();
+	}
+
 private:
 
 	int _depth;

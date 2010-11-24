@@ -68,6 +68,7 @@ void SearchAgent::newGame() {
 	setMovesToGo(0);
 	setMoveTime(0);
 	setInfinite(false);
+	simpleSearcher.cleanUp();
 }
 
 // get board

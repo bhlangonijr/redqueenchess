@@ -271,6 +271,10 @@ public:
 		entry.passers[color]=passers;
 	}
 
+	inline void cleanPawnInfo() {
+		memset(pawnInfo, 0, pawnHashSize * sizeof(PawnInfo));
+	}
+
 private:
 
 	Bitboard getLeastValuablePiece(Board& board, Bitboard attackers, PieceColor& color, PieceTypeByColor& piece);
