@@ -48,7 +48,7 @@ SimplePVSearch simpleSearcher;
 
 SearchAgent::SearchAgent() : searchMode(SEARCH_TIME), searchInProgress(false), requestStop(false), quit(false),
 		hashSize(defaultHashSize),	threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
-		blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), infinite(false) {
+		blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), ponder(false) {
 	// creates initial hashtables
 	createHash();
 	simpleSearcher.setSearchAgent(this);
@@ -67,7 +67,7 @@ void SearchAgent::newGame() {
 	setDepth(defaultDepth);
 	setMovesToGo(0);
 	setMoveTime(0);
-	setInfinite(false);
+	setPonder(false);
 	simpleSearcher.cleanUp();
 }
 
@@ -95,29 +95,25 @@ void SearchAgent::setPositionFromFEN(std::string fenMoves) {
 void* SearchAgent::startThreadSearch() {
 	pthread_mutex_lock(&mutex);
 	while (!quit) {
-		setRequestStop(false);
 		pthread_cond_wait(&waitCond, &mutex);
 		if (quit) {
 			break;
 		}
+		setRequestStop(false);
 		setSearchInProgress(true);
 		newSearchHash();
+		simpleSearcher.setInfinite(getPonder());
 		if (getSearchMode()==SearchAgent::SEARCH_DEPTH) {
-			simpleSearcher.setInfinite(false);
 			simpleSearcher.setSearchFixedDepth(true);
 			simpleSearcher.setDepth(getDepth());
 		} else if (getSearchMode()==SearchAgent::SEARCH_TIME ||
 				getSearchMode()==SearchAgent::SEARCH_MOVETIME) {
-			simpleSearcher.setInfinite(false);
 			simpleSearcher.setSearchFixedDepth(false);
 			simpleSearcher.setTimeToSearch(getTimeToSearch());
 		} else if (getSearchMode()==SearchAgent::SEARCH_INFINITE) {
+			simpleSearcher.setSearchFixedDepth(false);
 			simpleSearcher.setInfinite(true);
 			simpleSearcher.setDepth(maxSearchDepth);
-		} else {
-			simpleSearcher.setInfinite(false);
-			simpleSearcher.setSearchFixedDepth(true);
-			simpleSearcher.setDepth(defaultDepth);
 		}
 		simpleSearcher.search(board);
 		setSearchInProgress(false);
@@ -130,6 +126,7 @@ void* SearchAgent::startThreadSearch() {
 // start search
 void SearchAgent::startSearch() {
 	pthread_mutex_lock(&mutex);
+	setRequestStop(true);
 	pthread_cond_signal(&waitCond);
 	pthread_mutex_unlock(&mutex);
 }
@@ -171,6 +168,13 @@ const long SearchAgent::getTimeToSearch() {
 
 	}
 	return time/(long(movesLeft))+incTime;
+}
+
+void  SearchAgent::ponderHit() {
+	simpleSearcher.setSearchFixedDepth(false);
+	simpleSearcher.setInfinite(false);
+	simpleSearcher.setTimeToSearch(getTimeToSearch());
+	simpleSearcher.setTimeToStop();
 }
 
 void SearchAgent::initThreads() {

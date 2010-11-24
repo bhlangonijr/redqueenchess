@@ -113,7 +113,7 @@ bool Uci::execute()
 		executePerft();
 		break;
 	case PONDERHIT:
-		executeStop();
+		executePonderHit();
 		break;
 	case TEST :
 		executeTest();
@@ -250,7 +250,6 @@ void Uci::executeGo() {
 	} else if (containsString(this->rawInput, "go infinite")) {
 
 		searchAgent->setSearchMode(SearchAgent::SEARCH_INFINITE);
-		searchAgent->setInfinite(true);
 
 	} else if (containsString(this->rawInput, "go searchmoves")) {
 
@@ -260,13 +259,14 @@ void Uci::executeGo() {
 	} else if (containsString(this->rawInput, "go ponder")) {
 
 		searchAgent->setSearchMode(SearchAgent::SEARCH_INFINITE);
-		searchAgent->setInfinite(true);
 
 	} else {
 		// in case of invalid parameters
 		searchAgent->setSearchMode(SearchAgent::SEARCH_DEPTH);
 		searchAgent->setDepth(1);
 	}
+
+	searchAgent->setPonder(containsString(this->rawInput, " ponder"));
 
 	searchAgent->startSearch();
 }
@@ -295,6 +295,12 @@ void Uci::executeUciNewGame() {
 void Uci::executeStop() {
 	SearchAgent *searchAgent = SearchAgent::getInstance();
 	searchAgent->stopSearch();
+}
+
+// execute ponderhit
+void Uci::executePonderHit() {
+	SearchAgent *searchAgent = SearchAgent::getInstance();
+	searchAgent->ponderHit();
 }
 
 // execute perft

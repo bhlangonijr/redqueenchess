@@ -180,13 +180,15 @@ public:
 		moveTime = _moveTime;
 	}
 
-	inline const bool getInfinite() const {
-		return infinite;
+	inline const bool getPonder() const {
+		return ponder;
 	}
 
-	inline void setInfinite(bool _infinite) {
-		infinite = _infinite;
+	inline void setPonder(bool _ponder) {
+		ponder = _ponder;
 	}
+
+	void ponderHit();
 
 	inline void clearHash() {
 		transTable->clearHash();
@@ -300,7 +302,7 @@ private:
 	int depth;
 	int movesToGo;
 	long moveTime;
-	bool infinite;
+	bool ponder;
 	TranspositionTable* transTable;
 
 	const long getTimeToSearch();

@@ -35,7 +35,7 @@ void SimplePVSearch::search(Board board) {
 	rootMoves.clear();
 	_nodes = 0;
 	_startTime = getTickCount();
-	timeToStop = clock() + toClock(_timeToSearch-10);
+	setTimeToStop();
 	_score = idSearch(board);
 	_time = getTickCount()-_startTime;
 }
@@ -127,8 +127,7 @@ int SimplePVSearch::idSearch(Board& board) {
 
 			if (depth>5 && (abs(iterationScore[depth - 0]) >= maxScore-maxSearchPly ||
 					abs(iterationScore[depth - 1]) >= maxScore-maxSearchPly ||
-					abs(iterationScore[depth - 2]) >= maxScore-maxSearchPly ||
-					abs(iterationScore[depth - 3]) >= maxScore-maxSearchPly)) {
+					abs(iterationScore[depth - 2]) >= maxScore-maxSearchPly)) {
 				break;
 			}
 
@@ -152,9 +151,6 @@ int SimplePVSearch::idSearch(Board& board) {
 						iterationTime[depth] > _timeToSearch/2) {
 					break;
 				}
-			}
-
-			if (depth>5) {
 				if (_timeToSearch <	predictTimeUse(iterationTime,_timeToSearch,depth+1) &&
 						iterationTime[depth] > (_timeToSearch*80)/100) {
 					break;

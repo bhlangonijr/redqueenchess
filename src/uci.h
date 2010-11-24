@@ -91,6 +91,7 @@ private:
 	void executeGo();
 	void executeUciNewGame();
 	void executeStop();
+	void executePonderHit();
 	void executePerft();
 	void executeTest();
 

@@ -469,6 +469,7 @@ const int bishopValue 	= 420;
 const int rookValue 	= 640;
 const int queenValue 	= 1280;
 const int kingValue		= 15000;
+const int minimalMaterial = kingValue*2+bishopValue;
 
 const int materialValues[ALL_PIECE_TYPE_BY_COLOR] = {
 		pawnValue, knightValue, bishopValue, rookValue, queenValue, kingValue,

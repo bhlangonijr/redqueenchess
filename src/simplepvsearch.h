@@ -159,6 +159,14 @@ public:
 		return _startTime;
 	}
 
+	inline const void setTimeToStop() {
+		timeToStop = clock() + toClock(_timeToSearch-10);
+	}
+
+	inline const long getTimeToStop() const {
+		return timeToStop;
+	}
+
 	inline void setSearchAgent(SearchAgent* _agent) {
 		this->agent=_agent;
 	}

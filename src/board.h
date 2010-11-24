@@ -709,8 +709,7 @@ inline const bool Board::isDraw() {
 	const Bitboard pawns = getPiecesByType(WHITE_PAWN) |
 			getPiecesByType(BLACK_PAWN);
 	if (!pawns) {
-		if (getMaterial(WHITE)+getMaterial(BLACK)<=
-				kingValue*2+bishopValue) {
+		if (getMaterial(WHITE)+getMaterial(BLACK)<=minimalMaterial) {
 			return true;
 		}
 	}
