@@ -99,8 +99,8 @@ const int connectedPasserBonus[ALL_PIECE_COLOR][ALL_RANK] = {
 };
 
 const int spaceBonus[18] = {
-		MS(+0,+0),MS(+0,+0),MS(+3,+5),MS(+4,+7),MS(+6,+10),MS(+10,+17),MS(+15,+23),MS(+20,+27),MS(+25,+33),
-		MS(+30,+40),MS(+35,+50),MS(+40,+60),MS(+50,+70),MS(+60,+80),MS(+70,+90),MS(+80,+100),MS(+90,+120),MS(+100,+140)
+		MS(+0,+0),MS(+0,+0),MS(+5,+5),MS(+7,+7),MS(+9,+9),MS(+15,+13),MS(+20,+17),MS(+25,+23),MS(+30,+27),
+		MS(+35,+33),MS(+45,+45),MS(+50,+50),MS(+60,+60),MS(+70,+70),MS(+80,+80),MS(+90,+90),MS(+100,+100),MS(+100,+100)
 };
 
 const int threatBonus[ALL_PIECE_TYPE][ALL_PIECE_TYPE] = {

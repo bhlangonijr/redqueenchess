@@ -96,18 +96,19 @@ struct MoveBackup {
 	Square to;
 	int halfMoveCounter;
 	GamePhase phase;
+	bool inCheck;
 };
 
 // the board node representation
 struct Node {
 
 	Node () : key(0ULL), pawnKey(0ULL), piece(), moveCounter(0),
-			halfMoveCounter(0), gamePhase(OPENING) {}
+			halfMoveCounter(0), gamePhase(OPENING), inCheck(false) {}
 
 	Node (const Node& node) : key(node.key), pawnKey(node.pawnKey), piece( node.piece ),
 			enPassant( node.enPassant ),sideToMove( node.sideToMove ),
 			moveCounter(node.moveCounter),halfMoveCounter(node.halfMoveCounter),
-			gamePhase(node.gamePhase) {
+			gamePhase(node.gamePhase), inCheck(node.inCheck) {
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=node.square[x];
 		}
@@ -172,6 +173,7 @@ struct Node {
 	int halfMoveCounter;
 	GamePhase gamePhase;
 	Square kingSquare[ALL_PIECE_COLOR];
+	bool inCheck;
 
 	// clear structure node
 	void clear()
@@ -210,7 +212,7 @@ struct Node {
 		kingSquare[WHITE]=NONE;
 		kingSquare[BLACK]=NONE;
 		kingSquare[COLOR_NONE]=NONE;
-
+		inCheck=false;
 	}
 
 };
@@ -272,6 +274,9 @@ public:
 	const bool isAttacked(const PieceColor color, const Square from);
 	const bool isInCheck(const PieceColor color);
 	const bool isNotLegal();
+	const bool isInCheck();
+	void setInCheck(const bool check);
+
 	template <bool isMoveFromCache>
 	const bool isMoveLegal(MoveIterator::Move& move);
 	const bool isAttackedBy(const Square from, const Square to);
@@ -441,7 +446,6 @@ inline bool Board::canCastle(const PieceColor color) {
 inline bool Board::canCastle(const PieceColor color, const CastleRight castleRight) {
 
 	// lost the right to castle?
-
 	if (isCastleDone(color)) {
 		return false;
 	} else if (currentBoard.castleRight[color]!=BOTH_SIDE_CASTLE &&
@@ -449,12 +453,13 @@ inline bool Board::canCastle(const PieceColor color, const CastleRight castleRig
 		return false;
 	}
 
-	// pieces interposing king & rooks?
-	if (castleSquare[color][castleRight]&getAllPieces()) {
+	// is king in check?
+	if (isInCheck()) {
 		return false;
 	}
 
-	if (isInCheck(color)) {
+	// pieces interposing king & rooks?
+	if (castleSquare[color][castleRight]&getAllPieces()) {
 		return false;
 	}
 
@@ -589,14 +594,22 @@ inline const bool Board::isAttacked(const PieceColor color, const Square from) {
 }
 
 inline const bool Board::isInCheck(const PieceColor color) {
-	return isAttacked(color, getKingSquare(color));
+	setInCheck(isAttacked(color, getKingSquare(color)));
+	return isInCheck();
 }
 
 // verify board legality
 inline const bool Board::isNotLegal() {
 	const PieceColor color = flipSide(getSideToMove());
 	return isInCheck(color);
+}
 
+inline const bool Board::isInCheck() {
+	return currentBoard.inCheck;
+}
+
+inline void Board::setInCheck(const bool check) {
+	currentBoard.inCheck = check;
 }
 
 // verify board legality

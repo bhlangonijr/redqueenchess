@@ -139,6 +139,7 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	backup.hasBlackQueenCastle=false;
 	backup.phase=getGamePhase();
 	backup.halfMoveCounter =  getHalfMoveCounter();
+	backup.inCheck = isInCheck();
 
 	removePiece(fromPiece,move.from);
 	setKey(getKey()^zobrist.pieceSquare[fromPiece][move.from]);
@@ -355,6 +356,7 @@ void Board::undoMove(MoveBackup& backup){
 	putPiece(piece,backup.from);
 	currentBoard.halfMoveCounter = backup.halfMoveCounter;
 	currentBoard.gamePhase=backup.phase;
+	currentBoard.inCheck=backup.inCheck;
 
 	if (backup.hasCapture) {
 		putPiece(backup.capturedPiece,backup.capturedSquare);

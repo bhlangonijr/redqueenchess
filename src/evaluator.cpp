@@ -46,7 +46,8 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 
 	evalInfo.computeEval();
 
-	if (evalInfo.eval > alpha-lazyEvalMargin && evalInfo.eval < beta+lazyEvalMargin) {
+	if ((evalInfo.eval > alpha-lazyEvalMargin && evalInfo.eval < beta+lazyEvalMargin) ||
+		board.isInCheck()) {
 		evalInfo.attackers[WHITE_PAWN] = ((evalInfo.pawns[WHITE] & midBoardNoFileA) << 7) |
 				((evalInfo.pawns[WHITE] & midBoardNoFileH) << 9);
 		evalInfo.attackers[BLACK_PAWN] = ((evalInfo.pawns[BLACK] & midBoardNoFileA) >> 9) |
@@ -299,9 +300,10 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 	}
 
 	// evaluate space
-	//const Bitboard sidePieces = evalInfo.board.getPiecesByColor(color);
-	//const Bitboard kingAndPawns = evalInfo.board.getPiecesByType(king) | evalInfo.pawns[color];
-	//evalInfo.value[color] += spaceBonus[_BitCount((sidePieces ^ kingAndPawns) & colorSpaceBB[other])];
+	const Bitboard sidePieces = evalInfo.board.getPiecesByColor(color);
+	const Bitboard kingAndPawns = evalInfo.board.getPiecesByType(king) | evalInfo.pawns[color];
+	const Bitboard otherSideControl = (sidePieces ^ kingAndPawns) & colorSpaceBB[other] & freeArea;
+	evalInfo.value[color] += spaceBonus[_BitCount(otherSideControl)];
 
 	evalInfo.attacks[color] = evalInfo.attackers[knight] | evalInfo.attackers[bishop] |
 			evalInfo.attackers[rook] | evalInfo.attackers[queen] | evalInfo.attackers[pawn];
@@ -318,7 +320,7 @@ void Evaluator::evalThreats(PieceColor color, EvalInfo& evalInfo) {
 			~evalInfo.attackers[pawnOther] & evalInfo.attacks[color];
 
 	if (pieces) {
-		for (int sideType=PAWN;sideType<KING;sideType++) {
+		for (int sideType=KNIGHT;sideType<KING;sideType++) {
 			const PieceTypeByColor sidePiece = evalInfo.board.makePiece(color,PieceType(sideType));
 			Bitboard attacked = evalInfo.attackers[sidePiece]&pieces;
 			if (attacked) {
