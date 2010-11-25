@@ -98,6 +98,21 @@ const int connectedPasserBonus[ALL_PIECE_COLOR][ALL_RANK] = {
 		{}
 };
 
+const int spaceBonus[18] = {
+		MS(+0,+0),MS(+0,+0),MS(+3,+5),MS(+4,+7),MS(+6,+10),MS(+10,+17),MS(+15,+23),MS(+20,+27),MS(+25,+33),
+		MS(+30,+40),MS(+35,+50),MS(+40,+60),MS(+50,+70),MS(+60,+80),MS(+70,+90),MS(+80,+100),MS(+90,+120),MS(+100,+140)
+};
+
+const int threatBonus[ALL_PIECE_TYPE][ALL_PIECE_TYPE] = {
+		{MS(+0,+0),MS(+5,+10),MS(+5,+10),MS(+10,+15),MS(+15,+20),MS(+20,+25),0},
+		{MS(-1,-2),MS(+0,+0),MS(+0,+0),MS(+5,+10),MS(+10,+15),MS(+15,+20),0},
+		{MS(-1,-2),MS(+0,+0),MS(+0,+0),MS(+5,+10),MS(+10,+15),MS(+15,+20),0},
+		{MS(+0,+0),MS(+2,+2),MS(+2,+2),MS(+0,+0),MS(+5,+10),MS(+10,+15),0},
+		{MS(-2,-3),MS(-2,-3),MS(-2,-3),MS(-2,-3),MS(+0,+0),MS(+10,+15),0},
+		{MS(-20,-20),MS(-20,-20),MS(-20,-20),MS(-20,-20),MS(-20,-20),MS(-20,-20),0},
+		{}
+};
+
 const Bitboard passedMask[ALL_PIECE_COLOR][ALL_SQUARE]= {
 		{
 				PM(WHITE,A1), PM(WHITE,B1), PM(WHITE,C1), PM(WHITE,D1), PM(WHITE,E1), PM(WHITE,F1), PM(WHITE,G1), PM(WHITE,H1),
@@ -197,6 +212,7 @@ public:
 		PieceColor other;
 		int kingThreat[ALL_PIECE_COLOR];
 		Bitboard attackers[ALL_PIECE_TYPE_BY_COLOR];
+		Bitboard attacks[ALL_PIECE_COLOR];
 		Bitboard pawns[ALL_PIECE_COLOR];
 		int value[ALL_PIECE_COLOR];
 		int eval;
@@ -241,6 +257,7 @@ public:
 			const bool isPawnFinal, const bool isChained);
 	void evalBishops(PieceColor color, EvalInfo& evalInfo);
 	void evalBoardControl(PieceColor color, EvalInfo& evalInfo);
+	void evalThreats(PieceColor color, EvalInfo& evalInfo);
 	const bool isPawnPassed(Board& board, const Square from);
 	const void setGameStage(const GamePhase phase);
 	const int see(Board& board, MoveIterator::Move& move);

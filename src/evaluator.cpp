@@ -61,6 +61,8 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 			evalPawns(evalInfo.side, evalInfo);
 			evalPawns(evalInfo.other, evalInfo);
 		}
+		evalThreats(evalInfo.side, evalInfo);
+		evalThreats(evalInfo.other, evalInfo);
 		evalInfo.computeEval();
 	}
 
@@ -211,10 +213,12 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 	const Bitboard otherKingSquareBB = adjacentSquares[otherKingSq];
 
 	const PieceTypeByColor pawnOther = evalInfo.board.makePiece(other,PAWN);
+	const PieceTypeByColor pawn = evalInfo.board.makePiece(color,PAWN);
 	const PieceTypeByColor knight = evalInfo.board.makePiece(color,KNIGHT);
 	const PieceTypeByColor bishop = evalInfo.board.makePiece(color,BISHOP);
 	const PieceTypeByColor rook = evalInfo.board.makePiece(color,ROOK);
 	const PieceTypeByColor queen = evalInfo.board.makePiece(color,QUEEN);
+	const PieceTypeByColor king = evalInfo.board.makePiece(color,KING);
 	const Bitboard freeArea = ~(evalInfo.board.getPiecesByColor(color) |
 			evalInfo.attackers[pawnOther]);
 
@@ -270,6 +274,7 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 		from = extractLSB(pieces);
 	}
 
+	// king area safety
 	const Bitboard knightAttacks = evalInfo.attackers[knight]&otherKingSquareBB;
 	if (knightAttacks) {
 		evalInfo.kingThreat[color] += minorKingZoneAttackBonus[1];
@@ -292,4 +297,44 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 		const int attackCount = _BitCount(queenAttacks);
 		evalInfo.kingThreat[color] += majorKingZoneAttackBonus[attackCount];
 	}
+
+	// evaluate space
+	const Bitboard sidePieces = evalInfo.board.getPiecesByColor(color);
+	const Bitboard kingAndPawns = evalInfo.board.getPiecesByType(king) | evalInfo.pawns[color];
+	evalInfo.value[color] += spaceBonus[_BitCount((sidePieces ^ kingAndPawns) & colorSpaceBB[other])];
+
+	evalInfo.attacks[color] = evalInfo.attackers[knight] | evalInfo.attackers[bishop] |
+			evalInfo.attackers[rook] | evalInfo.attackers[queen] | evalInfo.attackers[pawn];
+
 }
+
+// eval threats - idea from Stockfish
+void Evaluator::evalThreats(PieceColor color, EvalInfo& evalInfo) {
+
+	const PieceColor other = evalInfo.board.flipSide(color);
+	const PieceTypeByColor pawnOther = evalInfo.board.makePiece(other,PAWN);
+
+	Bitboard pieces=evalInfo.board.getPiecesByColor(other) &
+			~evalInfo.attackers[pawnOther] & evalInfo.attacks[color];
+
+	if (pieces) {
+		for (int t1=PAWN;t1<KING;t1++) {
+			const PieceTypeByColor sidePiece = evalInfo.board.makePiece(color,PieceType(t1));
+			Bitboard test = evalInfo.attackers[sidePiece]&pieces;
+			if (test) {
+				for (int t2=PAWN;t2<=KING;t2++) {
+					const PieceTypeByColor otherPiece = evalInfo.board.makePiece(color,PieceType(t2));
+					if (test & evalInfo.board.getPiecesByType(otherPiece)) {
+						evalInfo.value[color] += threatBonus[t1][t2];
+					}
+				}
+			}
+		}
+	}
+
+}
+
+
+
+
+

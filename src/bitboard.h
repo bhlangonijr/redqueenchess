@@ -225,6 +225,12 @@ const Bitboard fileBB[ALL_FILE]={
 		0x1010101010101010ULL,0x2020202020202020ULL,0x4040404040404040ULL,0x8080808080808080ULL
 };
 
+// bitboard for black and white space
+const Bitboard colorSpaceBB[ALL_PIECE_COLOR] ={
+		0x00000000FFFFFFFFULL, 0xFFFFFFFF00000000ULL, 0x0ULL
+
+};
+
 // bitboard for all diagonal A1..H8
 const Bitboard diagonalA1H8BB[ALL_DIAGONAL]={
 		Sq2Bb(A8),
