@@ -104,12 +104,12 @@ const int spaceBonus[18] = {
 };
 
 const int threatBonus[ALL_PIECE_TYPE][ALL_PIECE_TYPE] = {
-		{MS(+0,+0),MS(+5,+10),MS(+5,+10),MS(+10,+15),MS(+15,+20),MS(+20,+25),0},
-		{MS(-1,-2),MS(+0,+0),MS(+0,+0),MS(+5,+10),MS(+10,+15),MS(+15,+20),0},
-		{MS(-1,-2),MS(+0,+0),MS(+0,+0),MS(+5,+10),MS(+10,+15),MS(+15,+20),0},
-		{MS(+0,+0),MS(+2,+2),MS(+2,+2),MS(+0,+0),MS(+5,+10),MS(+10,+15),0},
-		{MS(-2,-3),MS(-2,-3),MS(-2,-3),MS(-2,-3),MS(+0,+0),MS(+10,+15),0},
-		{MS(-20,-20),MS(-20,-20),MS(-20,-20),MS(-20,-20),MS(-20,-20),MS(-20,-20),0},
+		{MS(+0,+0),MS(+2,+3),MS(+2,+3),MS(+3,+5),MS(+15,+20),MS(+20,+25),0},
+		{MS(+0,+0),MS(+5,+10),MS(+5,+10),MS(+5,+10),MS(+10,+15),MS(+15,+20),0},
+		{MS(+0,+0),MS(+5,+10),MS(+5,+10),MS(+5,+10),MS(+10,+15),MS(+15,+20),0},
+		{MS(+0,+0),MS(+3,+5),MS(+3,+5),MS(+0,+0),MS(+5,+10),MS(+10,+15),0},
+		{MS(+0,+0),MS(+2,+4),MS(+2,+4),MS(+2,+4),MS(+0,+0),MS(+10,+15),0},
+		{},
 		{}
 };
 
@@ -185,7 +185,7 @@ const Bitboard frontSquares[ALL_PIECE_COLOR][ALL_SQUARE]= {
 		{}
 };
 
-const int lazyEvalMargin=100;
+const int lazyEvalMargin=200;
 const size_t pawnHashSize=1<<18;
 
 class Evaluator {
