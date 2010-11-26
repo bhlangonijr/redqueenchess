@@ -76,12 +76,17 @@ const int queenKingBonus[8] = {
 		7*MS(+3,+5),6*MS(+3,+5),5*MS(+3,+5),4*MS(+3,+5),3*MS(+3,+5),2*MS(+3,+5),1*MS(+3,+5),0*MS(+3,+5)
 };
 
-const int minorKingZoneAttackBonus[10] = {
+const int minorKingZoneAttackWeight[10] = {
 		0*MS(+2,+7),1*MS(+2,+7),2*MS(+2,+7),3*MS(+2,+7),4*MS(+2,+7),
 		5*MS(+2,+7),6*MS(+2,+7),7*MS(+2,+7),8*MS(+2,+7),9*MS(+2,+7)
 };
 
-const int majorKingZoneAttackBonus[10] = {
+const int rookKingZoneAttackWeight[10] = {
+		0*MS(+3,+8),1*MS(+3,+8),2*MS(+3,+8),3*MS(+3,+8),4*MS(+3,+8),
+		5*MS(+3,+8),6*MS(+3,+8),7*MS(+3,+8),8*MS(+3,+8),9*MS(+3,+8)
+};
+
+const int queenKingZoneAttackWeight[10] = {
 		0*MS(+4,+10),1*MS(+4,+10),2*MS(+4,+10),3*MS(+4,+10),4*MS(+4,+10),
 		5*MS(+4,+10),6*MS(+4,+10),7*MS(+4,+10),8*MS(+4,+10),9*MS(+4,+10)
 };

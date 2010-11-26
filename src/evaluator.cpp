@@ -39,15 +39,18 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 
 	EvalInfo evalInfo(board);
 
-	evalKing(evalInfo.side, evalInfo);
-	evalKing(evalInfo.other, evalInfo);
 	evalBishops(evalInfo.side, evalInfo);
 	evalBishops(evalInfo.other, evalInfo);
+	evalInfo.value[WHITE] +=
+			evalInfo.board.isCastleDone(WHITE)?DONE_CASTLE_BONUS:-DONE_CASTLE_BONUS;
+	evalInfo.value[BLACK] +=
+			evalInfo.board.isCastleDone(BLACK)?DONE_CASTLE_BONUS:-DONE_CASTLE_BONUS;
+
 
 	evalInfo.computeEval();
 
 	if ((evalInfo.eval > alpha-lazyEvalMargin && evalInfo.eval < beta+lazyEvalMargin) ||
-		board.isInCheck()) {
+			board.isInCheck()) {
 		evalInfo.attackers[WHITE_PAWN] = ((evalInfo.pawns[WHITE] & midBoardNoFileA) << 7) |
 				((evalInfo.pawns[WHITE] & midBoardNoFileH) << 9);
 		evalInfo.attackers[BLACK_PAWN] = ((evalInfo.pawns[BLACK] & midBoardNoFileA) >> 9) |
@@ -64,6 +67,8 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 		}
 		evalThreats(evalInfo.side, evalInfo);
 		evalThreats(evalInfo.other, evalInfo);
+		evalKing(evalInfo.side, evalInfo);
+		evalKing(evalInfo.other, evalInfo);
 		evalInfo.computeEval();
 	}
 
@@ -73,9 +78,36 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 // king eval function
 void Evaluator::evalKing(PieceColor color, EvalInfo& evalInfo) {
 
-	// king
-	if (evalInfo.board.isCastleDone(color)) {
-		evalInfo.value[color] += DONE_CASTLE_BONUS;
+	const PieceColor other = evalInfo.board.flipSide(color);
+	const Square kingSq = evalInfo.board.getKingSquare(color);
+	const Bitboard kingSquareBB = adjacentSquares[kingSq];
+	const PieceTypeByColor knight = evalInfo.board.makePiece(other,KNIGHT);
+	const PieceTypeByColor bishop = evalInfo.board.makePiece(other,BISHOP);
+	const PieceTypeByColor rook = evalInfo.board.makePiece(other,ROOK);
+	const PieceTypeByColor queen = evalInfo.board.makePiece(other,QUEEN);
+
+	// king area safety
+	const Bitboard knightAttacks = evalInfo.attackers[knight]&kingSquareBB;
+	if (knightAttacks) {
+		evalInfo.kingThreat[color] -= minorKingZoneAttackWeight[1];
+	}
+
+	const Bitboard bishopAttacks = evalInfo.attackers[bishop]&kingSquareBB;
+	if (bishopAttacks) {
+		const int attackCount = _BitCount(bishopAttacks);
+		evalInfo.kingThreat[color] -= minorKingZoneAttackWeight[attackCount];
+	}
+
+	const Bitboard rookAttacks = evalInfo.attackers[rook]&kingSquareBB;
+	if (rookAttacks) {
+		const int attackCount = _BitCount(rookAttacks);
+		evalInfo.kingThreat[color] -= rookKingZoneAttackWeight[attackCount];
+	}
+
+	const Bitboard queenAttacks = evalInfo.attackers[queen]&kingSquareBB;
+	if (queenAttacks) {
+		const int attackCount = _BitCount(queenAttacks);
+		evalInfo.kingThreat[color] -= queenKingZoneAttackWeight[attackCount];
 	}
 
 }
@@ -142,10 +174,8 @@ void Evaluator::evalPawns(PieceColor color, EvalInfo& evalInfo) {
 				eval += CONNECTED_PAWN_BONUS;
 			}
 			if (isPasser && !(isDoubled && (frontSquares[color][from]&allButThePawn))) {
-
 				passedBonus += evalPassedPawn(evalInfo.board,color,from,isPawnFinal,isChained);
 				passers|=squareToBitboard[from];
-
 			}
 			if (!(isPasser | isIsolated | isChained) &&
 					!(backwardPawnMask[color][from]&allButThePawn) &&
@@ -211,8 +241,6 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 
 	const PieceColor other = evalInfo.board.flipSide(color);
 	const Square otherKingSq = evalInfo.board.getKingSquare(other);
-	const Bitboard otherKingSquareBB = adjacentSquares[otherKingSq];
-
 	const PieceTypeByColor pawnOther = evalInfo.board.makePiece(other,PAWN);
 	const PieceTypeByColor pawn = evalInfo.board.makePiece(color,PAWN);
 	const PieceTypeByColor knight = evalInfo.board.makePiece(color,KNIGHT);
@@ -273,30 +301,6 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 		evalInfo.value[color] += MS(queenMobility,queenMobility);
 		evalInfo.kingThreat[color] += queenKingBonus[squareDistance(from,otherKingSq)];
 		from = extractLSB(pieces);
-	}
-
-	// king area safety
-	const Bitboard knightAttacks = evalInfo.attackers[knight]&otherKingSquareBB;
-	if (knightAttacks) {
-		evalInfo.kingThreat[color] += minorKingZoneAttackBonus[1];
-	}
-
-	const Bitboard bishopAttacks = evalInfo.attackers[bishop]&otherKingSquareBB;
-	if (bishopAttacks) {
-		const int attackCount = _BitCount(bishopAttacks);
-		evalInfo.kingThreat[color] += minorKingZoneAttackBonus[attackCount];
-	}
-
-	const Bitboard rookAttacks = evalInfo.attackers[rook]&otherKingSquareBB;
-	if (rookAttacks) {
-		const int attackCount = _BitCount(rookAttacks);
-		evalInfo.kingThreat[color] += minorKingZoneAttackBonus[attackCount];
-	}
-
-	const Bitboard queenAttacks = evalInfo.attackers[queen]&otherKingSquareBB;
-	if (queenAttacks) {
-		const int attackCount = _BitCount(queenAttacks);
-		evalInfo.kingThreat[color] += majorKingZoneAttackBonus[attackCount];
 	}
 
 	// evaluate space
