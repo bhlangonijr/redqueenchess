@@ -265,6 +265,7 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 	while ( from!=NONE ) {
 		const Bitboard attacks = evalInfo.board.getKnightAttacks(from);
 		evalInfo.value[color] += knightMobility[_BitCount(attacks&freeArea)];
+		evalInfo.kingThreat[color] += knightKingBonus[squareDistance(from,otherKingSq)];
 		evalInfo.attackers[knight] |= attacks;
 		from = extractLSB(pieces);
 	}
