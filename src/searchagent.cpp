@@ -156,6 +156,9 @@ const long SearchAgent::getTimeToSearch() {
 	int movesLeft = defaultGameSize;
 	if (movesToGo>0) {
 		movesLeft = movesToGo;
+		if (movesToGo<2) {
+			time=(time*95)/100;
+		}
 	} else {
 
 		for (int x=0;x<timeTableSize;x++) {

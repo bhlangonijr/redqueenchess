@@ -36,6 +36,7 @@ void SimplePVSearch::search(Board board) {
 	_nodes = 0;
 	_startTime = getTickCount();
 	setTimeToStop();
+	nodesToGo = getTimeToSearch()<=1000?fastNodesToGo:defaultNodesToGo;
 	_score = idSearch(board);
 	_time = getTickCount()-_startTime;
 }

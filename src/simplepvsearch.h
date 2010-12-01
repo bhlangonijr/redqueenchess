@@ -68,6 +68,9 @@ const int lateMoveThreshold2=3;
 
 const int scoreTable[11]={0,80000,60000,95000,90000,45000,40000,1000,-12000,50050,50000};
 
+const long defaultNodesToGo=0xFFF;
+const long fastNodesToGo=0xFF;
+
 class SearchAgent;
 
 class MoveIterator;
@@ -93,7 +96,8 @@ public:
 		MoveIterator::Move move;
 	} SearchInfo;
 
-	SimplePVSearch() : _depth(maxSearchDepth), _updateUci(true), _startTime(0), _searchFixedDepth(false), _infinite(false), _nodes(0) {}
+	SimplePVSearch() : _depth(maxSearchDepth), _updateUci(true), _startTime(0), _searchFixedDepth(false),
+			_infinite(false), _nodes(0), nodesToGo(defaultNodesToGo) {}
 
 	~SimplePVSearch() {}
 
@@ -198,6 +202,7 @@ private:
 	SearchInfo rootSearchInfo;
 	int maxPlySearched;
 	int aspirationDelta;
+	long nodesToGo;
 
 	int idSearch(Board& board);
 	int rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int* betaRoot, int depth, int ply, PvLine* pv);
@@ -494,11 +499,11 @@ inline bool SimplePVSearch::isPawnOn7thRank(const Board& board, Square& square) 
 		return false;
 	}
 	const PieceColor color=board.getPieceColorBySquare(square);
-	return  (squareToBitboard[square] & (color==WHITE?rankBB[RANK_7]:rankBB[RANK_2]));
+	return  (squareToBitboard[square] & promoRank[color]);
 }
 
 inline const bool SimplePVSearch::timeIsUp() {
-	if (_searchFixedDepth || _infinite || _nodes & 0xFFF) {
+	if (_searchFixedDepth || _infinite || _nodes & nodesToGo) {
 		return false;
 	}
 	return clock()>=timeToStop;
