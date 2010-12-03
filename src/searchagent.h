@@ -198,7 +198,7 @@ public:
 	inline bool hashPut(const Key _key, int value, const int depth, const int ply,
 			const TranspositionTable::NodeFlag flag, MoveIterator::Move move) {
 
-		TranspositionTable::HashKey key=TranspositionTable::HashKey(_key>>32);
+		TranspositionTable::HashKey key=static_cast<TranspositionTable::HashKey>(_key>>32);
 
 		if (value >= maxScore-100) {
 			value -= ply;
@@ -212,7 +212,7 @@ public:
 
 	inline bool hashGet(const Key _key, TranspositionTable::HashData& hashData, const int ply) {
 
-		TranspositionTable::HashKey key=TranspositionTable::HashKey(_key>>32);
+		TranspositionTable::HashKey key=static_cast<TranspositionTable::HashKey>(_key>>32);
 
 		bool result = transTable->hashGet(key, hashData);
 		if (result) {

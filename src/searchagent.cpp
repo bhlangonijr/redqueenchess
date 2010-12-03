@@ -170,7 +170,7 @@ const long SearchAgent::getTimeToSearch() {
 		}
 
 	}
-	return time/(long(movesLeft))+incTime;
+	return time/(static_cast<long>(movesLeft))+incTime;
 }
 
 void  SearchAgent::ponderHit() {

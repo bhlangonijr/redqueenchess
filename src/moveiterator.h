@@ -160,7 +160,7 @@ public:
 
 	bool goNextStage() {
 		if (_data.stage<END_STAGE) {
-			_data.stage = IteratorStage(int(_data.stage)+1);
+			_data.stage = IteratorStage(static_cast<int>(_data.stage)+1);
 			return true;
 		}
 		return false;
@@ -279,7 +279,7 @@ inline const size_t MoveIterator::getIndex() {
 }
 
 inline const void MoveIterator::clearScore() {
-	for(int i = 0; i <(int) _data.size; i++) {
+	for(int i = 0; i <static_cast<int>(_data.size); i++) {
 		_data.list[i].score=-maxScore;
 	}
 }

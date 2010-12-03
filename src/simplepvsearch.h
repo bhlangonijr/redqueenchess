@@ -296,7 +296,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 					continue;
 				}
 				if (move.type==MoveIterator::UNKNOW_CAPTURE) {
-					move.score=evaluator.see(board,move);
+					move.score=evaluator.see<true>(board,move);
 					if (move.score >= 0) {
 						move.type=MoveIterator::GOOD_CAPTURE;
 						move.score+=scoreTable[move.type];
@@ -414,7 +414,7 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 		MoveIterator::Move& move = moves.next();
 		MoveBackup backup;
 		const bool isCapture = board.isCaptureMove(move);
-		const int value = isCapture ? evaluator.see(board,move) : 0;
+		const int value = isCapture ? evaluator.see<true>(board,move) : 0;
 		board.doMove(move,backup);
 		const bool givingCheck = board.isInCheck(board.getSideToMove());
 		SearchInfo newSi(givingCheck,move);

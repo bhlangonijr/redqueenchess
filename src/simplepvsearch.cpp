@@ -214,7 +214,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 				const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to);
 
 				int extension=0;
-				if (isKingAttacked || pawnOn7thExtension) {
+				if ((isKingAttacked && move.type!=MoveIterator::BAD_CAPTURE) || pawnOn7thExtension) {
 					extension++;
 				}
 
@@ -363,7 +363,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		const bool givingCheck = board.isInCheck(board.getSideToMove());
 		const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to);
 		int extension=0;
-		if (isKingAttacked || pawnOn7thExtension) {
+		if ((isKingAttacked && move.type!=MoveIterator::BAD_CAPTURE) || pawnOn7thExtension) {
 			extension++;
 		}
 
@@ -583,7 +583,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		//reductions
 		int reduction=0;
 		int extension=0;
-		if (isKingAttacked || pawnOn7thExtension){
+		if ((isKingAttacked && move.type!=MoveIterator::BAD_CAPTURE) || pawnOn7thExtension){
 			extension++;
 		} else if (move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
 				!passedPawn && !nullMoveMateScore &&

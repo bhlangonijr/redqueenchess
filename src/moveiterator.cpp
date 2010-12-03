@@ -56,9 +56,9 @@ void MoveIterator::sort() {
 void MoveIterator::sort(const int after) {
 
 	bool flag=true;
-	for(int i = after; i <(int)_data.size&&flag; i++){
+	for(int i = after; i<static_cast<int>(_data.size)&&flag; i++){
 		flag=false;
-		for(int j = after; j <(int) _data.size-1; j++)
+		for(int j = after; j<static_cast<int>(_data.size)-1; j++)
 		{
 			if (_data.list[j+1].score > _data.list[j].score) {
 				Move tmp=_data.list[j];
@@ -76,9 +76,9 @@ void MoveIterator::sort(const int after) {
 void MoveIterator::sort(long* moveScore) {
 
 	bool flag=true;
-	for(int i = 0; i <(int)_data.size&&flag; i++){
+	for(int i = 0; i <static_cast<int>(_data.size)&&flag; i++){
 		flag=false;
-		for(int j = 0; j <(int) _data.size-1; j++)
+		for(int j = 0; j <static_cast<int>(_data.size)-1; j++)
 		{
 			if (_data.list[j+1].score > _data.list[j].score) {
 
@@ -104,9 +104,9 @@ void MoveIterator::sort(long* moveScore) {
 void MoveIterator::sortOrderingBy(long moveScore[MOVE_LIST_MAX_SIZE]) {
 
 	bool flag=true;
-	for(int i = 0; i <(int)_data.size&&flag; i++) {
+	for(int i = 0; i <static_cast<int>(_data.size)&&flag; i++) {
 		flag=false;
-		for(int j = 0; j <(int) _data.size-1; j++) {
+		for(int j = 0; j <static_cast<int>(_data.size)-1; j++) {
 			if (moveScore[j+1] > moveScore[j]) {
 
 				Move tmp=_data.list[j];
@@ -123,7 +123,6 @@ void MoveIterator::sortOrderingBy(long moveScore[MOVE_LIST_MAX_SIZE]) {
 	}
 
 	sort(moveScore);
-
 	/*for(int i = 0; i <(int)_data.size; i++){
 		std::cout << "move " << i << " " << _data.list[i].toString() << " score: " << _data.list[i].score  << " nodes: " << moveScore[i] << std::endl;
 	}*/

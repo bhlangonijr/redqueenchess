@@ -269,6 +269,7 @@ public:
 	void evalThreats(PieceColor color, EvalInfo& evalInfo);
 	const bool isPawnPassed(Board& board, const Square from);
 	const void setGameStage(const GamePhase phase);
+	template <bool lazySee>
 	const int see(Board& board, MoveIterator::Move& move);
 
 	inline const static int interpolate(const int value, const int gamePhase) {
@@ -278,7 +279,7 @@ public:
 	}
 
 	inline bool getPawnInfo(const Key key, PawnInfo& pawnHash) {
-		PawnInfo& entry = pawnInfo[key & (pawnHashSize-1)];
+		PawnInfo& entry = pawnInfo[static_cast<size_t>(key) & (pawnHashSize-1)];
 		if (entry.key==key) {
 			pawnHash.key=entry.key;
 			pawnHash.passers[WHITE]=entry.passers[WHITE];
@@ -291,7 +292,7 @@ public:
 	}
 
 	inline void setPawnInfo(const Key key, const int value, const PieceColor color, const Bitboard passers) {
-		PawnInfo& entry = pawnInfo[key & (pawnHashSize-1)];
+		PawnInfo& entry = pawnInfo[static_cast<size_t>(key) & (pawnHashSize-1)];
 		entry.key=key;
 		entry.value[color]=value;
 		entry.passers[color]=passers;
@@ -318,6 +319,7 @@ inline const bool Evaluator::isPawnPassed(Board& board, const Square from) {
 }
 
 // static exchange evaluation
+template <bool lazySee>
 inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 
 	const int gainTableSize=32;
@@ -326,8 +328,9 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 	PieceTypeByColor firstPiece = board.getPieceBySquare(move.from);
 	PieceTypeByColor secondPiece = board.getPieceBySquare(move.to);
 
-	if (secondPiece==EMPTY) {
-		return 0;
+	if (lazySee && secondPiece!=EMPTY &&
+			materialValues[secondPiece]-materialValues[firstPiece]>=0) {
+		return 1;
 	}
 
 	const Bitboard sidePawn =  board.getPiecesByType(board.makePiece(side,PAWN));
@@ -379,7 +382,7 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 		return queenValue*10;
 	}
 
-	while (true) {
+	while (fromPiece) {
 
 		allAttackers |= attackers;
 		idx++;
@@ -402,9 +405,6 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 		sideToMove=board.flipSide(sideToMove);
 		fromPiece  = getLeastValuablePiece (board, attackers, sideToMove, firstPiece);
 
-		if (!fromPiece) {
-			break;
-		}
 	}
 
 	while (--idx) {
@@ -420,9 +420,9 @@ inline Bitboard Evaluator::getLeastValuablePiece(Board& board, Bitboard attacker
 	const int last = board.makePiece(color,KING);
 
 	for(register int pieceType = first; pieceType <= last; pieceType++) {
-		Bitboard pieces = board.getPiecesByType(PieceTypeByColor(pieceType)) & attackers;
+		Bitboard pieces = board.getPiecesByType(static_cast<PieceTypeByColor>(pieceType)) & attackers;
 		if (pieces) {
-			piece = PieceTypeByColor(pieceType);
+			piece = static_cast<PieceTypeByColor>(pieceType);
 			return pieces & -pieces;
 		}
 	}

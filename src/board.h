@@ -428,7 +428,7 @@ inline const CastleRight Board::getCastleRights(PieceColor color) const {
 
 // remove castle rights passed as params
 inline void Board::removeCastleRights(const PieceColor color, const CastleRight castle) {
-	currentBoard.castleRight[color]=CastleRight((int)currentBoard.castleRight[color]&(~(int)castle));
+	currentBoard.castleRight[color]=static_cast<CastleRight>(static_cast<int>(currentBoard.castleRight[color])&(~static_cast<int>(castle)));
 }
 
 // set castle rights
@@ -512,7 +512,7 @@ inline void Board::setEnPassant(const Square square) {
 
 // flip side
 inline const PieceColor Board::flipSide(const PieceColor color) {
-	return PieceColor((int)color ^ 1);
+	return PieceColor(static_cast<int>(color)^1);
 }
 
 // get piece color
@@ -558,7 +558,7 @@ inline const File Board::getSquareFile(const Square square) const {
 inline const bool Board::isAttacked(const PieceColor color, const PieceType type) {
 
 	Bitboard piece = getPiecesByType(makePiece(color,type));
-	PieceColor other = flipSide(color);
+	const PieceColor other = flipSide(color);
 
 	Square from = extractLSB(piece);
 
@@ -578,7 +578,7 @@ inline const bool Board::isAttacked(const PieceColor color, const PieceType type
 
 inline const bool Board::isAttacked(const PieceColor color, const Square from) {
 
-	PieceColor other = flipSide(color);
+	const PieceColor other = flipSide(color);
 
 	if (from!=NONE) {
 		return 	(getBishopAttacks(from) & (getPiecesByType(makePiece(other,BISHOP)) |

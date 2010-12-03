@@ -43,7 +43,7 @@ typedef uint64_t Bitboard;
 #define ALL_FILE				8																	// all files
 #define ALL_DIAGONAL			15																	// all diagonals
 #define ALL_SLIDER_ATTACKS      256																	// all sliders attacks per orientation
-#define SqBB(S)					0x1ULL << (int)S													// Encode a square enum to a bitboard
+#define SqBB(S)					0x1ULL << static_cast<int>(S)										// Encode a square enum to a bitboard
 #define Sq2Bb(X)				squareToBitboard[X] 												// square to bitboard macro
 
 #define Sq2FA(X)				fileBB[squareFile[X]]^squareToBitboard[X]							// Encode Square to File Attack
@@ -60,7 +60,7 @@ typedef uint64_t Bitboard;
 #define WHITE_SQUARES 			0x55AA55AA55AA55AAULL
 #define BLACK_SQUARES 			0xAA55AA55AA55AA55ULL
 #define MID_BOARD				0x00FFFFFFFFFFFF00ULL
-#define St2Sq(F,R)				(((int)F-96)+((int)R-49)*8)-1	// encode String to Square enum
+#define St2Sq(F,R)				((static_cast<int>(F)-96)+(static_cast<int>(R)-49)*8)-1	// encode String to Square enum
 
 
 #define MIN(x,y) (x<y?x:y)
@@ -494,15 +494,15 @@ extern int inverseSquareDistance(const Square from, const Square to);
 inline Square bitboardToSquare(const Bitboard& bitboard) {
 
 	if (!bitboard) {
-		return Square(NONE);
+		return static_cast<Square>(NONE);
 	}
 	int square=0;
 
 	if (!_BitScanForward(&square, bitboard)) {
-		return Square(NONE);
+		return static_cast<Square>(NONE);
 	}
 
-	return Square( square );
+	return static_cast<Square>( square );
 
 }
 
@@ -537,26 +537,26 @@ inline Bitboard getSliderAttacks(const Bitboard& attacks, const Bitboard& mask, 
 inline Square extractLSB(Bitboard& bitboard) {
 
 	if (!bitboard) {
-		return Square(NONE);
+		return static_cast<Square>(NONE);
 	}
 	int square=0;
 
 	if (!_BitScanForward(&square, bitboard)) {
-		return Square(NONE);
+		return static_cast<Square>(NONE);
 	}
 
 	bitboard &= bitboard - 1;
 
-	return Square( square );
+	return static_cast<Square>(square);
 
 }
 
 inline const int upperScore(const int value) {
-	return ((int16_t(value >> 15) & 1) + int16_t(value >> 16));
+	return ((static_cast<int16_t>(value >> 15) & 1) + static_cast<int16_t>(value >> 16));
 }
 
 inline const int lowerScore(const int value) {
-	return  int16_t(value & 0xFFFF);
+	return  static_cast<int16_t>(value & 0xFFFF);
 }
 
 inline const int makeScore(const int upperValue, const int lowerValue) {

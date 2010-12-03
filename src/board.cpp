@@ -632,14 +632,14 @@ void Board::initialize() {
 		for (int piece=0; piece<ALL_PIECE_TYPE_BY_COLOR; piece++) {
 			for (int square=0; square<ALL_SQUARE; square++) {
 				pst[phase][piece][square]=
-						calcPieceSquareValue(PieceTypeByColor(piece),Square(square),GamePhase(phase));
+						calcPieceSquareValue(PieceTypeByColor(piece),static_cast<Square>(square),static_cast<GamePhase>(phase));
 			}
 		}
 	}
 	// initialize pst
 	for (int piece=0; piece<ALL_PIECE_TYPE_BY_COLOR; piece++) {
 		for (int square=0; square<ALL_SQUARE; square++) {
-			const Square sq = pieceColor[piece]==WHITE?Square(square):flip[square];
+			const Square sq = pieceColor[piece]==WHITE?static_cast<Square>(square):flip[square];
 			const int upperValue = defaultPieceSquareTable[pieceType[piece]][sq];
 			const int lowerValue = endGamePieceSquareTable[pieceType[piece]][sq];
 			fullPst[piece][square]=makeScore(upperValue,lowerValue);

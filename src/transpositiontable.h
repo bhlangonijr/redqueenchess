@@ -77,13 +77,13 @@ public:
 					PieceTypeByColor(_promotion), MoveIterator::TT_MOVE);
 		}
 		inline int depth() {
-			return int(_depth);
+			return static_cast<int>(_depth);
 		}
 		inline int value() {
-			return int(_value);
+			return static_cast<int>(_value);
 		}
 		inline int generation() {
-			return int(_generation);
+			return static_cast<int>(_generation);
 		}
 		inline void setValue(int value) {
 			_value=int16_t(value);
@@ -192,7 +192,7 @@ inline bool TranspositionTable::hashPut(const HashKey key, const int value, cons
 
 	HashData *entry;
 	HashData *replace;
-	entry = transTable[size_t(key) & _mask].entry;
+	entry = transTable[key & _mask].entry;
 	replace = entry;
 	for (int x=0;x<BUCKET_SIZE;x++,entry++) {
 		if (!entry->key || entry->key==key) {
@@ -220,7 +220,7 @@ inline bool TranspositionTable::hashPut(const HashKey key, const int value, cons
 
 inline bool TranspositionTable::hashGet(const HashKey key, HashData& hashData) {
 	HashData *entry;
-	entry = transTable[size_t(key) & _mask].entry;
+	entry = transTable[key & _mask].entry;
 	for (int x=0;x<BUCKET_SIZE;x++,entry++) {
 		if (entry->key==key) {
 			hashData.key=entry->key;
@@ -255,7 +255,7 @@ inline bool TranspositionTable::isHashFull() {
 
 inline const int TranspositionTable::hashFull() {
 	double n = double(_size);
-	return int(1000 * (1 - exp(writes * log(1.0 - 1.0/n))));
+	return static_cast<int>(1000 * (1 - exp(writes * log(1.0 - 1.0/n))));
 }
 
 inline const std::string TranspositionTable::getId() const {

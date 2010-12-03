@@ -45,8 +45,6 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 			evalInfo.board.isCastleDone(WHITE)?DONE_CASTLE_BONUS:-DONE_CASTLE_BONUS;
 	evalInfo.value[BLACK] +=
 			evalInfo.board.isCastleDone(BLACK)?DONE_CASTLE_BONUS:-DONE_CASTLE_BONUS;
-
-
 	evalInfo.computeEval();
 
 	if ((evalInfo.eval > alpha-lazyEvalMargin && evalInfo.eval < beta+lazyEvalMargin) ||
