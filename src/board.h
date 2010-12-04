@@ -298,6 +298,7 @@ public:
 	void generateCaptures(MoveIterator& moves, const PieceColor side);
 	void generateQuiesMoves(MoveIterator& moves, const PieceColor side);
 	void generateNonCaptures(MoveIterator& moves, const PieceColor side);
+	void generateNonCaptureChecks(MoveIterator& moves, const PieceColor side);
 	void generateEvasions(MoveIterator& moves, const PieceColor side);
 	void generateAllMoves(MoveIterator& moves, const PieceColor side);
 	void generatePawnCaptures(MoveIterator& moves, const PieceColor side, const Bitboard mask);
@@ -970,7 +971,39 @@ inline void Board::generateNonCaptures(MoveIterator& moves, const PieceColor sid
 
 inline void Board::generateQuiesMoves(MoveIterator& moves, const PieceColor side){
 	generateCaptures(moves, side);
+	generateNonCaptureChecks(moves, side);
 	generatePromotion(moves, side, getEmptySquares());
+}
+
+// generate checks
+// Note: this method does not guarantee generation of only legal moves, although it might reduce the number of moves
+// it will be necessary to use isLegalMove() to validate legality
+// FIXME generate only legal moves
+// TODO generate discovered checks
+inline void Board::generateNonCaptureChecks(MoveIterator& moves, const PieceColor side) {
+
+	const PieceColor otherSide = flipSide(side);
+	const Bitboard empty = getEmptySquares();
+	const Square kingSquare = getKingSquare(otherSide);
+
+	const Bitboard bishop = getPiecesByType(makePiece(side,BISHOP));
+	const Bitboard rook = getPiecesByType(makePiece(side,ROOK));
+	const Bitboard queen = getPiecesByType(makePiece(side,QUEEN));
+
+	const Bitboard bishopAndQueen = (bishop | queen);
+	const Bitboard rookAndQueen = (rook | queen);
+
+	const Bitboard bishopAttacks = bishopAndQueen ? getBishopAttacks(kingSquare) : EMPTY_BB;
+	const Bitboard rookAttacks = rookAndQueen ? getRookAttacks(kingSquare) : EMPTY_BB;
+	const Bitboard knightAttacks = getKnightAttacks(kingSquare);
+	const Bitboard pawnAttacks = getPawnAttacks(kingSquare);
+
+	generatePawnMoves(moves, side, empty & pawnAttacks);
+	generateKnightMoves(moves, side, empty & knightAttacks);
+	generateBishopMoves(moves, side, empty & bishopAttacks);
+	generateRookMoves(moves, side, empty & rookAttacks);
+	generateQueenMoves(moves, side, empty & (bishopAttacks | rookAttacks));
+
 }
 
 // generate check evasions

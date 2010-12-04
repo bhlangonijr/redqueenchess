@@ -218,7 +218,7 @@ private:
 	const std::string pvLineToString(const PvLine* pv);
 	template <bool quiescenceMoves>
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves,
-			MoveIterator::Move& ttMove, bool isKingAttacked, int ply);
+			MoveIterator::Move& ttMove, bool isKingAttacked, int ply, int depth);
 	void scoreMoves(Board& board, MoveIterator& moves);
 	void scoreRootMoves(Board& board, MoveIterator& moves);
 	void filterLegalMoves(Board& board, MoveIterator& moves);
@@ -242,7 +242,7 @@ private:
 // select a move
 template <bool quiescenceMoves>
 inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves,
-		MoveIterator::Move& ttMove, bool isKingAttacked, int ply) {
+		MoveIterator::Move& ttMove, bool isKingAttacked, int ply, int depth) {
 
 	while (true) {
 
@@ -252,7 +252,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			return emptyMove;
 
 		case MoveIterator::BEGIN_STAGE:
-			if (!isKingAttacked) {
+			if (!isKingAttacked || (quiescenceMoves && depth < -1)) {
 				moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
 			} else {
 				moves.setStage(MoveIterator::INIT_EVASION_STAGE);
@@ -280,7 +280,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			return emptyMove;
 
 		case MoveIterator::INIT_CAPTURE_STAGE:
-			if (quiescenceMoves) {
+			if (quiescenceMoves && depth>-1) {
 				board.generateQuiesMoves(moves, board.getSideToMove());
 			} else {
 				board.generateCaptures(moves, board.getSideToMove());
