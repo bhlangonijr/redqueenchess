@@ -39,8 +39,8 @@
 // game constants
 const int maxScoreRepetition = 25;
 const int mateRangeScore = 300;
-const int maxSearchDepth = 80;
-const int maxSearchPly = 100;
+const int maxSearchDepth = 200;
+const int maxSearchPly = 200;
 const int checksAtQuiescenceMargin = 30;
 
 // internal iterative deepening
@@ -48,9 +48,9 @@ const int allowIIDAtPV = 3;
 const int allowIIDAtNormal = 7;
 
 // margin constants
-#define futilityMargin(depth) (depth * 150)
-#define razorMargin(depth) (150 + depth * 175)
-#define moveCountMargin(depth) (6 + depth * 4)
+const inline int futilityMargin(const int depth) {return depth * 150;}
+const inline int razorMargin(const int depth) {return 150 + depth * 175;}
+const inline int moveCountMargin(const int depth) {return 6 + depth * 4;}
 const int iidMargin=260;
 const int easyMargin=500;
 const int deltaMargin=950;
@@ -219,7 +219,7 @@ private:
 	const std::string pvLineToString(const PvLine* pv);
 	template <bool quiescenceMoves>
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves,
-			MoveIterator::Move& ttMove, const int ply, const int depth, const bool checksAtQuiescence);
+			MoveIterator::Move& ttMove, bool isKingAttacked, int ply, int depth);
 	void scoreMoves(Board& board, MoveIterator& moves);
 	void scoreRootMoves(Board& board, MoveIterator& moves);
 	void filterLegalMoves(Board& board, MoveIterator& moves);
@@ -243,7 +243,7 @@ private:
 // select a move
 template <bool quiescenceMoves>
 inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves,
-		MoveIterator::Move& ttMove, const int ply, const int depth, const bool checksAtQuiescence) {
+		MoveIterator::Move& ttMove, bool isKingAttacked, int ply, int depth) {
 
 	while (true) {
 
@@ -253,7 +253,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			return emptyMove;
 
 		case MoveIterator::BEGIN_STAGE:
-			if (!board.isInCheck() || (quiescenceMoves && depth<-1)) {
+			if (!isKingAttacked || (quiescenceMoves && depth < -1)) {
 				moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
 			} else {
 				moves.setStage(MoveIterator::INIT_EVASION_STAGE);
@@ -281,7 +281,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			return emptyMove;
 
 		case MoveIterator::INIT_CAPTURE_STAGE:
-			if (quiescenceMoves && checksAtQuiescence) {
+			if (quiescenceMoves && depth>-1) {
 				board.generateQuiesMoves(moves, board.getSideToMove());
 			} else {
 				board.generateCaptures(moves, board.getSideToMove());
