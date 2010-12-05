@@ -35,33 +35,20 @@
 
 //Bitboard type - unsigned long int (8 bytes)
 typedef uint64_t Bitboard;
-#define ALL_PIECE_TYPE 			7   																// pawn, knight, bishop, rook, queen, king
-#define ALL_PIECE_TYPE_BY_COLOR 13  																// (black, white) X (pawn, knight, bishop, rook, queen, king) + empty
-#define ALL_PIECE_COLOR			3   																// black, white, none
-#define ALL_SQUARE				64  																// all square A1 .. H8
-#define ALL_RANK				8																	// all ranks
-#define ALL_FILE				8																	// all files
-#define ALL_DIAGONAL			15																	// all diagonals
-#define ALL_SLIDER_ATTACKS      256																	// all sliders attacks per orientation
-#define SqBB(S)					0x1ULL << static_cast<int>(S)										// Encode a square enum to a bitboard
-#define Sq2Bb(X)				squareToBitboard[X] 												// square to bitboard macro
 
-#define Sq2FA(X)				fileBB[squareFile[X]]^squareToBitboard[X]							// Encode Square to File Attack
-#define Sq2RA(X)				rankBB[squareRank[X]]^squareToBitboard[X]							// Encode Square to Rank Attack
+#define SqBB(S)					(0x1ULL << static_cast<int>(S))										// Encode a square enum to a bitboard
+#define Sq2Bb(X)				(squareToBitboard[X]) 												// square to bitboard macro
 
-#define Sq2A1(X)				diagonalA1H8BB[squareToDiagonalA1H8[X]]^squareToBitboard[X]			// Encode Square to Diagonal A1H1 Attack
-#define Sq2H1(X)				diagonalH1A8BB[squareToDiagonalH1A8[X]]^squareToBitboard[X]			// Encode Square to Diagonal H1A1 Attack
+#define Sq2FA(X)				(fileBB[squareFile[X]]^squareToBitboard[X])							// Encode Square to File Attack
+#define Sq2RA(X)				(rankBB[squareRank[X]]^squareToBitboard[X])							// Encode Square to Rank Attack
 
-#define Sq2UM(X)				~(squareToBitboard[X]-1) 											// Encode Square to BB uppermask
-#define Sq2LM(X)				squareToBitboard[X]-1												// Encode Square to BB lowermask
+#define Sq2A1(X)				(diagonalA1H8BB[squareToDiagonalA1H8[X]]^squareToBitboard[X])		// Encode Square to Diagonal A1H1 Attack
+#define Sq2H1(X)				(diagonalH1A8BB[squareToDiagonalH1A8[X]]^squareToBitboard[X])			// Encode Square to Diagonal H1A1 Attack
 
-#define FULL_BB					0xFFFFFFFFFFFFFFFFULL
-#define EMPTY_BB				0x0ULL
-#define WHITE_SQUARES 			0x55AA55AA55AA55AAULL
-#define BLACK_SQUARES 			0xAA55AA55AA55AA55ULL
-#define MID_BOARD				0x00FFFFFFFFFFFF00ULL
-#define St2Sq(F,R)				((static_cast<int>(F)-96)+(static_cast<int>(R)-49)*8)-1	// encode String to Square enum
+#define Sq2UM(X)				(~(squareToBitboard[X]-1)) 											// Encode Square to BB uppermask
+#define Sq2LM(X)				(squareToBitboard[X]-1)												// Encode Square to BB lowermask
 
+#define St2Sq(F,R)				(((static_cast<int>(F)-96)+(static_cast<int>(R)-49)*8)-1)			// encode String to Square enum
 
 #define MIN(x,y) (x<y?x:y)
 #define MAX(x,y) (x>y?x:y)
@@ -72,6 +59,20 @@ typedef uint64_t Bitboard;
 
 #define MS(X,Y) ((Y)+(X<<16))
 #define AVG(X,Y) ((X+Y)/2)
+
+const int ALL_PIECE_TYPE =				7;  														// pawn, knight, bishop, rook, queen, king
+const int ALL_PIECE_TYPE_BY_COLOR =		13; 														// (black, white) X (pawn, knight, bishop, rook, queen, king) + empty
+const int ALL_PIECE_COLOR	=			3;  														// black, white, none
+const int ALL_SQUARE	=				64; 														// all square A1 .. H8
+const int ALL_RANK	=					8;															// all ranks
+const int ALL_FILE	=					8;															// all files
+const int ALL_DIAGONAL	=				15;															// all diagonals
+
+const Bitboard FULL_BB =		0xFFFFFFFFFFFFFFFFULL;
+const Bitboard EMPTY_BB	=		0x0ULL;
+const Bitboard WHITE_SQUARES =	0x55AA55AA55AA55AAULL;
+const Bitboard BLACK_SQUARES =	0xAA55AA55AA55AA55ULL;
+const Bitboard MID_BOARD =		0x00FFFFFFFFFFFF00ULL;
 
 // squares
 enum Square {

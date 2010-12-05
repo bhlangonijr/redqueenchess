@@ -301,6 +301,7 @@ public:
 	void generateNonCaptureChecks(MoveIterator& moves, const PieceColor side);
 	void generateEvasions(MoveIterator& moves, const PieceColor side);
 	void generateAllMoves(MoveIterator& moves, const PieceColor side);
+
 	void generatePawnCaptures(MoveIterator& moves, const PieceColor side, const Bitboard mask);
 	void generatePawnMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask);
 	void generatePromotion(MoveIterator& moves, const PieceColor side, const Bitboard mask);
@@ -310,6 +311,14 @@ public:
 	void generateQueenMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask);
 	void generateKingMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask);
 	void generateCastleMoves(MoveIterator& moves, const PieceColor side);
+
+	void generatePawnCaptures(MoveIterator& moves, const PieceColor side, const Bitboard mask, Bitboard piece);
+	void generatePawnMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask, Bitboard piece);
+	void generateKnightMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask, Bitboard piece);
+	void generateBishopMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask, Bitboard piece);
+	void generateRookMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask, Bitboard piece);
+	void generateQueenMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask, Bitboard piece);
+	void generateCastleMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask);
 
 	const Bitboard getRookAttacks(const Square square);
 	const Bitboard getRookAttacks(const Square square, const Bitboard occupied);
@@ -655,7 +664,7 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 		otherPieces^=squareToBitboard[move.to];
 	} else if (fromType==PAWN && getEnPassant()!=NONE &&
 			getSquareFile(move.from)!=getSquareFile(move.to) &&
-			(squareToBitboard[move.to] & fileBB[squareFile[getEnPassant()]])) {
+			(getSquareFile(move.to) == getSquareFile(getEnPassant()))) {
 		otherPieces^=squareToBitboard[getEnPassant()];
 	}
 
@@ -664,13 +673,21 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 	testBoard |= squareToBitboard[move.to];
 	testBoard |= otherPieces;
 
-	return !((getBishopAttacks(kingLocation,testBoard) & ((getPiecesByType(makePiece(other,BISHOP)) |
-			getPiecesByType(makePiece(other,QUEEN)))&otherPieces)) ||
-			(getRookAttacks(kingLocation,testBoard) & ((getPiecesByType(makePiece(other,ROOK)) |
-					getPiecesByType(makePiece(other,QUEEN)))&otherPieces)) ||
-					(getKnightAttacks(kingLocation,testBoard) & (getPiecesByType(makePiece(other,KNIGHT))&otherPieces)) ||
-					(getPawnAttacks(kingLocation,color) & (getPiecesByType(makePiece(other,PAWN))&otherPieces)) ||
-					(getKingAttacks(kingLocation,testBoard) & (getPiecesByType(makePiece(other,KING))&otherPieces)));
+	const Bitboard diagonalAttacks = diagA1H8Attacks[kingLocation]|diagH1A8Attacks[kingLocation];
+	const Bitboard lineAttacks = fileAttacks[kingLocation]|rankAttacks[kingLocation];
+
+	const Bitboard bishopAndQueens = ((getPiecesByType(makePiece(other,BISHOP)) |
+			getPiecesByType(makePiece(other,QUEEN)))&otherPieces&diagonalAttacks);
+
+	const Bitboard rookAndQueens = ((getPiecesByType(makePiece(other,ROOK)) |
+			getPiecesByType(makePiece(other,QUEEN)))&otherPieces&lineAttacks);
+
+	return !((bishopAndQueens?getBishopAttacks(kingLocation,testBoard)&bishopAndQueens:EMPTY_BB) ||
+			(rookAndQueens?getRookAttacks(kingLocation,testBoard)&rookAndQueens:EMPTY_BB) ||
+			(getKnightAttacks(kingLocation,testBoard) & (getPiecesByType(makePiece(other,KNIGHT))&otherPieces)) ||
+			(getPawnAttacks(kingLocation,color) & (getPiecesByType(makePiece(other,PAWN))&otherPieces)) ||
+			(getKingAttacks(kingLocation,testBoard) & (getPiecesByType(makePiece(other,KING))&otherPieces)));
+
 }
 
 // Get attacks from a given square
@@ -967,8 +984,6 @@ inline void Board::generateNonCaptures(MoveIterator& moves, const PieceColor sid
 }
 
 //generate quiescence moves
-//TODO generate checks
-
 inline void Board::generateQuiesMoves(MoveIterator& moves, const PieceColor side){
 	generateCaptures(moves, side);
 	generateNonCaptureChecks(moves, side);
@@ -976,16 +991,16 @@ inline void Board::generateQuiesMoves(MoveIterator& moves, const PieceColor side
 }
 
 // generate checks
-// Note: this method does not guarantee generation of only legal moves, although it might reduce the number of moves
-// it will be necessary to use isLegalMove() to validate legality
-// FIXME generate only legal moves
-// TODO generate discovered checks
 inline void Board::generateNonCaptureChecks(MoveIterator& moves, const PieceColor side) {
 
 	const PieceColor otherSide = flipSide(side);
 	const Bitboard empty = getEmptySquares();
 	const Square kingSquare = getKingSquare(otherSide);
+	const Bitboard sidePieces = getPiecesByColor(side);
 
+	const Bitboard pawn = getPiecesByType(makePiece(side,PAWN));
+	const Bitboard king = getPiecesByType(makePiece(side,KING));
+	const Bitboard knight = getPiecesByType(makePiece(side,KNIGHT));
 	const Bitboard bishop = getPiecesByType(makePiece(side,BISHOP));
 	const Bitboard rook = getPiecesByType(makePiece(side,ROOK));
 	const Bitboard queen = getPiecesByType(makePiece(side,QUEEN));
@@ -998,18 +1013,35 @@ inline void Board::generateNonCaptureChecks(MoveIterator& moves, const PieceColo
 	const Bitboard knightAttacks = getKnightAttacks(kingSquare);
 	const Bitboard pawnAttacks = getPawnAttacks(kingSquare);
 
+	Bitboard discoverCandidate = EMPTY_BB;
+
+	if (rookAndQueen && rookAttacks && !(rookAttacks&rookAndQueen)) {
+		discoverCandidate = fileAttacks[kingSquare]&rookAndQueen?(fileAttacks[kingSquare] & sidePieces):EMPTY_BB;
+		discoverCandidate|= rankAttacks[kingSquare]&rookAndQueen?(rankAttacks[kingSquare] & sidePieces):EMPTY_BB;
+		generateKnightMoves(moves, side, empty, discoverCandidate&knight);
+		generateBishopMoves(moves, side, empty, discoverCandidate&bishop);
+		generateKingMoves(moves, side, discoverCandidate&king);
+	}
+
+	if (bishopAndQueen && bishopAttacks && !(bishopAttacks&bishopAndQueen)) {
+		discoverCandidate= diagA1H8Attacks[kingSquare]&bishopAndQueen?(diagA1H8Attacks[kingSquare] & sidePieces):EMPTY_BB;
+		discoverCandidate|= diagH1A8Attacks[kingSquare]&bishopAndQueen?(diagH1A8Attacks[kingSquare] & sidePieces):EMPTY_BB;
+		generatePawnMoves(moves, side, empty, discoverCandidate&pawn);
+		generateRookMoves(moves, side, empty, discoverCandidate&rook);
+		generateKnightMoves(moves, side, empty, discoverCandidate&knight);
+		generateKingMoves(moves, side, discoverCandidate&king);
+	}
+
 	generatePawnMoves(moves, side, empty & pawnAttacks);
 	generateKnightMoves(moves, side, empty & knightAttacks);
 	generateBishopMoves(moves, side, empty & bishopAttacks);
 	generateRookMoves(moves, side, empty & rookAttacks);
 	generateQueenMoves(moves, side, empty & (bishopAttacks | rookAttacks));
+	generateCastleMoves(moves,side,rookAttacks);
 
 }
 
 // generate check evasions
-// Note: this method does not guarantee generation of only legal moves, although it might reduce the number of moves
-// it will be necessary to use isLegalMove() to validate legality
-// FIXME generate only legal moves
 inline void Board::generateEvasions(MoveIterator& moves, const PieceColor side) {
 
 	const PieceColor otherSide = flipSide(side);
@@ -1089,8 +1121,11 @@ inline void Board::generateAllMoves(MoveIterator& moves, const PieceColor side) 
 
 // generate pawn captures
 inline void Board::generatePawnCaptures(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
+	return generatePawnCaptures(moves,side,mask,getPiecesByType(makePiece(side,PAWN)));
+}
+// generate pawn captures
+inline void Board::generatePawnCaptures(MoveIterator& moves, const PieceColor side, const Bitboard mask, Bitboard pieces) {
 
-	Bitboard pieces = getPiecesByType(makePiece(side,PAWN));
 	Bitboard attacks = EMPTY_BB;
 	Square from = extractLSB(pieces);
 
@@ -1118,8 +1153,12 @@ inline void Board::generatePawnCaptures(MoveIterator& moves, const PieceColor si
 
 // generate pawn moves
 inline void Board::generatePawnMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
+	return generatePawnMoves(moves,side,mask,getPiecesByType(makePiece(side,PAWN)));
+}
 
-	Bitboard pieces = getPiecesByType(makePiece(side,PAWN));
+// generate pawn moves
+inline void Board::generatePawnMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask, Bitboard pieces) {
+
 	Bitboard attacks = EMPTY_BB;
 	Square from = extractLSB(pieces);
 
@@ -1167,11 +1206,14 @@ inline void Board::generatePromotion(MoveIterator& moves, const PieceColor side,
 	}
 
 }
-
 // generate knight moves
 inline void Board::generateKnightMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
+	return generateKnightMoves(moves,side,mask,getPiecesByType(makePiece(side,KNIGHT)));
+}
 
-	Bitboard pieces = getPiecesByType(makePiece(side,KNIGHT));
+// generate knight moves
+inline void Board::generateKnightMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask, Bitboard pieces) {
+
 	Bitboard attacks = EMPTY_BB;
 	Square from = extractLSB(pieces);
 
@@ -1189,8 +1231,12 @@ inline void Board::generateKnightMoves(MoveIterator& moves, const PieceColor sid
 
 // generate bishop moves
 inline void Board::generateBishopMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
+	return generateBishopMoves(moves,side,mask,getPiecesByType(makePiece(side,BISHOP)));
+}
 
-	Bitboard pieces = getPiecesByType(makePiece(side,BISHOP));
+// generate bishop moves
+inline void Board::generateBishopMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask, Bitboard pieces) {
+
 	Bitboard attacks = EMPTY_BB;
 	Square from = extractLSB(pieces);
 
@@ -1205,11 +1251,14 @@ inline void Board::generateBishopMoves(MoveIterator& moves, const PieceColor sid
 	}
 
 }
-
 // generate rook moves
 inline void Board::generateRookMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
+	return generateRookMoves(moves,side,mask,getPiecesByType(makePiece(side,ROOK)));
+}
 
-	Bitboard pieces = getPiecesByType(makePiece(side,ROOK));
+// generate rook moves
+inline void Board::generateRookMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask, Bitboard pieces) {
+
 	Bitboard attacks = EMPTY_BB;
 	Square from = extractLSB(pieces);
 
@@ -1227,8 +1276,12 @@ inline void Board::generateRookMoves(MoveIterator& moves, const PieceColor side,
 
 // generate queen moves
 inline void Board::generateQueenMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
+	return generateQueenMoves(moves,side,mask,getPiecesByType(makePiece(side,QUEEN)));
+}
 
-	Bitboard pieces = getPiecesByType(makePiece(side,QUEEN));
+// generate queen moves
+inline void Board::generateQueenMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask, Bitboard pieces) {
+
 	Bitboard attacks = EMPTY_BB;
 	Square from = extractLSB(pieces);
 
@@ -1262,6 +1315,26 @@ inline void Board::generateKingMoves(MoveIterator& moves, const PieceColor side,
 }
 
 // generate castle moves
+inline void Board::generateCastleMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
+
+	if (canCastle(side, KING_SIDE_CASTLE)) {
+		if (side==WHITE && (squareToBitboard[F1] & mask)) {
+			moves.add(E1,G1,EMPTY,MoveIterator::CASTLE);
+		} else if ((squareToBitboard[D1] & mask)) {
+			moves.add(E8,G8,EMPTY,MoveIterator::CASTLE);
+		}
+	}
+
+	if (canCastle(side, QUEEN_SIDE_CASTLE)) {
+		if (side==WHITE && (squareToBitboard[F8] & mask)) {
+			moves.add(E1,C1,EMPTY,MoveIterator::CASTLE);
+		} else if ((squareToBitboard[D8] & mask)) {
+			moves.add(E8,C8,EMPTY,MoveIterator::CASTLE);
+		}
+	}
+}
+
+// generate castle moves
 inline void Board::generateCastleMoves(MoveIterator& moves, const PieceColor side) {
 
 	if (canCastle(side, KING_SIDE_CASTLE)) {
@@ -1279,7 +1352,6 @@ inline void Board::generateCastleMoves(MoveIterator& moves, const PieceColor sid
 			moves.add(E8,C8,EMPTY,MoveIterator::CASTLE);
 		}
 	}
-
 }
 
 // increase the game move counter
