@@ -348,7 +348,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 
 	while (true) {
 
-		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, ply, false);
+		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, ply, depth, false);
 		if (move.none()) {
 			break;
 		}
@@ -542,7 +542,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	int bestScore=-maxScore;
 
 	while (true) {
-		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, ply, false);
+		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, ply, depth, false);
 		if (move.none()) {
 			break;
 		}
@@ -645,7 +645,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 
 	_nodes++;
 
-	if (ply>maxPlySearched) {
+	if (depth==0 && ply>maxPlySearched) {
 		maxPlySearched=ply;
 	}
 
@@ -700,7 +700,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 
 	while (true)  {
 
-		MoveIterator::Move& move = selectMove<true>(board, moves, hashMove, ply, searchForChecks);
+		MoveIterator::Move& move = selectMove<true>(board, moves, hashMove, ply, depth, searchForChecks);
 		if (move.none()) {
 			break;
 		}
@@ -778,7 +778,7 @@ long SimplePVSearch::perft(Board& board, int depth, int ply) {
 
 	while (true)  {
 
-		MoveIterator::Move& move = selectMove<false>(board, moves, emptyMove, ply, false);
+		MoveIterator::Move& move = selectMove<false>(board, moves, emptyMove, ply, depth, false);
 		if (moves.end()) {
 			break;
 		}
