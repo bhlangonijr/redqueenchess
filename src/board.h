@@ -1020,8 +1020,8 @@ inline void Board::generateNonCaptureChecks(MoveIterator& moves, const PieceColo
 		Bitboard dc = diagA1H8Attacks[kingSquare]&bishopAndQueen?(diagA1H8Attacks[kingSquare] & sidePieces):EMPTY_BB;
 		dc |= diagH1A8Attacks[kingSquare]&bishopAndQueen?(diagH1A8Attacks[kingSquare] & sidePieces):EMPTY_BB;
 		if (dc) {
-			generatePawnMoves(moves, side, empty & ~pawnAttacks, discoverCandidate&pawn);
-			generateRookMoves(moves, side, empty & ~rookAttacks, discoverCandidate&rook);
+			generatePawnMoves(moves, side, empty & ~pawnAttacks, dc&pawn);
+			generateRookMoves(moves, side, empty & ~rookAttacks, dc&rook);
 			discoverCandidate|=dc;
 		}
 	}
