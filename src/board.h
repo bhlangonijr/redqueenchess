@@ -986,8 +986,8 @@ inline void Board::generateNonCaptures(MoveIterator& moves, const PieceColor sid
 //generate quiescence moves
 inline void Board::generateQuiesMoves(MoveIterator& moves, const PieceColor side){
 	generateCaptures(moves, side);
-	generateNonCaptureChecks(moves, side);
 	generatePromotion(moves, side, getEmptySquares());
+	generateNonCaptureChecks(moves, side);
 }
 
 // generate checks

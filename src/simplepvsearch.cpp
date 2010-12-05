@@ -348,7 +348,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 
 	while (true) {
 
-		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, isKingAttacked, ply, depth);
+		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, ply, false);
 		if (move.none()) {
 			break;
 		}
@@ -542,7 +542,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	int bestScore=-maxScore;
 
 	while (true) {
-		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, isKingAttacked, ply, depth);
+		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, ply, false);
 		if (move.none()) {
 			break;
 		}
@@ -675,9 +675,12 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		}
 	}
 	const bool isKingAttacked = si.inCheck;
-	int bestScore = isKingAttacked?-maxScore:evaluator.evaluate(board,alpha,beta);
+	int bestScore = -maxScore;
+	bool searchForChecks=false;
 
 	if (!isKingAttacked) {
+		searchForChecks=depth==0 || (depth==-1 && bestScore >= beta-checksAtQuiescenceMargin);
+		bestScore=evaluator.evaluate(board,alpha,beta);
 		if(bestScore>=beta) {
 			return beta;
 		}
@@ -697,7 +700,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 
 	while (true)  {
 
-		MoveIterator::Move& move = selectMove<true>(board, moves, hashMove, isKingAttacked, ply, depth);
+		MoveIterator::Move& move = selectMove<true>(board, moves, hashMove, ply, searchForChecks);
 		if (move.none()) {
 			break;
 		}
@@ -772,16 +775,16 @@ long SimplePVSearch::perft(Board& board, int depth, int ply) {
 
 	long nodes=0;
 	MoveIterator moves = MoveIterator();
-	const bool isKingAttacked = board.isInCheck(board.getSideToMove());
 
 	while (true)  {
 
-		MoveIterator::Move& move = selectMove<false>(board, moves, emptyMove, isKingAttacked, ply, depth);
+		MoveIterator::Move& move = selectMove<false>(board, moves, emptyMove, ply, false);
 		if (moves.end()) {
 			break;
 		}
 		MoveBackup backup;
 		board.doMove(move,backup);
+		board.isInCheck(board.getSideToMove());
 		nodes += perft(board, depth-1, ply+1);
 		board.undoMove(backup);
 
