@@ -252,7 +252,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			return emptyMove;
 
 		case MoveIterator::BEGIN_STAGE:
-			if (!isKingAttacked || (quiescenceMoves && depth < 0)) {
+			if (!isKingAttacked || (quiescenceMoves && depth < -1)) {
 				moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
 			} else {
 				moves.setStage(MoveIterator::INIT_EVASION_STAGE);
@@ -280,7 +280,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			return emptyMove;
 
 		case MoveIterator::INIT_CAPTURE_STAGE:
-			if (quiescenceMoves && depth>-1) {
+			if (quiescenceMoves && depth==0) {
 				board.generateQuiesMoves(moves, board.getSideToMove());
 			} else {
 				board.generateCaptures(moves, board.getSideToMove());

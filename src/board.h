@@ -1016,19 +1016,26 @@ inline void Board::generateNonCaptureChecks(MoveIterator& moves, const PieceColo
 	Bitboard discoverCandidate = EMPTY_BB;
 
 	if (rookAndQueen && rookAttacks && !(rookAttacks&rookAndQueen)) {
-		discoverCandidate = fileAttacks[kingSquare]&rookAndQueen?(fileAttacks[kingSquare] & sidePieces):EMPTY_BB;
-		discoverCandidate|= rankAttacks[kingSquare]&rookAndQueen?(rankAttacks[kingSquare] & sidePieces):EMPTY_BB;
-		generateKnightMoves(moves, side, empty, discoverCandidate&knight);
-		generateBishopMoves(moves, side, empty, discoverCandidate&bishop);
-		generateKingMoves(moves, side, discoverCandidate&king);
+		Bitboard dc = fileAttacks[kingSquare]&rookAndQueen?(fileAttacks[kingSquare] & sidePieces):EMPTY_BB;
+		dc |= rankAttacks[kingSquare]&rookAndQueen?(rankAttacks[kingSquare] & sidePieces):EMPTY_BB;
+		if (dc) {
+			generateBishopMoves(moves, side, empty & ~bishopAttacks, dc&bishop);
+			discoverCandidate=dc;
+		}
 	}
 
 	if (bishopAndQueen && bishopAttacks && !(bishopAttacks&bishopAndQueen)) {
-		discoverCandidate= diagA1H8Attacks[kingSquare]&bishopAndQueen?(diagA1H8Attacks[kingSquare] & sidePieces):EMPTY_BB;
-		discoverCandidate|= diagH1A8Attacks[kingSquare]&bishopAndQueen?(diagH1A8Attacks[kingSquare] & sidePieces):EMPTY_BB;
-		generatePawnMoves(moves, side, empty, discoverCandidate&pawn);
-		generateRookMoves(moves, side, empty, discoverCandidate&rook);
-		generateKnightMoves(moves, side, empty, discoverCandidate&knight);
+		Bitboard dc = diagA1H8Attacks[kingSquare]&bishopAndQueen?(diagA1H8Attacks[kingSquare] & sidePieces):EMPTY_BB;
+		dc |= diagH1A8Attacks[kingSquare]&bishopAndQueen?(diagH1A8Attacks[kingSquare] & sidePieces):EMPTY_BB;
+		if (dc) {
+			generatePawnMoves(moves, side, empty & ~pawnAttacks, discoverCandidate&pawn);
+			generateRookMoves(moves, side, empty & ~rookAttacks, discoverCandidate&rook);
+			discoverCandidate|=dc;
+		}
+	}
+
+	if (discoverCandidate) {
+		generateKnightMoves(moves, side, empty & ~knightAttacks, discoverCandidate&knight);
 		generateKingMoves(moves, side, discoverCandidate&king);
 	}
 
@@ -1036,7 +1043,7 @@ inline void Board::generateNonCaptureChecks(MoveIterator& moves, const PieceColo
 	generateKnightMoves(moves, side, empty & knightAttacks);
 	generateBishopMoves(moves, side, empty & bishopAttacks);
 	generateRookMoves(moves, side, empty & rookAttacks);
-	generateQueenMoves(moves, side, empty & (bishopAttacks | rookAttacks));
+	generateQueenMoves(moves, side, empty & (bishopAttacks|rookAttacks));
 	generateCastleMoves(moves,side,rookAttacks);
 
 }
