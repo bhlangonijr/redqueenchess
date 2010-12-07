@@ -1031,11 +1031,26 @@ inline void Board::generateNonCaptureChecks(MoveIterator& moves, const PieceColo
 		generateKingMoves(moves, side, discoverCandidate&king);
 	}
 
-	generatePawnMoves(moves, side, empty & pawnAttacks);
-	generateKnightMoves(moves, side, empty & knightAttacks);
-	generateBishopMoves(moves, side, empty & bishopAttacks);
-	generateRookMoves(moves, side, empty & rookAttacks);
-	generateQueenMoves(moves, side, empty & (bishopAttacks|rookAttacks));
+	if (bishopAttacks & bishop) {
+		generateBishopMoves(moves, side, empty & bishopAttacks);
+	}
+
+	if ((bishopAttacks|rookAttacks) & queen) {
+		generateQueenMoves(moves, side, empty & (bishopAttacks|rookAttacks));
+	}
+
+	if (rookAttacks|rook) {
+		generateRookMoves(moves, side, empty & rookAttacks);
+	}
+
+	if (knightAttacks|knight) {
+		generateKnightMoves(moves, side, empty & knightAttacks);
+	}
+
+	if (pawnAttacks|pawn) {
+		generatePawnMoves(moves, side, empty & pawnAttacks);
+	}
+
 	generateCastleMoves(moves,side,rookAttacks);
 
 }
@@ -1097,7 +1112,7 @@ inline void Board::generateEvasions(MoveIterator& moves, const PieceColor side) 
 	generateBishopMoves(moves, side, attackersAndEmpty);
 	generateRookMoves(moves, side, attackersAndEmpty);
 	generateQueenMoves(moves, side, attackersAndEmpty);
-	generateKingMoves(moves, side, otherPieces | empty);
+	generateKingMoves(moves, side, otherPieces|empty);
 
 }
 

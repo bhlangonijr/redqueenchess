@@ -134,9 +134,7 @@ void SearchAgent::startSearch() {
 // start perft
 void SearchAgent::doPerft() {
 	std::cout << "info Executing perft..." << std::endl;
-	Board newBoard(board);
-	SimplePVSearch simplePV;
-	long nodes = simplePV.perft(board,this->getDepth(),1);
+	long nodes = simpleSearcher.perft(board,this->getDepth(),1);
 	std::cout << "info Finished perft: " << nodes << std::endl;
 }
 
