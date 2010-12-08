@@ -39,9 +39,8 @@
 // game constants
 const int maxScoreRepetition = 25;
 const int mateRangeScore = 300;
-const int maxSearchDepth = 200;
-const int maxSearchPly = 200;
-const int checksAtQuiescenceMargin = 30;
+const int maxSearchDepth = 80;
+const int maxSearchPly = 100;
 
 // internal iterative deepening
 const int allowIIDAtPV = 3;
@@ -253,7 +252,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			return emptyMove;
 
 		case MoveIterator::BEGIN_STAGE:
-			if (!isKingAttacked || (quiescenceMoves && depth < -1)) {
+			if (!isKingAttacked) {
 				moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
 			} else {
 				moves.setStage(MoveIterator::INIT_EVASION_STAGE);
@@ -297,7 +296,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 					continue;
 				}
 				if (move.type==MoveIterator::UNKNOW_CAPTURE) {
-					move.score=evaluator.see<true>(board,move);
+					move.score=evaluator.see<false>(board,move);
 					if (move.score >= 0) {
 						move.type=MoveIterator::GOOD_CAPTURE;
 						move.score+=scoreTable[move.type];
@@ -415,7 +414,7 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 		MoveIterator::Move& move = moves.next();
 		MoveBackup backup;
 		const bool isCapture = board.isCaptureMove(move);
-		const int value = isCapture ? evaluator.see<true>(board,move) : 0;
+		const int value = isCapture ? evaluator.see<false>(board,move) : 0;
 		board.doMove(move,backup);
 		const bool givingCheck = board.isInCheck(board.getSideToMove());
 		SearchInfo newSi(givingCheck,move);
