@@ -673,13 +673,21 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 	testBoard |= squareToBitboard[move.to];
 	testBoard |= otherPieces;
 
-	return !((getBishopAttacks(kingLocation,testBoard) & ((getPiecesByType(makePiece(other,BISHOP)) |
-			getPiecesByType(makePiece(other,QUEEN)))&otherPieces)) ||
-			(getRookAttacks(kingLocation,testBoard) & ((getPiecesByType(makePiece(other,ROOK)) |
-					getPiecesByType(makePiece(other,QUEEN)))&otherPieces)) ||
-					(getKnightAttacks(kingLocation,testBoard) & (getPiecesByType(makePiece(other,KNIGHT))&otherPieces)) ||
-					(getPawnAttacks(kingLocation,color) & (getPiecesByType(makePiece(other,PAWN))&otherPieces)) ||
-					(getKingAttacks(kingLocation,testBoard) & (getPiecesByType(makePiece(other,KING))&otherPieces)));
+	const Bitboard diagonalAttacks = diagA1H8Attacks[kingLocation]|diagH1A8Attacks[kingLocation];
+	const Bitboard lineAttacks = fileAttacks[kingLocation]|rankAttacks[kingLocation];
+
+	const Bitboard bishopAndQueens = ((getPiecesByType(makePiece(other,BISHOP)) |
+			getPiecesByType(makePiece(other,QUEEN)))&otherPieces&diagonalAttacks);
+
+	const Bitboard rookAndQueens = ((getPiecesByType(makePiece(other,ROOK)) |
+			getPiecesByType(makePiece(other,QUEEN)))&otherPieces&lineAttacks);
+
+	return !((bishopAndQueens?getBishopAttacks(kingLocation,testBoard)&bishopAndQueens:EMPTY_BB) ||
+			(rookAndQueens?getRookAttacks(kingLocation,testBoard)&rookAndQueens:EMPTY_BB) ||
+			(getKnightAttacks(kingLocation,testBoard) & (getPiecesByType(makePiece(other,KNIGHT))&otherPieces)) ||
+			(getPawnAttacks(kingLocation,color) & (getPiecesByType(makePiece(other,PAWN))&otherPieces)) ||
+			(getKingAttacks(kingLocation,testBoard) & (getPiecesByType(makePiece(other,KING))&otherPieces)));
+
 }
 
 // Get attacks from a given square

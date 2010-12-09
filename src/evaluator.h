@@ -228,7 +228,7 @@ public:
 
 		inline const int getScore() {
 			return (value[side]-value[other]) +
-					(kingThreat[side]-kingThreat[other]);
+			(kingThreat[side]-kingThreat[other]);
 		}
 
 		inline const int getEval() {
@@ -237,7 +237,7 @@ public:
 
 		inline void computeEval() {
 			eval = interpolate(getScore(),board.getGamePhase())+
-				   board.getMaterial(side)-board.getMaterial(other);
+					board.getMaterial(side)-board.getMaterial(other);
 			normalize();
 		}
 
@@ -327,6 +327,11 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 	PieceColor other = board.flipSide(side);
 	PieceTypeByColor firstPiece = board.getPieceBySquare(move.from);
 	PieceTypeByColor secondPiece = board.getPieceBySquare(move.to);
+
+	if (secondPiece==EMPTY && board.getPieceType(firstPiece)==PAWN && board.getEnPassant()!=NONE &&
+			board.getSquareFile(move.from)!=board.getSquareFile(move.to)) {
+		secondPiece=board.makePiece(other,PAWN);
+	}
 
 	if (lazySee && secondPiece!=EMPTY &&
 			materialValues[secondPiece]-materialValues[firstPiece]>=0) {

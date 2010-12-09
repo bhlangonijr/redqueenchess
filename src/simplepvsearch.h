@@ -41,6 +41,7 @@ const int maxScoreRepetition = 25;
 const int mateRangeScore = 300;
 const int maxSearchDepth = 80;
 const int maxSearchPly = 100;
+const int checksAtQuiescenceMargin = 30;
 
 // internal iterative deepening
 const int allowIIDAtPV = 3;
@@ -218,7 +219,7 @@ private:
 	const std::string pvLineToString(const PvLine* pv);
 	template <bool quiescenceMoves>
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves,
-			MoveIterator::Move& ttMove, bool isKingAttacked, int ply, int depth);
+			MoveIterator::Move& ttMove, bool isKingAttacked, int ply, int depth, const bool checksAtQuiescence);
 	void scoreMoves(Board& board, MoveIterator& moves);
 	void scoreRootMoves(Board& board, MoveIterator& moves);
 	void filterLegalMoves(Board& board, MoveIterator& moves);
@@ -242,7 +243,7 @@ private:
 // select a move
 template <bool quiescenceMoves>
 inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves,
-		MoveIterator::Move& ttMove, bool isKingAttacked, int ply, int depth) {
+		MoveIterator::Move& ttMove, bool isKingAttacked, int ply, int depth, const bool checksAtQuiescence) {
 
 	while (true) {
 
@@ -252,7 +253,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			return emptyMove;
 
 		case MoveIterator::BEGIN_STAGE:
-			if (!isKingAttacked) {
+			if (!isKingAttacked || (quiescenceMoves && checksAtQuiescence?depth<-2:depth<-1)) {
 				moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
 			} else {
 				moves.setStage(MoveIterator::INIT_EVASION_STAGE);
@@ -280,7 +281,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			return emptyMove;
 
 		case MoveIterator::INIT_CAPTURE_STAGE:
-			if (quiescenceMoves && depth>-1) {
+			if (quiescenceMoves && checksAtQuiescence) {
 				board.generateQuiesMoves(moves, board.getSideToMove());
 			} else {
 				board.generateCaptures(moves, board.getSideToMove());
