@@ -214,7 +214,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 				const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to);
 
 				int extension=0;
-				if ((givingCheck && move.type!=MoveIterator::BAD_CAPTURE) || pawnOn7thExtension) {
+				if (isKingAttacked || pawnOn7thExtension) {
 					extension++;
 				}
 
@@ -225,7 +225,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 					score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
 				} else {
 					int reduction=0;
-					if (!extension && move.type == MoveIterator::NON_CAPTURE && !isKingAttacked &&
+					if (!extension && move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
 							!isPawnPush(board,move.to) && remainingMoves>lateMoveThreshold1 &&
 							depth>lmrDepthThresholdRoot) {
 						reduction++;
@@ -348,7 +348,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 
 	while (true) {
 
-		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, isKingAttacked, ply, depth, false);
+		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, isKingAttacked, ply, depth);
 		if (move.none()) {
 			break;
 		}
@@ -363,7 +363,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		const bool givingCheck = board.isInCheck(board.getSideToMove());
 		const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to);
 		int extension=0;
-		if ((givingCheck && move.type!=MoveIterator::BAD_CAPTURE) || pawnOn7thExtension) {
+		if (isKingAttacked || pawnOn7thExtension) {
 			extension++;
 		}
 
@@ -374,7 +374,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 			score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
 		} else {
 			int reduction=0;
-			if (!extension && move.type == MoveIterator::NON_CAPTURE && !isKingAttacked &&
+			if (!extension && move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
 					!isPawnPush(board,move.to) && remainingMoves>lateMoveThreshold1 &&
 					depth>lmrDepthThreshold1) {
 				reduction++;
@@ -542,7 +542,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	int bestScore=-maxScore;
 
 	while (true) {
-		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, isKingAttacked, ply, depth, false);
+		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, isKingAttacked, ply, depth);
 		if (move.none()) {
 			break;
 		}
@@ -583,9 +583,9 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		//reductions
 		int reduction=0;
 		int extension=0;
-		if ((givingCheck && move.type!=MoveIterator::BAD_CAPTURE) || pawnOn7thExtension){
+		if (isKingAttacked || pawnOn7thExtension){
 			extension++;
-		} else if (move.type == MoveIterator::NON_CAPTURE && !isKingAttacked &&
+		} else if (move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
 				!passedPawn && !nullMoveMateScore &&
 				remainingMoves>lateMoveThreshold1 && depth>lmrDepthThreshold1) {
 			reduction++;
@@ -677,10 +677,8 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 
 	const bool isKingAttacked = si.inCheck;
 	int bestScore = -maxScore;
-	bool searchForChecks=false;
 
 	if (!isKingAttacked) {
-		searchForChecks=depth==0 || (depth==-1 && bestScore >= beta-checksAtQuiescenceMargin);
 		bestScore=evaluator.evaluate(board,alpha,beta);
 		if(bestScore>=beta) {
 			return beta;
@@ -701,7 +699,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 
 	while (true)  {
 
-		MoveIterator::Move& move = selectMove<true>(board, moves, hashMove, isKingAttacked, ply, depth, searchForChecks);
+		MoveIterator::Move& move = selectMove<true>(board, moves, hashMove, isKingAttacked, ply, depth);
 		if (move.none()) {
 			break;
 		}
@@ -780,7 +778,7 @@ long SimplePVSearch::perft(Board& board, int depth, int ply) {
 
 	while (true)  {
 
-		MoveIterator::Move& move = selectMove<false>(board, moves, emptyMove, isKingAttacked, ply, depth, false);
+		MoveIterator::Move& move = selectMove<false>(board, moves, emptyMove, isKingAttacked, ply, depth);
 		if (moves.end()) {
 			break;
 		}
