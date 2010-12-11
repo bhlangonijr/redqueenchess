@@ -52,6 +52,7 @@ int main() {
 	initializeBitboards();
 	Board::initialize();
 	SearchAgent::getInstance();
+	SimplePVSearch::initialize();
 	Uci *uci = Uci::getInstance();
 
 	std::string paramNumProcs = StringUtil::toStr(getNumProcs());

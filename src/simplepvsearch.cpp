@@ -23,9 +23,9 @@
  *  Created on: 18/05/2009
  *      Author: bhlangonijr
  */
-
-
 #include "simplepvsearch.h"
+static int reductionTablePV[maxSearchDepth+1][maxMoveCount];
+static int reductionTableNonPV[maxSearchDepth+1][maxMoveCount];
 
 // root search
 void SimplePVSearch::search(Board board) {
@@ -225,10 +225,10 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 					score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
 				} else {
 					int reduction=0;
-					if (!extension && move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
-							!isPawnPush(board,move.to) && remainingMoves>lateMoveThreshold1 &&
-							depth>lmrDepthThresholdRoot) {
+					if (!extension && !givingCheck && !isPawnPush(board,move.to) &&
+							remainingMoves>lateMoveThreshold && depth>lmrDepthThresholdRoot) {
 						reduction++;
+						//TODO try multi reductions here
 					}
 
 					score = -zwSearch(board, newSi, -alpha, newDepth-reduction, ply+1, &line, true);
@@ -374,10 +374,8 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 			score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
 		} else {
 			int reduction=0;
-			if (!extension && move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
-					!isPawnPush(board,move.to) && remainingMoves>lateMoveThreshold1 &&
-					depth>lmrDepthThreshold1) {
-				reduction++;
+			if (!extension && !givingCheck && !isPawnPush(board,move.to)) {
+				reduction+=reductionTablePV[depth][moveCounter];
 			}
 
 			score = -zwSearch(board, newSi, -alpha, newDepth-reduction, ply+1, &line, true);
@@ -585,14 +583,8 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		int extension=0;
 		if (isKingAttacked || pawnOn7thExtension){
 			extension++;
-		} else if (move.type == MoveIterator::NON_CAPTURE && !givingCheck &&
-				!passedPawn && !nullMoveMateScore &&
-				remainingMoves>lateMoveThreshold1 && depth>lmrDepthThreshold1) {
-			reduction++;
-			if (remainingMoves>lateMoveThreshold2 && depth>lmrDepthThreshold2 &&
-					!history[board.getPieceBySquare(move.to)][move.to]) {
-				reduction+=depth/8;
-			}
+		} else if (!givingCheck && !passedPawn && !nullMoveMateScore) {
+			reduction+=reductionTableNonPV[depth][moveCounter];
 		}
 
 		SearchInfo newSi(givingCheck,move);
@@ -759,6 +751,17 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 const bool SimplePVSearch::stop() {
 	return (timeIsUp() || agent->shouldStop());
 
+}
+
+void SimplePVSearch::initialize() {
+
+	for (int x=0;x<=maxSearchDepth;x++) {
+		for (int y=0;y<maxMoveCount;y++) {
+			reductionTablePV[x][y]=!(x&&y)?0:floor(log(x)*log(y))/4;
+			reductionTableNonPV[x][y]=!(x&&y)?0:floor(log(x)*log(y))/2;
+			//std::cout << "[" << x << ", " << y << "] " << reductionTableNonPV[x][y] << std::endl;
+		}
+	}
 }
 
 //perft

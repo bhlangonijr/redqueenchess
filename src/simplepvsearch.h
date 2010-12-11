@@ -41,16 +41,13 @@ const int maxScoreRepetition = 25;
 const int mateRangeScore = 300;
 const int maxSearchDepth = 80;
 const int maxSearchPly = 100;
-const int checksAtQuiescenceMargin = 30;
+const int maxMoveCount = 64;
 
 // internal iterative deepening
 const int allowIIDAtPV = 3;
 const int allowIIDAtNormal = 7;
 
 // margin constants
-const inline int futilityMargin(const int depth) {return depth * 150;}
-const inline int razorMargin(const int depth) {return 150 + depth * 175;}
-const inline int moveCountMargin(const int depth) {return 6 + depth * 4;}
 const int iidMargin=260;
 const int easyMargin=500;
 const int deltaMargin=950;
@@ -62,15 +59,15 @@ const int futilityDepth=4;
 const int nullMoveDepth=4;
 const int razorDepth=4;
 const int lmrDepthThresholdRoot=3;
-const int lmrDepthThreshold1=2;
-const int lateMoveThreshold1=2;
-const int lmrDepthThreshold2=7;
-const int lateMoveThreshold2=3;
+const int lateMoveThreshold=2;
 
 const int scoreTable[11]={0,80000,60000,95000,90000,45000,40000,1000,-12000,50050,50000};
-
 const long defaultNodesToGo=0xFFF;
 const long fastNodesToGo=0xFF;
+
+const inline int futilityMargin(const int depth) {return depth * 150;}
+const inline int razorMargin(const int depth) {return 150 + depth * 175;}
+const inline int moveCountMargin(const int depth) {return 6 + depth * 4;}
 
 class SearchAgent;
 
@@ -107,6 +104,8 @@ public:
 	long perft(Board& board, int depth, int ply);
 
 	int getScore();
+
+	static void initialize();
 
 	inline const long getTickCount() {
 		return ((clock() * 1000) / CLOCKS_PER_SEC);
