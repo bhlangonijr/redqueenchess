@@ -215,7 +215,7 @@ const int Evaluator::evalPassedPawn(Board& board, PieceColor color, const Square
 		const int delta2 = squareDistance(otherKingSq,target);
 		const int otherMove=board.getSideToMove();
 
-		if (MIN(5,delta1)<delta2-otherMove) {
+		if (std::min(5,delta1)<delta2-otherMove) {
 			eval += UNSTOPPABLE_PAWN_BONUS;
 		}
 	}

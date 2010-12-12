@@ -50,9 +50,6 @@ typedef uint64_t Bitboard;
 
 #define St2Sq(F,R)				(((static_cast<int>(F)-96)+(static_cast<int>(R)-49)*8)-1)			// encode String to Square enum
 
-#define MIN(x,y) (x<y?x:y)
-#define MAX(x,y) (x>y?x:y)
-
 #define bitsBetween(BB,S1,S2)		(((squareToBitboard[S2]|(squareToBitboard[S2]-squareToBitboard[S1]))) & BB)
 #define NFILE(X) ((squareFile[X]!=FILE_H ? fileBB[squareFile[X]+1] : EMPTY_BB) | \
 		(squareFile[X]!=FILE_A ? fileBB[squareFile[X]-1] : EMPTY_BB))

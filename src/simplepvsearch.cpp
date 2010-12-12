@@ -90,9 +90,9 @@ int SimplePVSearch::idSearch(Board& board) {
 		if (depth >= aspirationDepth && abs(iterationScore[depth-1]) < winningScore)	{
 			int delta1 = iterationScore[depth-1]-iterationScore[depth-2];
 			int delta2 = iterationScore[depth-2]-iterationScore[depth-3];
-			aspirationDelta = MAX(abs(delta1)+abs(delta2)/2, 16)+7;
-			alpha = MAX(iterationScore[depth-1]-aspirationDelta,-maxScore);
-			beta  = MIN(iterationScore[depth-1]+aspirationDelta,+maxScore);
+			aspirationDelta = std::max(abs(delta1)+abs(delta2)/2, 16)+7;
+			alpha = std::max(iterationScore[depth-1]-aspirationDelta,-maxScore);
+			beta  = std::min(iterationScore[depth-1]+aspirationDelta,+maxScore);
 		}
 
 		score = rootSearch(board, rootSearchInfo, &alpha, &beta, depth, 0, &pv);
@@ -250,7 +250,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 				bestMove=move;
 				updatePv(pv, line, bestMove);
 				uciOutput(pv, bestMove.score, getTickCount()-_startTime, agent->hashFull(), depth, maxPlySearched, alpha, beta);
-				beta =  MIN(beta+aspirationDelta*(1<<countFH),maxScore);
+				beta =  std::min(beta+aspirationDelta*(1<<countFH),maxScore);
 				*betaRoot = beta;
 				countFH++;
 			}
@@ -271,7 +271,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 			break;
 		}
 
-		alpha = MAX(alpha-aspirationDelta*(1<<countFL),-maxScore);
+		alpha = std::max(alpha-aspirationDelta*(1<<countFL),-maxScore);
 		*alphaRoot = alpha;
 		countFL++;
 	}
@@ -318,8 +318,8 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 	TranspositionTable::HashData hashData;
 	MoveIterator::Move hashMove;
 	const Key key = board.getKey();
-	alpha = MAX(-maxScore+ply, alpha);
-	beta = MIN(maxScore-(ply+1), beta);
+	alpha = std::max(-maxScore+ply, alpha);
+	beta = std::min(maxScore-(ply+1), beta);
 
 	if (alpha>=beta) {
 		return alpha;

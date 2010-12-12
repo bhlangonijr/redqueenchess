@@ -175,7 +175,7 @@ void  SearchAgent::ponderHit() {
 	const long timeThinking = simpleSearcher.getTickCount()-simpleSearcher.getStartTime();
 	simpleSearcher.setSearchFixedDepth(false);
 	simpleSearcher.setInfinite(false);
-	simpleSearcher.setTimeToSearch(getTimeToSearch()-MAX(10,timeThinking));
+	simpleSearcher.setTimeToSearch(getTimeToSearch()-std::max(10L,timeThinking));
 	simpleSearcher.setTimeToStop();
 }
 

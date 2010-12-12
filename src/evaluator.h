@@ -40,9 +40,9 @@
 #define BP(COLOR, X) ((FSQUARE((COLOR==WHITE?BLACK:WHITE), (neighborFiles[X]), X)) | (rankBB[squareRank[X]] & adjacentSquares[X]))
 #define FQ(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]]), X))
 
-const int DOUBLED_PAWN_PENALTY =   MS(-10,-12);
-const int ISOLATED_PAWN_PENALTY =  MS(-14,-16);
-const int BACKWARD_PAWN_PENALTY =  MS(-10,-12);
+const int DOUBLED_PAWN_PENALTY =   MS(-10,-16);
+const int ISOLATED_PAWN_PENALTY =  MS(-14,-20);
+const int BACKWARD_PAWN_PENALTY =  MS(-10,-20);
 const int DONE_CASTLE_BONUS=       MS(+20,+1);
 const int CONNECTED_PAWN_BONUS =   MS(+4,+6);
 const int BISHOP_PAIR_BONUS = 	   MS(+25,+25);
@@ -413,7 +413,7 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 	}
 
 	while (--idx) {
-		gain[idx-1]= -MAX(-gain[idx-1], gain[idx]);
+		gain[idx-1]= -std::max(-gain[idx-1], gain[idx]);
 	}
 
 	return gain[0];

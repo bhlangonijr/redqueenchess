@@ -1418,7 +1418,7 @@ inline const GamePhase Board::getGamePhase() {
 
 // set game phase
 inline void Board::setGamePhase(const GamePhase phase) {
-	currentBoard.gamePhase=GamePhase(MAX(0,MIN(maxGamePhase,phase)));
+	currentBoard.gamePhase=GamePhase(std::max(0,std::min(maxGamePhase,static_cast<int>(phase))));
 }
 
 inline Square Board::getKingSquare(const PieceColor color) {

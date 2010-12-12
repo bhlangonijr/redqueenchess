@@ -52,7 +52,7 @@ void initializeBitboards() {
 		for (int y=0;y<ALL_SQUARE;y++) {
 			const int delta1 = abs(squareRank[x]-squareRank[y]);
 			const int delta2 = abs(squareFile[x]-squareFile[y]);
-			squareDelta[x][y] = MAX(delta1, delta2);
+			squareDelta[x][y] = std::max(delta1, delta2);
 		}
 	}
 
