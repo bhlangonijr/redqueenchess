@@ -459,7 +459,7 @@ const int maxGamePhase = 32;
 enum GamePhase {
 	OPENING=		 2,
 	MIDDLEGAME=		 maxGamePhase/2,
-	ENDGAME=		 maxGamePhase
+	ENDGAME=		 26
 };
 
 const int maxScore = 15000;

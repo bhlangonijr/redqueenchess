@@ -675,8 +675,9 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		if(bestScore>=beta) {
 			return beta;
 		}
-		const int delta =  deltaMargin + (isPawnPromoting(board) ? deltaMargin : 0);
-		if (bestScore < alpha - delta && !isPV) {
+		const int delta = deltaMargin1+(isPawnPromoting(board)?deltaMargin2:0);
+		if (bestScore < alpha - delta && hashMove.none() &&
+				!isPV && depth<0 && board.getGamePhase()<ENDGAME) {
 			return alpha;
 		}
 		if( alpha < bestScore) {
@@ -757,9 +758,9 @@ void SimplePVSearch::initialize() {
 
 	for (int x=0;x<=maxSearchDepth;x++) {
 		for (int y=0;y<maxMoveCount;y++) {
-			reductionTablePV[x][y]=!(x&&y)?0:floor(log(x)*log(y))/4;
-			reductionTableNonPV[x][y]=!(x&&y)?0:floor(log(x)*log(y))/2;
-			//std::cout << "[" << x << ", " << y << "] " << reductionTableNonPV[x][y] << std::endl;
+			reductionTablePV[x][y]=(x<2 || y<2)?0:std::max(1.0,floor(log(x)*log(y))/4);
+			reductionTableNonPV[x][y]=(x<2 || y<2)?0:std::max(1.0,floor(log(x)*log(y))/2);
+			//std::cout << "[" << x << ", " << y << "] " << reductionTableNonPV[x][y] << " - " << reductionTablePV[x][y] << std::endl;
 		}
 	}
 }
