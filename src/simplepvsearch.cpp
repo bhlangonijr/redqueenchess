@@ -675,17 +675,13 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		if(bestScore>=beta) {
 			return beta;
 		}
-		const int delta = deltaMargin1+(isPawnPromoting(board)?deltaMargin2:0);
-		if (bestScore < alpha - delta && hashMove.none() &&
-				!isPV && depth<0 && board.getGamePhase()<ENDGAME) {
-			return alpha;
-		}
 		if( alpha < bestScore) {
 			alpha = bestScore;
 		}
 	}
 
 	int moveCounter=0;
+	const int currentScore=bestScore;
 	PvLine line = PvLine();
 	MoveIterator moves = MoveIterator();
 	MoveIterator::Move bestMove;
@@ -701,14 +697,31 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 
 		moveCounter++;
 
-		if (!isKingAttacked && !isPV && depth < 0 &&
-				move.type==MoveIterator::BAD_CAPTURE &&
+		if ((!isKingAttacked || (isKingAttacked && move.type == MoveIterator::NON_CAPTURE && bestScore > -maxScore+ply))
+				&& !isPV && depth < 0 && evaluator.see<false>(board,move) < 0 &&
 				move != hashMove &&	!isPawnPromoting(board)) {
 			board.undoMove(backup);
 			continue;
 		}
 
 		const bool givingCheck = board.isInCheck(board.getSideToMove());
+
+		//futility
+		if  (	!isPV &&
+				!isKingAttacked &&
+				!givingCheck &&
+				!isPawnPromoting(board) &&
+				board.getGamePhase()<ENDGAME) {
+			const int futilityScore = currentScore + futilityMargin(1) +
+					materialValues[board.getPieceTypeBySquare(move.to)];
+			if (futilityScore < beta) {
+				if (futilityScore>bestScore) {
+					bestScore=futilityScore;
+				}
+				board.undoMove(backup);
+				continue;
+			}
+		}
 
 		SearchInfo newSi(givingCheck,move);
 
