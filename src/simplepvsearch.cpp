@@ -675,8 +675,8 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		if(bestScore>=beta) {
 			return beta;
 		}
-		const int delta =  deltaMargin1 + (isPawnPromoting(board) ? deltaMargin2 : 0);
-		if (bestScore < alpha - delta && !isPV && board.getGamePhase()<ENDGAME && depth<0) {
+		const int delta = isPawnPromoting(board)?deltaMargin*2:deltaMargin;
+		if (bestScore < alpha - delta && !isPV) {
 			return alpha;
 		}
 		if( alpha < bestScore) {
@@ -685,7 +685,6 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 	}
 
 	int moveCounter=0;
-	const int currentScore=bestScore;
 	PvLine line = PvLine();
 	MoveIterator moves = MoveIterator();
 	MoveIterator::Move bestMove;
@@ -696,43 +695,19 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		if (move.none()) {
 			break;
 		}
-		const bool quietEvasion = isKingAttacked && move.type == MoveIterator::NON_CAPTURE;
-		const bool passedPawn = isPawnPush(board,move.to);
-		bool futilMove = false;
-		if (move.type == MoveIterator::BAD_CAPTURE) {
-			futilMove=true;
-		} else if (move.type == MoveIterator::NON_CAPTURE) {
-			futilMove=evaluator.see<true>(board,move)<0;
-		}
-		if (futilMove && (!isKingAttacked || (quietEvasion && bestScore > -maxScore+ply))
-				&& !isPV && move != hashMove &&	!isPawnPromoting(board) && !passedPawn) {
-			continue;
-		}
 		MoveBackup backup;
 		board.doMove(move,backup);
 
 		moveCounter++;
 
-		const bool givingCheck = board.isInCheck(board.getSideToMove());
-
-		//futility
-		if  (	!isPV &&
-				move != hashMove &&
-				!isKingAttacked &&
-				!givingCheck &&
-				!passedPawn &&
-				!isPawnPromoting(board) &&
-				board.getGamePhase()<ENDGAME) {
-			const int futilityScore = currentScore + futilityMargin(1) +
-					materialValues[board.getPieceTypeBySquare(move.to)];
-			if (futilityScore < beta) {
-				if (futilityScore>bestScore) {
-					bestScore=futilityScore;
-				}
-				board.undoMove(backup);
-				continue;
-			}
+		if (!isKingAttacked && !isPV && depth < 0 &&
+				move.type==MoveIterator::BAD_CAPTURE &&
+				move != hashMove &&	!isPawnPromoting(board)) {
+			board.undoMove(backup);
+			continue;
 		}
+
+		const bool givingCheck = board.isInCheck(board.getSideToMove());
 
 		SearchInfo newSi(givingCheck,move);
 

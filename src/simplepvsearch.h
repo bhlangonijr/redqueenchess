@@ -50,8 +50,7 @@ const int allowIIDAtNormal = 7;
 // margin constants
 const int iidMargin=260;
 const int easyMargin=500;
-const int deltaMargin1=950;
-const int deltaMargin2=750;
+const int deltaMargin=950;
 const int nullMoveMargin=512;
 
 //depth prunning threshold
