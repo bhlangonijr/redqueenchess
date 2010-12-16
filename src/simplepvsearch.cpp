@@ -675,6 +675,10 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		if(bestScore>=beta) {
 			return beta;
 		}
+		const int delta =  deltaMargin1 + (isPawnPromoting(board) ? deltaMargin2 : 0);
+		if (bestScore < alpha - delta && !isPV && board.getGamePhase()<ENDGAME && depth<0) {
+			return alpha;
+		}
 		if( alpha < bestScore) {
 			alpha = bestScore;
 		}
@@ -692,24 +696,31 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		if (move.none()) {
 			break;
 		}
+		const bool quietEvasion = isKingAttacked && move.type == MoveIterator::NON_CAPTURE;
+		const bool passedPawn = isPawnPush(board,move.to);
+		bool futilMove = false;
+		if (move.type == MoveIterator::BAD_CAPTURE) {
+			futilMove=true;
+		} else if (move.type == MoveIterator::NON_CAPTURE) {
+			futilMove=evaluator.see<true>(board,move)<0;
+		}
+		if (futilMove && (!isKingAttacked || (quietEvasion && bestScore > -maxScore+ply))
+				&& !isPV && move != hashMove &&	!isPawnPromoting(board) && !passedPawn) {
+			continue;
+		}
 		MoveBackup backup;
 		board.doMove(move,backup);
 
 		moveCounter++;
 
-		if ((!isKingAttacked || (isKingAttacked && move.type == MoveIterator::NON_CAPTURE && bestScore > -maxScore+ply))
-				&& !isPV && depth < 0 && evaluator.see<false>(board,move) < 0 &&
-				move != hashMove &&	!isPawnPromoting(board)) {
-			board.undoMove(backup);
-			continue;
-		}
-
 		const bool givingCheck = board.isInCheck(board.getSideToMove());
 
 		//futility
 		if  (	!isPV &&
+				move != hashMove &&
 				!isKingAttacked &&
 				!givingCheck &&
+				!passedPawn &&
 				!isPawnPromoting(board) &&
 				board.getGamePhase()<ENDGAME) {
 			const int futilityScore = currentScore + futilityMargin(1) +
