@@ -471,7 +471,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		currentScore = evaluator.evaluate(board,beta-1,beta);
 	}
 
-	if (depth < razorDepth && hashMove.none() &&
+	if (depth < razorDepth && hashMove.none() && allowNullMove &&
 			!isKingAttacked && !isMateScore(beta) &&
 			!isPawnPromoting(board) && !si.move.none() &&
 			currentScore < beta - razorMargin(depth)) {
@@ -482,8 +482,9 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		}
 	}
 
-	if (!isKingAttacked && allowNullMove && depth < nullMoveDepth &&
-			!isPawnFinal(board) && !isMateScore(beta) &&
+	if (!isKingAttacked && allowNullMove &&
+			depth < nullMoveDepth && !isPawnFinal(board) &&
+			!isMateScore(beta) && !si.move.none() &&
 			currentScore >= beta+futilityMargin(depth)) {
 		return currentScore-futilityMargin(depth);
 	}
@@ -666,7 +667,8 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 			return beta;
 		}
 		const int delta = isPawnPromoting(board)?deltaMargin*2:deltaMargin;
-		if (bestScore < alpha - delta && !isPV && board.getGamePhase()<ENDGAME) {
+		if (bestScore < alpha - delta && !isPV &&
+				board.getGamePhase()<ENDGAME && !isMateScore(beta)) {
 			return alpha;
 		}
 		if( alpha < bestScore) {
