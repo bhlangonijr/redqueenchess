@@ -327,7 +327,8 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 	PieceColor other = board.flipSide(side);
 	PieceTypeByColor firstPiece = board.getPieceBySquare(move.from);
 	PieceTypeByColor secondPiece = board.getPieceBySquare(move.to);
-	Bitboard occupied = board.getAllPieces()^squareToBitboard[move.from];
+	Bitboard fromPiece = squareToBitboard[move.from];
+	Bitboard occupied = board.getAllPieces();
 
 	if (secondPiece==EMPTY && board.getPieceType(firstPiece)==PAWN && board.getEnPassant()!=NONE &&
 			board.getSquareFile(move.from)!=board.getSquareFile(move.to)) {
@@ -377,7 +378,6 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 
 	int idx = 0;
 	int gain[gainTableSize];
-	Bitboard fromPiece = squareToBitboard[move.from];
 	PieceColor sideToMove = side;
 	Bitboard allAttackers = EMPTY_BB;
 
@@ -397,11 +397,9 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 		Bitboard moreAttackers = (bishopAndQueen | rookAndQueen) & (~allAttackers);
 
 		if (moreAttackers) {
-			Bitboard findMoreAttackers =
+			const Bitboard findMoreAttackers = moreAttackers &
 					(board.getBishopAttacks(move.to,occupied) |
-							board.getRookAttacks(move.to,occupied));
-			findMoreAttackers &= moreAttackers;
-
+							board.getRookAttacks(move.to,occupied)) ;
 			if (findMoreAttackers) {
 				attackers |= findMoreAttackers;
 			}

@@ -642,6 +642,10 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 			if (!(fromType==PAWN && (squareToBitboard[move.from] & promoRank[color]))) {
 				return false;
 			}
+		} else {
+			if ((fromType==PAWN && (squareToBitboard[move.from] & promoRank[color]))) {
+				return false;
+			}
 		}
 		if (((fromPiece==WHITE_KING && move.from==E1 && (move.to==G1 || move.to==C1)) ||
 				(fromPiece==BLACK_KING && move.from==E8 && (move.to==G8 || move.to==C8)))) {

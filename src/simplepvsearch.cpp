@@ -207,7 +207,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 				board.doMove(move,backup);
 
 				const bool givingCheck = board.isInCheck(board.getSideToMove());
-				const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to);
+				const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
 
 				int extension=0;
 				if (isKingAttacked || pawnOn7thExtension) {
@@ -353,7 +353,8 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		moveCounter++;
 
 		const bool givingCheck = board.isInCheck(board.getSideToMove());
-		const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to);
+		const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
+
 		int extension=0;
 		if (isKingAttacked || pawnOn7thExtension) {
 			extension++;
@@ -368,7 +369,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 			int reduction=0;
 			if (!extension && !givingCheck && !isPawnPush(board,move.to) &&
 					move.type == MoveIterator::NON_CAPTURE) {
-				reduction+=reductionTablePV[depth][moveCounter];
+				reduction=reductionTablePV[depth][moveCounter];
 			}
 
 			score = -zwSearch(board, newSi, -alpha, newDepth-reduction, ply+1, &line, true);
@@ -544,15 +545,15 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 
 		const bool givingCheck = board.isInCheck(board.getSideToMove());
 		const bool passedPawn = isPawnPush(board,move.to);
-		const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to);
+		const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
 
 		//futility
 		if  (	move.type == MoveIterator::NON_CAPTURE &&
 				depth < futilityDepth &&
 				!isKingAttacked &&
 				!givingCheck &&
+				!pawnOn7thExtension &&
 				!passedPawn &&
-				!isPawnPromoting(board) &&
 				!nullMoveMateScore) {
 			if (moveCountMargin(depth) < moveCounter  && !isMateScore(bestScore) ) {
 				board.undoMove(backup);
@@ -575,7 +576,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 			extension++;
 		} else if (!givingCheck && !passedPawn && !nullMoveMateScore &&
 				move.type == MoveIterator::NON_CAPTURE) {
-			reduction+=reductionTableNonPV[depth][moveCounter];
+			reduction=reductionTableNonPV[depth][moveCounter];
 		}
 
 		SearchInfo newSi(givingCheck,move);
@@ -687,17 +688,17 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		if (move.none()) {
 			break;
 		}
-		MoveBackup backup;
-		board.doMove(move,backup);
 
 		moveCounter++;
 
 		if (!isKingAttacked && !isPV && depth < 0 &&
 				move.type==MoveIterator::BAD_CAPTURE &&
-				move != hashMove &&	!isPawnPromoting(board)) {
-			board.undoMove(backup);
+				move != hashMove) {
 			continue;
 		}
+
+		MoveBackup backup;
+		board.doMove(move,backup);
 
 		const bool givingCheck = board.isInCheck(board.getSideToMove());
 
