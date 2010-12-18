@@ -192,16 +192,12 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 		rootMoves.sortOrderingBy(nodesPerMove);
 		rootMoves.first();
 		moveCounter=0;
-		int remainingMoves=0;
 		int score = -maxScore;
 
 		while (rootMoves.hasNext()) {
 
 			MoveIterator::Move& move = rootMoves.next();
 			moveCounter++;
-			if (move.type == MoveIterator::NON_CAPTURE) {
-				remainingMoves++;
-			}
 			uciOutput(move, moveCounter);
 
 			while (true) {
@@ -226,9 +222,9 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 				} else {
 					int reduction=0;
 					if (!extension && !givingCheck && !isPawnPush(board,move.to) &&
-							remainingMoves>lateMoveThreshold && depth>lmrDepthThresholdRoot) {
+							moveCounter>lateMoveThreshold && depth>lmrDepthThresholdRoot &&
+							move.type == MoveIterator::NON_CAPTURE) {
 						reduction++;
-						//TODO try multi reductions here
 					}
 
 					score = -zwSearch(board, newSi, -alpha, newDepth-reduction, ply+1, &line, true);
@@ -343,7 +339,6 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 	MoveIterator moves = MoveIterator();
 	MoveIterator::Move bestMove;
 	int moveCounter=0;
-	int remainingMoves=0;
 	int bestScore=-maxScore;
 
 	while (true) {
@@ -357,9 +352,6 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 
 		moveCounter++;
 
-		if (move.type == MoveIterator::NON_CAPTURE) {
-			remainingMoves++;
-		}
 		const bool givingCheck = board.isInCheck(board.getSideToMove());
 		const bool pawnOn7thExtension = isPawnOn7thRank(board,move.to);
 		int extension=0;
@@ -374,7 +366,8 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 			score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
 		} else {
 			int reduction=0;
-			if (!extension && !givingCheck && !isPawnPush(board,move.to)) {
+			if (!extension && !givingCheck && !isPawnPush(board,move.to) &&
+					move.type == MoveIterator::NON_CAPTURE) {
 				reduction+=reductionTablePV[depth][moveCounter];
 			}
 
@@ -536,7 +529,6 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	MoveIterator moves = MoveIterator();
 	MoveIterator::Move bestMove;
 	int moveCounter=0;
-	int remainingMoves=0;
 	int bestScore=-maxScore;
 
 	while (true) {
@@ -574,16 +566,14 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 				continue;
 			}
 		}
-		if (move.type == MoveIterator::NON_CAPTURE) {
-			remainingMoves++;
-		}
 
 		//reductions
 		int reduction=0;
 		int extension=0;
 		if (isKingAttacked || pawnOn7thExtension){
 			extension++;
-		} else if (!givingCheck && !passedPawn && !nullMoveMateScore) {
+		} else if (!givingCheck && !passedPawn && !nullMoveMateScore &&
+				move.type == MoveIterator::NON_CAPTURE) {
 			reduction+=reductionTableNonPV[depth][moveCounter];
 		}
 
@@ -676,7 +666,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 			return beta;
 		}
 		const int delta = isPawnPromoting(board)?deltaMargin*2:deltaMargin;
-		if (bestScore < alpha - delta && !isPV) {
+		if (bestScore < alpha - delta && !isPV && board.getGamePhase()<ENDGAME) {
 			return alpha;
 		}
 		if( alpha < bestScore) {
@@ -757,8 +747,8 @@ void SimplePVSearch::initialize() {
 
 	for (int x=0;x<=maxSearchDepth;x++) {
 		for (int y=0;y<maxMoveCount;y++) {
-			reductionTablePV[x][y]=(x<2 || y<2)?0:std::max(1.0,floor(log(x)*log(y))/4);
-			reductionTableNonPV[x][y]=(x<2 || y<2)?0:std::max(1.0,floor(log(x)*log(y))/2);
+			reductionTablePV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/4);
+			reductionTableNonPV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/2);
 			//std::cout << "[" << x << ", " << y << "] " << reductionTableNonPV[x][y] << " - " << reductionTablePV[x][y] << std::endl;
 		}
 	}

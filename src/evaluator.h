@@ -327,14 +327,16 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 	PieceColor other = board.flipSide(side);
 	PieceTypeByColor firstPiece = board.getPieceBySquare(move.from);
 	PieceTypeByColor secondPiece = board.getPieceBySquare(move.to);
+	Bitboard occupied = board.getAllPieces()^squareToBitboard[move.from];
 
 	if (secondPiece==EMPTY && board.getPieceType(firstPiece)==PAWN && board.getEnPassant()!=NONE &&
 			board.getSquareFile(move.from)!=board.getSquareFile(move.to)) {
 		secondPiece=board.makePiece(other,PAWN);
+		occupied^=squareToBitboard[board.getEnPassant()];
 	}
 
 	if (lazySee && secondPiece!=EMPTY &&
-			materialValues[secondPiece]-materialValues[firstPiece]>=0) {
+			materialValues[secondPiece]>=materialValues[firstPiece]) {
 		return 1;
 	}
 
@@ -352,8 +354,8 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 	const Bitboard otherQueen =  board.getPiecesByType(board.makePiece(other,QUEEN));
 	const Bitboard otherKing =  board.getPiecesByType(board.makePiece(other,KING));
 
-	const Bitboard bishopAttacks =  board.getBishopAttacks(move.to);
-	const Bitboard rookAttacks =  board.getRookAttacks(move.to);
+	const Bitboard bishopAttacks =  board.getBishopAttacks(move.to,occupied);
+	const Bitboard rookAttacks =  board.getRookAttacks(move.to,occupied);
 	const Bitboard knightAttacks =  board.getKnightAttacks(move.to);
 	const Bitboard pawnAttacks =  board.getPawnAttacks(move.to);
 	const Bitboard kingAttacks =  board.getKingAttacks(move.to);
@@ -364,8 +366,6 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 
 	const Bitboard bishopAndQueen =  rooks | queens;
 	const Bitboard rookAndQueen =  bishops | queens;
-
-	Bitboard occupied = board.getAllPieces();
 
 	Bitboard attackers =
 			(bishopAttacks & bishopAndQueen) |
