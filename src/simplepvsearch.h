@@ -55,9 +55,9 @@ const int nullMoveMargin=512;
 
 //depth prunning threshold
 const int aspirationDepth=6;
-const int futilityDepth=4;
+const int futilityDepth=5;
 const int nullMoveDepth=4;
-const int razorDepth=4;
+const int razorDepth=5;
 const int lmrDepthThresholdRoot=3;
 const int lateMoveThreshold=2;
 
@@ -218,7 +218,7 @@ private:
 	const std::string pvLineToString(const PvLine* pv);
 	template <bool quiescenceMoves>
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves,
-			MoveIterator::Move& ttMove, bool isKingAttacked, int ply, int depth);
+			MoveIterator::Move& ttMove, int ply, int depth);
 	void scoreMoves(Board& board, MoveIterator& moves);
 	void scoreRootMoves(Board& board, MoveIterator& moves);
 	void filterLegalMoves(Board& board, MoveIterator& moves);
@@ -242,7 +242,7 @@ private:
 // select a move
 template <bool quiescenceMoves>
 inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves,
-		MoveIterator::Move& ttMove, bool isKingAttacked, int ply, int depth) {
+		MoveIterator::Move& ttMove, int ply, int depth) {
 
 	while (true) {
 
@@ -252,7 +252,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			return emptyMove;
 
 		case MoveIterator::BEGIN_STAGE:
-			if (!isKingAttacked || (quiescenceMoves && depth<-1)) {
+			if (!board.isInCheck() || (quiescenceMoves && depth<-1)) {
 				moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
 			} else {
 				moves.setStage(MoveIterator::INIT_EVASION_STAGE);
@@ -280,10 +280,12 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			return emptyMove;
 
 		case MoveIterator::INIT_CAPTURE_STAGE:
-			if (quiescenceMoves && depth==0) {
-				board.generateQuiesMoves(moves, board.getSideToMove());
-			} else {
-				board.generateCaptures(moves, board.getSideToMove());
+			board.generateCaptures(moves, board.getSideToMove());
+			if (quiescenceMoves) {
+				board.generatePromotion(moves, board.getSideToMove(),board.getEmptySquares());
+				if (depth==0) {
+					board.generateNonCaptureChecks(moves, board.getSideToMove());
+				}
 			}
 			scoreMoves(board, moves);
 			moves.setStage(MoveIterator::ON_CAPTURE_STAGE);
@@ -415,8 +417,8 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 		MoveBackup backup;
 		const bool isCapture = board.isCaptureMove(move);
 		const int value = isCapture ? evaluator.see<false>(board,move) : 0;
-		board.doMove(move,backup);
-		const bool givingCheck = board.isInCheck(board.getSideToMove());
+		const bool givingCheck = board.isMoveCheck(move);
+		board.doMove(move,backup,givingCheck);
 		SearchInfo newSi(givingCheck,move);
 		move.score = -qSearch(board,newSi,-maxScore,maxScore,0,0,&pv,true);
 		if (move.type==MoveIterator::UNKNOW) {
@@ -443,7 +445,8 @@ inline void SimplePVSearch::filterLegalMoves(Board& board, MoveIterator& moves) 
 	while (moves.hasNext()) {
 		MoveIterator::Move& move = moves.next();
 		MoveBackup backup;
-		board.doMove(move,backup);
+		const bool givingCheck = board.isMoveCheck(move);
+		board.doMove(move,backup,givingCheck);
 		if (board.isNotLegal()) {
 			board.undoMove(backup);
 			continue;

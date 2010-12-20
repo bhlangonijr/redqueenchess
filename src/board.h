@@ -243,7 +243,7 @@ public:
 	const void printBoard();
 	const void printBoard(const std::string pad);
 	void genericTest();
-	void doMove(const MoveIterator::Move& move, MoveBackup& backup);
+	void doMove(const MoveIterator::Move& move, MoveBackup& backup, const bool givingCheck);
 	void doNullMove(MoveBackup& backup);
 	void undoMove(MoveBackup& backup);
 	void undoNullMove(MoveBackup& backup);
@@ -276,6 +276,7 @@ public:
 	const bool isNotLegal();
 	const bool isInCheck();
 	void setInCheck(const bool check);
+	const bool isMoveCheck(MoveIterator::Move& move);
 
 	template <bool isMoveFromCache>
 	const bool isMoveLegal(MoveIterator::Move& move);
@@ -622,6 +623,103 @@ inline void Board::setInCheck(const bool check) {
 	currentBoard.inCheck = check;
 }
 
+inline const bool Board::isMoveCheck(MoveIterator::Move& move) {
+
+	const PieceTypeByColor fromPiece=getPieceBySquare(move.from);
+	const PieceColor color = getPieceColor(fromPiece);
+	const PieceType fromType = pieceType[fromPiece];
+	const PieceColor other = flipSide(color);
+	const Square kingSquare = getKingSquare(other);
+
+	if (!move.none() && kingSquare!=NONE) {
+
+		const Bitboard fromBB = squareToBitboard[move.from];
+		const Bitboard toBB = squareToBitboard[move.to];
+
+		Bitboard oc = getAllPieces();
+		Bitboard pawns = getPiecesByType(makePiece(color,PAWN));
+		Bitboard knights = getPiecesByType(makePiece(color,KNIGHT));
+		Bitboard bishops = getPiecesByType(makePiece(color,BISHOP));
+		Bitboard rooks = getPiecesByType(makePiece(color,ROOK));
+		Bitboard queens = getPiecesByType(makePiece(color,QUEEN));
+		Bitboard king = getPiecesByType(makePiece(color,KING));
+
+		if (pawns & fromBB) {
+			pawns^=fromBB;
+			if (move.promotionPiece==EMPTY) {
+				pawns|=toBB;
+			} else {
+				if (move.promotionPiece==makePiece(color,QUEEN)) {
+					queens|=toBB;
+				} else if (move.promotionPiece==makePiece(color,KNIGHT)) {
+					knights|=toBB;
+				} else if (move.promotionPiece==makePiece(color,BISHOP)) {
+					bishops|=toBB;
+				} else if (move.promotionPiece==makePiece(color,ROOK)) {
+					rooks|=toBB;
+				}
+			}
+		} else if (knights & fromBB) {
+			knights^=fromBB;
+			knights|=toBB;
+		} else if (bishops & fromBB) {
+			bishops^=fromBB;
+			bishops|=toBB;
+		} else if (rooks & fromBB) {
+			rooks^=fromBB;
+			rooks|=toBB;
+		} else if (queens & fromBB) {
+			queens^=fromBB;
+			queens|=toBB;
+		} else if (king & fromBB) {
+			if (color==WHITE && move.from==E1) {
+				if (move.to==G1) {
+					rooks^=squareToBitboard[H1];
+					rooks|=squareToBitboard[F1];
+					oc^=squareToBitboard[H1];
+					oc|=squareToBitboard[F1];
+				} else if (move.to==C1) {
+					rooks^=squareToBitboard[A1];
+					rooks|=squareToBitboard[D1];
+					oc^=squareToBitboard[A1];
+					oc|=squareToBitboard[D1];
+				}
+			} else if (color==BLACK && move.from==E8) {
+				if (move.to==G8) {
+					rooks^=squareToBitboard[H8];
+					rooks|=squareToBitboard[F8];
+					oc^=squareToBitboard[H8];
+					oc|=squareToBitboard[F8];
+				} else if (move.to==C8) {
+					rooks^=squareToBitboard[A8];
+					rooks|=squareToBitboard[D8];
+					oc^=squareToBitboard[A8];
+					oc|=squareToBitboard[D8];
+				}
+			}
+
+		}
+
+		oc^=fromBB;
+		oc|=toBB;
+
+		if (getPieceBySquare(move.to)==EMPTY &&
+				fromType==PAWN && getEnPassant()!=NONE &&
+				getSquareFile(move.from)!=getSquareFile(move.to) &&
+				(getSquareFile(move.to) == getSquareFile(getEnPassant()))) {
+			oc^=squareToBitboard[getEnPassant()];
+		}
+
+		return 	(getBishopAttacks(kingSquare, oc) & (bishops|queens)) ||
+				(getRookAttacks(kingSquare, oc) & (rooks|queens)) ||
+				(getKnightAttacks(kingSquare) & knights) ||
+				(getPawnAttacks(kingSquare,other) & pawns);
+
+	}
+
+	return false;
+}
+
 // verify board legality
 template <bool isMoveFromCache>
 inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
@@ -638,14 +736,12 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 		if (move.none() || fromPiece==EMPTY) {
 			return false;
 		}
-		if (move.promotionPiece!=EMPTY) {
-			if (!(fromType==PAWN && (squareToBitboard[move.from] & promoRank[color]))) {
-				return false;
-			}
-		} else {
-			if ((fromType==PAWN && (squareToBitboard[move.from] & promoRank[color]))) {
-				return false;
-			}
+		const bool promoting = squareToBitboard[move.from] & promoRank[color];
+		if (move.promotionPiece!=EMPTY && promoting && fromType!=PAWN) {
+			return false;
+		}
+		if (fromType==PAWN && ((move.promotionPiece!=EMPTY) ^ promoting)) {
+			return false;
 		}
 		if (((fromPiece==WHITE_KING && move.from==E1 && (move.to==G1 || move.to==C1)) ||
 				(fromPiece==BLACK_KING && move.from==E8 && (move.to==G8 || move.to==C8)))) {
@@ -1015,7 +1111,7 @@ inline void Board::generateNonCaptureChecks(MoveIterator& moves, const PieceColo
 	const Bitboard bishopAttacks = bishopAndQueen ? getBishopAttacks(kingSquare) : EMPTY_BB;
 	const Bitboard rookAttacks = rookAndQueen ? getRookAttacks(kingSquare) : EMPTY_BB;
 	const Bitboard knightAttacks = getKnightAttacks(kingSquare);
-	const Bitboard pawnAttacks = getPawnAttacks(kingSquare);
+	const Bitboard pawnAttacks = getPawnAttacks(kingSquare,otherSide);
 
 	Bitboard discoverCandidate = EMPTY_BB;
 
@@ -1051,20 +1147,21 @@ inline void Board::generateNonCaptureChecks(MoveIterator& moves, const PieceColo
 		generateQueenMoves(moves, side, empty & (bishopAttacks|rookAttacks));
 	}
 
-	if (rookAttacks|rook) {
+	if (rookAttacks&rook) {
 		generateRookMoves(moves, side, empty & rookAttacks);
 	}
 
-	if (knightAttacks|knight) {
+	if (knightAttacks&knight) {
 		generateKnightMoves(moves, side, empty & knightAttacks);
 	}
 
-	if (pawnAttacks|pawn) {
+	if (pawnAttacks&pawn) {
 		generatePawnMoves(moves, side, empty & pawnAttacks);
 	}
 
-	generateCastleMoves(moves,side,rookAttacks);
-
+	if (rookAttacks&&rook) {
+		generateCastleMoves(moves,side,rookAttacks);
+	}
 }
 
 // generate check evasions
@@ -1346,15 +1443,15 @@ inline void Board::generateCastleMoves(MoveIterator& moves, const PieceColor sid
 	if (canCastle(side, KING_SIDE_CASTLE)) {
 		if (side==WHITE && (squareToBitboard[F1] & mask)) {
 			moves.add(E1,G1,EMPTY,MoveIterator::CASTLE);
-		} else if ((squareToBitboard[D1] & mask)) {
+		} else if (side==BLACK && (squareToBitboard[F8] & mask)) {
 			moves.add(E8,G8,EMPTY,MoveIterator::CASTLE);
 		}
 	}
 
 	if (canCastle(side, QUEEN_SIDE_CASTLE)) {
-		if (side==WHITE && (squareToBitboard[F8] & mask)) {
+		if (side==WHITE && (squareToBitboard[D1] & mask)) {
 			moves.add(E1,C1,EMPTY,MoveIterator::CASTLE);
-		} else if ((squareToBitboard[D8] & mask)) {
+		} else if (side==BLACK && (squareToBitboard[D8] & mask)) {
 			moves.add(E8,C8,EMPTY,MoveIterator::CASTLE);
 		}
 	}

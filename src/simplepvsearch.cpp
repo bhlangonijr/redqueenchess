@@ -204,10 +204,10 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 
 				MoveBackup backup;
 				long nodes=_nodes;
-				board.doMove(move,backup);
-
-				const bool givingCheck = board.isInCheck(board.getSideToMove());
+				const bool givingCheck = board.isMoveCheck(move);
 				const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
+
+				board.doMove(move,backup,givingCheck);
 
 				int extension=0;
 				if (isKingAttacked || pawnOn7thExtension) {
@@ -343,17 +343,17 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 
 	while (true) {
 
-		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, isKingAttacked, ply, depth);
+		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, ply, depth);
 		if (move.none()) {
 			break;
 		}
-		MoveBackup backup;
-		board.doMove(move,backup);
-
 		moveCounter++;
 
-		const bool givingCheck = board.isInCheck(board.getSideToMove());
+		const bool givingCheck = board.isMoveCheck(move);
 		const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
+
+		MoveBackup backup;
+		board.doMove(move,backup,givingCheck);
 
 		int extension=0;
 		if (isKingAttacked || pawnOn7thExtension) {
@@ -534,16 +534,13 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	int bestScore=-maxScore;
 
 	while (true) {
-		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, isKingAttacked, ply, depth);
+		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, ply, depth);
 		if (move.none()) {
 			break;
 		}
-		MoveBackup backup;
-		board.doMove(move,backup);
-
 		moveCounter++;
 
-		const bool givingCheck = board.isInCheck(board.getSideToMove());
+		const bool givingCheck = board.isMoveCheck(move);
 		const bool passedPawn = isPawnPush(board,move.to);
 		const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
 
@@ -556,7 +553,6 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 				!passedPawn &&
 				!nullMoveMateScore) {
 			if (moveCountMargin(depth) < moveCounter  && !isMateScore(bestScore) ) {
-				board.undoMove(backup);
 				continue;
 			}
 			const int futilityScore = currentScore + futilityMargin(depth);
@@ -564,10 +560,12 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 				if (futilityScore>bestScore) {
 					bestScore=futilityScore;
 				}
-				board.undoMove(backup);
 				continue;
 			}
 		}
+
+		MoveBackup backup;
+		board.doMove(move,backup,givingCheck);
 
 		//reductions
 		int reduction=0;
@@ -684,7 +682,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 
 	while (true)  {
 
-		MoveIterator::Move& move = selectMove<true>(board, moves, hashMove, isKingAttacked, ply, depth);
+		MoveIterator::Move& move = selectMove<true>(board, moves, hashMove, ply, depth);
 		if (move.none()) {
 			break;
 		}
@@ -696,12 +694,9 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 				move != hashMove) {
 			continue;
 		}
-
+		const bool givingCheck = board.isMoveCheck(move);
 		MoveBackup backup;
-		board.doMove(move,backup);
-
-		const bool givingCheck = board.isInCheck(board.getSideToMove());
-
+		board.doMove(move,backup,givingCheck);
 		SearchInfo newSi(givingCheck,move);
 
 		int score = -qSearch(board, newSi, -beta, -alpha, depth-1, ply+1, &line, isPV);
@@ -770,16 +765,16 @@ long SimplePVSearch::perft(Board& board, int depth, int ply) {
 
 	long nodes=0;
 	MoveIterator moves = MoveIterator();
-	const bool isKingAttacked = board.isInCheck(board.getSideToMove());
 
 	while (true)  {
 
-		MoveIterator::Move& move = selectMove<false>(board, moves, emptyMove, isKingAttacked, ply, depth);
+		MoveIterator::Move& move = selectMove<false>(board, moves, emptyMove, ply, depth);
 		if (moves.end()) {
 			break;
 		}
+		const bool givingCheck = board.isMoveCheck(move);
 		MoveBackup backup;
-		board.doMove(move,backup);
+		board.doMove(move,backup,givingCheck);
 		nodes += perft(board, depth-1, ply+1);
 		board.undoMove(backup);
 
