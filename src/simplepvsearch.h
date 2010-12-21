@@ -55,9 +55,9 @@ const int nullMoveMargin=512;
 
 //depth prunning threshold
 const int aspirationDepth=6;
-const int futilityDepth=5;
+const int futilityDepth=4;
 const int nullMoveDepth=4;
-const int razorDepth=5;
+const int razorDepth=4;
 const int lmrDepthThresholdRoot=3;
 const int lateMoveThreshold=2;
 

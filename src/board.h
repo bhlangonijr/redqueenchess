@@ -737,7 +737,7 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 			return false;
 		}
 		const bool promoting = squareToBitboard[move.from] & promoRank[color];
-		if (move.promotionPiece!=EMPTY && promoting && fromType!=PAWN) {
+		if (move.promotionPiece!=EMPTY && fromType!=PAWN) {
 			return false;
 		}
 		if (fromType==PAWN && ((move.promotionPiece!=EMPTY) ^ promoting)) {
