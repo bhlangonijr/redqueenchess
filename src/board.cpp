@@ -96,9 +96,8 @@ void Board::genericTest() {
 		while (moves.hasNext()) {
 			MoveIterator::Move move = moves.next();
 			//std::cout << counter << " - " << move.toString() << std::endl;
-			const bool givingCheck = isMoveCheck(move);
 			MoveBackup backup;
-			doMove(move,backup,givingCheck);
+			doMove(move,backup);
 			//printBoard();
 			undoMove(backup);
 			counter++;
@@ -118,7 +117,7 @@ void Board::genericTest() {
 }
 
 // do a move and set backup info into struct MoveBackup
-void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup, const bool givingCheck){
+void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 
 	const PieceTypeByColor fromPiece = getPieceBySquare(move.from);
 	const PieceTypeByColor toPiece = getPieceBySquare(move.to);
@@ -307,8 +306,6 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup, const boo
 		setPawnKey(getPawnKey()^zobrist.pieceSquare[fromPiece][move.to]);
 	}
 
-	setInCheck(givingCheck);
-
 	setKey(getKey()^zobrist.sideToMove[getSideToMove()]);
 	setSideToMove(otherSide);
 	setKey(getKey()^zobrist.sideToMove[otherSide]);
@@ -447,9 +444,7 @@ void Board::loadFromString(const std::string startPosMoves) {
 			}
 		}
 
-		MoveIterator::Move moveDone = MoveIterator::Move(Square(St2Sq(moveFrom[0],moveFrom[1])), Square(St2Sq(moveTo[0],moveTo[1])), promotionPiece);
-		const bool givingCheck = isMoveCheck(moveDone);
-		doMove(moveDone,backup,givingCheck);
+		this->doMove(MoveIterator::Move(Square(St2Sq(moveFrom[0],moveFrom[1])), Square(St2Sq(moveTo[0],moveTo[1])), promotionPiece),backup);
 		promotionPiece=EMPTY;
 		last=position+1;
 		position = moves.find(" ", position+1);
@@ -550,7 +545,6 @@ void Board::loadFromFEN(const std::string startFENMoves) {
 	setPawnKey(generatePawnKey());
 	updateKeyHistory();
 	setGamePhase(predictGamePhase());
-	isInCheck(getSideToMove());
 
 }
 

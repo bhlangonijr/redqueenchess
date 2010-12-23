@@ -55,7 +55,7 @@ const int nullMoveMargin=512;
 
 //depth prunning threshold
 const int aspirationDepth=6;
-const int futilityDepth=4;
+const int futilityDepth=5;
 const int nullMoveDepth=4;
 const int razorDepth=4;
 const int lmrDepthThresholdRoot=3;
@@ -87,10 +87,10 @@ public:
 	} PvLine;
 
 	typedef struct SearchInfo {
-		SearchInfo(): inCheck(false) {}
-		SearchInfo(const bool _inCheck,	const MoveIterator::Move _move):
-			inCheck(_inCheck), move(_move)  {}
-		bool inCheck;
+		SearchInfo(): allowNullMove(false) {}
+		SearchInfo(const bool _allowNullMove, const MoveIterator::Move _move):
+			allowNullMove(_allowNullMove), move(_move)  {}
+		bool allowNullMove;
 		MoveIterator::Move move;
 	} SearchInfo;
 
@@ -207,7 +207,7 @@ private:
 	int idSearch(Board& board);
 	int rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int* betaRoot, int depth, int ply, PvLine* pv);
 	int pvSearch(Board& board,  SearchInfo& si, int alpha, int beta, int depth, int ply, PvLine* pv);
-	int zwSearch(Board& board,  SearchInfo& si, int beta, int depth, int ply, PvLine* pv, const bool allowNullMove);
+	int zwSearch(Board& board,  SearchInfo& si, int beta, int depth, int ply, PvLine* pv);
 	int qSearch(Board& board,  SearchInfo& si,
 			int alpha, int beta, int depth, int ply, PvLine* pv, const bool isPV);
 	void uciOutput(PvLine* pv, const int score, const int totalTime,
@@ -417,9 +417,9 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 		MoveBackup backup;
 		const bool isCapture = board.isCaptureMove(move);
 		const int value = isCapture ? evaluator.see<false>(board,move) : 0;
-		const bool givingCheck = board.isMoveCheck(move);
-		board.doMove(move,backup,givingCheck);
-		SearchInfo newSi(givingCheck,move);
+		board.doMove(move,backup);
+		board.setInCheck(board.getSideToMove());
+		SearchInfo newSi(false,move);
 		move.score = -qSearch(board,newSi,-maxScore,maxScore,0,0,&pv,true);
 		if (move.type==MoveIterator::UNKNOW) {
 			if (isCapture) {
@@ -445,8 +445,7 @@ inline void SimplePVSearch::filterLegalMoves(Board& board, MoveIterator& moves) 
 	while (moves.hasNext()) {
 		MoveIterator::Move& move = moves.next();
 		MoveBackup backup;
-		const bool givingCheck = board.isMoveCheck(move);
-		board.doMove(move,backup,givingCheck);
+		board.doMove(move,backup);
 		if (board.isNotLegal()) {
 			board.undoMove(backup);
 			continue;

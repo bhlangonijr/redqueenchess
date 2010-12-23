@@ -243,7 +243,7 @@ public:
 	const void printBoard();
 	const void printBoard(const std::string pad);
 	void genericTest();
-	void doMove(const MoveIterator::Move& move, MoveBackup& backup, const bool givingCheck);
+	void doMove(const MoveIterator::Move& move, MoveBackup& backup);
 	void doNullMove(MoveBackup& backup);
 	void undoMove(MoveBackup& backup);
 	void undoNullMove(MoveBackup& backup);
@@ -272,11 +272,10 @@ public:
 	const File getSquareFile(const Square square) const;
 	const bool isAttacked(const PieceColor color, const PieceType type);
 	const bool isAttacked(const PieceColor color, const Square from);
-	const bool isInCheck(const PieceColor color);
+	const bool setInCheck(const PieceColor color);
 	const bool isNotLegal();
 	const bool isInCheck();
 	void setInCheck(const bool check);
-	const bool isMoveCheck(MoveIterator::Move& move);
 
 	template <bool isMoveFromCache>
 	const bool isMoveLegal(MoveIterator::Move& move);
@@ -604,7 +603,7 @@ inline const bool Board::isAttacked(const PieceColor color, const Square from) {
 	return false;
 }
 
-inline const bool Board::isInCheck(const PieceColor color) {
+inline const bool Board::setInCheck(const PieceColor color) {
 	setInCheck(isAttacked(color, getKingSquare(color)));
 	return isInCheck();
 }
@@ -612,7 +611,7 @@ inline const bool Board::isInCheck(const PieceColor color) {
 // verify board legality
 inline const bool Board::isNotLegal() {
 	const PieceColor color = flipSide(getSideToMove());
-	return isInCheck(color);
+	return setInCheck(color);
 }
 
 inline const bool Board::isInCheck() {
@@ -621,103 +620,6 @@ inline const bool Board::isInCheck() {
 
 inline void Board::setInCheck(const bool check) {
 	currentBoard.inCheck = check;
-}
-
-inline const bool Board::isMoveCheck(MoveIterator::Move& move) {
-
-	const PieceTypeByColor fromPiece=getPieceBySquare(move.from);
-	const PieceColor color = getPieceColor(fromPiece);
-	const PieceType fromType = pieceType[fromPiece];
-	const PieceColor other = flipSide(color);
-	const Square kingSquare = getKingSquare(other);
-
-	if (!move.none() && kingSquare!=NONE) {
-
-		const Bitboard fromBB = squareToBitboard[move.from];
-		const Bitboard toBB = squareToBitboard[move.to];
-
-		Bitboard oc = getAllPieces();
-		Bitboard pawns = getPiecesByType(makePiece(color,PAWN));
-		Bitboard knights = getPiecesByType(makePiece(color,KNIGHT));
-		Bitboard bishops = getPiecesByType(makePiece(color,BISHOP));
-		Bitboard rooks = getPiecesByType(makePiece(color,ROOK));
-		Bitboard queens = getPiecesByType(makePiece(color,QUEEN));
-		Bitboard king = getPiecesByType(makePiece(color,KING));
-
-		if (pawns & fromBB) {
-			pawns^=fromBB;
-			if (move.promotionPiece==EMPTY) {
-				pawns|=toBB;
-			} else {
-				if (move.promotionPiece==makePiece(color,QUEEN)) {
-					queens|=toBB;
-				} else if (move.promotionPiece==makePiece(color,KNIGHT)) {
-					knights|=toBB;
-				} else if (move.promotionPiece==makePiece(color,BISHOP)) {
-					bishops|=toBB;
-				} else if (move.promotionPiece==makePiece(color,ROOK)) {
-					rooks|=toBB;
-				}
-			}
-		} else if (knights & fromBB) {
-			knights^=fromBB;
-			knights|=toBB;
-		} else if (bishops & fromBB) {
-			bishops^=fromBB;
-			bishops|=toBB;
-		} else if (rooks & fromBB) {
-			rooks^=fromBB;
-			rooks|=toBB;
-		} else if (queens & fromBB) {
-			queens^=fromBB;
-			queens|=toBB;
-		} else if (king & fromBB) {
-			if (color==WHITE && move.from==E1) {
-				if (move.to==G1) {
-					rooks^=squareToBitboard[H1];
-					rooks|=squareToBitboard[F1];
-					oc^=squareToBitboard[H1];
-					oc|=squareToBitboard[F1];
-				} else if (move.to==C1) {
-					rooks^=squareToBitboard[A1];
-					rooks|=squareToBitboard[D1];
-					oc^=squareToBitboard[A1];
-					oc|=squareToBitboard[D1];
-				}
-			} else if (color==BLACK && move.from==E8) {
-				if (move.to==G8) {
-					rooks^=squareToBitboard[H8];
-					rooks|=squareToBitboard[F8];
-					oc^=squareToBitboard[H8];
-					oc|=squareToBitboard[F8];
-				} else if (move.to==C8) {
-					rooks^=squareToBitboard[A8];
-					rooks|=squareToBitboard[D8];
-					oc^=squareToBitboard[A8];
-					oc|=squareToBitboard[D8];
-				}
-			}
-
-		}
-
-		oc^=fromBB;
-		oc|=toBB;
-
-		if (getPieceBySquare(move.to)==EMPTY &&
-				fromType==PAWN && getEnPassant()!=NONE &&
-				getSquareFile(move.from)!=getSquareFile(move.to) &&
-				(getSquareFile(move.to) == getSquareFile(getEnPassant()))) {
-			oc^=squareToBitboard[getEnPassant()];
-		}
-
-		return 	(getBishopAttacks(kingSquare, oc) & (bishops|queens)) ||
-				(getRookAttacks(kingSquare, oc) & (rooks|queens)) ||
-				(getKnightAttacks(kingSquare) & knights) ||
-				(getPawnAttacks(kingSquare,other) & pawns);
-
-	}
-
-	return false;
 }
 
 // verify board legality
