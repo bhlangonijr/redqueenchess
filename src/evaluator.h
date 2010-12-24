@@ -47,7 +47,7 @@ const int DONE_CASTLE_BONUS=       MS(+20,+1);
 const int CONNECTED_PAWN_BONUS =   MS(+4,+6);
 const int BISHOP_PAIR_BONUS = 	   MS(+25,+25);
 const int UNSTOPPABLE_PAWN_BONUS = MS(+700,+700);
-
+const int ROOK_ON_7TH_RANK_BONUS = MS(+7,+11);
 
 const int knightMobility[9] = {
 		-4*MS(+8,+4),-2*MS(+8,+4),+0*MS(+8,+4),+1*MS(+8,+4),+2*MS(+8,+4),

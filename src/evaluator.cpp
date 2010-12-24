@@ -287,6 +287,9 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 		evalInfo.attackers[rook] |= attacks;
 		evalInfo.value[color] += rookMobility[_BitCount(attacks&freeArea)];
 		evalInfo.kingThreat[color] += rookKingBonus[squareDistance(from,otherKingSq)];
+		if (squareToBitboard[from] & promoRank[color]) {
+			evalInfo.value[color] += ROOK_ON_7TH_RANK_BONUS;
+		}
 		from = extractLSB(pieces);
 	}
 
