@@ -40,14 +40,17 @@
 #define BP(COLOR, X) ((FSQUARE((COLOR==WHITE?BLACK:WHITE), (neighborFiles[X]), X)) | (rankBB[squareRank[X]] & adjacentSquares[X]))
 #define FQ(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]]), X))
 
-const int DOUBLED_PAWN_PENALTY =   MS(-10,-16);
-const int ISOLATED_PAWN_PENALTY =  MS(-14,-20);
-const int BACKWARD_PAWN_PENALTY =  MS(-10,-20);
-const int DONE_CASTLE_BONUS=       MS(+20,+1);
-const int CONNECTED_PAWN_BONUS =   MS(+4,+6);
-const int BISHOP_PAIR_BONUS = 	   MS(+25,+25);
-const int UNSTOPPABLE_PAWN_BONUS = MS(+700,+700);
-const int ROOK_ON_7TH_RANK_BONUS = MS(+7,+11);
+const int DOUBLED_PAWN_PENALTY =   		MS(-11,-20);
+const int ISOLATED_PAWN_PENALTY =  		MS(-20,-11);
+const int ISOLATED_OPEN_PAWN_PENALTY =  MS(-20,-20);
+const int BACKWARD_PAWN_PENALTY =  		MS(-11,-8);
+const int BACKWARD_OPEN_PAWN_PENALTY =  MS(-17,-11);
+const int DONE_CASTLE_BONUS=       		MS(+20,+1);
+const int CONNECTED_PAWN_BONUS =   		MS(+4,+6);
+const int BISHOP_PAIR_BONUS = 	   		MS(+25,+25);
+const int UNSTOPPABLE_PAWN_BONUS = 		MS(+700,+700);
+const int ROOK_ON_7TH_RANK_BONUS = 		MS(+17,+35);
+const int QUEEN_ON_7TH_RANK_BONUS = 	MS(+15,+20);
 
 const int knightMobility[9] = {
 		-4*MS(+8,+4),-2*MS(+8,+4),+0*MS(+8,+4),+1*MS(+8,+4),+2*MS(+8,+4),

@@ -24,8 +24,8 @@
  *      Author: bhlangonijr
  */
 
-#ifndef DATA_H_
-#define DATA_H_
+#ifndef PSQT_H_
+#define PSQT_H_
 
 #include "bitboard.h"
 
@@ -161,4 +161,4 @@ const int endGamePieceSquareTable[ALL_PIECE_TYPE][ALL_SQUARE]={
 };
 
 
-#endif /* DATA_H_ */
+#endif /* PSQT_H_ */

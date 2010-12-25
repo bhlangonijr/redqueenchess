@@ -438,6 +438,7 @@ const Bitboard neighborFiles[ALL_SQUARE]={
 };
 
 const Bitboard promoRank[ALL_PIECE_COLOR]={rankBB[RANK_7],rankBB[RANK_2],EMPTY_BB};
+const Bitboard eighthRank[ALL_PIECE_COLOR]={rankBB[RANK_8],rankBB[RANK_1],EMPTY_BB};
 
 // piece phase increment values
 enum PiecePhase {
