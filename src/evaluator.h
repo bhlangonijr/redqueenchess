@@ -35,22 +35,22 @@
 #include "psqt.h"
 #include "bitboard.h"
 
-#define FSQUARE(COLOR,BB,X) (BB&(COLOR==WHITE?upperMaskBitboard[X]:lowerMaskBitboard[X]))&~(rankBB[squareRank[X]])
+#define FSQUARE(COLOR,BB,X) (BB&(COLOR==WHITE?upperMaskBitboard[X]:lowerMaskBitboard[X]))&(~(rankBB[squareRank[X]]))
 #define PM(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]] | neighborFiles[X]), X))
 #define BP(COLOR, X) ((FSQUARE((COLOR==WHITE?BLACK:WHITE), (neighborFiles[X]), X)) | (rankBB[squareRank[X]] & adjacentSquares[X]))
 #define FQ(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]]), X))
 
-const int DOUBLED_PAWN_PENALTY =   		MS(-11,-20);
-const int ISOLATED_PAWN_PENALTY =  		MS(-20,-11);
+const int DOUBLED_PAWN_PENALTY =   		MS(-10,-16);
+const int ISOLATED_PAWN_PENALTY =  		MS(-14,-20);
 const int ISOLATED_OPEN_PAWN_PENALTY =  MS(-20,-20);
-const int BACKWARD_PAWN_PENALTY =  		MS(-11,-8);
-const int BACKWARD_OPEN_PAWN_PENALTY =  MS(-17,-11);
+const int BACKWARD_PAWN_PENALTY =  		MS(-15,-10);
+const int BACKWARD_OPEN_PAWN_PENALTY =  MS(-20,-15);
 const int DONE_CASTLE_BONUS=       		MS(+20,+1);
-const int CONNECTED_PAWN_BONUS =   		MS(+4,+6);
+const int CONNECTED_PAWN_BONUS =   		MS(+3,+5);
 const int BISHOP_PAIR_BONUS = 	   		MS(+25,+25);
 const int UNSTOPPABLE_PAWN_BONUS = 		MS(+700,+700);
-const int ROOK_ON_7TH_RANK_BONUS = 		MS(+17,+35);
-const int QUEEN_ON_7TH_RANK_BONUS = 	MS(+15,+20);
+const int ROOK_ON_7TH_RANK_BONUS = 		MS(+17,+33);
+const int QUEEN_ON_7TH_RANK_BONUS = 	MS(+13,+21);
 
 const int knightMobility[9] = {
 		-4*MS(+8,+4),-2*MS(+8,+4),+0*MS(+8,+4),+1*MS(+8,+4),+2*MS(+8,+4),
@@ -98,15 +98,21 @@ const int queenKingZoneAttackWeight[10] = {
 		5*MS(+6,+10),6*MS(+6,+10),7*MS(+6,+10),8*MS(+6,+10),9*MS(+6,+10)
 };
 
-const int passedPawnBonus[ALL_PIECE_COLOR][ALL_RANK] = {
-		{0,MS(+20,+25),MS(+25,+35),MS(+30,+40),MS(+35,+50),MS(+40,+60),MS(+50,+70),0},
-		{0,MS(+50,+70),MS(+40,+60),MS(+35,+50),MS(+30,+40),MS(+25,+35),MS(+20,+25),0},
+const int connectedPasserBonus[ALL_PIECE_COLOR][ALL_RANK] = {
+		{0,MS(+20,+25),MS(+25,+35),MS(+30,+40),MS(+35,+45),MS(+50,+60),MS(+60,+90),0},
+		{0,MS(+60,+90),MS(+50,+60),MS(+35,+45),MS(+30,+40),MS(+25,+35),MS(+20,+25),0},
 		{}
 };
 
-const int connectedPasserBonus[ALL_PIECE_COLOR][ALL_RANK] = {
+const int passedPawnBonus[ALL_PIECE_COLOR][ALL_RANK] = {
 		{0,MS(+5,+10),MS(+15,+25),MS(+25,+35),MS(+35,+40),MS(+40,+50),MS(+40,+70),0},
 		{0,MS(+40,+70),MS(+40,+50),MS(+35,+40),MS(+25,+35),MS(+15,+25),MS(+5,+10),0},
+		{}
+};
+
+const int candidatePasserBonus[ALL_PIECE_COLOR][ALL_RANK] = {
+		{0,MS(+5,+7),MS(+9,+12),MS(+15,+17),MS(+18,+25),MS(+27,+35),0,0},
+		{0,0,MS(+27,+35),MS(+18,+25),MS(+15,+17),MS(+9,+12),MS(+5,+7),0},
 		{}
 };
 

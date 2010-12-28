@@ -189,6 +189,18 @@ void Evaluator::evalPawns(PieceColor color, EvalInfo& evalInfo) {
 				}
 			}
 
+			if (!isPasser && !(frontSquares[color][from]&otherPawns)) {
+				const Bitboard c = backwardPawnMask[color][from] & pawns;
+				if (c) {
+					const int countSidePawns = _BitCount15(c);
+					const int countOtherPawns = _BitCount15(passedMask[color][from] & otherPawns);
+					if (countSidePawns>=countOtherPawns) {
+						eval+=candidatePasserBonus[color][squareRank[from]];
+					}
+				}
+
+			}
+
 			from = extractLSB(pieces);
 		}
 	}
@@ -204,9 +216,7 @@ const int Evaluator::evalPassedPawn(Board& board, PieceColor color, const Square
 
 	int eval=0;
 
-	const Bitboard all = board.getAllPieces();
-
-	if ((isChained && !(frontSquares[color][from]&all))) {
+	if (isChained) {
 		eval += connectedPasserBonus[color][squareRank[from]];
 	} else {
 		eval += passedPawnBonus[color][squareRank[from]];
@@ -295,7 +305,6 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 		evalInfo.value[color] += rookMobility[_BitCount(attacks&freeArea)];
 		evalInfo.kingThreat[color] += rookKingBonus[squareDistance(from,otherKingSq)];
 		if ((squareToBitboard[from] & promoRank[color]) &&
-				(evalInfo.pawns[other] & promoRank[color]) &&
 				(otherKingBB & eighthRank[color])) {
 			evalInfo.value[color] += ROOK_ON_7TH_RANK_BONUS;
 		}
@@ -312,7 +321,6 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 		evalInfo.value[color] += MS(queenMobility,queenMobility);
 		evalInfo.kingThreat[color] += queenKingBonus[squareDistance(from,otherKingSq)];
 		if ((squareToBitboard[from] & promoRank[color]) &&
-				(evalInfo.pawns[other] & promoRank[color]) &&
 				(otherKingBB & eighthRank[color])) {
 			evalInfo.value[color] += QUEEN_ON_7TH_RANK_BONUS;
 		}
