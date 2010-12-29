@@ -47,8 +47,8 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 			evalInfo.board.isCastleDone(BLACK)?DONE_CASTLE_BONUS:-DONE_CASTLE_BONUS;
 	evalInfo.computeEval();
 
-//	if ((evalInfo.eval > alpha-lazyEvalMargin && evalInfo.eval < beta+lazyEvalMargin) ||
-//			board.isInCheck()) {
+	if ((evalInfo.eval > alpha-lazyEvalMargin && evalInfo.eval < beta+lazyEvalMargin) ||
+			board.isInCheck()) {
 		evalInfo.attackers[WHITE_PAWN] = ((evalInfo.pawns[WHITE] & midBoardNoFileA) << 7) |
 				((evalInfo.pawns[WHITE] & midBoardNoFileH) << 9);
 		evalInfo.attackers[BLACK_PAWN] = ((evalInfo.pawns[BLACK] & midBoardNoFileA) >> 9) |
@@ -68,7 +68,7 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 		evalKing(evalInfo.side, evalInfo);
 		evalKing(evalInfo.other, evalInfo);
 		evalInfo.computeEval();
-//	}
+	}
 
 	return evalInfo.eval;
 }
