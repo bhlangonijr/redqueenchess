@@ -47,8 +47,8 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 			evalInfo.board.isCastleDone(BLACK)?DONE_CASTLE_BONUS:-DONE_CASTLE_BONUS;
 	evalInfo.computeEval();
 
-	if ((evalInfo.eval > alpha-lazyEvalMargin && evalInfo.eval < beta+lazyEvalMargin) ||
-			board.isInCheck()) {
+//	if ((evalInfo.eval > alpha-lazyEvalMargin && evalInfo.eval < beta+lazyEvalMargin) ||
+//			board.isInCheck()) {
 		evalInfo.attackers[WHITE_PAWN] = ((evalInfo.pawns[WHITE] & midBoardNoFileA) << 7) |
 				((evalInfo.pawns[WHITE] & midBoardNoFileH) << 9);
 		evalInfo.attackers[BLACK_PAWN] = ((evalInfo.pawns[BLACK] & midBoardNoFileA) >> 9) |
@@ -68,7 +68,7 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 		evalKing(evalInfo.side, evalInfo);
 		evalKing(evalInfo.other, evalInfo);
 		evalInfo.computeEval();
-	}
+//	}
 
 	return evalInfo.eval;
 }
@@ -146,7 +146,8 @@ void Evaluator::evalPawns(PieceColor color, EvalInfo& evalInfo) {
 	int passedBonus=0;
 	int eval=0;
 
-	//pawns - penalyze doubled, isolated and backward pawns
+	//penalyze doubled, isolated and backward pawns
+	//bonus to passer and candidates
 	if (pawns) {
 		const Bitboard pawnsAndKings = pawns | otherPawns |
 				evalInfo.board.getPiecesByType(WHITE_KING) |
@@ -188,9 +189,8 @@ void Evaluator::evalPawns(PieceColor color, EvalInfo& evalInfo) {
 					eval += halfOpenFile?BACKWARD_OPEN_PAWN_PENALTY:BACKWARD_PAWN_PENALTY;
 				}
 			}
-
 			if (!isPasser && !(frontSquares[color][from]&otherPawns)) {
-				const Bitboard c = backwardPawnMask[color][from] & pawns;
+				const Bitboard c = (backwardPawnMask[color][from]|pawn) & pawns;
 				if (c) {
 					const int countSidePawns = _BitCount15(c);
 					const int countOtherPawns = _BitCount15(passedMask[color][from] & otherPawns);
@@ -282,6 +282,10 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 		evalInfo.value[color] += knightMobility[_BitCount(attacks&freeArea)];
 		evalInfo.kingThreat[color] += knightKingBonus[squareDistance(from,otherKingSq)];
 		evalInfo.attackers[knight] |= attacks;
+		if (knightOutpostBonus[color][from] && evalInfo.attackers[pawn]&squareToBitboard[from] &&
+				!(evalInfo.attackers[pawnOther]&squareToBitboard[from])) {
+			evalInfo.value[color] += knightOutpostBonus[color][from];
+		}
 		from = extractLSB(pieces);
 	}
 

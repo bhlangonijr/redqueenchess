@@ -41,16 +41,16 @@
 #define FQ(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]]), X))
 
 const int DOUBLED_PAWN_PENALTY =   		MS(-10,-16);
-const int ISOLATED_PAWN_PENALTY =  		MS(-14,-20);
+const int ISOLATED_PAWN_PENALTY =  		MS(-20,-10);
 const int ISOLATED_OPEN_PAWN_PENALTY =  MS(-20,-20);
-const int BACKWARD_PAWN_PENALTY =  		MS(-15,-10);
-const int BACKWARD_OPEN_PAWN_PENALTY =  MS(-20,-15);
-const int DONE_CASTLE_BONUS=       		MS(+20,+1);
+const int BACKWARD_PAWN_PENALTY =  		MS(-13,-10);
+const int BACKWARD_OPEN_PAWN_PENALTY =  MS(-17,-13);
+const int DONE_CASTLE_BONUS=       		MS(+20,-1);
 const int CONNECTED_PAWN_BONUS =   		MS(+3,+5);
 const int BISHOP_PAIR_BONUS = 	   		MS(+25,+25);
 const int UNSTOPPABLE_PAWN_BONUS = 		MS(+700,+700);
-const int ROOK_ON_7TH_RANK_BONUS = 		MS(+17,+33);
-const int QUEEN_ON_7TH_RANK_BONUS = 	MS(+13,+21);
+const int ROOK_ON_7TH_RANK_BONUS = 		MS(+15,+25);
+const int QUEEN_ON_7TH_RANK_BONUS = 	MS(+10,+15);
 
 const int knightMobility[9] = {
 		-4*MS(+8,+4),-2*MS(+8,+4),+0*MS(+8,+4),+1*MS(+8,+4),+2*MS(+8,+4),
@@ -203,6 +203,30 @@ const Bitboard frontSquares[ALL_PIECE_COLOR][ALL_SQUARE]= {
 		{}
 };
 
+const int knightOutpostBonus[ALL_PIECE_COLOR][ALL_SQUARE] = {
+		{
+				MS(+0,+0), MS(+0,+0), MS(+0,+0), MS(+0,+0),   MS(+0,+0),   MS(+0,+0), MS(+0,+0), MS(+0,+0),
+				MS(+0,+0), MS(+0,+0), MS(+0,+0), MS(+0,+0),   MS(+0,+0),   MS(+0,+0), MS(+0,+0), MS(+0,+0),
+				MS(+0,+0), MS(+0,+0), MS(+5,+3), MS(+7,+5),   MS(+7,+5),   MS(+5,+3), MS(+0,+0), MS(+0,+0),
+				MS(+0,+0), MS(+4,+2), MS(+7,+5), MS(+12,+10), MS(+12,+10), MS(+7,+5), MS(+4,+2), MS(+0,+0),
+				MS(+0,+0), MS(+4,+2), MS(+7,+5), MS(+12,+10), MS(+12,+10), MS(+7,+5), MS(+4,+2), MS(+0,+0),
+				MS(+0,+0), MS(+0,+0), MS(+0,+0), MS(+0,+0),   MS(+0,+0),   MS(+0,+0), MS(+0,+0), MS(+0,+0),
+				MS(+0,+0), MS(+0,+0), MS(+0,+0), MS(+0,+0),   MS(+0,+0),   MS(+0,+0), MS(+0,+0), MS(+0,+0),
+				MS(+0,+0), MS(+0,+0), MS(+0,+0), MS(+0,+0),   MS(+0,+0),   MS(+0,+0), MS(+0,+0), MS(+0,+0)
+		},
+		{
+				MS(+0,+0), MS(+0,+0), MS(+0,+0), MS(+0,+0),   MS(+0,+0),   MS(+0,+0), MS(+0,+0), MS(+0,+0),
+				MS(+0,+0), MS(+0,+0), MS(+0,+0), MS(+0,+0),   MS(+0,+0),   MS(+0,+0), MS(+0,+0), MS(+0,+0),
+				MS(+0,+0), MS(+0,+0), MS(+0,+0), MS(+0,+0),   MS(+0,+0),   MS(+0,+0), MS(+0,+0), MS(+0,+0),
+				MS(+0,+0), MS(+4,+2), MS(+7,+5), MS(+12,+10), MS(+12,+10), MS(+7,+5), MS(+4,+2), MS(+0,+0),
+				MS(+0,+0), MS(+4,+2), MS(+7,+5), MS(+12,+10), MS(+12,+10), MS(+7,+5), MS(+4,+2), MS(+0,+0),
+				MS(+0,+0), MS(+0,+0), MS(+5,+3), MS(+7,+5),   MS(+7,+5),   MS(+5,+3), MS(+0,+0), MS(+0,+0),
+				MS(+0,+0), MS(+0,+0), MS(+0,+0), MS(+0,+0),   MS(+0,+0),   MS(+0,+0), MS(+0,+0), MS(+0,+0),
+				MS(+0,+0), MS(+0,+0), MS(+0,+0), MS(+0,+0),   MS(+0,+0),   MS(+0,+0), MS(+0,+0), MS(+0,+0)
+		},
+		{}
+};
+
 const int lazyEvalMargin=200;
 const size_t pawnHashSize=1<<18;
 
@@ -237,7 +261,7 @@ public:
 
 		inline const int getScore() {
 			return (value[side]-value[other]) +
-			(kingThreat[side]-kingThreat[other]);
+					(kingThreat[side]-kingThreat[other]);
 		}
 
 		inline const int getEval() {

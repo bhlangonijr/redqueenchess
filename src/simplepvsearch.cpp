@@ -375,7 +375,19 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 			score = -zwSearch(board, newSi, -alpha, newDepth-reduction, ply+1, &line);
 
 			if (score > alpha && score < beta) {
-				score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
+				if (reduction>0) {
+					bool research=true;
+					if (reduction>2) {
+						score = -zwSearch(board, newSi, 1-beta, newDepth-1, ply+1, &line);
+						research=(score >= beta);
+					}
+					if (research) {
+						score = -zwSearch(board, newSi, 1-beta, newDepth, ply+1, &line);
+					}
+				}
+				if (score > alpha && score < beta) {
+					score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
+				}
 			}
 		}
 
