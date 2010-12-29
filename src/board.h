@@ -31,6 +31,7 @@
 #include <vector>
 #include <inttypes.h>
 #include <time.h>
+#include <string.h>
 
 #include "stringutil.h"
 #include "mersenne.h"
@@ -109,15 +110,14 @@ struct Node {
 			enPassant( node.enPassant ),sideToMove( node.sideToMove ),
 			moveCounter(node.moveCounter),halfMoveCounter(node.halfMoveCounter),
 			gamePhase(node.gamePhase), inCheck(node.inCheck) {
-		for(register int x=0;x<ALL_SQUARE;x++){
-			square[x]=node.square[x];
-		}
-		for(register int x=0;x<MAX_GAME_LENGTH;x++){
-			keyHistory[x]=node.keyHistory[x];
-		}
-		for(register int x=0;x<ALL_PIECE_TYPE_BY_COLOR;x++){
-			pieceCount[x]=node.pieceCount[x];
-		}
+
+		memcpy(square, node.square, ALL_SQUARE * sizeof(PieceTypeByColor));
+		memcpy(keyHistory, node.keyHistory, MAX_GAME_LENGTH * sizeof(Key));
+		memcpy(pieceCount, node.pieceCount, ALL_PIECE_TYPE_BY_COLOR * sizeof(int));
+
+		memcpy(pieceListIndex, node.pieceListIndex, ALL_SQUARE * sizeof(int));
+		memcpy(pieceList, node.pieceList, 16 * ALL_PIECE_TYPE_BY_COLOR * sizeof(Square));
+
 		psq[WHITE]=node.psq[WHITE];
 		psq[BLACK]=node.psq[BLACK];
 		fullMaterial[WHITE]=node.fullMaterial[WHITE];
@@ -166,6 +166,8 @@ struct Node {
 	Bitboard pieceColor[ALL_PIECE_COLOR];
 	int pieceCount[ALL_PIECE_TYPE_BY_COLOR];
 	int pieceColorCount[ALL_PIECE_COLOR];
+	Square pieceList[ALL_PIECE_TYPE_BY_COLOR][16];
+	int pieceListIndex[ALL_SQUARE];
 	int fullMaterial[ALL_PIECE_COLOR];
 	int psq[ALL_PIECE_COLOR];
 	Key keyHistory[MAX_GAME_LENGTH];
@@ -183,17 +185,18 @@ struct Node {
 		moveCounter=0;
 		halfMoveCounter=0;
 		gamePhase=OPENING;
-		for(register int x=0;x<ALL_PIECE_TYPE_BY_COLOR;x++){
-			piece.array[x]=0ULL;
-			pieceCount[x]=0;
-		}
+		memset(piece.array, 0, sizeof(Bitboard)*ALL_PIECE_TYPE_BY_COLOR);
+		memset(pieceCount, 0, sizeof(int)*ALL_PIECE_TYPE_BY_COLOR);
+		memset(pieceListIndex, 0, sizeof(int)*ALL_SQUARE);
+		memset(keyHistory, 0, sizeof(Key)*MAX_GAME_LENGTH);
 		for(register int x=0;x<ALL_SQUARE;x++){
 			square[x]=EMPTY;
 		}
-		for(register int x=0;x<MAX_GAME_LENGTH;x++){
-			keyHistory[x]=0x0ULL;
+		for(register int x=0;x<ALL_PIECE_TYPE_BY_COLOR;x++){
+			for(register int y=0;y<16;y++){
+				pieceList[x][y]=NONE;
+			}
 		}
-
 		fullMaterial[WHITE]=0;
 		fullMaterial[BLACK]=0;
 		psq[WHITE]=0;
@@ -291,6 +294,7 @@ public:
 	const PieceTypeByColor getPieceBySquare(const Square square) const;
 	const int getPieceCountByType(const PieceTypeByColor piece) const;
 	const int getPieceCountByColor(const PieceColor color ) const;
+	const Square getPieceLocation(const PieceTypeByColor piece, const int idx) const;
 	const int getMaterial(const PieceColor color) const;
 	const int getPieceSquareValue(const PieceColor color) const;
 	const int getMaterialPst(const PieceColor color) const;
@@ -395,10 +399,12 @@ inline void Board::putPiece(const PieceTypeByColor piece, const Square square) {
 	currentBoard.piece.array[piece] |= squareToBitboard[square];
 	currentBoard.pieceColor[color] |= squareToBitboard[square];
 	currentBoard.square[square] = piece;
-	currentBoard.pieceCount[piece]++;
 	currentBoard.fullMaterial[color]+=materialValues[piece];
 	currentBoard.psq[color]+=fullPst[piece][square];
 	currentBoard.pieceColorCount[color]++;
+	const int idx = currentBoard.pieceCount[piece]++;
+	currentBoard.pieceListIndex[square]=idx;
+	currentBoard.pieceList[piece][idx]=square;
 
 	if (piece==WHITE_KING || piece==BLACK_KING) {
 		currentBoard.kingSquare[color]=square;
@@ -410,15 +416,19 @@ inline void Board::removePiece(const PieceTypeByColor piece, const Square square
 	currentBoard.piece.array[piece] ^= squareToBitboard[square];
 	currentBoard.pieceColor[color] ^= squareToBitboard[square];
 	currentBoard.square[square] = EMPTY;
-	currentBoard.pieceCount[piece]--;
 	currentBoard.fullMaterial[color]-=materialValues[piece];
 	currentBoard.psq[color]-=fullPst[piece][square];
 	currentBoard.pieceColorCount[color]--;
+	const int last = --currentBoard.pieceCount[piece];
+	const int idx = currentBoard.pieceListIndex[square];
+	if (last!=idx) {
+		const Square sq = currentBoard.pieceList[piece][idx]=currentBoard.pieceList[piece][last];
+		currentBoard.pieceListIndex[sq]=idx;
+	}
 
 	if (piece==WHITE_KING || piece==BLACK_KING) {
 		currentBoard.kingSquare[color]=NONE;
 	}
-
 }
 
 inline const PieceTypeByColor Board::encodePieceChar(char piece) {
@@ -805,6 +815,11 @@ inline const int Board::getPieceCountByColor(const PieceColor color) const {
 	return currentBoard.pieceColorCount[color];
 }
 
+// get piece square location
+inline const Square Board::getPieceLocation(const PieceTypeByColor piece, const int idx) const {
+	return currentBoard.pieceList[piece][idx];
+}
+
 // get full material by side
 inline const int Board::getMaterial(const PieceColor color) const {
 	return currentBoard.fullMaterial[color];
@@ -1146,7 +1161,28 @@ inline void Board::generateAllMoves(MoveIterator& moves, const PieceColor side) 
 
 // generate pawn captures
 inline void Board::generatePawnCaptures(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
-	return generatePawnCaptures(moves,side,mask,getPiecesByType(makePiece(side,PAWN)));
+	Bitboard attacks = EMPTY_BB;
+	const PieceTypeByColor pawn = makePiece(side,PAWN);
+
+	for (register int n=0;n<getPieceCountByType(pawn);n++) {
+		Square from = getPieceLocation(pawn,n);
+		attacks = getPawnCaptures(from,mask) ;
+		Square target = extractLSB(attacks);
+
+		bool promotion= squareToBitboard[from] & promoRank[side];
+
+		while ( target!=NONE ) {
+			if (promotion) {
+				moves.add(from,target,makePiece(side,QUEEN), MoveIterator::PROMO_CAPTURE);
+				moves.add(from,target,makePiece(side,KNIGHT), MoveIterator::PROMO_CAPTURE);
+				moves.add(from,target,makePiece(side,ROOK), MoveIterator::PROMO_CAPTURE);
+				moves.add(from,target,makePiece(side,BISHOP), MoveIterator::PROMO_CAPTURE);
+			} else {
+				moves.add(from,target,EMPTY);
+			}
+			target = extractLSB(attacks);
+		}
+	}
 }
 // generate pawn captures
 inline void Board::generatePawnCaptures(MoveIterator& moves, const PieceColor side, const Bitboard mask, Bitboard pieces) {
@@ -1178,7 +1214,28 @@ inline void Board::generatePawnCaptures(MoveIterator& moves, const PieceColor si
 
 // generate pawn moves
 inline void Board::generatePawnMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
-	return generatePawnMoves(moves,side,mask,getPiecesByType(makePiece(side,PAWN)));
+	Bitboard attacks = EMPTY_BB;
+	const PieceTypeByColor pawn = makePiece(side,PAWN);
+
+	for (register int n=0;n<getPieceCountByType(pawn);n++) {
+		Square from = getPieceLocation(pawn,n);
+		attacks = getPawnMoves(from) & mask;
+		Square target = extractLSB(attacks);
+
+		bool promotion= squareToBitboard[from] & promoRank[side];
+
+		while ( target!=NONE ) {
+			if (promotion) {
+				moves.add(from,target,makePiece(side,QUEEN),MoveIterator::PROMO_NONCAPTURE);
+				moves.add(from,target,makePiece(side,KNIGHT),MoveIterator::PROMO_NONCAPTURE);
+				moves.add(from,target,makePiece(side,ROOK),MoveIterator::PROMO_NONCAPTURE);
+				moves.add(from,target,makePiece(side,BISHOP),MoveIterator::PROMO_NONCAPTURE);
+			} else {
+				moves.add(from,target,EMPTY,MoveIterator::NON_CAPTURE);
+			}
+			target = extractLSB(attacks);
+		}
+	}
 }
 
 // generate pawn moves
@@ -1233,7 +1290,18 @@ inline void Board::generatePromotion(MoveIterator& moves, const PieceColor side,
 }
 // generate knight moves
 inline void Board::generateKnightMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
-	return generateKnightMoves(moves,side,mask,getPiecesByType(makePiece(side,KNIGHT)));
+	Bitboard attacks = EMPTY_BB;
+	const PieceTypeByColor knight = makePiece(side,KNIGHT);
+
+	for (register int n=0;n<getPieceCountByType(knight);n++) {
+		Square from = getPieceLocation(knight,n);
+		attacks = getKnightAttacks(from) & mask;
+		Square target = extractLSB(attacks);
+		while ( target!=NONE ) {
+			moves.add(from,target,EMPTY);
+			target = extractLSB(attacks);
+		}
+	}
 }
 
 // generate knight moves
@@ -1256,7 +1324,20 @@ inline void Board::generateKnightMoves(MoveIterator& moves, const PieceColor sid
 
 // generate bishop moves
 inline void Board::generateBishopMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
-	return generateBishopMoves(moves,side,mask,getPiecesByType(makePiece(side,BISHOP)));
+
+	Bitboard attacks = EMPTY_BB;
+	const PieceTypeByColor bishop = makePiece(side,BISHOP);
+
+	for (register int n=0;n<getPieceCountByType(bishop);n++) {
+		Square from = getPieceLocation(bishop,n);
+		attacks = getBishopAttacks(from) & mask;
+		Square target = extractLSB(attacks);
+		while ( target!=NONE ) {
+			moves.add(from,target,EMPTY);
+			target = extractLSB(attacks);
+		}
+	}
+
 }
 
 // generate bishop moves
@@ -1278,7 +1359,18 @@ inline void Board::generateBishopMoves(MoveIterator& moves, const PieceColor sid
 }
 // generate rook moves
 inline void Board::generateRookMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
-	return generateRookMoves(moves,side,mask,getPiecesByType(makePiece(side,ROOK)));
+	Bitboard attacks = EMPTY_BB;
+	const PieceTypeByColor rook = makePiece(side,ROOK);
+
+	for (register int n=0;n<getPieceCountByType(rook);n++) {
+		Square from = getPieceLocation(rook,n);
+		attacks = getRookAttacks(from) & mask;
+		Square target = extractLSB(attacks);
+		while ( target!=NONE ) {
+			moves.add(from,target,EMPTY);
+			target = extractLSB(attacks);
+		}
+	}
 }
 
 // generate rook moves
@@ -1301,7 +1393,19 @@ inline void Board::generateRookMoves(MoveIterator& moves, const PieceColor side,
 
 // generate queen moves
 inline void Board::generateQueenMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
-	return generateQueenMoves(moves,side,mask,getPiecesByType(makePiece(side,QUEEN)));
+
+	Bitboard attacks = EMPTY_BB;
+	const PieceTypeByColor queen = makePiece(side,QUEEN);
+
+	for (register int n=0;n<getPieceCountByType(queen);n++) {
+		Square from = getPieceLocation(queen,n);
+		attacks = getQueenAttacks(from) & mask;
+		Square target = extractLSB(attacks);
+		while ( target!=NONE ) {
+			moves.add(from,target,EMPTY);
+			target = extractLSB(attacks);
+		}
+	}
 }
 
 // generate queen moves
