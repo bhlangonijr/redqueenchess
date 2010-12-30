@@ -188,4 +188,4 @@ position fen 1q2r1k1/5pb1/2bppnp1/p1p5/Nr2PPP1/1BBP4/1PP4Q/2KR3R w - - 0 1
 go infinite
 ;h2h8
 
-
+position fen 8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - - 0 1

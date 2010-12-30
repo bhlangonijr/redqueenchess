@@ -374,10 +374,10 @@ public:
 	static const int interpolate(const int first, const int second, const int position);
 	const int getPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase);
 	static const int calcPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase);
+	Node& getBoard();
 
 private:
 
-	Node& getBoard();
 	void clearBoard();
 	void putPiece(const PieceTypeByColor piece, const Square square);
 	void removePiece(const PieceTypeByColor piece, const Square square);
@@ -425,6 +425,7 @@ inline void Board::removePiece(const PieceTypeByColor piece, const Square square
 		const Square sq = currentBoard.pieceList[piece][idx]=currentBoard.pieceList[piece][last];
 		currentBoard.pieceListIndex[sq]=idx;
 	}
+	currentBoard.pieceList[piece][last]=NONE;
 
 	if (piece==WHITE_KING || piece==BLACK_KING) {
 		currentBoard.kingSquare[color]=NONE;
@@ -1163,9 +1164,9 @@ inline void Board::generateAllMoves(MoveIterator& moves, const PieceColor side) 
 inline void Board::generatePawnCaptures(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
 	Bitboard attacks = EMPTY_BB;
 	const PieceTypeByColor pawn = makePiece(side,PAWN);
-
-	for (register int n=0;n<getPieceCountByType(pawn);n++) {
-		Square from = getPieceLocation(pawn,n);
+	Square from;
+	Square* list = currentBoard.pieceList[pawn];
+	while ((from=*list++) != NONE) {
 		attacks = getPawnCaptures(from,mask) ;
 		Square target = extractLSB(attacks);
 
@@ -1216,9 +1217,9 @@ inline void Board::generatePawnCaptures(MoveIterator& moves, const PieceColor si
 inline void Board::generatePawnMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
 	Bitboard attacks = EMPTY_BB;
 	const PieceTypeByColor pawn = makePiece(side,PAWN);
-
-	for (register int n=0;n<getPieceCountByType(pawn);n++) {
-		Square from = getPieceLocation(pawn,n);
+	Square from;
+	Square* list = currentBoard.pieceList[pawn];
+	while ((from=*list++) != NONE) {
 		attacks = getPawnMoves(from) & mask;
 		Square target = extractLSB(attacks);
 
@@ -1292,9 +1293,9 @@ inline void Board::generatePromotion(MoveIterator& moves, const PieceColor side,
 inline void Board::generateKnightMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
 	Bitboard attacks = EMPTY_BB;
 	const PieceTypeByColor knight = makePiece(side,KNIGHT);
-
-	for (register int n=0;n<getPieceCountByType(knight);n++) {
-		Square from = getPieceLocation(knight,n);
+	Square from;
+	Square* list = currentBoard.pieceList[knight];
+	while ((from=*list++) != NONE) {
 		attacks = getKnightAttacks(from) & mask;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
@@ -1327,9 +1328,9 @@ inline void Board::generateBishopMoves(MoveIterator& moves, const PieceColor sid
 
 	Bitboard attacks = EMPTY_BB;
 	const PieceTypeByColor bishop = makePiece(side,BISHOP);
-
-	for (register int n=0;n<getPieceCountByType(bishop);n++) {
-		Square from = getPieceLocation(bishop,n);
+	Square from;
+	Square* list = currentBoard.pieceList[bishop];
+	while ((from=*list++) != NONE) {
 		attacks = getBishopAttacks(from) & mask;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
@@ -1361,9 +1362,9 @@ inline void Board::generateBishopMoves(MoveIterator& moves, const PieceColor sid
 inline void Board::generateRookMoves(MoveIterator& moves, const PieceColor side, const Bitboard mask) {
 	Bitboard attacks = EMPTY_BB;
 	const PieceTypeByColor rook = makePiece(side,ROOK);
-
-	for (register int n=0;n<getPieceCountByType(rook);n++) {
-		Square from = getPieceLocation(rook,n);
+	Square from;
+	Square* list = currentBoard.pieceList[rook];
+	while ((from=*list++) != NONE) {
 		attacks = getRookAttacks(from) & mask;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
@@ -1396,9 +1397,9 @@ inline void Board::generateQueenMoves(MoveIterator& moves, const PieceColor side
 
 	Bitboard attacks = EMPTY_BB;
 	const PieceTypeByColor queen = makePiece(side,QUEEN);
-
-	for (register int n=0;n<getPieceCountByType(queen);n++) {
-		Square from = getPieceLocation(queen,n);
+	Square from;
+	Square* list = currentBoard.pieceList[queen];
+	while ((from=*list++) != NONE) {
 		attacks = getQueenAttacks(from) & mask;
 		Square target = extractLSB(attacks);
 		while ( target!=NONE ) {
