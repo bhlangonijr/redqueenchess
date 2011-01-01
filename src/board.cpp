@@ -627,6 +627,7 @@ void Board::initialize() {
 	for(int castle=0; castle<ALL_CASTLE_RIGHT*ALL_CASTLE_RIGHT; castle++) {
 		zobrist.castleRight[castle]=genrand_int64();
 	}
+	zobrist.ignoreMove=genrand_int64();
 	// initialize incremental pst
 	for (int phase=0; phase<=maxGamePhase; phase++) {
 		for (int piece=0; piece<ALL_PIECE_TYPE_BY_COLOR; piece++) {
@@ -671,6 +672,11 @@ const int Board::getZobristCastleIndex() {
 // get board zobrist key
 const Key Board::getKey() const {
 	return currentBoard.key;
+}
+
+// get zobrist key for partial searches
+const Key Board::getPartialSearchKey() const {
+	return currentBoard.key ^ zobrist.ignoreMove;
 }
 
 // get pawn zobrist key

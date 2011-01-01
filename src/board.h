@@ -226,6 +226,7 @@ struct NodeZobrist {
 	Key castleRight[ALL_CASTLE_RIGHT*ALL_CASTLE_RIGHT];
 	Key enPassant[ALL_FILE];
 	Key sideToMove[ALL_PIECE_COLOR];
+	Key ignoreMove;
 };
 
 }
@@ -346,6 +347,7 @@ public:
 	const void calcFullPieceSquareValue();
 	const int getZobristCastleIndex();
 	const Key getKey() const;
+	const Key getPartialSearchKey() const;
 	const Key getPawnKey() const;
 	void setKey(Key key);
 	void setPawnKey(Key key);
