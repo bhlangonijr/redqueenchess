@@ -639,7 +639,10 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 
 	const PieceTypeByColor fromPiece=getPieceBySquare(move.from);
 	const PieceColor color = getPieceColorBySquare(move.from);
+	const PieceColor other = flipSide(color);
 	const PieceType fromType = pieceType[fromPiece];
+	const bool isEnPassant = (fromType==PAWN && getEnPassant()!=NONE &&
+			getSquareFile(move.from)!=getSquareFile(move.to));
 
 	if (isMoveFromCache) {
 		if (color == getPieceColorBySquare(move.to) ||
@@ -653,8 +656,14 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 		if (move.promotionPiece!=EMPTY && fromType!=PAWN) {
 			return false;
 		}
-		if (fromType==PAWN && ((move.promotionPiece!=EMPTY) ^ promoting)) {
-			return false;
+		if (fromType==PAWN) {
+			if ((move.promotionPiece!=EMPTY) ^ promoting) {
+				return false;
+			}
+			if (isEnPassant && (getSquareFile(move.to) != getSquareFile(getEnPassant()) ||
+					getPieceBySquare(getEnPassant()) != makePiece(other,PAWN))) {
+				return false;
+			}
 		}
 		if (((fromPiece==WHITE_KING && move.from==E1 && (move.to==G1 || move.to==C1)) ||
 				(fromPiece==BLACK_KING && move.from==E8 && (move.to==G8 || move.to==C8)))) {
@@ -670,14 +679,13 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 			return true;
 		}
 	}
-	const Square kingLocation = (fromType==KING?move.to:getKingSquare(color));
-	const PieceColor other = flipSide(color);
+
+	const Square kingLocation = fromType==KING?move.to:getKingSquare(color);
+
 	Bitboard otherPieces = getPiecesByColor(other);
 	if (getPieceBySquare(move.to)!=EMPTY) {
 		otherPieces^=squareToBitboard[move.to];
-	} else if (fromType==PAWN && getEnPassant()!=NONE &&
-			getSquareFile(move.from)!=getSquareFile(move.to) &&
-			(getSquareFile(move.to) == getSquareFile(getEnPassant()))) {
+	} else if (isEnPassant) {
 		otherPieces^=squareToBitboard[getEnPassant()];
 	}
 
@@ -686,18 +694,25 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 	testBoard |= squareToBitboard[move.to];
 	testBoard |= otherPieces;
 
-	const Bitboard diagonalAttacks = diagA1H8Attacks[kingLocation]|diagH1A8Attacks[kingLocation];
 	const Bitboard lineAttacks = fileAttacks[kingLocation]|rankAttacks[kingLocation];
-
-	const Bitboard bishopAndQueens = ((getPiecesByType(makePiece(other,BISHOP)) |
-			getPiecesByType(makePiece(other,QUEEN)))&otherPieces&diagonalAttacks);
-
 	const Bitboard rookAndQueens = ((getPiecesByType(makePiece(other,ROOK)) |
 			getPiecesByType(makePiece(other,QUEEN)))&otherPieces&lineAttacks);
+	if (rookAndQueens) {
+		if (getRookAttacks(kingLocation,testBoard)&rookAndQueens) {
+			return false;
+		}
+	}
 
-	return !((bishopAndQueens?getBishopAttacks(kingLocation,testBoard)&bishopAndQueens:EMPTY_BB) ||
-			(rookAndQueens?getRookAttacks(kingLocation,testBoard)&rookAndQueens:EMPTY_BB) ||
-			(getKnightAttacks(kingLocation,testBoard) & (getPiecesByType(makePiece(other,KNIGHT))&otherPieces)) ||
+	const Bitboard diagonalAttacks = diagA1H8Attacks[kingLocation]|diagH1A8Attacks[kingLocation];
+	const Bitboard bishopAndQueens = ((getPiecesByType(makePiece(other,BISHOP)) |
+			getPiecesByType(makePiece(other,QUEEN)))&otherPieces&diagonalAttacks);
+	if (bishopAndQueens) {
+		if (getBishopAttacks(kingLocation,testBoard)&bishopAndQueens) {
+			return false;
+		}
+	}
+
+	return !((getKnightAttacks(kingLocation,testBoard) & (getPiecesByType(makePiece(other,KNIGHT))&otherPieces)) ||
 			(getPawnAttacks(kingLocation,color) & (getPiecesByType(makePiece(other,PAWN))&otherPieces)) ||
 			(getKingAttacks(kingLocation,testBoard) & (getPiecesByType(makePiece(other,KING))&otherPieces)));
 

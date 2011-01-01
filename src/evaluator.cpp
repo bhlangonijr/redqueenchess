@@ -39,9 +39,6 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 
 	EvalInfo evalInfo(board);
 
-	evalPosition(evalInfo.side, evalInfo);
-	evalPosition(evalInfo.other, evalInfo);
-
 	evalInfo.computeEval();
 
 	if ((evalInfo.eval > alpha-lazyEvalMargin && evalInfo.eval < beta+lazyEvalMargin) ||
@@ -52,6 +49,8 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 				((evalInfo.pawns[BLACK] & midBoardNoFileH) >> 7);
 		evalBoardControl(evalInfo.side, evalInfo);
 		evalBoardControl(evalInfo.other, evalInfo);
+		evalPosition(evalInfo.side, evalInfo);
+		evalPosition(evalInfo.other, evalInfo);
 		PawnInfo info;
 		if (getPawnInfo(board.getPawnKey(),info)) {
 			evalPawnsFromCache(evalInfo.side, info, evalInfo);
