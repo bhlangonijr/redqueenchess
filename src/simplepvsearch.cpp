@@ -340,7 +340,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 	}
 
 	const bool canDoSingularExtension = depth > sePVDepth &&
-			!hashMove.none() && !si.partialSearch && hashData.depth() > depth-2 &&
+			!hashMove.none() && !si.partialSearch && hashData.depth() >= depth-2 &&
 			(hashData.flag() & TranspositionTable::LOWER);
 
 	MoveIterator moves = MoveIterator();
@@ -368,13 +368,14 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		int extension=0;
 		if (isKingAttacked || pawnOn7thExtension) {
 			extension++;
-		} else if (canDoSingularExtension && move == si.move) {
+		} else if (canDoSingularExtension && move == hashMove) {
 			if (abs(hashData.value()) < winningScore) {
 				SearchInfo seSi(false,move,true);
 				const int seValue = hashData.value() - seMargin;
 				const int partialScore = zwSearch(board,seSi,seValue-1,depth/2,ply,&line);
 				if (partialScore < seValue) {
 					extension++;
+
 				}
 			}
 		}
@@ -563,8 +564,12 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	}
 
 	const bool canDoSingularExtension = depth > seNonPVDepth &&
-			!hashMove.none() && !si.partialSearch && hashData.depth() > depth-3 &&
+			!hashMove.none() && !si.partialSearch && hashData.depth() >= depth-2 &&
 			(hashData.flag() & TranspositionTable::LOWER);
+
+	if (canDoSingularExtension) {
+
+	}
 
 	MoveIterator moves = MoveIterator();
 	MoveIterator::Move bestMove;
@@ -615,7 +620,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		int extension=0;
 		if (isKingAttacked || pawnOn7thExtension){
 			extension++;
-		} else if (canDoSingularExtension && move == si.move) {
+		} else if (canDoSingularExtension && move == hashMove) {
 			if (abs(hashData.value()) < winningScore) {
 				SearchInfo seSi(false,move,true);
 				const int seValue = hashData.value() - seMargin;
@@ -814,8 +819,8 @@ void SimplePVSearch::initialize() {
 
 	for (int x=0;x<=maxSearchDepth;x++) {
 		for (int y=0;y<maxMoveCount;y++) {
-			reductionTablePV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/4);
-			reductionTableNonPV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/2);
+			reductionTablePV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/3.0);
+			reductionTableNonPV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/2.0);
 			//std::cout << "[" << x << ", " << y << "] " << reductionTableNonPV[x][y] << " - " << reductionTablePV[x][y] << std::endl;
 		}
 	}

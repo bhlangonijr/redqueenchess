@@ -52,7 +52,7 @@ const int iidMargin=260;
 const int easyMargin=500;
 const int deltaMargin=950;
 const int nullMoveMargin=512;
-const int seMargin=40;
+const int seMargin=25;
 
 //depth prunning threshold
 const int aspirationDepth=6;
@@ -60,8 +60,8 @@ const int futilityDepth=5;
 const int nullMoveDepth=4;
 const int razorDepth=4;
 const int lmrDepthThresholdRoot=3;
-const int sePVDepth=5;
-const int seNonPVDepth=7;
+const int sePVDepth=7;
+const int seNonPVDepth=9;
 const int lateMoveThreshold=2;
 
 const int scoreTable[11]={0,80000,60000,95000,90000,45000,40000,1000,-12000,50050,50000};
@@ -90,7 +90,7 @@ public:
 	} PvLine;
 
 	typedef struct SearchInfo {
-		SearchInfo(): allowNullMove(false) {}
+		SearchInfo(): allowNullMove(false), move(MoveIterator::Move()), partialSearch(false) {}
 		SearchInfo(const bool _allowNullMove, const MoveIterator::Move _move):
 			allowNullMove(_allowNullMove), move(_move), partialSearch(false) {}
 		SearchInfo(const bool _allowNullMove, const MoveIterator::Move _move, const bool _partialSearch):

@@ -465,7 +465,7 @@ enum GamePhase {
 
 const int maxScore = 15000;
 const int drawScore = 0;
-const int winningScore = 5000;
+const int winningScore = 2000;
 const int maxPieces=32;
 
 const int pawnValue 	= 100;

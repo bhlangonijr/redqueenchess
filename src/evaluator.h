@@ -297,7 +297,7 @@ public:
 	void evalPawns(PieceColor color, EvalInfo& evalInfo);
 	const int evalPassedPawn(Board& board, PieceColor color, const Square from,
 			const bool isPawnFinal, const bool isChained);
-	void evalPosition(PieceColor color, EvalInfo& evalInfo);
+	void evalBishops(PieceColor color, EvalInfo& evalInfo);
 	void evalBoardControl(PieceColor color, EvalInfo& evalInfo);
 	void evalThreats(PieceColor color, EvalInfo& evalInfo);
 	const bool isPawnPassed(Board& board, const Square from);
