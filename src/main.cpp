@@ -35,9 +35,18 @@
 #include "bitboard.h"
 #include "searchagent.h"
 #include "mersenne.h"
-#include "inline.h"
 #include "stringutil.h"
 #include "magicmoves.h"
+
+#  if defined(_SC_NPROCESSORS_ONLN)
+int getNumProcs() {
+  return std::min(sysconf( _SC_NPROCESSORS_ONLN ), 8L);
+}
+#  else
+int getNumProcs() {
+  return 1;
+}
+#  endif
 
 int main() {
 

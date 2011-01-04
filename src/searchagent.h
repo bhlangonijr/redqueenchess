@@ -31,6 +31,7 @@
 #include <assert.h>
 #include <pthread.h>
 #include <time.h>
+#include <iostream>
 
 #include "board.h"
 #include "simplepvsearch.h"

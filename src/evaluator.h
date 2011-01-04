@@ -30,7 +30,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include "inline.h"
 #include "board.h"
 #include "psqt.h"
 #include "bitboard.h"
@@ -400,7 +399,8 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 	PieceColor sideToMove = side;
 	Bitboard allAttackers = EMPTY_BB;
 
-	gain[idx] = materialValues[secondPiece];
+	gain[0] = materialValues[secondPiece];
+	gain[1] = secondPiece==EMPTY?0:materialValues[firstPiece] - gain[0];
 
 	if (board.getPieceType(secondPiece)==KING) {
 		return queenValue*10;
@@ -410,7 +410,9 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 
 		allAttackers |= attackers;
 		idx++;
-		gain[idx]  = materialValues[firstPiece] - gain[idx-1];
+		if (idx>1) {
+			gain[idx]  = materialValues[firstPiece] - gain[idx-1];
+		}
 		attackers ^= fromPiece;
 		occupied  ^= fromPiece;
 		Bitboard moreAttackers = (bishopAndQueen | rookAndQueen) & (~allAttackers);

@@ -31,8 +31,6 @@
 #include <iostream>
 #include <stdlib.h>
 
-#include "inline.h"
-
 //Bitboard type - unsigned long int (8 bytes)
 typedef uint64_t Bitboard;
 
@@ -71,6 +69,18 @@ const Bitboard WHITE_SQUARES =	0x55AA55AA55AA55AAULL;
 const Bitboard BLACK_SQUARES =	0xAA55AA55AA55AA55ULL;
 const Bitboard MID_BOARD =		0x00FFFFFFFFFFFF00ULL;
 
+const uint64_t debruijn64 = 0x07EDD5E59A4E28C2ULL;
+
+const uint32_t index64[64] = {
+		63,  0, 58,  1, 59, 47, 53,  2,
+		60, 39, 48, 27, 54, 33, 42,  3,
+		61, 51, 37, 40, 49, 18, 28, 20,
+		55, 30, 34, 11, 43, 14, 22,  4,
+		62, 57, 46, 52, 38, 26, 32, 41,
+		50, 36, 17, 19, 29, 10, 13, 21,
+		56, 45, 25, 31, 35, 16,  9, 12,
+		44, 24, 15,  8, 23,  7,  6,  5
+};
 // squares
 enum Square {
 	A1, B1, C1, D1, E1, F1, G1, H1,
@@ -489,6 +499,86 @@ extern int squareDistance(const Square from, const Square to);
 
 extern int inverseSquareDistance(const Square from, const Square to);
 
+// return the index of LSB
+inline int bitScanForward(int* const index, const uint64_t mask)
+{
+#if defined(__LP64__)
+	uint64_t ret;
+	asm	("bsfq %[mask], %[ret]" : [ret] "=r" (ret) :[mask] "mr" (mask));
+	*index = int(ret);
+#else
+	*index = int(index64[((mask & -mask) * debruijn64) >> 58]);
+#endif
+
+	return mask?1:0;
+}
+// return the index of MSB
+inline int bitScanReverse(int* const index, const uint64_t mask)
+{
+
+#if defined(__LP64__)
+	uint64_t ret;
+	asm ("bsrq %[mask], %[ret]" :[ret] "=r" (ret) :[mask] "mr" (mask));
+	*index = (unsigned int)ret;
+#else
+	union {
+		double d;
+		struct {
+			unsigned int mantissal : 32;
+			unsigned int mantissah : 20;
+			unsigned int exponent : 11;
+			unsigned int sign : 1;
+		};
+	} ud;
+	ud.d = (double)(mask & ~(mask >> 32));
+
+	*index = ud.exponent - 1023;
+#endif
+	return mask?1:0;
+}
+
+inline int bitCount(const uint64_t data)
+{
+	if (!data) {
+		return 0;
+	}
+#if defined(__LP64__)
+	return __builtin_popcountll( data );
+#else
+	uint64_t x = data;
+	const uint64_t k1 = 0x5555555555555555ULL;
+	const uint64_t k2 = 0x3333333333333333ULL;
+	const uint64_t k4 = 0x0f0f0f0f0f0f0f0fULL;
+	const uint64_t kf = 0x0101010101010101ULL;
+	x =  x       - ((x >> 1)  & k1);
+	x = (x & k2) + ((x >> 2)  & k2);
+	x = (x       +  (x >> 4)) & k4 ;
+	x = (x * kf) >> 56;
+	return int(x);
+#endif
+}
+
+inline uint32_t bitCount15(const uint64_t data)
+{
+	if (!data) {
+		return 0;
+	}
+#if defined(__LP64__)
+	return __builtin_popcountll( data );
+#else
+	unsigned w = unsigned(data >> 32);
+	unsigned v = unsigned(data);
+	v -= (v >> 1) & 0x55555555;
+	w -= (w >> 1) & 0x55555555;
+	v = ((v >> 2) & 0x33333333) + (v & 0x33333333);
+	w = ((w >> 2) & 0x33333333) + (w & 0x33333333);
+	v += w;
+	v *= 0x11111111;
+	return  int(v >> 28);
+
+#endif
+}
+
 // get the bit index from a bitboard
 inline Square bitboardToSquare(const Bitboard& bitboard) {
 
@@ -497,7 +587,7 @@ inline Square bitboardToSquare(const Bitboard& bitboard) {
 	}
 	int square=0;
 
-	if (!_BitScanForward(&square, bitboard)) {
+	if (!bitScanForward(&square, bitboard)) {
 		return static_cast<Square>(NONE);
 	}
 
@@ -520,11 +610,11 @@ inline Bitboard getSliderAttacks(const Bitboard& attacks, const Bitboard& mask, 
 	const Bitboard lowerMask= occ & lowerMaskBitboard[start];
 	const Bitboard upperMask= occ & upperMaskBitboard[start];
 
-	if (lowerMask && !_BitScanReverse(&minor, lowerMask)) {
+	if (lowerMask && !bitScanReverse(&minor, lowerMask)) {
 		minor=A1;
 	}
 
-	if (upperMask && !_BitScanForward(&major, upperMask)) {
+	if (upperMask && !bitScanForward(&major, upperMask)) {
 		major=H8;
 	}
 
@@ -540,7 +630,7 @@ inline Square extractLSB(Bitboard& bitboard) {
 	}
 	int square=0;
 
-	if (!_BitScanForward(&square, bitboard)) {
+	if (!bitScanForward(&square, bitboard)) {
 		return static_cast<Square>(NONE);
 	}
 

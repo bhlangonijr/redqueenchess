@@ -92,19 +92,19 @@ void Evaluator::evalKing(PieceColor color, EvalInfo& evalInfo) {
 
 	const Bitboard bishopAttacks = evalInfo.attackers[bishop]&kingSquareBB;
 	if (bishopAttacks) {
-		const int attackCount = _BitCount(bishopAttacks);
+		const int attackCount = bitCount(bishopAttacks);
 		evalInfo.kingThreat[color] -= minorKingZoneAttackWeight[attackCount];
 	}
 
 	const Bitboard rookAttacks = evalInfo.attackers[rook]&kingSquareBB;
 	if (rookAttacks) {
-		const int attackCount = _BitCount(rookAttacks);
+		const int attackCount = bitCount(rookAttacks);
 		evalInfo.kingThreat[color] -= rookKingZoneAttackWeight[attackCount];
 	}
 
 	const Bitboard queenAttacks = evalInfo.attackers[queen]&kingSquareBB;
 	if (queenAttacks) {
-		const int attackCount = _BitCount(queenAttacks);
+		const int attackCount = bitCount(queenAttacks);
 		evalInfo.kingThreat[color] -= queenKingZoneAttackWeight[attackCount];
 	}
 
@@ -192,8 +192,8 @@ void Evaluator::evalPawns(PieceColor color, EvalInfo& evalInfo) {
 			if (!isPasser && !(frontSquares[color][from]&otherPawns)) {
 				const Bitboard c = (backwardPawnMask[color][from]|pawn) & pawns;
 				if (c) {
-					const int countSidePawns = _BitCount15(c);
-					const int countOtherPawns = _BitCount15(passedMask[color][from] & otherPawns);
+					const int countSidePawns = bitCount15(c);
+					const int countOtherPawns = bitCount15(passedMask[color][from] & otherPawns);
 					if (countSidePawns>=countOtherPawns) {
 						eval+=candidatePasserBonus[color][squareRank[from]];
 					}
@@ -271,7 +271,7 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 
 	while ( from!=NONE ) {
 		const Bitboard attacks = evalInfo.board.getKnightAttacks(from);
-		evalInfo.value[color] += knightMobility[_BitCount(attacks&freeArea)];
+		evalInfo.value[color] += knightMobility[bitCount(attacks&freeArea)];
 		evalInfo.kingThreat[color] += knightKingBonus[squareDistance(from,otherKingSq)];
 		evalInfo.attackers[makePiece(color,KNIGHT)] |= attacks;
 		if (knightOutpostBonus[color][from] && evalInfo.attackers[makePiece(color,PAWN)]&squareToBitboard[from] &&
@@ -287,7 +287,7 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 	while ( from!=NONE ) {
 		const Bitboard attacks = evalInfo.board.getBishopAttacks(from);
 		evalInfo.attackers[makePiece(color,BISHOP)] |= attacks;
-		evalInfo.value[color] += bishopMobility[_BitCount(attacks&freeArea)];
+		evalInfo.value[color] += bishopMobility[bitCount(attacks&freeArea)];
 		evalInfo.kingThreat[color] += bishopKingBonus[squareDistance(from,otherKingSq)];
 		from = extractLSB(pieces);
 	}
@@ -298,7 +298,7 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 	while ( from!=NONE ) {
 		const Bitboard attacks = evalInfo.board.getRookAttacks(from);
 		evalInfo.attackers[makePiece(color,ROOK)] |= attacks;
-		evalInfo.value[color] += rookMobility[_BitCount(attacks&freeArea)];
+		evalInfo.value[color] += rookMobility[bitCount(attacks&freeArea)];
 		evalInfo.kingThreat[color] += rookKingBonus[squareDistance(from,otherKingSq)];
 		if ((squareToBitboard[from] & promoRank[color]) &&
 				(otherKingBB & eighthRank[color])) {
@@ -312,7 +312,7 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 
 	while ( from!=NONE ) {
 		const Bitboard attacks = evalInfo.board.getQueenAttacks(from);
-		const int queenMobility = _BitCount(attacks&freeArea)-10;
+		const int queenMobility = bitCount(attacks&freeArea)-10;
 		evalInfo.attackers[makePiece(color,QUEEN)] |= attacks;
 		evalInfo.value[color] += MS(queenMobility,queenMobility);
 		evalInfo.kingThreat[color] += queenKingBonus[squareDistance(from,otherKingSq)];
@@ -327,7 +327,7 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 	const Bitboard sidePieces = evalInfo.board.getPieces(color);
 	const Bitboard kingAndPawns = evalInfo.board.getPieces(color,KING) | evalInfo.pawns[color];
 	const Bitboard otherSideControl = (sidePieces ^ kingAndPawns) & colorSpaceBB[other] & freeArea;
-	evalInfo.value[color] += spaceBonus[_BitCount(otherSideControl)];
+	evalInfo.value[color] += spaceBonus[bitCount(otherSideControl)];
 
 	evalInfo.attacks[color] = evalInfo.attackers[makePiece(color,KNIGHT)] |
 			evalInfo.attackers[makePiece(color,BISHOP)] | evalInfo.attackers[makePiece(color,ROOK)] |

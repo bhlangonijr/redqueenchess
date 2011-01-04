@@ -350,9 +350,6 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		if (move.none()) {
 			break;
 		}
-		if (si.partialSearch && move == si.move) {
-			continue;
-		}
 		MoveBackup backup;
 		board.doMove(move,backup);
 
@@ -559,13 +556,6 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		if (move.none()) {
 			break;
 		}
-		if (si.partialSearch && move == si.move) {
-			continue;
-		}
-		if (move.type == MoveIterator::BAD_CAPTURE && !isKingAttacked &&
-				depth < hardPruneDepth && bestScore>-maxScore+maxSearchPly) {
-			continue;
-		}
 		MoveBackup backup;
 		board.doMove(move,backup);
 
@@ -581,8 +571,9 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 				!passedPawn &&
 				depth < futilityDepth &&
 				!isKingAttacked &&
-				!(givingCheck && evaluator.see<true>(board,move)>=0) &&
+				!(givingCheck && evaluator.see<false>(board,move)>=0) &&
 				!nmMateScore) {
+
 			if (moveCountMargin(depth) < moveCounter  && !isMateScore(bestScore) ) {
 				board.undoMove(backup);
 				continue;
@@ -592,6 +583,11 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 				if (futilityScore>bestScore) {
 					bestScore=futilityScore;
 				}
+				board.undoMove(backup);
+				continue;
+			}
+			if (evaluator.see<false>(board,move)<0 &&
+					depth < hardPruneDepth && bestScore>-maxScore+maxSearchPly) {
 				board.undoMove(backup);
 				continue;
 			}
