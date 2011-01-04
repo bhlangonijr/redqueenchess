@@ -239,8 +239,8 @@ public:
 			side = board.getSideToMove();
 			other = board.flipSide(side);
 			all = board.getAllPieces();
-			pawns[WHITE] = board.getPiecesByType(board.makePiece(WHITE,PAWN));
-			pawns[BLACK] = board.getPiecesByType(board.makePiece(BLACK,PAWN));
+			pawns[WHITE] = board.getPieces(makePiece(WHITE,PAWN));
+			pawns[BLACK] = board.getPieces(makePiece(BLACK,PAWN));
 			value[WHITE] = board.getPieceSquareValue(WHITE);
 			value[BLACK] = board.getPieceSquareValue(BLACK);
 			kingThreat[side]=0;
@@ -345,9 +345,9 @@ private:
 
 // verify if pawn is passer
 inline const bool Evaluator::isPawnPassed(Board& board, const Square from) {
-	const PieceColor color = board.getPieceColorBySquare(from);
+	const PieceColor color = board.getPieceColor(from);
 	const PieceColor other = board.flipSide(color);
-	const Bitboard otherPawns = board.getPiecesByType(board.makePiece(other,PAWN));
+	const Bitboard otherPawns = board.getPieces(other,PAWN);
 	return !(passedMask[color][from]&otherPawns);
 }
 
@@ -356,16 +356,16 @@ template <bool lazySee>
 inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 
 	const int gainTableSize=32;
-	PieceColor side = board.getPieceColorBySquare(move.from);
+	PieceColor side = board.getPieceColor(move.from);
 	PieceColor other = board.flipSide(side);
-	PieceTypeByColor firstPiece = board.getPieceBySquare(move.from);
-	PieceTypeByColor secondPiece = board.getPieceBySquare(move.to);
+	PieceTypeByColor firstPiece = board.getPiece(move.from);
+	PieceTypeByColor secondPiece = board.getPiece(move.to);
 	Bitboard fromPiece = squareToBitboard[move.from];
 	Bitboard occupied = board.getAllPieces();
 
 	if (secondPiece==EMPTY && board.getPieceType(firstPiece)==PAWN && board.getEnPassant()!=NONE &&
 			board.getSquareFile(move.from)!=board.getSquareFile(move.to)) {
-		secondPiece=board.makePiece(other,PAWN);
+		secondPiece=makePiece(other,PAWN);
 		occupied^=squareToBitboard[board.getEnPassant()];
 	}
 
@@ -374,29 +374,15 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 		return 1;
 	}
 
-	const Bitboard sidePawn =  board.getPiecesByType(board.makePiece(side,PAWN));
-	const Bitboard sideKnight =  board.getPiecesByType(board.makePiece(side,KNIGHT));
-	const Bitboard sideBishop =  board.getPiecesByType(board.makePiece(side,BISHOP));
-	const Bitboard sideRook =  board.getPiecesByType(board.makePiece(side,ROOK));
-	const Bitboard sideQueen =  board.getPiecesByType(board.makePiece(side,QUEEN));
-	const Bitboard sideKing =  board.getPiecesByType(board.makePiece(side,KING));
-
-	const Bitboard otherPawn =  board.getPiecesByType(board.makePiece(other,PAWN));
-	const Bitboard otherKnight =  board.getPiecesByType(board.makePiece(other,KNIGHT));
-	const Bitboard otherBishop =  board.getPiecesByType(board.makePiece(other,BISHOP));
-	const Bitboard otherRook =  board.getPiecesByType(board.makePiece(other,ROOK));
-	const Bitboard otherQueen =  board.getPiecesByType(board.makePiece(other,QUEEN));
-	const Bitboard otherKing =  board.getPiecesByType(board.makePiece(other,KING));
-
 	const Bitboard bishopAttacks =  board.getBishopAttacks(move.to,occupied);
 	const Bitboard rookAttacks =  board.getRookAttacks(move.to,occupied);
 	const Bitboard knightAttacks =  board.getKnightAttacks(move.to);
 	const Bitboard pawnAttacks =  board.getPawnAttacks(move.to);
 	const Bitboard kingAttacks =  board.getKingAttacks(move.to);
 
-	const Bitboard rooks = sideRook | otherRook;
-	const Bitboard bishops = sideBishop | otherBishop;
-	const Bitboard queens = sideQueen | otherQueen;
+	const Bitboard rooks = board.getPieces(side,ROOK) | board.getPieces(other,ROOK);
+	const Bitboard bishops = board.getPieces(side,BISHOP) | board.getPieces(other,BISHOP);
+	const Bitboard queens = board.getPieces(side,QUEEN) | board.getPieces(other,QUEEN);
 
 	const Bitboard bishopAndQueen =  rooks | queens;
 	const Bitboard rookAndQueen =  bishops | queens;
@@ -404,9 +390,9 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 	Bitboard attackers =
 			(bishopAttacks & bishopAndQueen) |
 			(rookAttacks & rookAndQueen) |
-			(knightAttacks & (sideKnight | otherKnight)) |
-			(pawnAttacks & (sidePawn | otherPawn)) |
-			(kingAttacks & (sideKing | otherKing));
+			(knightAttacks & (board.getPieces(side,KNIGHT) | board.getPieces(other,KNIGHT))) |
+			(pawnAttacks & (board.getPieces(side,PAWN) | board.getPieces(other,PAWN))) |
+			(kingAttacks & (board.getPieces(side,KING) | board.getPieces(other,KING)));
 
 
 	int idx = 0;
@@ -452,11 +438,11 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 
 inline Bitboard Evaluator::getLeastValuablePiece(Board& board, Bitboard attackers, PieceColor& color, PieceTypeByColor& piece) {
 
-	const int first = board.makePiece(color,PAWN);
-	const int last = board.makePiece(color,KING);
+	const int first = makePiece(color,PAWN);
+	const int last = makePiece(color,KING);
 
 	for(register int pieceType = first; pieceType <= last; pieceType++) {
-		Bitboard pieces = board.getPiecesByType(static_cast<PieceTypeByColor>(pieceType)) & attackers;
+		Bitboard pieces = board.getPieces(static_cast<PieceTypeByColor>(pieceType)) & attackers;
 		if (pieces) {
 			piece = static_cast<PieceTypeByColor>(pieceType);
 			return pieces & -pieces;

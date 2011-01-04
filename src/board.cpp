@@ -119,8 +119,8 @@ void Board::genericTest() {
 // do a move and set backup info into struct MoveBackup
 void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 
-	const PieceTypeByColor fromPiece = getPieceBySquare(move.from);
-	const PieceTypeByColor toPiece = getPieceBySquare(move.to);
+	const PieceTypeByColor fromPiece = getPiece(move.from);
+	const PieceTypeByColor toPiece = getPiece(move.to);
 	const PieceColor otherSide = flipSide(getSideToMove());
 	bool enPassant=false;
 	bool reversible=true;
@@ -556,7 +556,7 @@ const std::string Board::getFEN() {
 	size_t rank=1;
 	for(size_t sq=A1;sq<=H8;sq++) {
 
-		PieceTypeByColor piece = this->getPieceBySquare(Square(sq));
+		PieceTypeByColor piece = getPiece(Square(sq));
 		if (piece!=EMPTY) {
 			if (count>0) {
 				fen+=StringUtil::toStr(count);
@@ -652,10 +652,10 @@ void Board::initialize() {
 // game phase full calculation
 const GamePhase Board::predictGamePhase() {
 
-	const int knights = getPieceCountByType(WHITE_KNIGHT)+getPieceCountByType(BLACK_KNIGHT);
-	const int bishops = getPieceCountByType(WHITE_BISHOP)+getPieceCountByType(BLACK_BISHOP);
-	const int rooks = getPieceCountByType(WHITE_ROOK)+getPieceCountByType(BLACK_ROOK);
-	const int queens = getPieceCountByType(WHITE_QUEEN)+getPieceCountByType(BLACK_QUEEN);
+	const int knights = getPieceCount(WHITE_KNIGHT)+getPieceCount(BLACK_KNIGHT);
+	const int bishops = getPieceCount(WHITE_BISHOP)+getPieceCount(BLACK_BISHOP);
+	const int rooks = getPieceCount(WHITE_ROOK)+getPieceCount(BLACK_ROOK);
+	const int queens = getPieceCount(WHITE_QUEEN)+getPieceCount(BLACK_QUEEN);
 
 	return GamePhase((4-knights)*phaseIncrement[KNIGHT]+
 			(4-bishops)*phaseIncrement[BISHOP]+

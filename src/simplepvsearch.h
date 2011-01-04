@@ -52,16 +52,14 @@ const int iidMargin=260;
 const int easyMargin=500;
 const int deltaMargin=950;
 const int nullMoveMargin=512;
-const int seMargin=25;
 
 //depth prunning threshold
 const int aspirationDepth=6;
 const int futilityDepth=5;
 const int nullMoveDepth=4;
 const int razorDepth=4;
+const int hardPruneDepth=3;
 const int lmrDepthThresholdRoot=3;
-const int sePVDepth=7;
-const int seNonPVDepth=9;
 const int lateMoveThreshold=2;
 
 const int scoreTable[11]={0,80000,60000,95000,90000,45000,40000,1000,-12000,50050,50000};
@@ -384,8 +382,8 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 
 	while (moves.hasNext()) {
 		MoveIterator::Move& move = moves.next();
-		const PieceTypeByColor pieceFrom = board.getPieceBySquare(move.from);
-		const PieceTypeByColor pieceTo = board.getPieceBySquare(move.to);
+		const PieceTypeByColor pieceFrom = board.getPiece(move.from);
+		const PieceTypeByColor pieceTo = board.getPiece(move.to);
 		if (move.type==MoveIterator::UNKNOW) {
 			move.score=-maxScore;
 			if (pieceTo!=EMPTY) {
@@ -474,10 +472,10 @@ inline bool SimplePVSearch::isMateScore(const int score) {
 // remains pawns & kings only?
 inline bool SimplePVSearch::isPawnFinal(Board& board) {
 
-	Bitboard pieces = board.getPiecesByType(WHITE_PAWN) |
-			board.getPiecesByType(BLACK_PAWN) |
-			board.getPiecesByType(WHITE_KING) |
-			board.getPiecesByType(BLACK_KING);
+	Bitboard pieces = board.getPieces(WHITE_PAWN) |
+			board.getPieces(BLACK_PAWN) |
+			board.getPieces(WHITE_KING) |
+			board.getPieces(BLACK_KING);
 
 	return !(pieces^board.getAllPieces());
 }
@@ -485,7 +483,7 @@ inline bool SimplePVSearch::isPawnFinal(Board& board) {
 // pawn push
 inline bool SimplePVSearch::isPawnPush(Board& board, Square& square) {
 
-	if (board.getPieceTypeBySquare(square)!=PAWN) {
+	if (board.getPieceType(square)!=PAWN) {
 		return false;
 	}
 	return evaluator.isPawnPassed(board,square);
@@ -498,16 +496,16 @@ inline bool SimplePVSearch::isCaptureOrPromotion(Board& board, MoveIterator::Mov
 
 // pawn promoting
 inline bool SimplePVSearch::isPawnPromoting(const Board& board) {
-	return (board.getPiecesByType(WHITE_PAWN) & rankBB[RANK_7]) ||
-			(board.getPiecesByType(BLACK_PAWN) & rankBB[RANK_2]);
+	return (board.getPieces(WHITE_PAWN) & rankBB[RANK_7]) ||
+			(board.getPieces(BLACK_PAWN) & rankBB[RANK_2]);
 }
 
 // pawn on 7th rank
 inline bool SimplePVSearch::isPawnOn7thRank(const Board& board, const Square pieceOnSquare, const Square target) {
-	if (board.getPieceTypeBySquare(pieceOnSquare)!=PAWN) {
+	if (board.getPieceType(pieceOnSquare)!=PAWN) {
 		return false;
 	}
-	const PieceColor color=board.getPieceColorBySquare(pieceOnSquare);
+	const PieceColor color=board.getPieceColor(pieceOnSquare);
 	return  (squareToBitboard[target] & promoRank[color]);
 }
 
@@ -616,7 +614,7 @@ inline void SimplePVSearch::updateHistory(Board& board, MoveIterator::Move& move
 		return;
 	}
 
-	history[board.getPieceBySquare(move.from)][move.to]+=depth*depth;
+	history[board.getPiece(move.from)][move.to]+=depth*depth;
 
 }
 

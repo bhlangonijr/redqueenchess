@@ -79,10 +79,10 @@ void Evaluator::evalKing(PieceColor color, EvalInfo& evalInfo) {
 	const PieceColor other = evalInfo.board.flipSide(color);
 	const Square kingSq = evalInfo.board.getKingSquare(color);
 	const Bitboard kingSquareBB = adjacentSquares[kingSq];
-	const PieceTypeByColor knight = evalInfo.board.makePiece(other,KNIGHT);
-	const PieceTypeByColor bishop = evalInfo.board.makePiece(other,BISHOP);
-	const PieceTypeByColor rook = evalInfo.board.makePiece(other,ROOK);
-	const PieceTypeByColor queen = evalInfo.board.makePiece(other,QUEEN);
+	const PieceTypeByColor knight = makePiece(other,KNIGHT);
+	const PieceTypeByColor bishop = makePiece(other,BISHOP);
+	const PieceTypeByColor rook = makePiece(other,ROOK);
+	const PieceTypeByColor queen = makePiece(other,QUEEN);
 
 	// king area safety
 	const Bitboard knightAttacks = evalInfo.attackers[knight]&kingSquareBB;
@@ -120,8 +120,8 @@ void Evaluator::evalPawnsFromCache(PieceColor color, PawnInfo& info, EvalInfo& e
 	Bitboard passed=info.passers[color] & pawns;
 	if (passed) {
 		const Bitboard pawnsAndKings = pawns | otherPawns |
-				evalInfo.board.getPiecesByType(WHITE_KING) |
-				evalInfo.board.getPiecesByType(BLACK_KING);
+				evalInfo.board.getPieces(WHITE_KING) |
+				evalInfo.board.getPieces(BLACK_KING);
 		const bool isPawnFinal = !(pawnsAndKings^all);
 		Square from = extractLSB(passed);
 		while ( from!=NONE ) {
@@ -150,8 +150,8 @@ void Evaluator::evalPawns(PieceColor color, EvalInfo& evalInfo) {
 	//bonus to passer and candidates
 	if (pawns) {
 		const Bitboard pawnsAndKings = pawns | otherPawns |
-				evalInfo.board.getPiecesByType(WHITE_KING) |
-				evalInfo.board.getPiecesByType(BLACK_KING);
+				evalInfo.board.getPieces(WHITE_KING) |
+				evalInfo.board.getPieces(BLACK_KING);
 		const bool isPawnFinal = !(pawnsAndKings^all);
 		Bitboard pieces=pawns;
 		Square from = extractLSB(pieces);
@@ -241,7 +241,7 @@ const int Evaluator::evalPassedPawn(Board& board, PieceColor color, const Square
 // Bishops eval function
 void Evaluator::evalBishops(PieceColor color, EvalInfo& evalInfo) {
 
-	const Bitboard bishop = evalInfo.board.getPiecesByType(evalInfo.board.makePiece(color,BISHOP));
+	const Bitboard bishop = evalInfo.board.getPieces(color,BISHOP);
 
 	if ((bishop & WHITE_SQUARES) && (bishop & BLACK_SQUARES)) {
 		evalInfo.value[color] += BISHOP_PAIR_BONUS;
@@ -254,58 +254,50 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 
 	const PieceColor other = evalInfo.board.flipSide(color);
 	const Square otherKingSq = evalInfo.board.getKingSquare(other);
-	const PieceTypeByColor pawnOther = evalInfo.board.makePiece(other,PAWN);
-	const PieceTypeByColor pawn = evalInfo.board.makePiece(color,PAWN);
-	const PieceTypeByColor knight = evalInfo.board.makePiece(color,KNIGHT);
-	const PieceTypeByColor bishop = evalInfo.board.makePiece(color,BISHOP);
-	const PieceTypeByColor rook = evalInfo.board.makePiece(color,ROOK);
-	const PieceTypeByColor queen = evalInfo.board.makePiece(color,QUEEN);
-	const PieceTypeByColor king = evalInfo.board.makePiece(color,KING);
-	const PieceTypeByColor otherKing = evalInfo.board.makePiece(other,KING);
-	const Bitboard otherKingBB = evalInfo.board.getPiecesByType(otherKing);
-	const Bitboard freeArea = ~(evalInfo.board.getPiecesByColor(color) |
-			evalInfo.attackers[pawnOther]);
+	const Bitboard otherKingBB = evalInfo.board.getPieces(other,KING);
+	const Bitboard freeArea = ~(evalInfo.board.getPieces(color) |
+			evalInfo.attackers[makePiece(other,PAWN)]);
 
 	Bitboard pieces = EMPTY_BB;
-	evalInfo.attackers[knight] = EMPTY_BB;
-	evalInfo.attackers[bishop] = EMPTY_BB;
-	evalInfo.attackers[rook] = EMPTY_BB;
-	evalInfo.attackers[queen] = EMPTY_BB;
+	evalInfo.attackers[makePiece(color,KNIGHT)] = EMPTY_BB;
+	evalInfo.attackers[makePiece(color,BISHOP)] = EMPTY_BB;
+	evalInfo.attackers[makePiece(color,ROOK)] = EMPTY_BB;
+	evalInfo.attackers[makePiece(color,QUEEN)] = EMPTY_BB;
 	Square from = NONE;
 	evalInfo.kingThreat[color]=0;
 
-	pieces = evalInfo.board.getPiecesByType(knight);
+	pieces = evalInfo.board.getPieces(color,KNIGHT);
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
 		const Bitboard attacks = evalInfo.board.getKnightAttacks(from);
 		evalInfo.value[color] += knightMobility[_BitCount(attacks&freeArea)];
 		evalInfo.kingThreat[color] += knightKingBonus[squareDistance(from,otherKingSq)];
-		evalInfo.attackers[knight] |= attacks;
-		if (knightOutpostBonus[color][from] && evalInfo.attackers[pawn]&squareToBitboard[from] &&
-				!(evalInfo.attackers[pawnOther]&squareToBitboard[from])) {
+		evalInfo.attackers[makePiece(color,KNIGHT)] |= attacks;
+		if (knightOutpostBonus[color][from] && evalInfo.attackers[makePiece(color,PAWN)]&squareToBitboard[from] &&
+				!(evalInfo.attackers[makePiece(other,PAWN)]&squareToBitboard[from])) {
 			evalInfo.value[color] += knightOutpostBonus[color][from];
 		}
 		from = extractLSB(pieces);
 	}
 
-	pieces = evalInfo.board.getPiecesByType(bishop);
+	pieces = evalInfo.board.getPieces(color,BISHOP);
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
 		const Bitboard attacks = evalInfo.board.getBishopAttacks(from);
-		evalInfo.attackers[bishop] |= attacks;
+		evalInfo.attackers[makePiece(color,BISHOP)] |= attacks;
 		evalInfo.value[color] += bishopMobility[_BitCount(attacks&freeArea)];
 		evalInfo.kingThreat[color] += bishopKingBonus[squareDistance(from,otherKingSq)];
 		from = extractLSB(pieces);
 	}
 
-	pieces = evalInfo.board.getPiecesByType(rook);
+	pieces = evalInfo.board.getPieces(color,ROOK);
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
 		const Bitboard attacks = evalInfo.board.getRookAttacks(from);
-		evalInfo.attackers[rook] |= attacks;
+		evalInfo.attackers[makePiece(color,ROOK)] |= attacks;
 		evalInfo.value[color] += rookMobility[_BitCount(attacks&freeArea)];
 		evalInfo.kingThreat[color] += rookKingBonus[squareDistance(from,otherKingSq)];
 		if ((squareToBitboard[from] & promoRank[color]) &&
@@ -315,13 +307,13 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 		from = extractLSB(pieces);
 	}
 
-	pieces = evalInfo.board.getPiecesByType(queen);
+	pieces = evalInfo.board.getPieces(color,QUEEN);
 	from = extractLSB(pieces);
 
 	while ( from!=NONE ) {
 		const Bitboard attacks = evalInfo.board.getQueenAttacks(from);
 		const int queenMobility = _BitCount(attacks&freeArea)-10;
-		evalInfo.attackers[queen] |= attacks;
+		evalInfo.attackers[makePiece(color,QUEEN)] |= attacks;
 		evalInfo.value[color] += MS(queenMobility,queenMobility);
 		evalInfo.kingThreat[color] += queenKingBonus[squareDistance(from,otherKingSq)];
 		if ((squareToBitboard[from] & promoRank[color]) &&
@@ -332,13 +324,14 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 	}
 
 	// evaluate space
-	const Bitboard sidePieces = evalInfo.board.getPiecesByColor(color);
-	const Bitboard kingAndPawns = evalInfo.board.getPiecesByType(king) | evalInfo.pawns[color];
+	const Bitboard sidePieces = evalInfo.board.getPieces(color);
+	const Bitboard kingAndPawns = evalInfo.board.getPieces(color,KING) | evalInfo.pawns[color];
 	const Bitboard otherSideControl = (sidePieces ^ kingAndPawns) & colorSpaceBB[other] & freeArea;
 	evalInfo.value[color] += spaceBonus[_BitCount(otherSideControl)];
 
-	evalInfo.attacks[color] = evalInfo.attackers[knight] | evalInfo.attackers[bishop] |
-			evalInfo.attackers[rook] | evalInfo.attackers[queen] | evalInfo.attackers[pawn];
+	evalInfo.attacks[color] = evalInfo.attackers[makePiece(color,KNIGHT)] |
+			evalInfo.attackers[makePiece(color,BISHOP)] | evalInfo.attackers[makePiece(color,ROOK)] |
+			evalInfo.attackers[makePiece(color,QUEEN)] | evalInfo.attackers[makePiece(color,PAWN)];
 
 }
 
@@ -346,19 +339,19 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 void Evaluator::evalThreats(PieceColor color, EvalInfo& evalInfo) {
 
 	const PieceColor other = evalInfo.board.flipSide(color);
-	const PieceTypeByColor pawnOther = evalInfo.board.makePiece(other,PAWN);
+	const PieceTypeByColor pawnOther = makePiece(other,PAWN);
 
-	Bitboard pieces=evalInfo.board.getPiecesByColor(other) &
+	Bitboard pieces=evalInfo.board.getPieces(other) &
 			~evalInfo.attackers[pawnOther] & evalInfo.attacks[color];
 
 	if (pieces) {
 		for (int sideType=KNIGHT;sideType<KING;sideType++) {
-			const PieceTypeByColor sidePiece = evalInfo.board.makePiece(color,PieceType(sideType));
+			const PieceTypeByColor sidePiece = makePiece(color,PieceType(sideType));
 			Bitboard attacked = evalInfo.attackers[sidePiece]&pieces;
 			if (attacked) {
 				for (int otherType=PAWN;otherType<=KING;otherType++) {
-					const PieceTypeByColor otherPiece = evalInfo.board.makePiece(other,PieceType(otherType));
-					if (attacked & evalInfo.board.getPiecesByType(otherPiece)) {
+					const PieceTypeByColor otherPiece = makePiece(other,PieceType(otherType));
+					if (attacked & evalInfo.board.getPieces(otherPiece)) {
 						evalInfo.value[color] += threatBonus[sideType][otherType];
 					}
 				}
@@ -367,8 +360,3 @@ void Evaluator::evalThreats(PieceColor color, EvalInfo& evalInfo) {
 	}
 
 }
-
-
-
-
-

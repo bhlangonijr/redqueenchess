@@ -339,10 +339,6 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		}
 	}
 
-	const bool canDoSingularExtension = depth > sePVDepth &&
-			!hashMove.none() && !si.partialSearch && hashData.depth() >= depth-2 &&
-			(hashData.flag() & TranspositionTable::LOWER);
-
 	MoveIterator moves = MoveIterator();
 	MoveIterator::Move bestMove;
 	int moveCounter=0;
@@ -368,16 +364,6 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		int extension=0;
 		if (isKingAttacked || pawnOn7thExtension) {
 			extension++;
-		} else if (canDoSingularExtension && move == hashMove) {
-			if (abs(hashData.value()) < winningScore) {
-				SearchInfo seSi(false,move,true);
-				const int seValue = hashData.value() - seMargin;
-				const int partialScore = zwSearch(board,seSi,seValue-1,depth/2,ply,&line);
-				if (partialScore < seValue) {
-					extension++;
-
-				}
-			}
 		}
 
 		SearchInfo newSi(true,move);
@@ -484,8 +470,8 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 
 	PvLine line = PvLine();
 	const bool isKingAttacked = board.isInCheck();
-	bool nullMoveMateScore=false;
-	bool okToPruneWithHash=false;
+	bool nmMateScore=false;
+	bool okToPrune=false;
 	int score = 0;
 	int currentScore = -maxScore;
 	TranspositionTable::HashData hashData;
@@ -493,9 +479,9 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	const Key key = si.partialSearch?board.getPartialSearchKey():board.getKey();
 
 	// tt retrieve & prunning
-	if (agent->hashPruneGet(okToPruneWithHash, key, hashData, ply, depth, si.allowNullMove, beta-1, beta)) {
+	if (agent->hashPruneGet(okToPrune, key, hashData, ply, depth, si.allowNullMove, beta-1, beta)) {
 		hashMove = hashData.move();
-		if (okToPruneWithHash) {
+		if (okToPrune) {
 			return hashData.value();
 		}
 	}
@@ -546,7 +532,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 			return score;
 		} else {
 			if (score < -maxScore-maxSearchPly) {
-				nullMoveMateScore=true;
+				nmMateScore=true;
 			}
 		}
 	}
@@ -563,14 +549,6 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		}
 	}
 
-	const bool canDoSingularExtension = depth > seNonPVDepth &&
-			!hashMove.none() && !si.partialSearch && hashData.depth() >= depth-2 &&
-			(hashData.flag() & TranspositionTable::LOWER);
-
-	if (canDoSingularExtension) {
-
-	}
-
 	MoveIterator moves = MoveIterator();
 	MoveIterator::Move bestMove;
 	int moveCounter=0;
@@ -584,6 +562,10 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		if (si.partialSearch && move == si.move) {
 			continue;
 		}
+		if (move.type == MoveIterator::BAD_CAPTURE && !isKingAttacked &&
+				depth < hardPruneDepth && bestScore>-maxScore+maxSearchPly) {
+			continue;
+		}
 		MoveBackup backup;
 		board.doMove(move,backup);
 
@@ -595,12 +577,12 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 
 		//futility
 		if  (	move.type == MoveIterator::NON_CAPTURE &&
-				depth < futilityDepth &&
-				!isKingAttacked &&
-				!givingCheck &&
 				!pawnOn7thExtension &&
 				!passedPawn &&
-				!nullMoveMateScore) {
+				depth < futilityDepth &&
+				!isKingAttacked &&
+				!(givingCheck && evaluator.see<true>(board,move)>=0) &&
+				!nmMateScore) {
 			if (moveCountMargin(depth) < moveCounter  && !isMateScore(bestScore) ) {
 				board.undoMove(backup);
 				continue;
@@ -620,18 +602,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		int extension=0;
 		if (isKingAttacked || pawnOn7thExtension){
 			extension++;
-		} else if (canDoSingularExtension && move == hashMove) {
-			if (abs(hashData.value()) < winningScore) {
-				SearchInfo seSi(false,move,true);
-				const int seValue = hashData.value() - seMargin;
-				const int partialScore = zwSearch(board,seSi,seValue-1,depth/2,ply,&line);
-				if (partialScore < seValue) {
-					extension++;
-				}
-			}
-		}
-
-		if (!extension && !givingCheck && !passedPawn && !nullMoveMateScore &&
+		} else if (!givingCheck && !passedPawn && !nmMateScore &&
 				move.type == MoveIterator::NON_CAPTURE) {
 			reduction=reductionTableNonPV[depth][moveCounter];
 		}
@@ -755,8 +726,8 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 			continue;
 		}
 
-		if (move.promotionPiece==board.makePiece(sideToMove,ROOK) ||
-				move.promotionPiece==board.makePiece(sideToMove,BISHOP)	) {
+		if (move.promotionPiece==makePiece(sideToMove,ROOK) ||
+				move.promotionPiece==makePiece(sideToMove,BISHOP)	) {
 			continue;
 		}
 
@@ -765,7 +736,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 
 		const bool givingCheck = board.setInCheck(board.getSideToMove());
 
-		if (move.promotionPiece==board.makePiece(sideToMove,KNIGHT) &&
+		if (move.promotionPiece==makePiece(sideToMove,KNIGHT) &&
 				!givingCheck) {
 			board.undoMove(backup);
 			continue;

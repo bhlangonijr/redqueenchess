@@ -550,6 +550,10 @@ inline Square extractLSB(Bitboard& bitboard) {
 
 }
 
+inline const PieceTypeByColor makePiece(const PieceColor color, const PieceType type) {
+	return pieceTypeByColor[color][type];
+}
+
 inline const int upperScore(const int value) {
 	return ((static_cast<int16_t>(value >> 15) & 1) + static_cast<int16_t>(value >> 16));
 }
