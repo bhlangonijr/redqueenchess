@@ -383,8 +383,8 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 	const Bitboard bishops = board.getPieces(side,BISHOP) | board.getPieces(other,BISHOP);
 	const Bitboard queens = board.getPieces(side,QUEEN) | board.getPieces(other,QUEEN);
 
-	const Bitboard bishopAndQueen =  rooks | queens;
-	const Bitboard rookAndQueen =  bishops | queens;
+	const Bitboard bishopAndQueen = bishops | queens;
+	const Bitboard rookAndQueen = rooks | queens;
 
 	Bitboard attackers =
 			(bishopAttacks & bishopAndQueen) |
@@ -400,7 +400,6 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 	Bitboard allAttackers = EMPTY_BB;
 
 	gain[0] = materialValues[secondPiece];
-	gain[1] = secondPiece==EMPTY?0:materialValues[firstPiece] - gain[0];
 
 	if (board.getPieceType(secondPiece)==KING) {
 		return queenValue*10;
@@ -410,9 +409,7 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 
 		allAttackers |= attackers;
 		idx++;
-		if (idx>1) {
-			gain[idx]  = materialValues[firstPiece] - gain[idx-1];
-		}
+		gain[idx]  = materialValues[firstPiece] - gain[idx-1];
 		attackers ^= fromPiece;
 		occupied  ^= fromPiece;
 		Bitboard moreAttackers = (bishopAndQueen | rookAndQueen) & (~allAttackers);

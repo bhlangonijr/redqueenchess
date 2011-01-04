@@ -672,13 +672,13 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 	TranspositionTable::HashData hashData;
 	MoveIterator::Move hashMove;
 	const Key key = board.getKey();
-	bool okToPruneWithHash=false;
+	bool okToPrune=false;
 	const int oldAlpha=alpha;
 
 	// tt retrieve & prunning
-	if (agent->hashPruneGet(okToPruneWithHash, key, hashData, ply, depth, true, alpha, beta)) {
+	if (agent->hashPruneGet(okToPrune, key, hashData, ply, depth, true, alpha, beta)) {
 		hashMove = hashData.move();
-		if (okToPruneWithHash && !isPV) {
+		if (okToPrune && !isPV) {
 			return hashData.value();
 		}
 	}
@@ -717,7 +717,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		moveCounter++;
 
 		if (!isKingAttacked && !isPV && depth < 0 &&
-				move.type==MoveIterator::BAD_CAPTURE &&
+				evaluator.see<true>(board,move)<0 &&
 				move != hashMove) {
 			continue;
 		}

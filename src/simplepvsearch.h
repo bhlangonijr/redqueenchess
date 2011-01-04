@@ -303,7 +303,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 					continue;
 				}
 				if (move.type==MoveIterator::UNKNOW_CAPTURE) {
-					move.score=evaluator.see<false>(board,move);
+					move.score=evaluator.see<true>(board,move);
 					if (move.score >= 0) {
 						move.type=MoveIterator::GOOD_CAPTURE;
 						move.score+=scoreTable[move.type];
