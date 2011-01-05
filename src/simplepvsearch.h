@@ -58,7 +58,6 @@ const int aspirationDepth=6;
 const int futilityDepth=5;
 const int nullMoveDepth=4;
 const int razorDepth=4;
-const int hardPruneDepth=3;
 const int lmrDepthThresholdRoot=3;
 const int lateMoveThreshold=2;
 
@@ -257,7 +256,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			return emptyMove;
 
 		case MoveIterator::BEGIN_STAGE:
-			if (!board.isInCheck()) {
+			if (!board.isInCheck()/* || (quiescenceMoves && depth<-1)*/) {
 				moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
 			} else {
 				moves.setStage(MoveIterator::INIT_EVASION_STAGE);
@@ -303,7 +302,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 					continue;
 				}
 				if (move.type==MoveIterator::UNKNOW_CAPTURE) {
-					move.score=evaluator.see<true>(board,move);
+					move.score=evaluator.see<false>(board,move);
 					if (move.score >= 0) {
 						move.type=MoveIterator::GOOD_CAPTURE;
 						move.score+=scoreTable[move.type];

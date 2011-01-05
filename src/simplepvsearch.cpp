@@ -313,7 +313,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 	int score = -maxScore;
 	TranspositionTable::HashData hashData;
 	MoveIterator::Move hashMove;
-	const Key key = si.partialSearch?board.getPartialSearchKey():board.getKey();
+	const Key key = board.getKey();
 	alpha = std::max(-maxScore+ply, alpha);
 	beta = std::min(maxScore-(ply+1), beta);
 
@@ -473,7 +473,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	int currentScore = -maxScore;
 	TranspositionTable::HashData hashData;
 	MoveIterator::Move hashMove;
-	const Key key = si.partialSearch?board.getPartialSearchKey():board.getKey();
+	const Key key = board.getKey();
 
 	// tt retrieve & prunning
 	if (agent->hashPruneGet(okToPrune, key, hashData, ply, depth, si.allowNullMove, beta-1, beta)) {
@@ -567,13 +567,12 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 
 		//futility
 		if  (	move.type == MoveIterator::NON_CAPTURE &&
-				!pawnOn7thExtension &&
-				!passedPawn &&
 				depth < futilityDepth &&
 				!isKingAttacked &&
-				!(givingCheck && evaluator.see<false>(board,move)>=0) &&
+				!givingCheck &&
+				!pawnOn7thExtension &&
+				!passedPawn &&
 				!nmMateScore) {
-
 			if (moveCountMargin(depth) < moveCounter  && !isMateScore(bestScore) ) {
 				board.undoMove(backup);
 				continue;
@@ -583,11 +582,6 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 				if (futilityScore>bestScore) {
 					bestScore=futilityScore;
 				}
-				board.undoMove(backup);
-				continue;
-			}
-			if (evaluator.see<false>(board,move)<0 &&
-					depth < hardPruneDepth && bestScore>-maxScore+maxSearchPly) {
 				board.undoMove(backup);
 				continue;
 			}
@@ -717,7 +711,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		moveCounter++;
 
 		if (!isKingAttacked && !isPV && depth < 0 &&
-				evaluator.see<true>(board,move)<0 &&
+				move.type==MoveIterator::BAD_CAPTURE &&
 				move != hashMove) {
 			continue;
 		}
@@ -786,7 +780,7 @@ void SimplePVSearch::initialize() {
 
 	for (int x=0;x<=maxSearchDepth;x++) {
 		for (int y=0;y<maxMoveCount;y++) {
-			reductionTablePV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/3.0);
+			reductionTablePV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/4.0);
 			reductionTableNonPV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/2.0);
 			//std::cout << "[" << x << ", " << y << "] " << reductionTableNonPV[x][y] << " - " << reductionTablePV[x][y] << std::endl;
 		}
