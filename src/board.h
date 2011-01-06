@@ -1196,7 +1196,7 @@ inline void Board::generatePawnMoves(MoveIterator& moves, const PieceColor side,
 				moves.add(from,target,makePiece(side,ROOK),MoveIterator::PROMO_NONCAPTURE);
 				moves.add(from,target,makePiece(side,BISHOP),MoveIterator::PROMO_NONCAPTURE);
 			} else {
-				moves.add(from,target,EMPTY,MoveIterator::NON_CAPTURE);
+				moves.add(from,target,EMPTY);
 			}
 			target = extractLSB(attacks);
 		}

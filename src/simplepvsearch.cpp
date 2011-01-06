@@ -330,10 +330,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 
 	//iid
 	if (depth > allowIIDAtPV &&	hashMove.none() && !isKingAttacked) {
-		const bool allow = si.allowNullMove;
-		si.allowNullMove=false;
 		score = pvSearch(board,si,alpha,beta,depth-2,ply,pv);
-		si.allowNullMove=allow;
 		if (agent->hashGet(key, hashData, ply)) {
 			hashMove = hashData.move();
 		}
@@ -647,10 +644,6 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 
 	_nodes++;
 
-	if (depth==0 && ply>maxPlySearched) {
-		maxPlySearched=ply;
-	}
-
 	if (stop()) {
 		return 0;
 	}
@@ -780,8 +773,8 @@ void SimplePVSearch::initialize() {
 
 	for (int x=0;x<=maxSearchDepth;x++) {
 		for (int y=0;y<maxMoveCount;y++) {
-			reductionTablePV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/4.0);
-			reductionTableNonPV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/2.0);
+			reductionTablePV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/4);
+			reductionTableNonPV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/2);
 			//std::cout << "[" << x << ", " << y << "] " << reductionTableNonPV[x][y] << " - " << reductionTablePV[x][y] << std::endl;
 		}
 	}

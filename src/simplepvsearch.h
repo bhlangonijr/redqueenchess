@@ -223,6 +223,7 @@ private:
 	template <bool quiescenceMoves>
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves,
 			MoveIterator::Move& ttMove, int ply, int depth);
+	template <bool isEvasion>
 	void scoreMoves(Board& board, MoveIterator& moves);
 	void scoreRootMoves(Board& board, MoveIterator& moves);
 	void filterLegalMoves(Board& board, MoveIterator& moves);
@@ -256,7 +257,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			return emptyMove;
 
 		case MoveIterator::BEGIN_STAGE:
-			if (!board.isInCheck()/* || (quiescenceMoves && depth<-1)*/) {
+			if (!board.isInCheck() || (quiescenceMoves && depth<-1)) {
 				moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
 			} else {
 				moves.setStage(MoveIterator::INIT_EVASION_STAGE);
@@ -268,7 +269,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 		case MoveIterator::INIT_EVASION_STAGE:
 			board.generateEvasions(moves, board.getSideToMove());
-			scoreMoves(board, moves);
+			scoreMoves<true>(board, moves);
 			moves.setStage(MoveIterator::ON_EVASION_STAGE);
 			break;
 
@@ -291,7 +292,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 					board.generateNonCaptureChecks(moves, board.getSideToMove());
 				}
 			}
-			scoreMoves(board, moves);
+			scoreMoves<false>(board, moves);
 			moves.setStage(MoveIterator::ON_CAPTURE_STAGE);
 			break;
 
@@ -350,7 +351,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 		case MoveIterator::INIT_QUIET_STAGE:
 			board.generateNonCaptures(moves, board.getSideToMove());
-			scoreMoves(board, moves);
+			scoreMoves<false>(board, moves);
 			moves.setStage(MoveIterator::ON_QUIET_STAGE);
 			break;
 
@@ -375,6 +376,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 }
 
 // score moves
+template <bool isEvasion>
 inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 
 	moves.bookmark();
@@ -383,28 +385,43 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 		MoveIterator::Move& move = moves.next();
 		const PieceTypeByColor pieceFrom = board.getPiece(move.from);
 		const PieceTypeByColor pieceTo = board.getPiece(move.to);
+
 		if (move.type==MoveIterator::UNKNOW) {
 			move.score=-maxScore;
+			if (isEvasion) {
+				int seeValue = evaluator.see<true>(board,move);
+				if (seeValue<0) {
+					move.score = seeValue-10000;
+				}
+			}
+			bool isCapture=false;
 			if (pieceTo!=EMPTY) {
-				move.score=(materialValues[pieceTo]-materialValues[pieceFrom]);
+				if (move.score==-maxScore) {
+					move.score=(materialValues[pieceTo]-materialValues[pieceFrom]);
+				}
+				isCapture=true;
 			} else if (board.getPieceType(pieceFrom)==PAWN){
 				if (board.getEnPassant()!=NONE &&
 						board.getSquareFile(move.from)!=board.getSquareFile(move.to)) {
-					move.score=0;
+					if (move.score==-maxScore) {
+						move.score=0;
+					}
+					isCapture=true;
 				}
 			}
-			if (move.score!=-maxScore) {
+			if (isCapture) {
 				move.type = (move.score >= 0 ?
 						MoveIterator::GOOD_CAPTURE : MoveIterator::UNKNOW_CAPTURE);
 			} else {
 				move.type=MoveIterator::NON_CAPTURE;
-				const int hist = history[pieceFrom][move.to];
-				const GamePhase phase = board.getGamePhase();
-				const int gain =
-						board.getPieceSquareValue(pieceFrom,move.to,phase)-
-						board.getPieceSquareValue(pieceFrom,move.from,phase);
-				move.score=hist+gain;
-
+				if (move.score==-maxScore) {
+					const int hist = history[pieceFrom][move.to];
+					const GamePhase phase = board.getGamePhase();
+					const int gain =
+							board.getPieceSquareValue(pieceFrom,move.to,phase)-
+							board.getPieceSquareValue(pieceFrom,move.from,phase);
+					move.score=hist+gain;
+				}
 			}
 		}
 		move.score+=scoreTable[move.type];
