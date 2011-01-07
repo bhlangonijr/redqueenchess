@@ -309,7 +309,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 	int score = -maxScore;
 	TranspositionTable::HashData hashData;
 	MoveIterator::Move hashMove;
-	const Key key = board.getKey();
+	const Key key = si.partialSearch?board.getPartialSearchKey():board.getKey();
 	alpha = std::max(-maxScore+ply, alpha);
 	beta = std::min(maxScore-(ply+1), beta);
 
@@ -336,12 +336,33 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 	MoveIterator::Move bestMove;
 	int moveCounter=0;
 	int bestScore=-maxScore;
+	bool isSingularMove = false;
+
+	if (!hashMove.none() && !board.isMoveLegal<true>(hashMove)) {
+		hashMove=emptyMove;
+	}
+
+	// se
+	if (depth > sePVDepth && !hashMove.none() && !si.partialSearch &&
+			hashData.depth() >= depth-3 && (hashData.flag() & TranspositionTable::LOWER)) {
+		if (abs(hashData.value()) < winningScore) {
+			SearchInfo seSi(false,hashMove,true);
+			const int seValue = hashData.value() - seMargin;
+			const int partialScore = zwSearch(board,seSi,seValue,depth/2,ply,&line);
+			if (partialScore < seValue) {
+				isSingularMove = true;
+			}
+		}
+	}
 
 	while (true) {
 
 		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, ply, depth);
 		if (move.none()) {
 			break;
+		}
+		if (si.partialSearch && move == si.move) {
+			continue;
 		}
 		MoveBackup backup;
 		board.doMove(move,backup);
@@ -352,7 +373,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
 
 		int extension=0;
-		if (isKingAttacked || pawnOn7thExtension) {
+		if (isKingAttacked || pawnOn7thExtension || (isSingularMove && move==hashMove)) {
 			extension++;
 		}
 
@@ -462,7 +483,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	int currentScore = -maxScore;
 	TranspositionTable::HashData hashData;
 	MoveIterator::Move hashMove;
-	const Key key = board.getKey();
+	const Key key = si.partialSearch?board.getPartialSearchKey():board.getKey();
 
 	// tt retrieve & prunning
 	if (agent->hashPruneGet(okToPrune, key, hashData, ply, depth, si.allowNullMove, beta-1, beta)) {
@@ -539,11 +560,32 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	MoveIterator::Move bestMove;
 	int moveCounter=0;
 	int bestScore=-maxScore;
+	bool isSingularMove = false;
+
+	if (!hashMove.none() && !board.isMoveLegal<true>(hashMove)) {
+		hashMove=emptyMove;
+	}
+
+	// se
+	if (depth > seNonPVDepth && !hashMove.none() && !si.partialSearch &&
+			hashData.depth() >= depth-3 && (hashData.flag() & TranspositionTable::LOWER)) {
+		if (abs(hashData.value()) < winningScore) {
+			SearchInfo seSi(false,hashMove,true);
+			const int seValue = hashData.value() - seMargin;
+			const int partialScore = zwSearch(board,seSi,seValue,depth/2,ply,&line);
+			if (partialScore < seValue) {
+				isSingularMove = true;
+			}
+		}
+	}
 
 	while (true) {
 		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, ply, depth);
 		if (move.none()) {
 			break;
+		}
+		if (si.partialSearch && move == si.move) {
+			continue;
 		}
 		MoveBackup backup;
 		board.doMove(move,backup);
@@ -583,7 +625,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		//reductions
 		int reduction=0;
 		int extension=0;
-		if (isKingAttacked || pawnOn7thExtension){
+		if (isKingAttacked || pawnOn7thExtension || (isSingularMove && move==hashMove)) {
 			extension++;
 		} else if (depth>lmrDepthThreshold && !givingCheck && !passedPawn && !nmMateScore &&
 				move.type == MoveIterator::NON_CAPTURE) {
@@ -704,10 +746,8 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 
 		moveCounter++;
 
-		if (!isKingAttacked && !isPV && depth < 0 &&
-				(move.type==MoveIterator::BAD_CAPTURE ||
-						evaluator.see<true>(board,move)<0) &&
-						move != hashMove) {
+		if (!isKingAttacked && !isPV &&	(move.type==MoveIterator::BAD_CAPTURE ||
+				evaluator.see<false>(board,move)<0) && move != hashMove) {
 			continue;
 		}
 

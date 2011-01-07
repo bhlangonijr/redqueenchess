@@ -52,6 +52,7 @@ const int iidMargin=260;
 const int easyMargin=500;
 const int deltaMargin=950;
 const int nullMoveMargin=512;
+const int seMargin=35;
 
 //depth prunning threshold
 const int aspirationDepth=6;
@@ -61,6 +62,8 @@ const int razorDepth=4;
 const int hardPruneDepth=3;
 const int lmrDepthThresholdRoot=3;
 const int lmrDepthThreshold=2;
+const int sePVDepth=7;
+const int seNonPVDepth=9;
 const int lateMoveThreshold=2;
 
 const int scoreTable[11]={0,80000,60000,95000,90000,45000,40000,1000,-12000,50050,50000};
@@ -264,7 +267,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			} else {
 				moves.setStage(MoveIterator::INIT_EVASION_STAGE);
 			}
-			if (!ttMove.none() && board.isMoveLegal<true>(ttMove)) {
+			if (!ttMove.none()/* && board.isMoveLegal<true>(ttMove)*/) {
 				return ttMove;
 			}
 			break;
