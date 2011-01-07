@@ -58,7 +58,9 @@ const int aspirationDepth=6;
 const int futilityDepth=5;
 const int nullMoveDepth=4;
 const int razorDepth=4;
+const int hardPruneDepth=3;
 const int lmrDepthThresholdRoot=3;
+const int lmrDepthThreshold=2;
 const int lateMoveThreshold=2;
 
 const int scoreTable[11]={0,80000,60000,95000,90000,45000,40000,1000,-12000,50050,50000};
