@@ -83,6 +83,10 @@ public:
 			return from==NONE;
 		}
 
+		inline void clear() {
+			from=NONE;
+		}
+
 		Square from;
 		Square to;
 		PieceTypeByColor promotionPiece;

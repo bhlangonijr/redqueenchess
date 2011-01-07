@@ -338,14 +338,10 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 	int bestScore=-maxScore;
 	bool isSingularMove = false;
 
-	if (!hashMove.none() && !board.isMoveLegal<true>(hashMove)) {
-		hashMove=emptyMove;
-	}
-
 	// se
 	if (depth > sePVDepth && !hashMove.none() && !si.partialSearch &&
 			hashData.depth() >= depth-3 && (hashData.flag() & TranspositionTable::LOWER)) {
-		if (abs(hashData.value()) < winningScore) {
+		if (abs(hashData.value()) < winningScore && board.isMoveLegal<true>(hashMove)) {
 			SearchInfo seSi(false,hashMove,true);
 			const int seValue = hashData.value() - seMargin;
 			const int partialScore = zwSearch(board,seSi,seValue,depth/2,ply,&line);
@@ -562,14 +558,10 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	int bestScore=-maxScore;
 	bool isSingularMove = false;
 
-	if (!hashMove.none() && !board.isMoveLegal<true>(hashMove)) {
-		hashMove=emptyMove;
-	}
-
 	// se
 	if (depth > seNonPVDepth && !hashMove.none() && !si.partialSearch &&
 			hashData.depth() >= depth-3 && (hashData.flag() & TranspositionTable::LOWER)) {
-		if (abs(hashData.value()) < winningScore) {
+		if (abs(hashData.value()) < winningScore && board.isMoveLegal<true>(hashMove)) {
 			SearchInfo seSi(false,hashMove,true);
 			const int seValue = hashData.value() - seMargin;
 			const int partialScore = zwSearch(board,seSi,seValue,depth/2,ply,&line);
@@ -746,8 +738,8 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 
 		moveCounter++;
 
-		if (!isKingAttacked && !isPV &&	(move.type==MoveIterator::BAD_CAPTURE ||
-				evaluator.see<false>(board,move)<0) && move != hashMove) {
+		if (!isKingAttacked && !isPV && move != hashMove && depth < 0 &&
+				(move.type==MoveIterator::BAD_CAPTURE || evaluator.see<true>(board,move)<0)) {
 			continue;
 		}
 

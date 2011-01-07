@@ -267,7 +267,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			} else {
 				moves.setStage(MoveIterator::INIT_EVASION_STAGE);
 			}
-			if (!ttMove.none()/* && board.isMoveLegal<true>(ttMove)*/) {
+			if (!ttMove.none() && board.isMoveLegal<true>(ttMove)) {
 				return ttMove;
 			}
 			break;
