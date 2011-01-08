@@ -587,12 +587,12 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		const bool givingCheck = board.setInCheck(board.getSideToMove());
 		const bool passedPawn = isPawnPush(board,move.to);
 		const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
-		const int seeValue = evaluator.see<true>(board,move);
+
 		//futility
 		if  (	move.type == MoveIterator::NON_CAPTURE &&
 				depth < futilityDepth &&
 				!isKingAttacked &&
-				!(givingCheck && seeValue>=0) &&
+				!givingCheck &&
 				!pawnOn7thExtension &&
 				!passedPawn &&
 				!nmMateScore) {
@@ -605,10 +605,6 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 				if (futilityScore>bestScore) {
 					bestScore=futilityScore;
 				}
-				board.undoMove(backup);
-				continue;
-			}
-			if (depth<hardPruneDepth && seeValue<0 && bestScore>-maxScore+ply) {
 				board.undoMove(backup);
 				continue;
 			}
@@ -739,7 +735,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		moveCounter++;
 
 		if (!isKingAttacked && !isPV && move != hashMove && depth < 0 &&
-				(move.type==MoveIterator::BAD_CAPTURE || evaluator.see<true>(board,move)<0)) {
+				move.type==MoveIterator::BAD_CAPTURE) {
 			continue;
 		}
 
