@@ -61,7 +61,6 @@ const int nullMoveDepth=4;
 const int razorDepth=4;
 const int hardPruneDepth=3;
 const int lmrDepthThresholdRoot=3;
-const int lmrDepthThreshold=2;
 const int sePVDepth=7;
 const int seNonPVDepth=9;
 const int lateMoveThreshold=2;
@@ -237,7 +236,6 @@ private:
 	bool isPawnPush(Board& board, Square& square);
 	bool isCaptureOrPromotion(Board& board, MoveIterator::Move& move);
 	bool isPawnPromoting(const Board& board);
-	bool isPawnOn7thRank(const Board& board, const Square pieceOnSquare, const Square target);
 	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
 	const bool stop();
 	const bool timeIsUp();
@@ -519,15 +517,6 @@ inline bool SimplePVSearch::isCaptureOrPromotion(Board& board, MoveIterator::Mov
 inline bool SimplePVSearch::isPawnPromoting(const Board& board) {
 	return (board.getPieces(WHITE_PAWN) & rankBB[RANK_7]) ||
 			(board.getPieces(BLACK_PAWN) & rankBB[RANK_2]);
-}
-
-// pawn on 7th rank
-inline bool SimplePVSearch::isPawnOn7thRank(const Board& board, const Square pieceOnSquare, const Square target) {
-	if (board.getPieceType(pieceOnSquare)!=PAWN) {
-		return false;
-	}
-	const PieceColor color=board.getPieceColor(pieceOnSquare);
-	return  (squareToBitboard[target] & promoRank[color]);
 }
 
 inline const bool SimplePVSearch::timeIsUp() {

@@ -581,13 +581,9 @@ inline uint32_t bitCount15(const uint64_t data)
 
 // get the bit index from a bitboard
 inline Square bitboardToSquare(const Bitboard& bitboard) {
-
-	if (!bitboard) {
-		return static_cast<Square>(NONE);
-	}
 	int square=0;
 
-	if (!bitScanForward(&square, bitboard)) {
+	if (!bitboard || !bitScanForward(&square, bitboard)) {
 		return static_cast<Square>(NONE);
 	}
 
@@ -625,12 +621,9 @@ inline Bitboard getSliderAttacks(const Bitboard& attacks, const Bitboard& mask, 
 // extract least significant bit of a bitboard
 inline Square extractLSB(Bitboard& bitboard) {
 
-	if (!bitboard) {
-		return static_cast<Square>(NONE);
-	}
 	int square=0;
 
-	if (!bitScanForward(&square, bitboard)) {
+	if (!bitboard || !bitScanForward(&square, bitboard)) {
 		return static_cast<Square>(NONE);
 	}
 

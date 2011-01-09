@@ -265,7 +265,6 @@ public:
 	const Square makeSquare(const Rank rank, const File file) const;
 	const Rank getSquareRank(const Square square) const;
 	const File getSquareFile(const Square square) const;
-	const bool isAttacked(const PieceColor color, const PieceType type);
 	const bool isAttacked(const PieceColor color, const Square from);
 	const bool setInCheck(const PieceColor color);
 	const bool isNotLegal();
@@ -555,27 +554,6 @@ inline const Rank Board::getSquareRank(const Square square) const {
 inline const File Board::getSquareFile(const Square square) const {
 	return squareFile[square];
 }
-
-inline const bool Board::isAttacked(const PieceColor color, const PieceType type) {
-
-	Bitboard piece = getPieces(color,type);
-	const PieceColor other = flipSide(color);
-
-	Square from = extractLSB(piece);
-
-	if ( from!=NONE ) {
-		return 	(getBishopAttacks(from) & (getPieces(other,BISHOP) |
-				getPieces(other,QUEEN))) ||
-				(getRookAttacks(from) & (getPieces(other,ROOK) |
-						getPieces(other,QUEEN))) ||
-						(getKnightAttacks(from) & getPieces(other,KNIGHT)) ||
-						(getPawnAttacks(from,color) & getPieces(other,PAWN)) ||
-						(getKingAttacks(from) & getPieces(other,KING));
-	}
-	return false;
-
-}
-
 
 inline const bool Board::isAttacked(const PieceColor color, const Square from) {
 

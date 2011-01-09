@@ -39,36 +39,36 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 
 	EvalInfo evalInfo(board);
 
-	evalBishops(evalInfo.side, evalInfo);
-	evalBishops(evalInfo.other, evalInfo);
-	evalInfo.value[WHITE] +=
-			evalInfo.board.isCastleDone(WHITE)?DONE_CASTLE_BONUS:-DONE_CASTLE_BONUS;
-	evalInfo.value[BLACK] +=
-			evalInfo.board.isCastleDone(BLACK)?DONE_CASTLE_BONUS:-DONE_CASTLE_BONUS;
-	evalInfo.computeEval();
+	evalPieces(evalInfo.side, evalInfo);
+	evalPieces(evalInfo.other, evalInfo);
 
-	if ((evalInfo.eval > alpha-lazyEvalMargin && evalInfo.eval < beta+lazyEvalMargin) ||
-			board.isInCheck()) {
-		evalInfo.attackers[WHITE_PAWN] = ((evalInfo.pawns[WHITE] & midBoardNoFileA) << 7) |
-				((evalInfo.pawns[WHITE] & midBoardNoFileH) << 9);
-		evalInfo.attackers[BLACK_PAWN] = ((evalInfo.pawns[BLACK] & midBoardNoFileA) >> 9) |
-				((evalInfo.pawns[BLACK] & midBoardNoFileH) >> 7);
-		evalBoardControl(evalInfo.side, evalInfo);
-		evalBoardControl(evalInfo.other, evalInfo);
-		PawnInfo info;
-		if (getPawnInfo(board.getPawnKey(),info)) {
-			evalPawnsFromCache(evalInfo.side, info, evalInfo);
-			evalPawnsFromCache(evalInfo.other, info, evalInfo);
-		} else {
-			evalPawns(evalInfo.side, evalInfo);
-			evalPawns(evalInfo.other, evalInfo);
-		}
-		evalThreats(evalInfo.side, evalInfo);
-		evalThreats(evalInfo.other, evalInfo);
-		evalKing(evalInfo.side, evalInfo);
-		evalKing(evalInfo.other, evalInfo);
+	if (alpha != -maxScore && beta != maxScore) {
 		evalInfo.computeEval();
+		if ((evalInfo.eval <= alpha-lazyEvalMargin || evalInfo.eval >=beta+lazyEvalMargin) &&
+				board.isInCheck()) {
+			return evalInfo.eval;
+		}
 	}
+
+	evalInfo.attackers[WHITE_PAWN] = ((evalInfo.pawns[WHITE] & midBoardNoFileA) << 7) |
+			((evalInfo.pawns[WHITE] & midBoardNoFileH) << 9);
+	evalInfo.attackers[BLACK_PAWN] = ((evalInfo.pawns[BLACK] & midBoardNoFileA) >> 9) |
+			((evalInfo.pawns[BLACK] & midBoardNoFileH) >> 7);
+	evalBoardControl(evalInfo.side, evalInfo);
+	evalBoardControl(evalInfo.other, evalInfo);
+	PawnInfo info;
+	if (getPawnInfo(board.getPawnKey(),info)) {
+		evalPawnsFromCache(evalInfo.side, info, evalInfo);
+		evalPawnsFromCache(evalInfo.other, info, evalInfo);
+	} else {
+		evalPawns(evalInfo.side, evalInfo);
+		evalPawns(evalInfo.other, evalInfo);
+	}
+	evalThreats(evalInfo.side, evalInfo);
+	evalThreats(evalInfo.other, evalInfo);
+	evalKing(evalInfo.side, evalInfo);
+	evalKing(evalInfo.other, evalInfo);
+	evalInfo.computeEval();
 
 	return evalInfo.eval;
 }
@@ -239,7 +239,11 @@ const int Evaluator::evalPassedPawn(Board& board, PieceColor color, const Square
 }
 
 // Bishops eval function
-void Evaluator::evalBishops(PieceColor color, EvalInfo& evalInfo) {
+void Evaluator::evalPieces(PieceColor color, EvalInfo& evalInfo) {
+
+	evalInfo.value[color] +=
+			evalInfo.board.isCastleDone(color)?DONE_CASTLE_BONUS:
+	evalInfo.board.getCastleRights(color)==NO_CASTLE?-DONE_CASTLE_BONUS:0;
 
 	const Bitboard bishop = evalInfo.board.getPieces(color,BISHOP);
 
