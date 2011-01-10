@@ -61,6 +61,7 @@ const int nullMoveDepth=4;
 const int razorDepth=4;
 const int hardPruneDepth=3;
 const int lmrDepthThresholdRoot=3;
+const int lmrDepthThreshold=2;
 const int sePVDepth=7;
 const int seNonPVDepth=9;
 const int lateMoveThreshold=2;

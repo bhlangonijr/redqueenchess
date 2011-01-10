@@ -42,33 +42,30 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 	evalPieces(evalInfo.side, evalInfo);
 	evalPieces(evalInfo.other, evalInfo);
 
-	if (alpha != -maxScore && beta != maxScore) {
-		evalInfo.computeEval();
-		if ((evalInfo.eval <= alpha-lazyEvalMargin || evalInfo.eval >=beta+lazyEvalMargin) &&
-				board.isInCheck()) {
-			return evalInfo.eval;
-		}
-	}
-
-	evalInfo.attackers[WHITE_PAWN] = ((evalInfo.pawns[WHITE] & midBoardNoFileA) << 7) |
-			((evalInfo.pawns[WHITE] & midBoardNoFileH) << 9);
-	evalInfo.attackers[BLACK_PAWN] = ((evalInfo.pawns[BLACK] & midBoardNoFileA) >> 9) |
-			((evalInfo.pawns[BLACK] & midBoardNoFileH) >> 7);
-	evalBoardControl(evalInfo.side, evalInfo);
-	evalBoardControl(evalInfo.other, evalInfo);
-	PawnInfo info;
-	if (getPawnInfo(board.getPawnKey(),info)) {
-		evalPawnsFromCache(evalInfo.side, info, evalInfo);
-		evalPawnsFromCache(evalInfo.other, info, evalInfo);
-	} else {
-		evalPawns(evalInfo.side, evalInfo);
-		evalPawns(evalInfo.other, evalInfo);
-	}
-	evalThreats(evalInfo.side, evalInfo);
-	evalThreats(evalInfo.other, evalInfo);
-	evalKing(evalInfo.side, evalInfo);
-	evalKing(evalInfo.other, evalInfo);
 	evalInfo.computeEval();
+
+	if ((evalInfo.eval > alpha-lazyEvalMargin && evalInfo.eval < beta+lazyEvalMargin) ||
+			board.isInCheck()) {
+		evalInfo.attackers[WHITE_PAWN] = ((evalInfo.pawns[WHITE] & midBoardNoFileA) << 7) |
+				((evalInfo.pawns[WHITE] & midBoardNoFileH) << 9);
+		evalInfo.attackers[BLACK_PAWN] = ((evalInfo.pawns[BLACK] & midBoardNoFileA) >> 9) |
+				((evalInfo.pawns[BLACK] & midBoardNoFileH) >> 7);
+		evalBoardControl(evalInfo.side, evalInfo);
+		evalBoardControl(evalInfo.other, evalInfo);
+		PawnInfo info;
+		if (getPawnInfo(board.getPawnKey(),info)) {
+			evalPawnsFromCache(evalInfo.side, info, evalInfo);
+			evalPawnsFromCache(evalInfo.other, info, evalInfo);
+		} else {
+			evalPawns(evalInfo.side, evalInfo);
+			evalPawns(evalInfo.other, evalInfo);
+		}
+		evalThreats(evalInfo.side, evalInfo);
+		evalThreats(evalInfo.other, evalInfo);
+		evalKing(evalInfo.side, evalInfo);
+		evalKing(evalInfo.other, evalInfo);
+		evalInfo.computeEval();
+	}
 
 	return evalInfo.eval;
 }

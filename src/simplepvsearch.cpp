@@ -381,8 +381,8 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 			score = -pvSearch(board, newSi, -beta, -alpha, newDepth, ply+1, &line);
 		} else {
 			int reduction=0;
-			if (!extension && !givingCheck && !isPawnPush(board,move.to) &&
-					move.type == MoveIterator::NON_CAPTURE) {
+			if (depth>lmrDepthThreshold && !extension && !givingCheck &&
+					!isPawnPush(board,move.to) && move.type == MoveIterator::NON_CAPTURE) {
 				reduction=reductionTablePV[depth][moveCounter];
 			}
 
@@ -618,7 +618,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		if (isKingAttacked || pawnOn7thExtension ||
 				(isSingularMove && move==hashMove)) {
 			extension++;
-		} else if (!givingCheck && !passedPawn && !nmMateScore &&
+		} else if (depth>lmrDepthThreshold && !givingCheck && !passedPawn && !nmMateScore &&
 				move.type == MoveIterator::NON_CAPTURE) {
 			reduction=reductionTableNonPV[depth][moveCounter];
 		}
@@ -713,7 +713,8 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 			return beta;
 		}
 		const int delta = isPawnPromoting(board)?deltaMargin*2:deltaMargin;
-		if (bestScore < alpha - delta && !isPV && board.getGamePhase()<ENDGAME) {
+		if (bestScore < alpha - delta && !isPV &&
+				board.getGamePhase()<ENDGAME && !isMateScore(beta)) {
 			return alpha;
 		}
 		if( alpha < bestScore) {
