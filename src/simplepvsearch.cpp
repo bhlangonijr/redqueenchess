@@ -713,11 +713,11 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 			return beta;
 		}
 		const int delta = isPawnPromoting(board)?deltaMargin*2:deltaMargin;
-		if (bestScore < alpha - delta && !isPV &&
+		if (bestScore < alpha - delta && !isPV && hashMove.none() &&
 				board.getGamePhase()<ENDGAME && !isMateScore(beta)) {
 			return alpha;
 		}
-		if( alpha < bestScore) {
+		if( isPV && alpha < bestScore) {
 			alpha = bestScore;
 		}
 	}
@@ -806,8 +806,8 @@ void SimplePVSearch::initialize() {
 
 	for (int x=0;x<=maxSearchDepth;x++) {
 		for (int y=0;y<maxMoveCount;y++) {
-			reductionTablePV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/4);
-			reductionTableNonPV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/2);
+			reductionTablePV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/3.0);
+			reductionTableNonPV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/2.0);
 			//std::cout << "[" << x << ", " << y << "] " << reductionTableNonPV[x][y] << " - " << reductionTablePV[x][y] << std::endl;
 		}
 	}
