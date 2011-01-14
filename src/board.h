@@ -45,9 +45,9 @@ namespace BoardTypes{
 //used for hashing
 typedef uint64_t Key;
 
-#define USE_MAGIC_MOVES 				     	 					    // comment it out to not use magics
-#define ALL_CASTLE_RIGHT				 4								// all castle rights
-#define MAX_GAME_LENGTH					 1024							// Max game lenght
+#define USE_MAGIC_MOVES 			// comment it out to not use magics
+const int ALL_CASTLE_RIGHT = 4;		// all castle rights
+const int MAX_GAME_LENGTH =	1024;	// Max game lenght
 
 // castle types
 enum CastleRight {

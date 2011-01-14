@@ -29,8 +29,8 @@
 
 #include "bitboard.h"
 
-#define MOVE_LIST_MAX_SIZE 128
-#define DEFAULT_SCORE 0
+const int MOVE_LIST_MAX_SIZE = 128;
+const int DEFAULT_SCORE = 0;
 
 class MoveIterator {
 public:
@@ -80,7 +80,7 @@ public:
 		}
 
 		inline bool none() {
-			return from==NONE;
+			return from==NONE || to==NONE ;
 		}
 
 		inline void clear() {

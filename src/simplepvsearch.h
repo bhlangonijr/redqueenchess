@@ -214,30 +214,29 @@ private:
 	long nodesToGo;
 
 	int idSearch(Board& board);
-	int rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int* betaRoot, int depth, int ply, PvLine* pv);
-	int pvSearch(Board& board,  SearchInfo& si, int alpha, int beta, int depth, int ply, PvLine* pv);
-	int zwSearch(Board& board,  SearchInfo& si, int beta, int depth, int ply, PvLine* pv);
-	int qSearch(Board& board,  SearchInfo& si,
-			int alpha, int beta, int depth, int ply, PvLine* pv, const bool isPV);
-	void uciOutput(PvLine* pv, const int score, const int totalTime,
+	int rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int* betaRoot, int depth, int ply, PvLine& pv);
+	int pvSearch(Board& board,  SearchInfo& si, int alpha, int beta, int depth, int ply);
+	int zwSearch(Board& board,  SearchInfo& si, int beta, int depth, int ply);
+	int qSearch(Board& board,  SearchInfo& si, int alpha, int beta, int depth, int ply, const bool isPV);
+	void uciOutput(PvLine& pv, const int score, const int totalTime,
 			const int hashFull, const int depth, const int selDepth, const int alpha, const int beta);
 	void uciOutput(MoveIterator::Move& bestMove, MoveIterator::Move& ponderMove);
 	void uciOutput(MoveIterator::Move& move, const int moveCounter);
 	void uciOutput(const int depth);
-	const std::string pvLineToString(const PvLine* pv);
+	const std::string pvLineToString(const PvLine& pv);
 	template <bool quiescenceMoves>
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves,
 			MoveIterator::Move& ttMove, int ply, int depth);
 	template <bool isEvasion>
 	void scoreMoves(Board& board, MoveIterator& moves);
 	void scoreRootMoves(Board& board, MoveIterator& moves);
+	void retrievePvFromHash(Board& board, PvLine& pv);
 	void filterLegalMoves(Board& board, MoveIterator& moves);
 	bool isMateScore(const int score);
 	bool isPawnFinal(Board& board);
 	bool isPawnPush(Board& board, Square& square);
 	bool isCaptureOrPromotion(Board& board, MoveIterator::Move& move);
 	bool isPawnPromoting(const Board& board);
-	void updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move);
 	const bool stop();
 	const bool timeIsUp();
 	void clearHistory();
@@ -435,7 +434,6 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 }
 
 inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
-	PvLine pv = PvLine();
 	moves.bookmark();
 	while (moves.hasNext()) {
 		MoveIterator::Move& move = moves.next();
@@ -445,7 +443,7 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 		board.doMove(move,backup);
 		board.setInCheck(board.getSideToMove());
 		SearchInfo newSi(false,move);
-		move.score = -qSearch(board,newSi,-maxScore,maxScore,0,0,&pv,true);
+		move.score = -qSearch(board,newSi,-maxScore,maxScore,0,0,true);
 		if (move.type==MoveIterator::UNKNOW) {
 			if (isCapture) {
 				move.type = (value >= 0 ?
@@ -486,7 +484,7 @@ inline void SimplePVSearch::filterLegalMoves(Board& board, MoveIterator& moves) 
 // is mate score?
 inline bool SimplePVSearch::isMateScore(const int score) {
 	return score < -maxScore+maxSearchPly ||
-			score > maxScore-maxSearchPly;
+	score > maxScore-maxSearchPly;
 }
 
 // remains pawns & kings only?
@@ -528,10 +526,10 @@ inline const bool SimplePVSearch::timeIsUp() {
 
 }
 
-inline void SimplePVSearch::uciOutput(PvLine* pv, const int score, const int totalTime,
+inline void SimplePVSearch::uciOutput(PvLine& pv, const int score, const int totalTime,
 		const int hashFull, const int depth, const int selDepth, const int alpha, const int beta) {
 
-	MoveIterator::Move& move = pv->moves[0];
+	MoveIterator::Move& move = pv.moves[0];
 
 	if (isUpdateUci() && !move.none()) {
 
@@ -597,19 +595,13 @@ inline void SimplePVSearch::uciOutput(const int depth) {
 	}
 }
 
-inline const std::string SimplePVSearch::pvLineToString(const PvLine* pv) {
+inline const std::string SimplePVSearch::pvLineToString(const PvLine& pv) {
 	std::string result="";
-	for(int x=0;x<pv->index;x++) {
+	for(int x=0;x<pv.index;x++) {
 		result += " ";
-		result += pv->moves[x].toString();
+		result += pv.moves[x].toString();
 	}
 	return result;
-}
-
-inline void SimplePVSearch::updatePv(PvLine* pv, PvLine& line, MoveIterator::Move& move) {
-	pv->moves[0] = move;
-	memcpy(pv->moves + 1, line.moves, line.index * sizeof(MoveIterator::Move));
-	pv->index = line.index + 1;
 }
 
 // clear history

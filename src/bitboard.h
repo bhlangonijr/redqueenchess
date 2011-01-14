@@ -58,7 +58,7 @@ typedef uint64_t Bitboard;
 const int ALL_PIECE_TYPE =				7;  														// pawn, knight, bishop, rook, queen, king
 const int ALL_PIECE_TYPE_BY_COLOR =		13; 														// (black, white) X (pawn, knight, bishop, rook, queen, king) + empty
 const int ALL_PIECE_COLOR	=			3;  														// black, white, none
-const int ALL_SQUARE	=				64; 														// all square A1 .. H8
+const int ALL_SQUARE	=				65; 														// all square A1 .. H8
 const int ALL_RANK	=					8;															// all ranks
 const int ALL_FILE	=					8;															// all files
 const int ALL_DIAGONAL	=				15;															// all diagonals

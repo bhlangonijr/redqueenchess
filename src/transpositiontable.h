@@ -32,8 +32,8 @@
 #include <cmath>
 #include <stdlib.h>
 
-#define DEFAULT_INITIAL_SIZE 64
-#define BUCKET_SIZE 4
+const int DEFAULT_INITIAL_SIZE = 64;
+const int BUCKET_SIZE = 4;
 
 class TranspositionTable {
 public:
@@ -153,16 +153,13 @@ private:
 		for (_size = 2; _size<=hashSize; _size *= 2);
 		_size = ((_size/2)<<20)/sizeof(Bucket);
 		_mask = _size - 1;
-
 		try {
 			transTable = new Bucket[_size];
 		} catch (std::exception const& e) {
 			std::cerr << "Failed to allocate memory for transposition table: " << e.what() << std::endl;
 			exit(EXIT_FAILURE);
 		}
-
 		clearHash();
-
 	}
 	size_t hashSize;
 	std::string id;
@@ -185,15 +182,18 @@ inline void TranspositionTable::setHashSize(const size_t _hashSize) {
 inline void TranspositionTable::clearHash() {
 	generation=0;
 	memset(transTable, 0, _size * sizeof(Bucket));
+	for(size_t i=0;i<_size;i++) {
+		HashData *entry = transTable[i].entry;
+		for (int x=0;x<BUCKET_SIZE;x++,entry++) {
+			entry->clear();
+		}
+	}
 }
 
 inline bool TranspositionTable::hashPut(const HashKey key, const int value, const NodeFlag flag,
 		MoveIterator::Move&move, const int depth) {
-
-	HashData *entry;
-	HashData *replace;
-	entry = transTable[key & _mask].entry;
-	replace = entry;
+	HashData *entry = transTable[key & _mask].entry;
+	HashData *replace = entry;
 	for (int x=0;x<BUCKET_SIZE;x++,entry++) {
 		if (!entry->key || entry->key==key) {
 			if (move.none()) {
@@ -207,11 +207,9 @@ inline bool TranspositionTable::hashPut(const HashKey key, const int value, cons
 		const bool b1 = entry->_generation==generation;
 		const bool b2 = replace->_generation==generation;
 		const bool b3 = replace->_depth>entry->_depth;
-
 		if ((!b1 && b2) || (!(b1 ^ b2) && b3)) {
 			replace=entry;
 		}
-
 	}
 	replace->update(key,value,depth,flag,move,generation);
 	writes++;
@@ -219,8 +217,7 @@ inline bool TranspositionTable::hashPut(const HashKey key, const int value, cons
 }
 
 inline bool TranspositionTable::hashGet(const HashKey key, HashData& hashData) {
-	HashData *entry;
-	entry = transTable[key & _mask].entry;
+	HashData *entry = transTable[key & _mask].entry;
 	for (int x=0;x<BUCKET_SIZE;x++,entry++) {
 		if (entry->key==key) {
 			hashData.key=entry->key;
