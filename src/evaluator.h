@@ -50,6 +50,7 @@ const int BISHOP_PAIR_BONUS = 	   		MS(+25,+25);
 const int UNSTOPPABLE_PAWN_BONUS = 		MS(+700,+700);
 const int ROOK_ON_7TH_RANK_BONUS = 		MS(+15,+25);
 const int QUEEN_ON_7TH_RANK_BONUS = 	MS(+10,+15);
+const int PASSER_AND_KING_BONUS = 		MS(0,+6);
 
 const int knightMobility[9] = {
 		-4*MS(+8,+4),-2*MS(+8,+4),+0*MS(+8,+4),+1*MS(+8,+4),+2*MS(+8,+4),
@@ -100,6 +101,12 @@ const int queenKingZoneAttackWeight[10] = {
 const int connectedPasserBonus[ALL_PIECE_COLOR][ALL_RANK] = {
 		{0,MS(+20,+25),MS(+25,+35),MS(+30,+40),MS(+35,+45),MS(+50,+60),MS(+60,+90),0},
 		{0,MS(+60,+90),MS(+50,+60),MS(+35,+45),MS(+30,+40),MS(+25,+35),MS(+20,+25),0},
+		{}
+};
+
+const int freePasserBonus[ALL_PIECE_COLOR][ALL_RANK] = {
+		{0,MS(+20,+25),MS(+25,+35),MS(+40,+50),MS(+50,+60),MS(+60,+70),MS(+80,+90),0},
+		{0,MS(+80,+90),MS(+60,+70),MS(+50,+60),MS(+40,+50),MS(+25,+35),MS(+20,+25),0},
 		{}
 };
 
@@ -294,7 +301,7 @@ public:
 	void evalKing(PieceColor color, EvalInfo& evalInfo);
 	void evalPawnsFromCache(PieceColor color, PawnInfo& info, EvalInfo& evalInfo);
 	void evalPawns(PieceColor color, EvalInfo& evalInfo);
-	const int evalPassedPawn(Board& board, PieceColor color, const Square from,
+	const int evalPassedPawn(EvalInfo& evalInfo, PieceColor color, const Square from,
 			const bool isPawnFinal, const bool isChained);
 	void evalPieces(PieceColor color, EvalInfo& evalInfo);
 	void evalBoardControl(PieceColor color, EvalInfo& evalInfo);

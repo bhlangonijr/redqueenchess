@@ -103,8 +103,8 @@ public:
 		bool partialSearch;
 	} SearchInfo;
 
-	SimplePVSearch() : _depth(maxSearchDepth), _updateUci(true), _startTime(0), _searchFixedDepth(false),
-			_infinite(false), _nodes(0), nodesToGo(defaultNodesToGo) {}
+	SimplePVSearch() : depthToSearch(maxSearchDepth), updateUci(true), startTime(0), searchFixedDepth(false),
+			infinite(false), nodes(0), nodesToGo(defaultNodesToGo) {}
 
 	~SimplePVSearch() {}
 
@@ -125,55 +125,55 @@ public:
 	}
 
 	inline const bool isUpdateUci() const {
-		return _updateUci;
+		return updateUci;
 	}
 
 	inline const void setUpdateUci(const bool value) {
-		_updateUci = value;
+		updateUci = value;
 	}
 
 	inline const bool isSearchFixedDepth() const {
-		return _searchFixedDepth;
+		return searchFixedDepth;
 	}
 
 	inline const void setSearchFixedDepth(const bool value) {
-		_searchFixedDepth = value;
+		searchFixedDepth = value;
 	}
 
 	inline const bool isInfinite() const {
-		return _infinite;
+		return infinite;
 	}
 
 	inline const void setInfinite(const bool value) {
-		_infinite = value;
+		infinite = value;
 	}
 
 	inline const void setDepth(const int depth) {
-		_depth = depth;
+		depthToSearch = depth;
 	}
 
 	inline const int getDepth() const {
-		return _depth;
+		return depthToSearch;
 	}
 
-	inline const void setTimeToSearch(const long timeToSearch) {
-		_timeToSearch = timeToSearch;
+	inline const void setTimeToSearch(const long value) {
+		timeToSearch = value;
 	}
 
 	inline const long getTimeToSearch() const {
-		return _timeToSearch;
+		return timeToSearch;
 	}
 
-	inline const void setStartTime(const long startTime) {
-		_startTime = startTime;
+	inline const void setStartTime(const long value) {
+		startTime = value;
 	}
 
 	inline const long getStartTime() const {
-		return _startTime;
+		return startTime;
 	}
 
 	inline const void setTimeToStop() {
-		timeToStop = clock() + toClock(_timeToSearch-10);
+		timeToStop = clock() + toClock(timeToSearch-10);
 	}
 
 	inline const long getTimeToStop() const {
@@ -191,15 +191,15 @@ public:
 
 private:
 
-	int _depth;
-	int _score;
-	bool _updateUci;
-	long _timeToSearch;
-	long _startTime;
-	long _time;
-	bool _searchFixedDepth;
-	bool _infinite;
-	long _nodes;
+	int depthToSearch;
+	int searchScore;
+	bool updateUci;
+	long timeToSearch;
+	long startTime;
+	long time;
+	bool searchFixedDepth;
+	bool infinite;
+	long nodes;
 	long timeToStop;
 	MoveIterator rootMoves;
 	MoveIterator::Move killer[maxSearchPly+1][2];
@@ -519,7 +519,7 @@ inline bool SimplePVSearch::isPawnPromoting(const Board& board) {
 }
 
 inline const bool SimplePVSearch::timeIsUp() {
-	if (_searchFixedDepth || _infinite || _nodes & nodesToGo) {
+	if (searchFixedDepth || infinite || nodes & nodesToGo) {
 		return false;
 	}
 	return clock()>=timeToStop;
@@ -549,11 +549,11 @@ inline void SimplePVSearch::uciOutput(PvLine& pv, const int score, const int tot
 			scoreString += " upperbound";
 		}
 
-		long nps = totalTime>1000 ?  ((_nodes)/(totalTime/1000)) : _nodes;
+		long nps = totalTime>1000 ?  ((nodes)/(totalTime/1000)) : nodes;
 		std::cout << "info depth "<< depth << " seldepth " << selDepth << std::endl;
 		std::cout << "info depth "<< depth << " score " << scoreString << " time " << totalTime
-				<< " nodes " << (_nodes) << " nps " << nps << " pv" << pvLineToString(pv) << std::endl;
-		std::cout << "info nodes " << (_nodes) << " time " << totalTime << " nps " << nps
+				<< " nodes " << (nodes) << " nps " << nps << " pv" << pvLineToString(pv) << std::endl;
+		std::cout << "info nodes " << (nodes) << " time " << totalTime << " nps " << nps
 				<< " hashfull " << hashFull << std::endl;
 
 	}
@@ -579,7 +579,7 @@ inline void SimplePVSearch::uciOutput(MoveIterator::Move& move, const int moveCo
 
 	const long uciOutputSecs=1500;
 	if (isUpdateUci()) {
-		if (_startTime+uciOutputSecs < getTickCount()) {
+		if (startTime+uciOutputSecs < getTickCount()) {
 			std::cout << "info currmove " << move.toString() << " currmovenumber " << moveCounter << std::endl;
 		}
 	}
@@ -589,8 +589,8 @@ inline void SimplePVSearch::uciOutput(const int depth) {
 
 	const long uciOutputSecs=1500;
 	if (isUpdateUci()) {
-		if (_startTime+uciOutputSecs < getTickCount()) {
-			std::cout << "info depth "<< depth << " seldepth " << maxPlySearched << " nodes " << _nodes << std::endl;
+		if (startTime+uciOutputSecs < getTickCount()) {
+			std::cout << "info depth "<< depth << " seldepth " << maxPlySearched << " nodes " << nodes << std::endl;
 		}
 	}
 }

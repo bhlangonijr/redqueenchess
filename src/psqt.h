@@ -18,7 +18,7 @@
     along with Redqueen.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * data.h
+ * psqt.h
  *
  *  Created on: 26/06/2 10
  *      Author: bhlangonijr
