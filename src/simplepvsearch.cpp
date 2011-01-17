@@ -414,7 +414,8 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		if( score >= beta) {
 			updateKillers(board,move,ply);
 			updateHistory(board,move,depth);
-			agent->hashPut(key,score,depth,ply,TranspositionTable::LOWER,move);
+			const TranspositionTable::NodeFlag flag = TranspositionTable::LOWER;
+			agent->hashPut(key,score,0,depth,ply,flag,move);
 			return score;
 		}
 
@@ -432,11 +433,14 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		return si.partialSearch?oldAlpha:isKingAttacked?-maxScore+ply:drawScore;
 	}
 
+	TranspositionTable::NodeFlag flag;
 	if (bestScore>oldAlpha) {
-		agent->hashPut(key,bestScore,depth,ply,TranspositionTable::EXACT,bestMove);
+		flag = TranspositionTable::EXACT;
 	} else {
-		agent->hashPut(key,bestScore,depth,ply,TranspositionTable::UPPER,emptyMove);
+		flag = TranspositionTable::UPPER;
+		bestMove=emptyMove;
 	}
+	agent->hashPut(key,bestScore,0,depth,ply,flag,bestMove);
 
 	return bestScore;
 
@@ -481,7 +485,8 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	const Key key = si.partialSearch?board.getPartialSearchKey():board.getKey();
 
 	// tt retrieve & prunning
-	if (agent->hashPruneGet(okToPrune, key, hashData, ply, depth, si.allowNullMove, beta-1, beta)) {
+	const bool hashOk = agent->hashPruneGet(okToPrune, key, hashData, ply, depth, si.allowNullMove, beta-1, beta);
+	if (hashOk) {
 		hashMove = hashData.move();
 		if (okToPrune) {
 			return hashData.value();
@@ -489,7 +494,11 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	}
 
 	if (!isKingAttacked) {
-		currentScore = evaluator.evaluate(board,beta-1,beta);
+		if (hashOk && (hashData.flag() & TranspositionTable::NODE_EVAL)) {
+			currentScore = hashData.evalValue();
+		} else {
+			currentScore = evaluator.evaluate(board,beta-1,beta);
+		}
 	}
 
 	if (depth < razorDepth && hashMove.none() && si.allowNullMove &&
@@ -530,7 +539,9 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 			if (score >= maxScore-maxSearchPly) {
 				score = beta;
 			}
-			agent->hashPut(key,score,depth,ply,TranspositionTable::NM_LOWER,emptyMove);
+			const TranspositionTable::NodeFlag flag = currentScore!=-maxScore?
+					TranspositionTable::NM_LOWER_EVAL:TranspositionTable::NM_LOWER;
+			agent->hashPut(key,score,currentScore,depth,ply,flag,emptyMove);
 			return score;
 		} else {
 			if (score < -maxScore-maxSearchPly) {
@@ -648,7 +659,9 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 			if( score >= beta) {
 				updateKillers(board,move,ply);
 				updateHistory(board,move,depth);
-				agent->hashPut(key,bestScore,depth,ply,TranspositionTable::LOWER,move);
+				const TranspositionTable::NodeFlag flag = currentScore!=-maxScore?
+						TranspositionTable::LOWER_EVAL:TranspositionTable::LOWER;
+				agent->hashPut(key,bestScore,currentScore,depth,ply,flag,move);
 				return bestScore;
 			}
 		}
@@ -659,7 +672,9 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		return si.partialSearch?beta-1:isKingAttacked?-maxScore+ply:drawScore;
 	}
 
-	agent->hashPut(key,bestScore,depth,ply,TranspositionTable::UPPER,emptyMove);
+	const TranspositionTable::NodeFlag flag = currentScore!=-maxScore?
+			TranspositionTable::UPPER_EVAL:TranspositionTable::UPPER;
+	agent->hashPut(key,bestScore,currentScore,depth,ply,flag,emptyMove);
 
 	return bestScore;
 }
@@ -694,7 +709,8 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 	const int oldAlpha=alpha;
 
 	// tt retrieve & prunning
-	if (agent->hashPruneGet(okToPrune, key, hashData, ply, depth, true, alpha, beta)) {
+	const bool hashOk = agent->hashPruneGet(okToPrune, key, hashData, ply, depth, true, alpha, beta);
+	if (hashOk) {
 		hashMove = hashData.move();
 		if (okToPrune && !isPV) {
 			return hashData.value();
@@ -703,11 +719,21 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 
 	const bool isKingAttacked = board.isInCheck();
 	int bestScore = -maxScore;
+	int currentScore = -maxScore;
 
 	if (!isKingAttacked) {
-		bestScore=evaluator.evaluate(board,alpha,beta);
+		if (hashOk && (hashData.flag() & TranspositionTable::NODE_EVAL)) {
+			currentScore = hashData.evalValue();
+		} else {
+			currentScore=evaluator.evaluate(board,alpha,beta);
+		}
+		bestScore=currentScore;
 		if(bestScore>=beta) {
-			return beta;
+			if (!hashOk) {
+				const TranspositionTable::NodeFlag flag = TranspositionTable::NODE_EVAL;
+				agent->hashPut(key,bestScore,currentScore,-maxSearchPly,ply,flag,emptyMove);
+			}
+			return bestScore;
 		}
 		const int delta = isPawnPromoting(board)?deltaMargin*2:deltaMargin;
 		if (bestScore < alpha - delta && !isPV && hashMove.none() &&
@@ -765,7 +791,9 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		}
 
 		if( score >= beta ) {
-			agent->hashPut(key,score,depth!=0?-1:0,ply,TranspositionTable::LOWER,move);
+			const TranspositionTable::NodeFlag flag = currentScore!=-maxScore?
+					TranspositionTable::LOWER_EVAL:TranspositionTable::LOWER;
+			agent->hashPut(key,score,currentScore,depth!=0?-1:0,ply,flag,move);
 			return score;
 		}
 
@@ -783,11 +811,16 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		return -maxScore+ply;
 	}
 
+	TranspositionTable::NodeFlag flag;
 	if (bestScore>oldAlpha) {
-		agent->hashPut(key,bestScore,depth!=0?-1:0,ply,TranspositionTable::EXACT,bestMove);
+		flag = currentScore!=-maxScore?
+				TranspositionTable::EXACT_EVAL:TranspositionTable::EXACT;
 	} else {
-		agent->hashPut(key,bestScore,depth!=0?-1:0,ply,TranspositionTable::UPPER,emptyMove);
+		flag = currentScore!=-maxScore?
+				TranspositionTable::UPPER_EVAL:TranspositionTable::UPPER;
+		bestMove=emptyMove;
 	}
+	agent->hashPut(key,bestScore,currentScore,depth!=0?-1:0,ply,flag,bestMove);
 
 	return bestScore;
 }

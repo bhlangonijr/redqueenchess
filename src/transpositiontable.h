@@ -46,22 +46,28 @@ public:
 		UPPER=2,
 		EXACT=4,
 		NODE_NULL=8,
-		NM_LOWER=LOWER|NODE_NULL
+		NODE_EVAL=16,
+		NM_LOWER=LOWER|NODE_NULL,
+		LOWER_EVAL=LOWER|NODE_EVAL,
+		UPPER_EVAL=UPPER|NODE_EVAL,
+		EXACT_EVAL=EXACT|NODE_EVAL,
+		NM_LOWER_EVAL=NM_LOWER|NODE_EVAL
 	};
 
 	struct HashData {
-		HashData() : _value(0), _depth(0), _flag(NODE_NONE),
+		HashData() : _value(0), _evalValue(0), _depth(0), _flag(NODE_NONE),
 				_from(NONE), _to(NONE), _promotion(EMPTY), _generation(0) {};
 
-		HashData(const int& value, const int& depth, const NodeFlag& flag,
+		HashData(const int& value, const int& evalValue, const int& depth, const NodeFlag& flag,
 				const MoveIterator::Move& move, const int& generation) :
-					_value(value), _depth(depth), _flag(flag),	_from(move.from), _to(move.to),
+					_value(value), _evalValue(evalValue), _depth(depth), _flag(flag), _from(move.from), _to(move.to),
 					_promotion(move.promotionPiece), _generation(generation)  {};
 
-		inline void update(const HashKey hashKey, const int& value, const int& depth, const NodeFlag& flag,
-				const MoveIterator::Move& move, const int& generation) {
+		inline void update(const HashKey hashKey, const int& value, const int& evalValue, const int& depth,
+				const NodeFlag& flag, const MoveIterator::Move& move, const int& generation) {
 			key=hashKey;
 			_value=int16_t(value);
+			_evalValue=int16_t(evalValue);
 			_depth=int16_t(depth);
 			_flag=int8_t(flag);
 			_from=int8_t(move.from);
@@ -82,6 +88,9 @@ public:
 		inline int value() {
 			return static_cast<int>(_value);
 		}
+		inline int evalValue() {
+			return static_cast<int>(_evalValue);
+		}
 		inline int generation() {
 			return static_cast<int>(_generation);
 		}
@@ -90,6 +99,7 @@ public:
 		}
 		inline void clear() {
 			_value=-maxScore;
+			_evalValue=-maxScore;
 			_depth=-80;
 			_flag=uint8_t(NODE_NONE);
 			_from=uint8_t(NONE);
@@ -100,6 +110,7 @@ public:
 
 		HashKey key;
 		int16_t _value;
+		int16_t _evalValue;
 		int16_t _depth;
 		uint8_t _flag;
 		uint8_t _from;
@@ -138,7 +149,7 @@ public:
 	const size_t getHashSize() const;
 	void setHashSize(const size_t _hashSize);
 	void clearHash();
-	bool hashPut(const HashKey key, const int value, const NodeFlag flag,
+	bool hashPut(const HashKey key, const int value, const int evalValue, const NodeFlag flag,
 			MoveIterator::Move&move, const int depth);
 	bool hashGet(const HashKey key, HashData& hashData);
 	void resizeHash();
@@ -190,7 +201,7 @@ inline void TranspositionTable::clearHash() {
 	}
 }
 
-inline bool TranspositionTable::hashPut(const HashKey key, const int value, const NodeFlag flag,
+inline bool TranspositionTable::hashPut(const HashKey key, const int value, const int evalValue, const NodeFlag flag,
 		MoveIterator::Move&move, const int depth) {
 	HashData *entry = transTable[key & _mask].entry;
 	HashData *replace = entry;
@@ -211,7 +222,7 @@ inline bool TranspositionTable::hashPut(const HashKey key, const int value, cons
 			replace=entry;
 		}
 	}
-	replace->update(key,value,depth,flag,move,generation);
+	replace->update(key,value,evalValue,depth,flag,move,generation);
 	writes++;
 	return true;
 }
@@ -222,6 +233,7 @@ inline bool TranspositionTable::hashGet(const HashKey key, HashData& hashData) {
 		if (entry->key==key) {
 			hashData.key=entry->key;
 			hashData._value= entry->_value;
+			hashData._evalValue= entry->_evalValue;
 			hashData._depth=entry->_depth;
 			hashData._flag=entry->_flag;
 			hashData._from=entry->_from;

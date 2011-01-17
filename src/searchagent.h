@@ -195,7 +195,7 @@ public:
 
 	}
 
-	inline bool hashPut(const Key _key, int value, const int depth, const int ply,
+	inline bool hashPut(const Key _key, int value, int evalValue, const int depth, const int ply,
 			const TranspositionTable::NodeFlag flag, MoveIterator::Move move) {
 
 		TranspositionTable::HashKey key=static_cast<TranspositionTable::HashKey>(_key>>32);
@@ -206,7 +206,7 @@ public:
 			value += ply;
 		}
 
-		return transTable->hashPut(key,value,flag,move,depth);
+		return transTable->hashPut(key,value,evalValue,flag,move,depth);
 
 	}
 
