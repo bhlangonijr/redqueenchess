@@ -214,7 +214,6 @@ const int Evaluator::evalPassedPawn(EvalInfo& evalInfo, PieceColor color, const 
 	int eval=0;
 	Board& board = evalInfo.board;
 	const PieceColor other = board.flipSide(color);
-	const Square sideKingSq = board.getKingSquare(color);
 	const Square otherKingSq = board.getKingSquare(other);
 	bool isUnstoppable = false;
 
@@ -237,17 +236,19 @@ const int Evaluator::evalPassedPawn(EvalInfo& evalInfo, PieceColor color, const 
 	}
 	const Rank r = color==WHITE?squareRank[from+8]:squareRank[from-8];
 	const Square next = board.makeSquare(r,squareFile[from]);
-	if (!isUnstoppable && board.getPiece(next)==EMPTY) {
+	if (!isUnstoppable) {
+		const Square sideKingSq = board.getKingSquare(color);
 		eval += squareDistance(next,otherKingSq)*PASSER_AND_KING_BONUS;
 		eval -= squareDistance(next,sideKingSq)*PASSER_AND_KING_BONUS;
-
-		const Bitboard block = evalInfo.attacks[other]|
-				board.getPieces(other);
-		const Bitboard otherQueenRook = board.getPieces(other,QUEEN) |
-				board.getPieces(other,ROOK);
-		if (!((frontSquares[color][from]&block) ||
-				(frontSquares[other][from]&otherQueenRook))) {
-			eval += freePasserBonus[color][squareRank[from]];
+		if (board.getPiece(next)==EMPTY) {
+			const Bitboard block = evalInfo.attacks[other]|
+					board.getPieces(other);
+			const Bitboard otherQueenRook = board.getPieces(other,QUEEN) |
+					board.getPieces(other,ROOK);
+			if (!((frontSquares[color][from]&block) ||
+					(frontSquares[other][from]&otherQueenRook))) {
+				eval += freePasserBonus[color][squareRank[from]];
+			}
 		}
 	}
 	return eval;
@@ -364,7 +365,7 @@ void Evaluator::evalThreats(PieceColor color, EvalInfo& evalInfo) {
 			~evalInfo.attackers[pawnOther] & evalInfo.attacks[color];
 
 	if (pieces) {
-		for (int sideType=KNIGHT;sideType<KING;sideType++) {
+		for (int sideType=PAWN;sideType<KING;sideType++) {
 			const PieceTypeByColor sidePiece = makePiece(color,PieceType(sideType));
 			Bitboard attacked = evalInfo.attackers[sidePiece]&pieces;
 			if (attacked) {

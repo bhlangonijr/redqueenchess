@@ -291,11 +291,13 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		return 0;
 	}
 
+	if (ply>maxPlySearched) {
+		maxPlySearched=ply;
+	}
+
 	if (depth<=0) {
 		return qSearch(board, si, alpha, beta, 0, ply, true);
 	}
-
-	nodes++;
 
 	if	(board.isDraw()) {
 		return drawScore;
@@ -327,7 +329,8 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 
 	//iid
 	if (depth > allowIIDAtPV &&	hashMove.none() && !isKingAttacked) {
-		score = pvSearch(board,si,alpha,beta,depth-2,ply);
+		SearchInfo newSi(false,emptyMove);
+		score = pvSearch(board,newSi,alpha,beta,depth-2,ply);
 		hashOk = agent->hashGet(key, hashData, ply);
 		if (hashOk) {
 			hashMove = hashData.move();
@@ -366,6 +369,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 		board.doMove(move,backup);
 
 		moveCounter++;
+		nodes++;
 
 		const bool givingCheck = board.setInCheck(board.getSideToMove());
 		const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
@@ -459,8 +463,6 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		return qSearch(board, si, beta-1, beta, 0, ply, false);
 	}
 
-	nodes++;
-
 	if	(board.isDraw()) {
 		return drawScore;
 	}
@@ -541,10 +543,20 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 			if (score >= maxScore-maxSearchPly) {
 				score = beta;
 			}
-			const TranspositionTable::NodeFlag flag = currentScore!=-maxScore?
-					TranspositionTable::NM_LOWER_EVAL:TranspositionTable::NM_LOWER;
-			agent->hashPut(key,score,currentScore,depth,ply,flag,emptyMove);
-			return score;
+			bool okToPrune = true;
+			if (depth>6) {
+				const int newScore = zwSearch(board, newSi, beta, depth-reduction, ply);
+				if (newScore<beta) {
+					okToPrune = false;
+				}
+			}
+			if (okToPrune) {
+				const TranspositionTable::NodeFlag flag = currentScore!=-maxScore?
+						TranspositionTable::NM_LOWER_EVAL:TranspositionTable::NM_LOWER;
+				agent->hashPut(key,score,currentScore,depth,ply,flag,emptyMove);
+				return score;
+			}
+
 		} else {
 			if (score < -maxScore-maxSearchPly) {
 				nmMateScore=true;
@@ -555,10 +567,8 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	//iid
 	if (depth > allowIIDAtNormal &&	hashMove.none() &&
 			!isKingAttacked && currentScore >= beta-iidMargin) {
-		const bool allow = si.allowNullMove;
-		si.allowNullMove=false;
-		score = zwSearch(board,si,beta,depth/2,ply);
-		si.allowNullMove=allow;
+		SearchInfo newSi(false,emptyMove);
+		score = zwSearch(board,newSi,beta,depth/2,ply);
 		hashOk=agent->hashGet(key, hashData, ply);
 		if (hashOk) {
 			hashMove = hashData.move();
@@ -596,6 +606,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 		board.doMove(move,backup);
 
 		moveCounter++;
+		nodes++;
 
 		const bool givingCheck = board.setInCheck(board.getSideToMove());
 		const bool passedPawn = isPawnPush(board,move.to);
@@ -686,14 +697,8 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		int alpha, int beta, int depth, int ply, const bool isPV) {
 
-	nodes++;
-
 	if (stop()) {
 		return 0;
-	}
-
-	if (depth==0 && isPV && ply>maxPlySearched) {
-		maxPlySearched=ply;
 	}
 
 	if	(board.isDraw()) {
@@ -740,6 +745,10 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		const int delta = isPawnPromoting(board)?deltaMargin*2:deltaMargin;
 		if (bestScore < alpha - delta && !isPV && hashMove.none() &&
 				board.getGamePhase()<ENDGAME && !isMateScore(beta)) {
+			if (!hashOk) {
+				const TranspositionTable::NodeFlag flag = TranspositionTable::NODE_EVAL;
+				agent->hashPut(key,alpha,currentScore,-maxSearchPly,ply,flag,emptyMove);
+			}
 			return alpha;
 		}
 		if( isPV && alpha < bestScore) {
@@ -760,6 +769,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 		}
 
 		moveCounter++;
+		nodes++;
 
 		if (!isKingAttacked && !isPV && move != hashMove &&
 				move.type==MoveIterator::BAD_CAPTURE && depth < 0) {
