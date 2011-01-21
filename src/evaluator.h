@@ -247,10 +247,16 @@ public:
 			all = board.getAllPieces();
 			pawns[WHITE] = board.getPieces(makePiece(WHITE,PAWN));
 			pawns[BLACK] = board.getPieces(makePiece(BLACK,PAWN));
-			value[WHITE] = board.getPieceSquareValue(WHITE);
-			value[BLACK] = board.getPieceSquareValue(BLACK);
-			kingThreat[side]=0;
-			kingThreat[other]=0;
+			evalPieces[WHITE] = board.getPieceSquareValue(WHITE);
+			evalPieces[BLACK] = board.getPieceSquareValue(BLACK);
+			evalPawns[WHITE] = 0;
+			evalPawns[BLACK] = 0;
+			evalMobility[WHITE] = 0;
+			evalMobility[BLACK] = 0;
+			evalPieceThreat[WHITE] = 0;
+			evalPieceThreat[BLACK] = 0;
+			evalKingThreat[WHITE]=0;
+			evalKingThreat[BLACK]=0;
 			eval=0;
 		}
 
@@ -258,16 +264,22 @@ public:
 		Bitboard all;
 		PieceColor side;
 		PieceColor other;
-		int kingThreat[ALL_PIECE_COLOR];
 		Bitboard attackers[ALL_PIECE_TYPE_BY_COLOR];
 		Bitboard attacks[ALL_PIECE_COLOR];
 		Bitboard pawns[ALL_PIECE_COLOR];
-		int value[ALL_PIECE_COLOR];
+		int evalKingThreat[ALL_PIECE_COLOR];
+		int evalPieces[ALL_PIECE_COLOR];
+		int evalPawns[ALL_PIECE_COLOR];
+		int evalMobility[ALL_PIECE_COLOR];
+		int evalPieceThreat[ALL_PIECE_COLOR];
 		int eval;
 
 		inline const int getScore() {
-			return (value[side]-value[other]) +
-					(kingThreat[side]-kingThreat[other]);
+			return (evalPieces[side]-evalPieces[other]) +
+					(evalPawns[side]-evalPawns[other]) +
+					(evalMobility[side]-evalMobility[other]) +
+					(evalPieceThreat[side]-evalPieceThreat[other]) +
+					(evalKingThreat[side]-evalKingThreat[other]);
 		}
 
 		inline const int getEval() {
@@ -297,6 +309,7 @@ public:
 
 	Evaluator();
 	virtual ~Evaluator();
+	const int evaluate(Board& board, const int alpha, const int beta, const bool debug);
 	const int evaluate(Board& board, const int alpha, const int beta);
 	void evalKing(PieceColor color, EvalInfo& evalInfo);
 	void evalPawnsFromCache(PieceColor color, PawnInfo& info, EvalInfo& evalInfo);

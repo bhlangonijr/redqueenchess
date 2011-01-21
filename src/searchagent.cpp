@@ -31,8 +31,10 @@ extern "C" void *threadRun(void *);
 SearchAgent* SearchAgent::searchAgent = 0;
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 
 pthread_cond_t waitCond = PTHREAD_COND_INITIALIZER;
+pthread_cond_t waitCond2 = PTHREAD_COND_INITIALIZER;
 
 pthread_t executor;
 
@@ -117,6 +119,7 @@ void* SearchAgent::startThreadSearch() {
 		}
 		simpleSearcher.search(board);
 		setSearchInProgress(false);
+		pthread_cond_signal(&waitCond2);
 	}
 	pthread_mutex_unlock(&mutex);
 	pthread_exit(NULL);
@@ -136,6 +139,38 @@ void SearchAgent::doPerft() {
 	std::cout << "info Executing perft..." << std::endl;
 	long nodes = simpleSearcher.perft(board,this->getDepth(),1);
 	std::cout << "info Finished perft: " << nodes << std::endl;
+}
+
+// bench test
+void SearchAgent::doBench() {
+	std::cout << "Executing benchmark..." << std::endl;
+	long time = 0;
+	long nodes = 0;
+	simpleSearcher.setUpdateUci(false);
+	for (int i=0;i<benchSize;i++) {
+		pthread_mutex_lock(&mutex2);
+		std::cout << "Position[" << (i+1) << "]: " << benchPositions[i] << std::endl;
+		newGame();
+		setPositionFromFEN(benchPositions[i]);
+		setSearchMode(SearchAgent::SEARCH_DEPTH);
+		setDepth(benchDepth);
+		startSearch();
+		pthread_cond_wait(&waitCond2, &mutex2);
+		time+=simpleSearcher.getSearchedTime();
+		nodes+=simpleSearcher.getSearchedNodes();
+		pthread_mutex_unlock(&mutex2);
+	}
+	simpleSearcher.setUpdateUci(true);
+
+	std::cout << std::endl << "Finished benchmark:  " << std::endl;
+	std::cout << "Total time(seconds): " << (time/1000) << std::endl;
+	std::cout << "Total nodes:         " << (nodes) << std::endl;
+	std::cout << "Nodes/Seconds:       " << (nodes/(std::max(1L,time/1000))) << std::endl;
+}
+
+// eval test
+void SearchAgent::doEval() {
+	simpleSearcher.getEvaluator().evaluate(board,-maxScore,maxScore,true);
 }
 
 // stop search

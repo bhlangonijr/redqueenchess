@@ -180,6 +180,18 @@ public:
 		return timeToStop;
 	}
 
+	inline const long getSearchedTime() const {
+		return time;
+	}
+
+	inline const long getSearchedNodes() const {
+		return nodes;
+	}
+
+	inline Evaluator& getEvaluator() {
+		return evaluator;
+	}
+
 	inline void setSearchAgent(SearchAgent* _agent) {
 		this->agent=_agent;
 	}
@@ -484,7 +496,7 @@ inline void SimplePVSearch::filterLegalMoves(Board& board, MoveIterator& moves) 
 // is mate score?
 inline bool SimplePVSearch::isMateScore(const int score) {
 	return score < -maxScore+maxSearchPly ||
-	score > maxScore-maxSearchPly;
+			score > maxScore-maxSearchPly;
 }
 
 // remains pawns & kings only?

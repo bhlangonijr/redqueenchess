@@ -41,7 +41,9 @@ const std::string mainHashName 		= "DefaultHashTable";
 const size_t defaultDepth			= 5;
 const size_t defaultHashSize		= 128;
 const int defaultGameSize			= 30;
-const int timeTableSize=7;
+const int timeTableSize				= 7;
+const int benchSize					= 12;
+const int benchDepth				= 14;
 
 const int timeTable [7][3] = {
 		{25, 900000, 180000},
@@ -50,6 +52,21 @@ const int timeTable [7][3] = {
 		{19, 10000, 5000},
 		{17, 5000, 1000},
 		{15, 1000, 0}
+};
+
+const std::string benchPositions[benchSize] = {
+		"8/7p/5k2/5p2/p1p2P2/Pr1pPK2/1P1R3P/8 b - - 0 1",
+		"1q2r1k1/5pb1/2bppnp1/p1p5/Nr2PPP1/1BBP4/1PP4Q/2KR3R w - - 0 1",
+		"1k1r3q/1ppn3p/p4b2/4p3/8/P2N2P1/1PP1R1BP/2K1Q3 w - - 0 1",
+		"rn3rk1/pbppq1pp/1p2pb2/4N2Q/3PN3/3B4/PPP2PPP/R3K2R w KQ - 6 11",
+		"1Q6/5kpp/2p4r/b4p2/P2R4/1N4P1/5PKP/4q3 b - - 0 1",
+		"r1r2bk1/pp1n1p1p/2pqb1p1/3p4/1P1P4/1QN1PN2/P3BPPP/2RR2K1 w - - 0 1",
+		"6k1/8/8/8/8/1p6/6K1/8 w - - 0 1",
+		"8/1B3k2/4Rbp1/3Pp1p1/5p2/5P1P/3r2PK/8 b - - 0 1",
+		"1r6/r7/2bkp3/1p1p1p1p/p1pP1PpP/P1P1P1B1/1PK4P/1N1B4 b - - 0 150",
+		"8/8/8/8/3k4/1r6/6K1/8 w - - 0 1",
+		"2n5/2P5/1Pk5/2B5/8/p7/8/1K6 b - - 2 86",
+		"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 };
 
 class SimplePVSearch;
@@ -106,6 +123,8 @@ public:
 
 	void startSearch();
 	void doPerft();
+	void doBench();
+	void doEval();
 	void stopSearch();
 
 	inline const size_t getHashSize() const {

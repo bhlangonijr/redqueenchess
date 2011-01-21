@@ -40,15 +40,15 @@
 
 #  if defined(_SC_NPROCESSORS_ONLN)
 int getNumProcs() {
-  return std::min(sysconf( _SC_NPROCESSORS_ONLN ), 8L);
+	return std::min(sysconf( _SC_NPROCESSORS_ONLN ), 8L);
 }
 #  else
 int getNumProcs() {
-  return 1;
+	return 1;
 }
 #  endif
 
-int main() {
+int main(int argc, char* argv[]) {
 
 	setbuf(stdin, NULL);
 	setbuf(stdout, NULL);
@@ -76,11 +76,20 @@ int main() {
 	uci->setUciOption(options);
 	std::cout << Constant::ENGINE_COPYRIGHT << std::endl;
 
-	//uci loop
-	Uci::Command command=Uci::NONE;
-	while (command != Uci::QUIT) {
-		command=uci->getUserInput();
-		uci->execute();
+	if (argc<=1) {
+		//uci loop
+		Uci::Command command=Uci::NONE;
+		while (command != Uci::QUIT) {
+			command=uci->getUserInput();
+			uci->execute();
+		}
+	} else if (StringUtil::containsString(std::string(argv[1]),"bench")) {
+		uci->setRawInput("test "+std::string(argv[1]));
+		uci->executeTest();
+	} else {
+		std::cout << " Usage: " << std::endl;
+		std::cout << ">redqueen<enter> --> Enter in UCI mode " << std::endl;
+		std::cout << ">redqueen bench<enter> --> Runs a benchmark" << std::endl;
 	}
 
 	uci->clearUciOption();

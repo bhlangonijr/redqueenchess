@@ -75,6 +75,8 @@ public:
 	void info(const std::string text) const;
 	void text(const std::string text) const;
 
+	void executeTest();
+
 protected:
 	Uci();
 	Uci(const Uci&);
@@ -93,8 +95,6 @@ private:
 	void executeStop();
 	void executePonderHit();
 	void executePerft();
-	void executeTest();
-
 };
 
 #endif /* UCI_H_ */
