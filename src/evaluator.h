@@ -30,6 +30,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <sstream>
 #include "board.h"
 #include "psqt.h"
 #include "bitboard.h"
@@ -47,7 +48,7 @@ const int BACKWARD_OPEN_PAWN_PENALTY =  MS(-17,-13);
 const int DONE_CASTLE_BONUS=       		MS(+20,-1);
 const int CONNECTED_PAWN_BONUS =   		MS(+3,+5);
 const int BISHOP_PAIR_BONUS = 	   		MS(+25,+25);
-const int UNSTOPPABLE_PAWN_BONUS = 		MS(+700,+700);
+const int UNSTOPPABLE_PAWN_BONUS = 		MS(+0,+200);
 const int ROOK_ON_7TH_RANK_BONUS = 		MS(+15,+25);
 const int QUEEN_ON_7TH_RANK_BONUS = 	MS(+10,+15);
 const int PASSER_AND_KING_BONUS = 		MS(0,+5);
@@ -81,6 +82,28 @@ const int rookKingBonus[8] = {
 
 const int queenKingBonus[8] = {
 		7*MS(+5,+7),6*MS(+5,+7),5*MS(+5,+7),4*MS(+5,+7),3*MS(+5,+7),2*MS(+5,+7),1*MS(+5,+7),0*MS(+5,+7)
+};
+
+const int kingZoneAttackWeight[ALL_PIECE_TYPE][10] = {
+		{},
+		{//knight
+				0*MS(+4,+7),1*MS(+4,+7),2*MS(+4,+7),3*MS(+4,+7),4*MS(+4,+7),
+				5*MS(+4,+7),6*MS(+4,+7),7*MS(+4,+7),8*MS(+4,+7),9*MS(+4,+7)
+		},
+		{// bishop
+				0*MS(+4,+7),1*MS(+4,+7),2*MS(+4,+7),3*MS(+4,+7),4*MS(+4,+7),
+				5*MS(+4,+7),6*MS(+4,+7),7*MS(+4,+7),8*MS(+4,+7),9*MS(+4,+7)
+		},
+		{// rook
+				0*MS(+5,+8),1*MS(+5,+8),2*MS(+5,+8),3*MS(+5,+8),4*MS(+5,+8),
+				5*MS(+5,+8),6*MS(+5,+8),7*MS(+5,+8),8*MS(+5,+8),9*MS(+5,+8)
+		},
+		{// queen
+				0*MS(+6,+10),1*MS(+6,+10),2*MS(+6,+10),3*MS(+6,+10),4*MS(+6,+10),
+				5*MS(+6,+10),6*MS(+6,+10),7*MS(+6,+10),8*MS(+6,+10),9*MS(+6,+10)
+		},
+		{},
+		{}
 };
 
 const int minorKingZoneAttackWeight[10] = {
@@ -251,12 +274,12 @@ public:
 			evalPieces[BLACK] = board.getPieceSquareValue(BLACK);
 			evalPawns[WHITE] = 0;
 			evalPawns[BLACK] = 0;
-			evalMobility[WHITE] = 0;
-			evalMobility[BLACK] = 0;
-			evalPieceThreat[WHITE] = 0;
-			evalPieceThreat[BLACK] = 0;
-			evalKingThreat[WHITE]=0;
-			evalKingThreat[BLACK]=0;
+			mobility[WHITE] = 0;
+			mobility[BLACK] = 0;
+			pieceThreat[WHITE] = 0;
+			pieceThreat[BLACK] = 0;
+			kingThreat[WHITE]=0;
+			kingThreat[BLACK]=0;
 			eval=0;
 		}
 
@@ -267,19 +290,19 @@ public:
 		Bitboard attackers[ALL_PIECE_TYPE_BY_COLOR];
 		Bitboard attacks[ALL_PIECE_COLOR];
 		Bitboard pawns[ALL_PIECE_COLOR];
-		int evalKingThreat[ALL_PIECE_COLOR];
+		int kingThreat[ALL_PIECE_COLOR];
 		int evalPieces[ALL_PIECE_COLOR];
 		int evalPawns[ALL_PIECE_COLOR];
-		int evalMobility[ALL_PIECE_COLOR];
-		int evalPieceThreat[ALL_PIECE_COLOR];
+		int mobility[ALL_PIECE_COLOR];
+		int pieceThreat[ALL_PIECE_COLOR];
 		int eval;
 
 		inline const int getScore() {
 			return (evalPieces[side]-evalPieces[other]) +
 					(evalPawns[side]-evalPawns[other]) +
-					(evalMobility[side]-evalMobility[other]) +
-					(evalPieceThreat[side]-evalPieceThreat[other]) +
-					(evalKingThreat[side]-evalKingThreat[other]);
+					(mobility[side]-mobility[other]) +
+					(pieceThreat[side]-pieceThreat[other]) +
+					(kingThreat[side]-kingThreat[other]);
 		}
 
 		inline const int getEval() {
@@ -298,6 +321,35 @@ public:
 			} else if (eval<-maxScore) {
 				eval=-maxScore;
 			}
+		}
+
+		inline std::string toString() {
+			std::stringstream out;
+			const int whiteScore=evalPieces[WHITE]+evalPawns[WHITE]+mobility[WHITE]+
+					pieceThreat[WHITE]+kingThreat[WHITE];
+			const int blackScore=evalPieces[BLACK]+evalPawns[BLACK]+mobility[BLACK]+
+								pieceThreat[BLACK]+kingThreat[BLACK];
+
+			out << "Material[WHITE]:          " << (board.getMaterial(WHITE)-kingValue) << std::endl;
+			out << "Material[BLACK]:          " << (board.getMaterial(BLACK)-kingValue) << std::endl;
+			out << "Pieces(PST&Other)[WHITE]: " << interpolate(evalPieces[WHITE],board.getGamePhase()) << std::endl;
+			out << "Pieces(PST&Other)[BLACK]: " << interpolate(evalPieces[BLACK],board.getGamePhase()) << std::endl;
+			out << "Pawns[WHITE]:             " << interpolate(evalPawns[WHITE],board.getGamePhase()) << std::endl;
+			out << "Pawns[BLACK]:             " << interpolate(evalPawns[BLACK],board.getGamePhase()) << std::endl;
+			out << "Mobility&Space[WHITE]:    " << interpolate(mobility[WHITE],board.getGamePhase()) << std::endl;
+			out << "Mobility&Space[BLACK]:    " << interpolate(mobility[BLACK],board.getGamePhase()) << std::endl;
+			out << "Pieces threats[WHITE]:    " << interpolate(pieceThreat[WHITE],board.getGamePhase()) << std::endl;
+			out << "Pieces threats[BLACK]:    " << interpolate(pieceThreat[BLACK],board.getGamePhase()) << std::endl;
+			out << "King threats[WHITE]:      " << interpolate(kingThreat[WHITE],board.getGamePhase()) << std::endl;
+			out << "King threats[BLACK]:      " << interpolate(kingThreat[BLACK],board.getGamePhase()) << std::endl;
+
+			out << "Endgame score(WHITE):    " << upperScore(whiteScore) << std::endl;
+			out << "Endgame score(BLACK):    " << upperScore(blackScore) << std::endl;
+			out << "Middlegame score(WHITE): " << lowerScore(whiteScore) << std::endl;
+			out << "Middlegame score(BLACK): " << lowerScore(blackScore) << std::endl;
+			std::string sign = eval==0?"":(eval>0 && side==WHITE)||(eval<0 && side==BLACK)?"+":"-";
+			out << "Main eval:                " << sign << abs(eval) << std::endl;
+			return out.str();
 		}
 	};
 
@@ -328,6 +380,10 @@ public:
 		const int mgValue = upperScore(value);
 		const int egValue = lowerScore(value);
 		return (egValue*gamePhase)/maxGamePhase+(mgValue*(maxGamePhase-gamePhase))/maxGamePhase;
+	}
+
+	inline const int getKingAttackWeight(const int piece, const int count) {
+		return kingZoneAttackWeight[pieceType[piece]][count];
 	}
 
 	inline bool getPawnInfo(const Key key, PawnInfo& pawnHash) {

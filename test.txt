@@ -202,3 +202,6 @@ go depth 0
 position fen 1k1r3q/1ppn3p/p4b2/4p3/8/P2N2P1/1PP1R1BP/2K1Q3 w - -
 go depth 0
 ;test see +225 d3e5 
+
+position fen r1bq1r1k/1ppn2pp/p1n1pN2/4P2Q/8/3B4/PPPB2PP/R3K2R b KQkq - 0 1
+test eval
