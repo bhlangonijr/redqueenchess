@@ -170,7 +170,9 @@ void SearchAgent::doBench() {
 
 // eval test
 void SearchAgent::doEval() {
-	simpleSearcher.getEvaluator().evaluate(board,-maxScore,maxScore,true);
+	simpleSearcher.getEvaluator().setDebugEnabled(true);
+	simpleSearcher.getEvaluator().evaluate(board,-maxScore,maxScore);
+	simpleSearcher.getEvaluator().setDebugEnabled(false);
 }
 
 // stop search

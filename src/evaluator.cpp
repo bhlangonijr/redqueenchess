@@ -26,7 +26,7 @@
 
 #include "evaluator.h"
 
-Evaluator::Evaluator() {
+Evaluator::Evaluator() : debug(false) {
 	cleanPawnInfo();
 }
 
@@ -35,7 +35,7 @@ Evaluator::~Evaluator() {
 }
 
 // main eval function
-const int Evaluator::evaluate(Board& board, const int alpha, const int beta, const bool debug) {
+const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 
 	EvalInfo evalInfo(board);
 
@@ -67,17 +67,11 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta, con
 		evalInfo.computeEval();
 	}
 
-	if (debug) {
+	if (isDebugEnabled()) {
 		std::cout << evalInfo.toString();
 	}
 
 	return evalInfo.getEval();
-}
-
-const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
-
-	return evaluate(board, alpha, beta, false);
-
 }
 
 // king eval function

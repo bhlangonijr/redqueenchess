@@ -106,21 +106,6 @@ const int kingZoneAttackWeight[ALL_PIECE_TYPE][10] = {
 		{}
 };
 
-const int minorKingZoneAttackWeight[10] = {
-		0*MS(+4,+7),1*MS(+4,+7),2*MS(+4,+7),3*MS(+4,+7),4*MS(+4,+7),
-		5*MS(+4,+7),6*MS(+4,+7),7*MS(+4,+7),8*MS(+4,+7),9*MS(+4,+7)
-};
-
-const int rookKingZoneAttackWeight[10] = {
-		0*MS(+5,+8),1*MS(+5,+8),2*MS(+5,+8),3*MS(+5,+8),4*MS(+5,+8),
-		5*MS(+5,+8),6*MS(+5,+8),7*MS(+5,+8),8*MS(+5,+8),9*MS(+5,+8)
-};
-
-const int queenKingZoneAttackWeight[10] = {
-		0*MS(+6,+10),1*MS(+6,+10),2*MS(+6,+10),3*MS(+6,+10),4*MS(+6,+10),
-		5*MS(+6,+10),6*MS(+6,+10),7*MS(+6,+10),8*MS(+6,+10),9*MS(+6,+10)
-};
-
 const int connectedPasserBonus[ALL_PIECE_COLOR][ALL_RANK] = {
 		{0,MS(+20,+25),MS(+25,+35),MS(+30,+40),MS(+35,+45),MS(+50,+60),MS(+60,+90),0},
 		{0,MS(+60,+90),MS(+50,+60),MS(+35,+45),MS(+30,+40),MS(+25,+35),MS(+20,+25),0},
@@ -361,7 +346,6 @@ public:
 
 	Evaluator();
 	virtual ~Evaluator();
-	const int evaluate(Board& board, const int alpha, const int beta, const bool debug);
 	const int evaluate(Board& board, const int alpha, const int beta);
 	void evalKing(PieceColor color, EvalInfo& evalInfo);
 	void evalPawnsFromCache(PieceColor color, PawnInfo& info, EvalInfo& evalInfo);
@@ -375,6 +359,14 @@ public:
 	const void setGameStage(const GamePhase phase);
 	template <bool lazySee>
 	const int see(Board& board, MoveIterator::Move& move);
+
+	inline const bool isDebugEnabled() {
+		return debug;
+	}
+
+	inline const void setDebugEnabled(const bool enabled) {
+		this->debug = enabled;
+	}
 
 	inline const static int interpolate(const int value, const int gamePhase) {
 		const int mgValue = upperScore(value);
@@ -413,8 +405,8 @@ public:
 private:
 
 	Bitboard getLeastValuablePiece(Board& board, Bitboard attackers, PieceColor& color, PieceTypeByColor& piece);
-
 	PawnInfo pawnInfo[pawnHashSize];
+	bool debug;
 
 };
 
