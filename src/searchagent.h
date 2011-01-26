@@ -1,6 +1,6 @@
 /*
 	Redqueen Chess Engine
-    Copyright (C) 2008-2010 Ben-Hur Carlos Vieira Langoni Junior
+    Copyright (C) 2008-2011 Ben-Hur Carlos Vieira Langoni Junior
 
     This file is part of Redqueen Chess Engine.
 
@@ -26,17 +26,14 @@
 
 #ifndef SEARCHAGENT_H_
 #define SEARCHAGENT_H_
-
 #include <iostream>
 #include <assert.h>
 #include <pthread.h>
 #include <time.h>
-
 #include "board.h"
 #include "simplepvsearch.h"
 #include "transpositiontable.h"
 #include "uci.h"
-
 const std::string mainHashName 		= "DefaultHashTable";
 const size_t defaultDepth			= 5;
 const size_t defaultHashSize		= 128;
@@ -44,7 +41,6 @@ const int defaultGameSize			= 30;
 const int timeTableSize				= 7;
 const int benchSize					= 12;
 const int benchDepth				= 14;
-
 const int timeTable [7][3] = {
 		{25, 900000, 180000},
 		{23, 180000, 60000},
@@ -120,7 +116,6 @@ public:
 
 	void setPositionFromSAN(std::string startPosMoves);
 	void setPositionFromFEN(std::string fenMoves);
-
 	void startSearch();
 	void doPerft();
 	void doBench();
@@ -216,23 +211,17 @@ public:
 
 	inline bool hashPut(const Key _key, int value, int evalValue, const int depth, const int ply,
 			const TranspositionTable::NodeFlag flag, MoveIterator::Move move) {
-
 		TranspositionTable::HashKey key=static_cast<TranspositionTable::HashKey>(_key>>32);
-
 		if (value >= maxScore-100) {
 			value -= ply;
 		} else if (value <= -maxScore+100) {
 			value += ply;
 		}
-
 		return transTable->hashPut(key,value,evalValue,flag,move,depth);
-
 	}
 
 	inline bool hashGet(const Key _key, TranspositionTable::HashData& hashData, const int ply) {
-
 		TranspositionTable::HashKey key=static_cast<TranspositionTable::HashKey>(_key>>32);
-
 		bool result = transTable->hashGet(key, hashData);
 		if (result) {
 			int value = hashData.value();
@@ -244,15 +233,12 @@ public:
 		} else {
 			hashData.clear();
 		}
-
 		return result;
 	}
 
 	inline bool hashPruneGet(bool& okToPrune, const Key _key, TranspositionTable::HashData& hashData, const int ply,
 			const int depth, const bool allowNullMove, const int alpha, const int beta) {
-
 		const bool result = hashGet(_key, hashData, ply);
-
 		if (result) {
 			okToPrune =
 					(allowNullMove || !(hashData.flag() & TranspositionTable::NODE_NULL)) &&
@@ -262,7 +248,6 @@ public:
 		} else {
 			okToPrune = false;
 		}
-
 		return result;
 	}
 
@@ -289,17 +274,13 @@ public:
 	}
 
 	void shutdown();
-
 	void *startThreadSearch();
-
 	void initThreads();
 
 protected:
 
 	SearchAgent();
-
 	SearchAgent(const SearchAgent&);
-
 	SearchAgent& operator= (const SearchAgent&);
 
 private:
@@ -307,11 +288,9 @@ private:
 	static SearchAgent* searchAgent;
 	Board board;
 	SearchMode searchMode;
-
 	volatile bool searchInProgress;
 	volatile bool requestStop;
 	volatile bool quit;
-
 	size_t hashSize;
 	int threadNumber;
 	long whiteTime;
@@ -323,9 +302,7 @@ private:
 	long moveTime;
 	bool ponder;
 	TranspositionTable* transTable;
-
 	const long getTimeToSearch();
-
 };
 
 #endif /* SEARCHAGENT_H_ */

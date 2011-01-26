@@ -1,6 +1,6 @@
 /*
 	Redqueen Chess Engine
-    Copyright (C) 2008-2010 Ben-Hur Carlos Vieira Langoni Junior
+    Copyright (C) 2008-2011 Ben-Hur Carlos Vieira Langoni Junior
 
     This file is part of Redqueen Chess Engine.
 
@@ -25,13 +25,11 @@
  */
 
 #include "bitboard.h"
-
 const int DELTA_MAX = 7;
 static int squareDelta[ALL_SQUARE][ALL_SQUARE];
 
 // print a bitboard in a readble form
 void printBitboard(Bitboard bb) {
-
 	for(long x=0;x<64;x++) {
 		if ((0x1ULL << x)&bb) {
 			std::cout << "1";
@@ -40,14 +38,11 @@ void printBitboard(Bitboard bb) {
 		}
 		if ((x+1) % 8 == 0) std::cout << std::endl;
 	}
-
 	std::cout << std::endl;
-
 }
 
 // initialize bitboards
 void initializeBitboards() {
-
 	for (int x=0;x<ALL_SQUARE;x++) {
 		for (int y=0;y<ALL_SQUARE;y++) {
 			const int delta1 = abs(squareRank[x]-squareRank[y]);
@@ -55,7 +50,6 @@ void initializeBitboards() {
 			squareDelta[x][y] = std::max(delta1, delta2);
 		}
 	}
-
 }
 
 int squareDistance(const Square from, const Square to) {

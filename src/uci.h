@@ -1,6 +1,6 @@
 /*
 	Redqueen Chess Engine
-    Copyright (C) 2008-2010 Ben-Hur Carlos Vieira Langoni Junior
+    Copyright (C) 2008-2011 Ben-Hur Carlos Vieira Langoni Junior
 
     This file is part of Redqueen Chess Engine.
 
@@ -30,17 +30,15 @@
 
 #include <vector>
 #include "ucioption.h"
-
 #define NU_COMMANDS 13
 
-static const std::string strCommand[NU_COMMANDS] =
-	{"none","quit","uci","ucinewgame","isready","position","setoption","go","stop","perft","ponderhit","test","unknow"};
-
+static const std::string strCommand[NU_COMMANDS] = {
+		"none","quit","uci","ucinewgame","isready","position","setoption","go","stop","perft","ponderhit","test","unknow"
+};
 // Singleton to Handle Universal Chess Interface
 class Uci {
 
 public:
-
 	// UCI commands enumeration
 	enum Command {
 		NONE,
@@ -60,21 +58,16 @@ public:
 	static Uci* getInstance();
 	Command getUserInput();
 	bool execute();
-
 	void setCommand(Command cmd);
 	Command getCommand() const;
-
 	void setRawInput(const std::string input);
 	std::string getRawInput() const;
-
 	const UciOption getUciOption(std::string name);
 	void setUciOption(std::vector< UciOption *>);
 	size_t indexOfUciOption(std::string optionName);
 	void clearUciOption();
-
 	void info(const std::string text) const;
 	void text(const std::string text) const;
-
 	void executeTest();
 
 protected:
@@ -87,7 +80,6 @@ private:
 	Command command;
 	std::string rawInput;
 	std::vector< UciOption *> uciOption;
-
 	void executeSetOption();
 	void executePosition();
 	void executeGo();
@@ -98,4 +90,3 @@ private:
 };
 
 #endif /* UCI_H_ */
-

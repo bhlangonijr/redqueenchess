@@ -1,6 +1,6 @@
 /*
 	Redqueen Chess Engine
-    Copyright (C) 2008-2010 Ben-Hur Carlos Vieira Langoni Junior
+    Copyright (C) 2008-2011 Ben-Hur Carlos Vieira Langoni Junior
 
     This file is part of Redqueen Chess Engine.
 
@@ -26,9 +26,7 @@
 
 #ifndef MOVEITERATOR_H_
 #define MOVEITERATOR_H_
-
 #include "bitboard.h"
-
 const int MOVE_LIST_MAX_SIZE = 128;
 const int DEFAULT_SCORE = 0;
 
@@ -47,22 +45,17 @@ public:
 
 	// Move representation
 	struct Move {
-
 		Move() : from(NONE), to(NONE), promotionPiece(EMPTY), score(DEFAULT_SCORE), type(UNKNOW)
 			{}
-
 		Move(const Square fromSquare, const Square toSquare, const PieceTypeByColor piece) :
 			from(fromSquare), to(toSquare), promotionPiece(piece), score(DEFAULT_SCORE), type(UNKNOW)
 			{}
-
 		Move(const Square fromSquare, const Square toSquare, const PieceTypeByColor piece, const MoveType type) :
 			from(fromSquare), to(toSquare), promotionPiece(piece), score(DEFAULT_SCORE), type(type)
 			{}
-
 		Move(const Move& move) :
 			from(move.from), to(move.to), promotionPiece(move.promotionPiece), score(move.score), type(move.type)
 			{}
-
 		inline void operator = (const Move &move) {
 			from=move.from;
 			to=move.to;
@@ -117,41 +110,23 @@ public:
 	} __attribute__ ((aligned(64))) ;
 
 	const void add(const Move& move);
-
 	const void add(const Square from, const Square to, const PieceTypeByColor piece);
-
 	const void add(const Square from, const Square to, const PieceTypeByColor piece, const MoveType type);
-
 	const void addAll(MoveIterator& moves);
-
 	const void remove(const size_t index);
-
 	const void clear();
-
 	const bool hasNext();
-
 	const void bookmark();
-
 	const int goToBookmark();
-
 	const bool end();
-
 	Move& next();
-
 	Move& prior();
-
 	Move& selectBest();
-
 	const void first();
-
 	const size_t size();
-
 	void sort();
-
 	void sort(const int after);
-
 	void sort(long* moveScore);
-
 	void sortOrderingBy(long moveScore[MOVE_LIST_MAX_SIZE]);
 
 	const IteratorStage getStage() {
@@ -171,25 +146,16 @@ public:
 	}
 
 	const Move& get(const size_t index);
-
 	const size_t getIndex();
-
 	const void clearScore();
-
 	MoveIterator();
-
 	MoveIterator(const MoveIterator&);
-
 	virtual ~MoveIterator();
 
 protected:
-
 	MoveIterator& operator= (const MoveIterator&);
-
 private:
-
 	Data _data;
-
 };
 
 inline const void MoveIterator::add(const Move& move) {

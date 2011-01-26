@@ -1,6 +1,6 @@
 /*
 	Redqueen Chess Engine
-    Copyright (C) 2008-2010 Ben-Hur Carlos Vieira Langoni Junior
+    Copyright (C) 2008-2011 Ben-Hur Carlos Vieira Langoni Junior
 
     This file is part of Redqueen Chess Engine.
 
@@ -32,7 +32,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-
 #include "searchagent.h"
 #include "evaluator.h"
 
@@ -42,18 +41,15 @@ const int mateRangeScore = 300;
 const int maxSearchDepth = 80;
 const int maxSearchPly = 100;
 const int maxMoveCount = 64;
-
 // internal iterative deepening
 const int allowIIDAtPV = 6;
 const int allowIIDAtNormal = 8;
-
 // margin constants
 const int iidMargin=260;
 const int easyMargin=500;
 const int deltaMargin=950;
 const int nullMoveMargin=512;
 const int seMargin=35;
-
 //depth prunning threshold
 const int aspirationDepth=6;
 const int futilityDepth=5;
@@ -65,11 +61,9 @@ const int lmrDepthThreshold=2;
 const int sePVDepth=7;
 const int seNonPVDepth=9;
 const int lateMoveThreshold=2;
-
 const int scoreTable[11]={0,80000,60000,95000,90000,45000,40000,1000,-12000,50050,50000};
 const long defaultNodesToGo=0xFFF;
 const long fastNodesToGo=0xFF;
-
 const inline int futilityMargin(const int depth) {return depth * 150;}
 const inline int razorMargin(const int depth) {return 150 + depth * 175;}
 const inline int moveCountMargin(const int depth) {return 6 + depth * 4;}
@@ -81,7 +75,6 @@ class MoveIterator;
 class SimplePVSearch {
 
 public:
-
 	typedef struct PvLine {
 		int index;
 		MoveIterator::Move moves[maxSearchPly+1];
@@ -90,7 +83,6 @@ public:
 			memcpy(moves, line.moves, (maxSearchPly+1) * sizeof(MoveIterator::Move));
 		}
 	} PvLine;
-
 	typedef struct SearchInfo {
 		SearchInfo(): allowNullMove(false), move(MoveIterator::Move()), partialSearch(false) {}
 		SearchInfo(const bool _allowNullMove, const MoveIterator::Move _move):
@@ -107,13 +99,9 @@ public:
 			infinite(false), nodes(0), nodesToGo(defaultNodesToGo) {}
 
 	~SimplePVSearch() {}
-
 	void search(Board _board);
-
 	long perft(Board& board, int depth, int ply);
-
 	int getScore();
-
 	static void initialize();
 
 	inline const long getTickCount() {
@@ -202,7 +190,6 @@ public:
 	}
 
 private:
-
 	int depthToSearch;
 	int searchScore;
 	bool updateUci;
@@ -224,7 +211,6 @@ private:
 	int maxPlySearched;
 	int aspirationDelta;
 	long nodesToGo;
-
 	int idSearch(Board& board);
 	int rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int* betaRoot, int depth, int ply, PvLine& pv);
 	int pvSearch(Board& board,  SearchInfo& si, int alpha, int beta, int depth, int ply);
@@ -257,22 +243,18 @@ private:
 	void initRootMovesOrder();
 	void updateRootMovesScore(const long value);
 	long predictTimeUse(const long iterationTime[maxSearchPly], const long totalTime, const int depth);
-
 };
+
 // select a move
 template <bool quiescenceMoves>
 inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator& moves,
 		MoveIterator::Move& ttMove, int ply, int depth) {
-
 	while (true) {
-
 		switch (moves.getStage()) {
-
 		case MoveIterator::END_STAGE:
 			return emptyMove;
-
 		case MoveIterator::BEGIN_STAGE:
-			if (!board.isInCheck()/* || (quiescenceMoves && depth<-1)*/) {
+			if (!board.isInCheck() || (quiescenceMoves && depth<-1)) {
 				moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
 			} else {
 				moves.setStage(MoveIterator::INIT_EVASION_STAGE);
@@ -281,13 +263,11 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 				return ttMove;
 			}
 			break;
-
 		case MoveIterator::INIT_EVASION_STAGE:
 			board.generateEvasions(moves, board.getSideToMove());
 			scoreMoves<true>(board, moves);
 			moves.setStage(MoveIterator::ON_EVASION_STAGE);
 			break;
-
 		case MoveIterator::ON_EVASION_STAGE:
 			while (moves.hasNext()) {
 				MoveIterator::Move& move=moves.selectBest();
@@ -298,7 +278,6 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			}
 			moves.setStage(MoveIterator::END_STAGE);
 			return emptyMove;
-
 		case MoveIterator::INIT_CAPTURE_STAGE:
 			board.generateCaptures(moves, board.getSideToMove());
 			if (quiescenceMoves) {
@@ -310,7 +289,6 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			scoreMoves<false>(board, moves);
 			moves.setStage(MoveIterator::ON_CAPTURE_STAGE);
 			break;
-
 		case MoveIterator::ON_CAPTURE_STAGE:
 			while (moves.hasNext()) {
 				MoveIterator::Move& move=moves.selectBest();
@@ -345,7 +323,6 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 				moves.setStage(MoveIterator::KILLER1_STAGE);
 			}
 			break;
-
 		case MoveIterator::KILLER1_STAGE:
 			moves.setStage(MoveIterator::KILLER2_STAGE);
 			if (killer[ply][0] != ttMove &&
@@ -354,7 +331,6 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 				return killer[ply][0];
 			}
 			break;
-
 		case MoveIterator::KILLER2_STAGE:
 			moves.setStage(MoveIterator::INIT_QUIET_STAGE);
 			if (killer[ply][1] != ttMove &&
@@ -363,13 +339,11 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 				return killer[ply][1];
 			}
 			break;
-
 		case MoveIterator::INIT_QUIET_STAGE:
 			board.generateNonCaptures(moves, board.getSideToMove());
 			scoreMoves<false>(board, moves);
 			moves.setStage(MoveIterator::ON_QUIET_STAGE);
 			break;
-
 		case MoveIterator::ON_QUIET_STAGE:
 			while (moves.hasNext()) {
 				MoveIterator::Move& move=moves.selectBest();
@@ -387,20 +361,16 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 
 	}
 	return emptyMove;
-
 }
 
 // score moves
 template <bool isEvasion>
 inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
-
 	moves.bookmark();
-
 	while (moves.hasNext()) {
 		MoveIterator::Move& move = moves.next();
 		const PieceTypeByColor pieceFrom = board.getPiece(move.from);
 		const PieceTypeByColor pieceTo = board.getPiece(move.to);
-
 		if (move.type==MoveIterator::UNKNOW) {
 			move.score=-maxScore;
 			if (isEvasion) {
@@ -442,7 +412,6 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 		move.score+=scoreTable[move.type];
 	}
 	moves.goToBookmark();
-
 }
 
 inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
@@ -468,14 +437,11 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 		board.undoMove(backup);
 	}
 	moves.goToBookmark();
-
 }
 
 // filter the move list to only legal moves
 inline void SimplePVSearch::filterLegalMoves(Board& board, MoveIterator& moves) {
-
 	MoveIterator newMoves;
-
 	moves.first();
 	while (moves.hasNext()) {
 		MoveIterator::Move& move = moves.next();
@@ -495,24 +461,18 @@ inline void SimplePVSearch::filterLegalMoves(Board& board, MoveIterator& moves) 
 
 // is mate score?
 inline bool SimplePVSearch::isMateScore(const int score) {
-	return score < -maxScore+maxSearchPly ||
-			score > maxScore-maxSearchPly;
+	return score < -maxScore+maxSearchPly || score > maxScore-maxSearchPly;
 }
 
 // remains pawns & kings only?
 inline bool SimplePVSearch::isPawnFinal(Board& board) {
-
-	Bitboard pieces = board.getPieces(WHITE_PAWN) |
-			board.getPieces(BLACK_PAWN) |
-			board.getPieces(WHITE_KING) |
-			board.getPieces(BLACK_KING);
-
+	Bitboard pieces = board.getPieces(WHITE_PAWN) |	board.getPieces(BLACK_PAWN) |
+			board.getPieces(WHITE_KING) | board.getPieces(BLACK_KING);
 	return !(pieces^board.getAllPieces());
 }
 
 // pawn push
 inline bool SimplePVSearch::isPawnPush(Board& board, Square& square) {
-
 	if (board.getPieceType(square)!=PAWN) {
 		return false;
 	}
@@ -520,8 +480,7 @@ inline bool SimplePVSearch::isPawnPush(Board& board, Square& square) {
 }
 
 inline bool SimplePVSearch::isCaptureOrPromotion(Board& board, MoveIterator::Move& move) {
-	return board.isCaptureMove(move) ||
-			move.promotionPiece != EMPTY;
+	return board.isCaptureMove(move) ||	move.promotionPiece != EMPTY;
 }
 
 // pawn promoting
@@ -535,18 +494,13 @@ inline const bool SimplePVSearch::timeIsUp() {
 		return false;
 	}
 	return clock()>=timeToStop;
-
 }
 
 inline void SimplePVSearch::uciOutput(PvLine& pv, const int score, const int totalTime,
 		const int hashFull, const int depth, const int selDepth, const int alpha, const int beta) {
-
 	MoveIterator::Move& move = pv.moves[0];
-
 	if (isUpdateUci() && !move.none()) {
-
 		std::string scoreString = "cp " + StringUtil::toStr(score);
-
 		if (abs(score) > (maxScore-mateRangeScore)) {
 			if (score>0) {
 				scoreString = "mate " +StringUtil::toStr((maxScore - (score+1))/2);
@@ -554,25 +508,21 @@ inline void SimplePVSearch::uciOutput(PvLine& pv, const int score, const int tot
 				scoreString = "mate " +StringUtil::toStr(-(maxScore + score)/2);
 			}
 		}
-
 		if (score >= beta) {
 			scoreString += " lowerbound";
 		} else if (score <= alpha) {
 			scoreString += " upperbound";
 		}
-
 		long nps = totalTime>1000 ?  ((nodes)/(totalTime/1000)) : nodes;
 		std::cout << "info depth "<< depth << " seldepth " << selDepth << std::endl;
 		std::cout << "info depth "<< depth << " score " << scoreString << " time " << totalTime
 				<< " nodes " << (nodes) << " nps " << nps << " pv" << pvLineToString(pv) << std::endl;
 		std::cout << "info nodes " << (nodes) << " time " << totalTime << " nps " << nps
 				<< " hashfull " << hashFull << std::endl;
-
 	}
 }
 
 inline void SimplePVSearch::uciOutput(MoveIterator::Move& bestMove, MoveIterator::Move& ponderMove) {
-
 	if (isUpdateUci()) {
 		if (!bestMove.none()) {
 			std::cout << "bestmove " << bestMove.toString();
@@ -588,7 +538,6 @@ inline void SimplePVSearch::uciOutput(MoveIterator::Move& bestMove, MoveIterator
 }
 
 inline void SimplePVSearch::uciOutput(MoveIterator::Move& move, const int moveCounter) {
-
 	const long uciOutputSecs=1500;
 	if (isUpdateUci()) {
 		if (startTime+uciOutputSecs < getTickCount()) {
@@ -598,7 +547,6 @@ inline void SimplePVSearch::uciOutput(MoveIterator::Move& move, const int moveCo
 }
 
 inline void SimplePVSearch::uciOutput(const int depth) {
-
 	const long uciOutputSecs=1500;
 	if (isUpdateUci()) {
 		if (startTime+uciOutputSecs < getTickCount()) {
@@ -624,22 +572,17 @@ inline void SimplePVSearch::clearHistory() {
 
 // update history
 inline void SimplePVSearch::updateHistory(Board& board, MoveIterator::Move& move, int depth) {
-
 	if (isCaptureOrPromotion(board,move) || move.none()) {
 		return;
 	}
-
 	history[board.getPiece(move.from)][move.to]+=depth*depth;
-
 }
 
 // update killers
 inline void SimplePVSearch::updateKillers(Board& board, MoveIterator::Move& move, int ply) {
-
 	if (isCaptureOrPromotion(board,move) || move.none()) {
 		return;
 	}
-
 	if (move != killer[ply][0]) {
 		killer[ply][1] = killer[ply][0];
 		killer[ply][0] = move;
@@ -661,17 +604,11 @@ inline void SimplePVSearch::updateRootMovesScore(const long value) {
 }
 
 inline long SimplePVSearch::predictTimeUse(const long iterationTime[maxSearchPly], const long totalTime, const int depth) {
-
 	double ratio1 = double(iterationTime[depth-1])/double(totalTime);
 	double ratio2 = double(iterationTime[depth-2])/double(totalTime);
 	double ratio3 = double(iterationTime[depth-3])/double(totalTime);
-
 	double newRatio = ratio1*exp((ratio2/ratio1)*0.7 + (ratio3/ratio2)*0.3);
-
 	double newTime = double(iterationTime[depth-1])*exp(newRatio);
-
 	return long(newTime);
 }
-
 #endif /* SIMPLEPVSEARCH_H_ */
-

@@ -1,6 +1,6 @@
 /*
 	Redqueen Chess Engine
-    Copyright (C) 2008-2010 Ben-Hur Carlos Vieira Langoni Junior
+    Copyright (C) 2008-2011 Ben-Hur Carlos Vieira Langoni Junior
 
     This file is part of Redqueen Chess Engine.
 
@@ -27,14 +27,11 @@
 
 #ifndef TRANSPOSITIONTABLE_H_
 #define TRANSPOSITIONTABLE_H_
-
 #include <cstring>
 #include <cmath>
 #include <stdlib.h>
-
 const int DEFAULT_INITIAL_SIZE = 64;
 const int BUCKET_SIZE = 4;
-
 class TranspositionTable {
 public:
 
@@ -107,7 +104,6 @@ public:
 			_promotion=uint8_t(EMPTY);
 			_generation=0;
 		}
-
 		HashKey key;
 		int16_t _value;
 		int16_t _evalValue;
@@ -179,7 +175,6 @@ private:
 	Bucket* transTable;
 	size_t writes;
 	uint16_t generation;
-
 };
 
 inline const size_t TranspositionTable::getHashSize() const {
@@ -201,8 +196,8 @@ inline void TranspositionTable::clearHash() {
 	}
 }
 
-inline bool TranspositionTable::hashPut(const HashKey key, const int value, const int evalValue, const NodeFlag flag,
-		MoveIterator::Move&move, const int depth) {
+inline bool TranspositionTable::hashPut(const HashKey key, const int value, const int evalValue,
+		const NodeFlag flag, MoveIterator::Move&move, const int depth) {
 	HashData *entry = transTable[key & _mask].entry;
 	HashData *replace = entry;
 	for (int x=0;x<BUCKET_SIZE;x++,entry++) {

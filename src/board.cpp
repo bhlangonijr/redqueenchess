@@ -1,6 +1,6 @@
 /*
 	Redqueen Chess Engine
-    Copyright (C) 2008-2010 Ben-Hur Carlos Vieira Langoni Junior
+    Copyright (C) 2008-2011 Ben-Hur Carlos Vieira Langoni Junior
 
     This file is part of Redqueen Chess Engine.
 
@@ -23,16 +23,12 @@
  *  Created on: Feb 21, 2009
  *      Author: bhlangonijr
  */
-
 #include "board.h"
-
 using namespace BoardTypes;
-
 static NodeZobrist zobrist;
 static int pst[maxGamePhase+1][ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 
-Board::Board() : currentBoard()
-{
+Board::Board() : currentBoard() {
 	setInitialPosition();
 }
 
@@ -42,25 +38,19 @@ Board::Board(const Board& board) : currentBoard( Node(board.currentBoard) ) {
 
 Board::~Board() {
 }
-
 // print board for debug
 const void Board::printBoard() {
 	printBoard("");
 }
-
 // print board for debug
 const void Board::printBoard(const std::string pad) {
-
 	std::string ranks[8];
 	int j=0;
-
 	for(int x=0;x<ALL_SQUARE;x++) {
-
 		if (currentBoard.piece.array[currentBoard.square[x]]&squareToBitboard[x]) {
 			ranks[j]+= " ";
 			ranks[j]+= pieceChar[currentBoard.square[x]];
 			ranks[j]+= " |";
-
 		} else {
 			ranks[j]+= " ";
 			ranks[j]+= pieceChar[12];
@@ -75,56 +65,15 @@ const void Board::printBoard(const std::string pad) {
 		std::cout << pad << (x+1) << "|" << ranks[x] << std::endl;
 		std::cout << pad << "__________________________________" << std::endl;
 	}
-
 	std::cout << pad << "    a   b   c   d   e   f   g   h " << std::endl;
-
 }
-
-// testing method
-void Board::genericTest() {
-	//testing code
-
-	printBoard();
-	int start = getTickCount();
-	PieceColor color = getSideToMove();
-	int counter=0;
-	for (int x=0;x<1000000;x++)
-	{
-		MoveIterator moves;
-		generateAllMoves(moves,color);
-		moves.first();
-		while (moves.hasNext()) {
-			MoveIterator::Move move = moves.next();
-			//std::cout << counter << " - " << move.toString() << std::endl;
-			MoveBackup backup;
-			doMove(move,backup);
-			//printBoard();
-			undoMove(backup);
-			counter++;
-		}
-	}
-
-	//Evaluator evaluator;
-	//std::cout << "Eval:        " << evaluator.evaluate(this) << std::endl;
-	std::cout << "sideToMove:  " << color << std::endl;
-	std::cout << "Key inc:     " << getKey() << std::endl;
-	std::cout << "Key gen:     " << generateKey() << std::endl;
-	std::cout << "Time:        " << (this->getTickCount()-start) << std::endl;
-	std::cout << "Perft:       " << (counter) << std::endl;
-	std::cout << "MoveCounter: " << getMoveCounter() << std::endl;
-	std::cout << "NPS:         " << (counter/((this->getTickCount()-start)/1000) ) << std::endl;
-
-}
-
 // do a move and set backup info into struct MoveBackup
 void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
-
 	const PieceTypeByColor fromPiece = getPiece(move.from);
 	const PieceTypeByColor toPiece = getPiece(move.to);
 	const PieceColor otherSide = flipSide(getSideToMove());
 	bool enPassant=false;
 	bool reversible=true;
-
 	backup.key=getKey();
 	backup.pawnKey=getPawnKey();
 	backup.from=move.from;
@@ -140,10 +89,8 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	backup.phase=getGamePhase();
 	backup.halfMoveCounter =  getHalfMoveCounter();
 	backup.inCheck = isInCheck();
-
 	removePiece(fromPiece,move.from);
 	setKey(getKey()^zobrist.pieceSquare[fromPiece][move.from]);
-
 	if (toPiece!=EMPTY) {
 		removePiece(toPiece,move.to);
 		setKey(getKey()^zobrist.pieceSquare[toPiece][move.to]);
@@ -156,7 +103,6 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 		backup.capturedSquare=NONE;
 		backup.hasCapture=false;
 	}
-
 	if (move.promotionPiece==EMPTY) {
 		putPiece(fromPiece,move.to);
 		setKey(getKey()^zobrist.pieceSquare[fromPiece][move.to]);
@@ -166,9 +112,7 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 		setKey(getKey()^zobrist.pieceSquare[move.promotionPiece][move.to]);
 		backup.hasPromotion=true;
 	}
-
 	setKey(getKey() ^ zobrist.castleRight[getZobristCastleIndex()]);
-
 	if (!isCastleDone(getSideToMove()) && getCastleRights(getSideToMove())!=NO_CASTLE) {
 		if (fromPiece==WHITE_KING) {
 			if (move.from==E1) {
@@ -229,7 +173,6 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 			}
 		}
 	}
-
 	if (!isCastleDone(otherSide) && getCastleRights(otherSide)!=NO_CASTLE) {
 		if (toPiece==makePiece(otherSide,ROOK)) {
 			if (getSideToMove()==WHITE) {
@@ -248,13 +191,10 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 			}
 		}
 	}
-
 	setKey(getKey() ^ zobrist.castleRight[getZobristCastleIndex()]);
-
 	if (getEnPassant()!=NONE) {
 		setKey(getKey()^zobrist.enPassant[getSquareFile(getEnPassant())]);
 	}
-
 	if (fromPiece==makePiece(getSideToMove(),PAWN)){
 		reversible=false;
 		setPawnKey(getPawnKey()^zobrist.pieceSquare[fromPiece][move.from]);
@@ -267,30 +207,24 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 				backup.capturedSquare=getEnPassant();
 			}
 		}
-
 		const Rank doubleInitialRank = getSideToMove()==WHITE?RANK_2:RANK_7;
 		const Rank doubleFinalRank = getSideToMove()==WHITE?RANK_4:RANK_5;
-
 		if (getSquareRank(move.to)==doubleFinalRank&&getSquareRank(move.from)==doubleInitialRank) {
 			setEnPassant(move.to);
 			enPassant=true;
 		}
 	}
-
 	if (!enPassant && getEnPassant()!=NONE) {
 		setEnPassant(NONE);
 	}
-
 	if (getEnPassant()!=NONE) {
 		setKey(getKey()^zobrist.enPassant[getSquareFile(getEnPassant())]);
 	}
-
 	if (reversible) {
 		increaseHalfMoveCounter();
 	} else {
 		resetHalfMoveCounter();
 	}
-
 	if (backup.capturedPiece!=EMPTY) {
 		if (pieceType[backup.capturedPiece]==PAWN) {
 			setPawnKey(getPawnKey()^zobrist.pieceSquare[backup.capturedPiece][move.to]);
@@ -298,28 +232,21 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 		setGamePhase(GamePhase(currentBoard.gamePhase+
 				phaseIncrement[getPieceType(backup.capturedPiece)]));
 	}
-
 	if (backup.hasPromotion) {
 		setGamePhase(GamePhase(currentBoard.gamePhase-
 				phaseIncrement[getPieceType(move.promotionPiece)]));
 	} else {
 		setPawnKey(getPawnKey()^zobrist.pieceSquare[fromPiece][move.to]);
 	}
-
 	setKey(getKey()^zobrist.sideToMove[getSideToMove()]);
 	setSideToMove(otherSide);
 	setKey(getKey()^zobrist.sideToMove[otherSide]);
-
 	increaseMoveCounter();
 	updateKeyHistory();
-
 }
-
 // do a null move and set backup info into struct MoveBackup
 void Board::doNullMove(MoveBackup& backup){
-
 	PieceColor otherSide = flipSide(getSideToMove());
-
 	backup.key=getKey();
 	backup.pawnKey=getPawnKey();
 	backup.enPassant=getEnPassant();
@@ -332,24 +259,18 @@ void Board::doNullMove(MoveBackup& backup){
 	backup.phase=getGamePhase();
 	backup.halfMoveCounter =  getHalfMoveCounter();
 	increaseHalfMoveCounter();
-
 	if (getEnPassant()!=NONE) {
 		setKey(getKey()^zobrist.enPassant[getSquareFile(getEnPassant())]);
 		setEnPassant(NONE);
 	}
-
 	setKey(getKey()^zobrist.sideToMove[getSideToMove()]);
 	setSideToMove(otherSide);
 	setKey(getKey()^zobrist.sideToMove[otherSide]);
-
 	increaseMoveCounter();
 	updateKeyHistory();
-
 }
-
 // undo a move based on struct MoveBackup
 void Board::undoMove(MoveBackup& backup){
-
 	PieceTypeByColor piece=backup.movingPiece;
 	PieceColor sideToMove=flipSide(getSideToMove());
 	removePiece(currentBoard.square[backup.to],backup.to);
@@ -357,7 +278,6 @@ void Board::undoMove(MoveBackup& backup){
 	currentBoard.halfMoveCounter = backup.halfMoveCounter;
 	currentBoard.gamePhase=backup.phase;
 	currentBoard.inCheck=backup.inCheck;
-
 	if (backup.hasCapture) {
 		putPiece(backup.capturedPiece,backup.capturedSquare);
 	}
@@ -378,7 +298,6 @@ void Board::undoMove(MoveBackup& backup){
 		putPiece(BLACK_ROOK,A8);
 		currentBoard.castleDone[BLACK]=false;
 	}
-
 	setCastleRights(WHITE, backup.whiteCastleRight);
 	setCastleRights(BLACK, backup.blackCastleRight);
 	setEnPassant(backup.enPassant);
@@ -386,12 +305,9 @@ void Board::undoMove(MoveBackup& backup){
 	setSideToMove(sideToMove);
 	setPawnKey(backup.pawnKey);
 	setKey(backup.key);
-
 }
-
 // undo a null move based on struct MoveBackup
 void Board::undoNullMove(MoveBackup& backup){
-
 	PieceColor sideToMove=flipSide(getSideToMove());
 	setCastleRights(WHITE, backup.whiteCastleRight);
 	setCastleRights(BLACK, backup.blackCastleRight);
@@ -406,32 +322,23 @@ void Board::undoNullMove(MoveBackup& backup){
 
 // set initial classic position to the board
 void Board::setInitialPosition() {
-
 	this->loadFromFEN(startFENPosition);
-
 }
 // load an specific chess position ex.: d2d4 g8f6 c2c4 e7e6 g1f3 b7b6 b1c3 c8b7 ...
 void Board::loadFromString(const std::string startPosMoves) {
-
 	std::string moves = startPosMoves+" ";
 	std::string moveFrom = "";
 	std::string moveTo = "";
 	PieceTypeByColor promotionPiece=EMPTY;
-
 	setInitialPosition();
-
 	StringUtil::normalizeString(moves);
 	size_t last = 0;
 	size_t position = moves.find(" ");
 	MoveBackup backup;
-
 	while ( position != std::string::npos )  {
-
 		std::string move=moves.substr(last,(position-last));
-
 		moveFrom = move.substr(0,2);
 		moveTo = move.substr(2,2);
-
 		if (move.length()>4) {
 			if (move[4]=='q'){
 				promotionPiece=makePiece(getSideToMove(),QUEEN);
@@ -443,34 +350,26 @@ void Board::loadFromString(const std::string startPosMoves) {
 				promotionPiece=makePiece(getSideToMove(),BISHOP);
 			}
 		}
-
-		this->doMove(MoveIterator::Move(Square(St2Sq(moveFrom[0],moveFrom[1])), Square(St2Sq(moveTo[0],moveTo[1])), promotionPiece),backup);
+		this->doMove(MoveIterator::Move(Square(St2Sq(moveFrom[0],moveFrom[1])),
+				Square(St2Sq(moveTo[0],moveTo[1])), promotionPiece),backup);
 		promotionPiece=EMPTY;
 		last=position+1;
 		position = moves.find(" ", position+1);
 	}
-
 }
-
 // load an specific chess position using FEN notation ex.: rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1
 void Board::loadFromFEN(const std::string startFENMoves) {
-
 	std::string ranks = startFENMoves.substr(0,startFENMoves.find(" "))+"/";
 	std::string states = StringUtil::getMiddleString(startFENMoves," ");
-
 	clearBoard();
-
 	size_t last = 0;
 	size_t position = ranks.find("/");
 	size_t square=63;
-
 	//process piece positions
 	while ( position != std::string::npos )  {
 		std::string rank=ranks.substr(last,(position-last));
 		size_t length = rank.length()-1;
-
 		for (int idx=length;idx>=0;idx--) {
-
 			if (std::isalpha(rank[idx])) {
 				this->putPiece(encodePieceChar(rank[idx]), Square(square));
 				square--;
@@ -478,13 +377,10 @@ void Board::loadFromFEN(const std::string startFENMoves) {
 				size_t count = StringUtil::toInt(rank[idx]);
 				square -= count;
 			}
-
 		}
-
 		last=position+1;
 		position = ranks.find("/", position+1);
 	}
-
 	// process board states
 	// side to move
 	if (states[0]=='w') {
@@ -492,10 +388,8 @@ void Board::loadFromFEN(const std::string startFENMoves) {
 	} else {
 		this->setSideToMove(BLACK);
 	}
-
 	std::string tokens = StringUtil::getMiddleString(states, " ");
 	std::string castleRights = tokens.substr(0,tokens.find(" "));
-
 	// white castle rights
 	if (castleRights.find("KQ")!=std::string::npos) {
 		this->setCastleRights(WHITE, BOTH_SIDE_CASTLE);
@@ -523,39 +417,30 @@ void Board::loadFromFEN(const std::string startFENMoves) {
 	// en passant
 	tokens = StringUtil::getMiddleString(tokens, " ");
 	std::string enPassant = tokens.substr(0,tokens.find(" "));
-
 	if (enPassant[0]=='-') {
 		setEnPassant(NONE);
 	} else {
 		const int square=St2Sq(enPassant[0],enPassant[1]);
 		setEnPassant(this->getSideToMove()==WHITE?Square(square-8):Square(square+8));
 	}
-
 	//halfmove clock
 	tokens = StringUtil::getMiddleString(tokens, " ");
 	std::string halfMove = tokens.substr(0,tokens.find(" "));
-
 	this->currentBoard.halfMoveCounter = StringUtil::toInt(halfMove);
-
 	//fullmove counter
 	tokens = StringUtil::getMiddleString(tokens, " ");
 	this->currentBoard.moveCounter = StringUtil::toInt(tokens);
-
 	setKey(generateKey());
 	setPawnKey(generatePawnKey());
 	updateKeyHistory();
 	setGamePhase(predictGamePhase());
-
 }
-
 // get FEN from current board
 const std::string Board::getFEN() {
-
 	std::string fen="";
 	size_t count=0;
 	size_t rank=1;
 	for(size_t sq=A1;sq<=H8;sq++) {
-
 		PieceTypeByColor piece = getPiece(Square(sq));
 		if (piece!=EMPTY) {
 			if (count>0) {
@@ -577,11 +462,8 @@ const std::string Board::getFEN() {
 			rank++;
 		}
 	}
-
 	fen+=this->getSideToMove()==WHITE?" w":" b";
-
 	std::string castleRights = "";
-
 	if (this->getCastleRights(BLACK)==BOTH_SIDE_CASTLE) {
 		castleRights+="kq";
 	} else if (this->getCastleRights(BLACK)==KING_SIDE_CASTLE) {
@@ -589,7 +471,6 @@ const std::string Board::getFEN() {
 	} if (this->getCastleRights(BLACK)==QUEEN_SIDE_CASTLE) {
 		castleRights+="q";
 	}
-
 	if (this->getCastleRights(WHITE)==BOTH_SIDE_CASTLE) {
 		castleRights+="KQ";
 	} else if (this->getCastleRights(WHITE)==KING_SIDE_CASTLE) {
@@ -597,17 +478,11 @@ const std::string Board::getFEN() {
 	} if (this->getCastleRights(WHITE)==QUEEN_SIDE_CASTLE) {
 		castleRights+="Q";
 	}
-
 	castleRights = castleRights.length()==0?"-":castleRights;
-
 	fen+=" "+castleRights;
-
 	fen+=this->getEnPassant()==NONE?" -":" "+squareToString[this->getEnPassant()];
-
 	fen+=" "+StringUtil::toStr(this->getHalfMoveCounter());
-
 	fen+=" "+StringUtil::toStr(this->getMoveCounter());
-
 	return fen;
 }
 
@@ -646,83 +521,65 @@ void Board::initialize() {
 			fullPst[piece][square]=makeScore(upperValue,lowerValue);
 		}
 	}
-
 }
-
 // game phase full calculation
 const GamePhase Board::predictGamePhase() {
-
 	const int knights = getPieceCount(WHITE_KNIGHT)+getPieceCount(BLACK_KNIGHT);
 	const int bishops = getPieceCount(WHITE_BISHOP)+getPieceCount(BLACK_BISHOP);
 	const int rooks = getPieceCount(WHITE_ROOK)+getPieceCount(BLACK_ROOK);
 	const int queens = getPieceCount(WHITE_QUEEN)+getPieceCount(BLACK_QUEEN);
-
 	return GamePhase((4-knights)*phaseIncrement[KNIGHT]+
 			(4-bishops)*phaseIncrement[BISHOP]+
 			(4-rooks)*phaseIncrement[ROOK]+
 			(2-queens)*phaseIncrement[QUEEN]);
 }
-
 // get index for zobrist index
 const int Board::getZobristCastleIndex() {
 	return zobristCastleIndex[getCastleRights(WHITE)][getCastleRights(BLACK)];
 }
-
-
 // get board zobrist key
 const Key Board::getKey() const {
 	return currentBoard.key;
 }
-
 // get zobrist key for partial searches
 const Key Board::getPartialSearchKey() const {
 	return currentBoard.key ^ zobrist.ignoreMove;
 }
-
 // get pawn zobrist key
 const Key Board::getPawnKey() const {
 	return currentBoard.pawnKey;
 }
-
 // set board zobrist key
 void Board::setKey(Key _key) {
 	currentBoard.key = _key;
 }
-
 // set pawn zobrist key
 void Board::setPawnKey(Key _key) {
 	currentBoard.pawnKey = _key;
 }
-
 // generate board zobrist key
 const Key Board::generateKey() {
 	Key key=Key(0x0ULL);
-
 	for(int square=A1; square<=H8; square++) {
 		if (currentBoard.square[square]!=EMPTY) {
 			key ^= zobrist.pieceSquare[currentBoard.square[square]][square];
 		}
 	}
 	key ^= zobrist.castleRight[getZobristCastleIndex()];
-
 	if (currentBoard.enPassant != NONE) {
 		key ^= zobrist.enPassant[getSquareFile(currentBoard.enPassant)];
 	}
 	key ^= zobrist.sideToMove[getSideToMove()];
-
 	return key;
 }
-
 // generate pawn zobrist key
 const Key Board::generatePawnKey() {
 	Key key=Key(0x0ULL);
-
 	for(int square=A1; square<=H8; square++) {
 		if (pieceType[currentBoard.square[square]]==PAWN) {
 			key ^= zobrist.pieceSquare[currentBoard.square[square]][square];
 		}
 	}
-
 	return key;
 }
 
@@ -740,6 +597,3 @@ const int Board::calcPieceSquareValue(const PieceTypeByColor piece, const Square
 	const int mgValue = defaultPieceSquareTable[pieceType[piece]][sq];
 	return interpolate(egValue,mgValue,phase);
 }
-
-
-

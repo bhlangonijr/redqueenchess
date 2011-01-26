@@ -1,6 +1,6 @@
 /*
 	Redqueen Chess Engine
-    Copyright (C) 2008-2010 Ben-Hur Carlos Vieira Langoni Junior
+    Copyright (C) 2008-2011 Ben-Hur Carlos Vieira Langoni Junior
 
     This file is part of Redqueen Chess Engine.
 
@@ -26,7 +26,6 @@
 
 #ifndef EVALUATOR_H_
 #define EVALUATOR_H_
-
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
@@ -34,12 +33,10 @@
 #include "board.h"
 #include "psqt.h"
 #include "bitboard.h"
-
 #define FSQUARE(COLOR,BB,X) (BB&(COLOR==WHITE?upperMaskBitboard[X]:lowerMaskBitboard[X]))&(~(rankBB[squareRank[X]]))
 #define PM(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]] | neighborFiles[X]), X))
 #define BP(COLOR, X) ((FSQUARE((COLOR==WHITE?BLACK:WHITE), (neighborFiles[X]), X)) | (rankBB[squareRank[X]] & adjacentSquares[X]))
 #define FQ(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]]), X))
-
 const int DOUBLED_PAWN_PENALTY =   		MS(-10,-16);
 const int ISOLATED_PAWN_PENALTY =  		MS(-20,-10);
 const int ISOLATED_OPEN_PAWN_PENALTY =  MS(-20,-20);
@@ -57,7 +54,6 @@ const int knightMobility[9] = {
 		-4*MS(+8,+4),-2*MS(+8,+4),+0*MS(+8,+4),+1*MS(+8,+4),+2*MS(+8,+4),
 		+3*MS(+8,+4),+4*MS(+8,+4),+5*MS(+8,+4),+6*MS(+8,+4)
 };
-
 const int bishopMobility[16] = {
 		-7*MS(+6,+4),-4*MS(+6,+4),-2*MS(+6,+4),+0*MS(+6,+4),+1*MS(+6,+4),+2*MS(+6,+4),+3*MS(+6,+4),+4*MS(+6,+4),
 		+5*MS(+6,+4),+6*MS(+6,+4),+7*MS(+6,+4),+8*MS(+6,+4),+9*MS(+6,+4),+10*MS(+6,+4),+10*MS(+6,+4),+10*MS(+6,+4)
@@ -246,9 +242,7 @@ const size_t pawnHashSize=1<<18;
 
 class Evaluator {
 public:
-
 	struct EvalInfo {
-
 		EvalInfo(Board& _board) : board(_board) {
 			side = board.getSideToMove();
 			other = board.flipSide(side);
@@ -267,7 +261,6 @@ public:
 			kingThreat[BLACK]=0;
 			eval=0;
 		}
-
 		Board& board;
 		Bitboard all;
 		PieceColor side;
@@ -314,7 +307,6 @@ public:
 					pieceThreat[WHITE]+kingThreat[WHITE];
 			const int blackScore=evalPieces[BLACK]+evalPawns[BLACK]+mobility[BLACK]+
 								pieceThreat[BLACK]+kingThreat[BLACK];
-
 			out << "Material[WHITE]:          " << (board.getMaterial(WHITE)-kingValue) << std::endl;
 			out << "Material[BLACK]:          " << (board.getMaterial(BLACK)-kingValue) << std::endl;
 			out << "Pieces(PST&Other)[WHITE]: " << interpolate(evalPieces[WHITE],board.getGamePhase()) << std::endl;
@@ -327,7 +319,6 @@ public:
 			out << "Pieces threats[BLACK]:    " << interpolate(pieceThreat[BLACK],board.getGamePhase()) << std::endl;
 			out << "King threats[WHITE]:      " << interpolate(kingThreat[WHITE],board.getGamePhase()) << std::endl;
 			out << "King threats[BLACK]:      " << interpolate(kingThreat[BLACK],board.getGamePhase()) << std::endl;
-
 			out << "Endgame score(WHITE):    " << upperScore(whiteScore) << std::endl;
 			out << "Endgame score(BLACK):    " << upperScore(blackScore) << std::endl;
 			out << "Middlegame score(WHITE): " << lowerScore(whiteScore) << std::endl;
@@ -403,11 +394,9 @@ public:
 	}
 
 private:
-
 	Bitboard getLeastValuablePiece(Board& board, Bitboard attackers, PieceColor& color, PieceTypeByColor& piece);
 	PawnInfo pawnInfo[pawnHashSize];
 	bool debug;
-
 };
 
 // verify if pawn is passer
@@ -421,7 +410,6 @@ inline const bool Evaluator::isPawnPassed(Board& board, const Square from) {
 // static exchange evaluation
 template <bool lazySee>
 inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
-
 	const int gainTableSize=32;
 	PieceColor side = board.getPieceColor(move.from);
 	PieceColor other = board.flipSide(side);
@@ -429,59 +417,46 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 	PieceTypeByColor secondPiece = board.getPiece(move.to);
 	Bitboard fromPiece = squareToBitboard[move.from];
 	Bitboard occupied = board.getAllPieces();
-
 	if (secondPiece==EMPTY && board.getPieceType(firstPiece)==PAWN && board.getEnPassant()!=NONE &&
 			board.getSquareFile(move.from)!=board.getSquareFile(move.to)) {
 		secondPiece=makePiece(other,PAWN);
 		occupied^=squareToBitboard[board.getEnPassant()];
 	}
-
 	if (lazySee && secondPiece!=EMPTY &&
 			materialValues[secondPiece]>=materialValues[firstPiece]) {
 		return 1;
 	}
-
 	const Bitboard bishopAttacks =  board.getBishopAttacks(move.to,occupied);
 	const Bitboard rookAttacks =  board.getRookAttacks(move.to,occupied);
 	const Bitboard knightAttacks =  board.getKnightAttacks(move.to);
 	const Bitboard pawnAttacks =  board.getPawnAttacks(move.to);
 	const Bitboard kingAttacks =  board.getKingAttacks(move.to);
-
 	const Bitboard rooks = board.getPieces(side,ROOK) | board.getPieces(other,ROOK);
 	const Bitboard bishops = board.getPieces(side,BISHOP) | board.getPieces(other,BISHOP);
 	const Bitboard queens = board.getPieces(side,QUEEN) | board.getPieces(other,QUEEN);
-
 	const Bitboard bishopAndQueen = bishops | queens;
 	const Bitboard rookAndQueen = rooks | queens;
-
 	Bitboard attackers =
 			(bishopAttacks & bishopAndQueen) |
 			(rookAttacks & rookAndQueen) |
 			(knightAttacks & (board.getPieces(side,KNIGHT) | board.getPieces(other,KNIGHT))) |
 			(pawnAttacks & (board.getPieces(side,PAWN) | board.getPieces(other,PAWN))) |
 			(kingAttacks & (board.getPieces(side,KING) | board.getPieces(other,KING)));
-
-
 	int idx = 0;
 	int gain[gainTableSize];
 	PieceColor sideToMove = side;
 	Bitboard allAttackers = EMPTY_BB;
-
 	gain[0] = materialValues[secondPiece];
-
 	if (board.getPieceType(secondPiece)==KING) {
 		return queenValue*10;
 	}
-
 	while (fromPiece) {
-
 		allAttackers |= attackers;
 		idx++;
 		gain[idx]  = materialValues[firstPiece] - gain[idx-1];
 		attackers ^= fromPiece;
 		occupied  ^= fromPiece;
 		Bitboard moreAttackers = (bishopAndQueen | rookAndQueen) & (~allAttackers);
-
 		if (moreAttackers) {
 			const Bitboard findMoreAttackers = moreAttackers &
 					(board.getBishopAttacks(move.to,occupied) |
@@ -490,24 +465,18 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 				attackers |= findMoreAttackers;
 			}
 		}
-
 		sideToMove=board.flipSide(sideToMove);
 		fromPiece  = getLeastValuablePiece (board, attackers, sideToMove, firstPiece);
-
 	}
-
 	while (--idx) {
 		gain[idx-1]= -std::max(-gain[idx-1], gain[idx]);
 	}
-
 	return gain[0];
 }
 
 inline Bitboard Evaluator::getLeastValuablePiece(Board& board, Bitboard attackers, PieceColor& color, PieceTypeByColor& piece) {
-
 	const int first = makePiece(color,PAWN);
 	const int last = makePiece(color,KING);
-
 	for(register int pieceType = first; pieceType <= last; pieceType++) {
 		Bitboard pieces = board.getPieces(static_cast<PieceTypeByColor>(pieceType)) & attackers;
 		if (pieces) {
@@ -515,9 +484,7 @@ inline Bitboard Evaluator::getLeastValuablePiece(Board& board, Bitboard attacker
 			return pieces & -pieces;
 		}
 	}
-
 	return EMPTY_BB;
 }
 
 #endif /* EVALUATOR_H_ */
-

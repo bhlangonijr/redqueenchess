@@ -1,6 +1,6 @@
 /*
 	Redqueen Chess Engine
-    Copyright (C) 2008-2010 Ben-Hur Carlos Vieira Langoni Junior
+    Copyright (C) 2008-2011 Ben-Hur Carlos Vieira Langoni Junior
 
     This file is part of Redqueen Chess Engine.
 
@@ -28,7 +28,6 @@
  */
 #include <iostream>
 #include <stdio.h>
-
 #include "uci.h"
 #include "constant.h"
 #include "board.h"
@@ -37,7 +36,6 @@
 #include "mersenne.h"
 #include "stringutil.h"
 #include "magicmoves.h"
-
 #  if defined(_SC_NPROCESSORS_ONLN)
 int getNumProcs() {
 	return std::min(sysconf( _SC_NPROCESSORS_ONLN ), 8L);
@@ -49,12 +47,10 @@ int getNumProcs() {
 #  endif
 
 int main(int argc, char* argv[]) {
-
 	setbuf(stdin, NULL);
 	setbuf(stdout, NULL);
 	std::cout.rdbuf()->pubsetbuf(NULL, 0);
 	std::cin.rdbuf()->pubsetbuf(NULL, 0);
-
 	// initialization methods
 	initmagicmoves();
 	init_mersenne();
@@ -63,9 +59,7 @@ int main(int argc, char* argv[]) {
 	SearchAgent::getInstance();
 	SimplePVSearch::initialize();
 	Uci *uci = Uci::getInstance();
-
 	std::string paramNumProcs = StringUtil::toStr(getNumProcs());
-
 	// creating uci options
 	std::vector< UciOption *> options;
 	options.push_back(new UciOption("Hash",UciOption::SPIN,"128","128",1,4096,""));
@@ -75,7 +69,6 @@ int main(int argc, char* argv[]) {
 	// set options into uci handler
 	uci->setUciOption(options);
 	std::cout << Constant::ENGINE_COPYRIGHT << std::endl;
-
 	if (argc<=1) {
 		//uci loop
 		Uci::Command command=Uci::NONE;
@@ -91,9 +84,7 @@ int main(int argc, char* argv[]) {
 		std::cout << ">redqueen<enter> --> Enter in UCI mode " << std::endl;
 		std::cout << ">redqueen bench<enter> --> Runs a benchmark" << std::endl;
 	}
-
 	uci->clearUciOption();
 	SearchAgent::getInstance()->shutdown();
-
 	return 0;
 }

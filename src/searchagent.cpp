@@ -1,6 +1,6 @@
 /*
 	Redqueen Chess Engine
-    Copyright (C) 2008-2010 Ben-Hur Carlos Vieira Langoni Junior
+    Copyright (C) 2008-2011 Ben-Hur Carlos Vieira Langoni Junior
 
     This file is part of Redqueen Chess Engine.
 
@@ -25,21 +25,15 @@
  */
 
 #include "searchagent.h"
-
 extern "C" void *threadRun(void *);
-
 SearchAgent* SearchAgent::searchAgent = 0;
-
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
-
 pthread_cond_t waitCond = PTHREAD_COND_INITIALIZER;
 pthread_cond_t waitCond2 = PTHREAD_COND_INITIALIZER;
-
 pthread_t executor;
 
-SearchAgent* SearchAgent::getInstance ()
-{
+SearchAgent* SearchAgent::getInstance () {
 	if (searchAgent == 0) {
 		searchAgent = new SearchAgent();
 	}
@@ -161,13 +155,11 @@ void SearchAgent::doBench() {
 		pthread_mutex_unlock(&mutex2);
 	}
 	simpleSearcher.setUpdateUci(true);
-
 	std::cout << std::endl << "Finished benchmark:  " << std::endl;
 	std::cout << "Total time(seconds): " << (time/1000) << std::endl;
 	std::cout << "Total nodes:         " << (nodes) << std::endl;
 	std::cout << "Nodes/Seconds:       " << (nodes/(std::max(1L,time/1000))) << std::endl;
 }
-
 // eval test
 void SearchAgent::doEval() {
 	simpleSearcher.getEvaluator().setDebugEnabled(true);
@@ -217,7 +209,6 @@ void  SearchAgent::ponderHit() {
 }
 
 void SearchAgent::initThreads() {
-
 	int rCode = pthread_create( &executor, NULL, threadRun, this);
 	if (rCode) {
 		std::cerr << "Failed to created new thread. pthread_create return code:  " << rCode << std::endl;

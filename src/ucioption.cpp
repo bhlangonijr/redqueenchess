@@ -1,6 +1,6 @@
 /*
 	Redqueen Chess Engine
-    Copyright (C) 2008-2010 Ben-Hur Carlos Vieira Langoni Junior
+    Copyright (C) 2008-2011 Ben-Hur Carlos Vieira Langoni Junior
 
     This file is part of Redqueen Chess Engine.
 
@@ -25,18 +25,14 @@
  */
 #include <string>
 #include <sstream>
-
 #include "stringutil.h"
 #include "ucioption.h"
-
-
 
 UciOption::UciOption() {
 
 }
 
 UciOption::UciOption(std::string name, OptionType type, std::string value, std::string defaultValue) {
-
 	this->name = name;
 	this->type = type;
 	this->value = value;
@@ -44,12 +40,10 @@ UciOption::UciOption(std::string name, OptionType type, std::string value, std::
 	this->minValue = 0;
 	this->maxValue = 0;
 	this->comboValues = "";
-
-
 }
 
-UciOption::UciOption(std::string name, OptionType type, std::string value, std::string defaultValue, int minValue, int maxValue, std::string comboValues) {
-
+UciOption::UciOption(std::string name, OptionType type, std::string value, std::string defaultValue,
+		int minValue, int maxValue, std::string comboValues) {
 	this->name = name;
 	this->type = type;
 	this->value = value;
@@ -57,76 +51,61 @@ UciOption::UciOption(std::string name, OptionType type, std::string value, std::
 	this->minValue = minValue;
 	this->maxValue = maxValue;
 	this->comboValues = comboValues;
-
 }
 // getters
 std::string UciOption::getName() const {
 	return name;
 }
-
 UciOption::OptionType UciOption::getType() const {
 	return type;
 }
-
 std::string UciOption::getValue() const {
 	return value;
 }
-
 std::string UciOption::getDefaultValue() const {
 	return defaultValue;
 }
-
 int UciOption::getMinValue() const {
 	return minValue;
 }
-
 int UciOption::getMaxValue() const {
 	return maxValue;
 }
-
 std::string UciOption::getComboValues() const {
 	return comboValues;
 }
-
 // setters
 void UciOption::setName( std::string name ){
 	this->name = name;
 }
-
 void UciOption::setType( OptionType type ){
 	this->type = type;
 }
-
 void UciOption::setValue( std::string value ){
 	this->value = value;
 }
-
 void UciOption::setDefaultValue( std::string defaultValue ){
 	this->defaultValue = defaultValue;
 }
-
 void UciOption::setMinValue( int minValue ){
 	this->minValue = minValue;
 }
-
 void UciOption::setMaxValue( int maxValue ){
 	this->maxValue = maxValue;
 }
-
 void UciOption::setComboValues( std::string comboValues ){
 	this->comboValues = comboValues;
 }
 
 std::string UciOption::toString() const {
-
 	std::string result="option name "+this->name+" type ";
-
 	switch (this->type) {
 	case STRING:
 		result += "string default " + this->defaultValue;
 		break;
 	case SPIN:
-		result += "spin default " + this->defaultValue+" min " + StringUtil::toStr(this->minValue) + " max " +StringUtil::toStr(this->maxValue);
+		result += "spin default " + this->defaultValue+" min " +
+		StringUtil::toStr(this->minValue) + " max " +StringUtil::toStr(this->maxValue);
 		break;
 	case CHECK:
 		result += "check default "+this->defaultValue;
@@ -137,15 +116,12 @@ std::string UciOption::toString() const {
 	case BUTTON:
 		result += "button ";
 		break;
-
 	default:
 		result=" ";
 		break;
-
 	}
 	return result;
 }
-
 // destructor
 UciOption::~UciOption() {
 

@@ -238,7 +238,6 @@ public:
 
 	const void printBoard();
 	const void printBoard(const std::string pad);
-	void genericTest();
 	void doMove(const MoveIterator::Move& move, MoveBackup& backup);
 	void doNullMove(MoveBackup& backup);
 	void undoMove(MoveBackup& backup);

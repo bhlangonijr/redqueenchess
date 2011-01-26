@@ -1,6 +1,6 @@
 /*
 	Redqueen Chess Engine
-    Copyright (C) 2008-2 10 Ben-Hur Carlos Vieira Langoni Junior
+    Copyright (C) 2008-2011 Ben-Hur Carlos Vieira Langoni Junior
 
     This file is part of Redqueen Chess Engine.
 
@@ -159,6 +159,5 @@ const int endGamePieceSquareTable[ALL_PIECE_TYPE][ALL_SQUARE]={
 		},
 		{}
 };
-
 
 #endif /* PSQT_H_ */
