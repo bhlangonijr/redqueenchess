@@ -44,8 +44,8 @@ const int maxSearchPly = 100;
 const int maxMoveCount = 64;
 
 // internal iterative deepening
-const int allowIIDAtPV = 3;
-const int allowIIDAtNormal = 7;
+const int allowIIDAtPV = 6;
+const int allowIIDAtNormal = 8;
 
 // margin constants
 const int iidMargin=260;
@@ -272,7 +272,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 			return emptyMove;
 
 		case MoveIterator::BEGIN_STAGE:
-			if (!board.isInCheck() || (quiescenceMoves && depth<-1)) {
+			if (!board.isInCheck()/* || (quiescenceMoves && depth<-1)*/) {
 				moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
 			} else {
 				moves.setStage(MoveIterator::INIT_EVASION_STAGE);
