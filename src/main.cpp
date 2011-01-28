@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
 	std::cin.rdbuf()->pubsetbuf(NULL, 0);
 	// initialization methods
 	initmagicmoves();
-	init_mersenne();
+	initMersenne();
 	initializeBitboards();
 	Board::initialize();
 	SearchAgent::getInstance();

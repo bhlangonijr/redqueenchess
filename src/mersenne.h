@@ -23,8 +23,8 @@
 
 #include "inttypes.h"
 
-extern uint64_t genrand_int64(void);
-extern void init_mersenne(void);
+extern uint64_t genRandInt64(void);
+extern void initMersenne(void);
 
 
 #endif // !defined(MERSENNE_H_INCLUDED)

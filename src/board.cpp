@@ -490,19 +490,19 @@ void Board::initialize() {
 	// initialize zobrist keys
 	for(int piece=0; piece<ALL_PIECE_TYPE_BY_COLOR; piece++) {
 		for(int square=0; square<ALL_SQUARE; square++) {
-			zobrist.pieceSquare[piece][square]=genrand_int64();
+			zobrist.pieceSquare[piece][square]=genRandInt64();
 		}
 	}
-	zobrist.sideToMove[WHITE]=genrand_int64();
-	zobrist.sideToMove[BLACK]=genrand_int64();
+	zobrist.sideToMove[WHITE]=genRandInt64();
+	zobrist.sideToMove[BLACK]=genRandInt64();
 	zobrist.sideToMove[COLOR_NONE]=0x0;
 	for(int file=0; file<ALL_FILE; file++) {
-		zobrist.enPassant[file]=genrand_int64();
+		zobrist.enPassant[file]=genRandInt64();
 	}
 	for(int castle=0; castle<ALL_CASTLE_RIGHT*ALL_CASTLE_RIGHT; castle++) {
-		zobrist.castleRight[castle]=genrand_int64();
+		zobrist.castleRight[castle]=genRandInt64();
 	}
-	zobrist.ignoreMove=genrand_int64();
+	zobrist.ignoreMove=genRandInt64();
 	// initialize incremental pst
 	for (int phase=0; phase<=maxGamePhase; phase++) {
 		for (int piece=0; piece<ALL_PIECE_TYPE_BY_COLOR; piece++) {
