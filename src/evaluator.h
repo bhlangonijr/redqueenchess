@@ -38,12 +38,12 @@
 #define BP(COLOR, X) ((FSQUARE((COLOR==WHITE?BLACK:WHITE), (neighborFiles[X]), X)) | (rankBB[squareRank[X]] & adjacentSquares[X]))
 #define FQ(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]]), X))
 const int DOUBLED_PAWN_PENALTY =   		 MS(-10,-16);
-const int ISOLATED_PAWN_PENALTY =  		 MS(-20,-10);
-const int ISOLATED_OPEN_PAWN_PENALTY =   MS(-20,-20);
+const int ISOLATED_PAWN_PENALTY =  		 MS(-15,-10);
+const int ISOLATED_OPEN_PAWN_PENALTY =   MS(-17,-17);
 const int BACKWARD_PAWN_PENALTY =  		 MS(-13,-10);
 const int BACKWARD_OPEN_PAWN_PENALTY =   MS(-17,-13);
 const int DONE_CASTLE_BONUS=       		 MS(+20,-1);
-const int CONNECTED_PAWN_BONUS =   		 MS(+3,+5);
+const int CONNECTED_PAWN_BONUS =   		 MS(+5,-1);
 const int BISHOP_PAIR_BONUS = 	   		 MS(+25,+25);
 const int UNSTOPPABLE_PAWN_BONUS = 		 MS(+0,+200);
 const int ROOK_ON_7TH_RANK_BONUS = 		 MS(+15,+25);
@@ -105,8 +105,8 @@ const int kingZoneAttackWeight[ALL_PIECE_TYPE][10] = {
 };
 
 const int connectedPasserBonus[ALL_PIECE_COLOR][ALL_RANK] = {
-		{0,MS(+20,+25),MS(+25,+35),MS(+30,+40),MS(+35,+45),MS(+50,+60),MS(+60,+90),0},
-		{0,MS(+60,+90),MS(+50,+60),MS(+35,+45),MS(+30,+40),MS(+25,+35),MS(+20,+25),0},
+		{0,MS(+15,+20),MS(+21,+35),MS(+36,+45),MS(+46,+50),MS(+51,+55),MS(+56,+80),0},
+		{0,MS(+56,+80),MS(+51,+55),MS(+46,+50),MS(+36,+45),MS(+21,+35),MS(+15,+20),0},
 		{}
 };
 
@@ -117,8 +117,8 @@ const int freePasserBonus[ALL_PIECE_COLOR][ALL_RANK] = {
 };
 
 const int passedPawnBonus[ALL_PIECE_COLOR][ALL_RANK] = {
-		{0,MS(+5,+10),MS(+15,+25),MS(+25,+35),MS(+35,+40),MS(+40,+50),MS(+40,+70),0},
-		{0,MS(+40,+70),MS(+40,+50),MS(+35,+40),MS(+25,+35),MS(+15,+25),MS(+5,+10),0},
+		{0,MS(+10,+15),MS(+21,+30),MS(+31,+40),MS(+41,+45),MS(+46,+50),MS(+51,+75),0},
+		{0,MS(+51,+75),MS(+46,+50),MS(+41,+45),MS(+31,+40),MS(+21,+30),MS(+15,+10),0},
 		{}
 };
 
