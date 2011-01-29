@@ -51,11 +51,11 @@
 #define UPPER_MASK 0x80000000UL /* most significant w-r bits */
 #define LOWER_MASK 0x7fffffffUL /* least significant r bits */
 
-static unsigned long mt[N]; /* the array for the state vector  */
+static uint64_t mt[N]; /* the array for the state vector  */
 static int mti=N+1; /* mti==N+1 means mt[N] is not initialized */
 
 /* initializes mt[N] with a seed */
-static void init_genrand(unsigned long s)
+static void init_genrand(uint64_t s)
 {
     mt[0]= s & 0xffffffffUL;
     for (mti=1; mti<N; mti++) {
@@ -74,7 +74,7 @@ static void init_genrand(unsigned long s)
 /* init_key is the array for initializing keys */
 /* key_length is its length */
 /* slight change for C++, 2004/2/26 */
-static void init_by_array(unsigned long init_key[], int key_length)
+static void init_by_array(uint64_t init_key[], int key_length)
 {
     int i, j, k;
     init_genrand(19650218UL);
@@ -102,7 +102,7 @@ static void init_by_array(unsigned long init_key[], int key_length)
 /* generates a random number on [0,0xffffffff]-interval */
 uint32_t genrand_int32(void) {
   unsigned long y;
-  static unsigned long mag01[2]={0x0UL, MATRIX_A};
+  static uint64_t mag01[2]={0x0UL, MATRIX_A};
   /* mag01[x] = x * MATRIX_A  for x=0,1 */
 
   if (mti >= N) { /* generate N words at one time */
