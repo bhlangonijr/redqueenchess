@@ -275,6 +275,13 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 				(otherKingBB & eighthRank[color])) {
 			evalInfo.evalPieces[color] += ROOK_ON_7TH_RANK_BONUS;
 		}
+		if (!(evalInfo.pawns[color]&fileBB[squareFile[from]])) {
+			if (!(evalInfo.pawns[other]&fileBB[squareFile[from]])) {
+				evalInfo.evalPieces[color] += ROOK_ON_OPEN_FILE_BONUS;
+			} else {
+				evalInfo.evalPieces[color] += ROOK_ON_HALF_OPEN_FILE_BONUS;
+			}
+		}
 		evalInfo.kingThreat[color] += rookKingBonus[squareDistance(from,otherKingSq)];
 		from = extractLSB(pieces);
 	}

@@ -37,18 +37,20 @@
 #define PM(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]] | neighborFiles[X]), X))
 #define BP(COLOR, X) ((FSQUARE((COLOR==WHITE?BLACK:WHITE), (neighborFiles[X]), X)) | (rankBB[squareRank[X]] & adjacentSquares[X]))
 #define FQ(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]]), X))
-const int DOUBLED_PAWN_PENALTY =   		MS(-10,-16);
-const int ISOLATED_PAWN_PENALTY =  		MS(-20,-10);
-const int ISOLATED_OPEN_PAWN_PENALTY =  MS(-20,-20);
-const int BACKWARD_PAWN_PENALTY =  		MS(-13,-10);
-const int BACKWARD_OPEN_PAWN_PENALTY =  MS(-17,-13);
-const int DONE_CASTLE_BONUS=       		MS(+20,-1);
-const int CONNECTED_PAWN_BONUS =   		MS(+3,+5);
-const int BISHOP_PAIR_BONUS = 	   		MS(+25,+25);
-const int UNSTOPPABLE_PAWN_BONUS = 		MS(+0,+200);
-const int ROOK_ON_7TH_RANK_BONUS = 		MS(+15,+25);
-const int QUEEN_ON_7TH_RANK_BONUS = 	MS(+10,+15);
-const int PASSER_AND_KING_BONUS = 		MS(0,+5);
+const int DOUBLED_PAWN_PENALTY =   		 MS(-10,-16);
+const int ISOLATED_PAWN_PENALTY =  		 MS(-20,-10);
+const int ISOLATED_OPEN_PAWN_PENALTY =   MS(-20,-20);
+const int BACKWARD_PAWN_PENALTY =  		 MS(-13,-10);
+const int BACKWARD_OPEN_PAWN_PENALTY =   MS(-17,-13);
+const int DONE_CASTLE_BONUS=       		 MS(+20,-1);
+const int CONNECTED_PAWN_BONUS =   		 MS(+3,+5);
+const int BISHOP_PAIR_BONUS = 	   		 MS(+25,+25);
+const int UNSTOPPABLE_PAWN_BONUS = 		 MS(+0,+200);
+const int ROOK_ON_7TH_RANK_BONUS = 		 MS(+15,+25);
+const int ROOK_ON_OPEN_FILE_BONUS = 	 MS(+17,+17);
+const int ROOK_ON_HALF_OPEN_FILE_BONUS = MS(+10,+10);
+const int QUEEN_ON_7TH_RANK_BONUS = 	 MS(+10,+15);
+const int PASSER_AND_KING_BONUS = 		 MS(0,+5);
 
 const int knightMobility[9] = {
 		-4*MS(+8,+4),-2*MS(+8,+4),+0*MS(+8,+4),+1*MS(+8,+4),+2*MS(+8,+4),
