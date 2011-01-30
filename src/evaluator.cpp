@@ -199,20 +199,33 @@ const int Evaluator::evalPassedPawn(EvalInfo& evalInfo, PieceColor color, const 
 			isUnstoppable = true;
 		}
 	}
-	const Rank r = color==WHITE?squareRank[from+8]:squareRank[from-8];
-	const Square next = board.makeSquare(r,squareFile[from]);
 	if (!isUnstoppable) {
+		const Rank r = color==WHITE?squareRank[from+8]:squareRank[from-8];
+		const Square next = board.makeSquare(r,squareFile[from]);
 		const Square sideKingSq = board.getKingSquare(color);
 		eval += squareDistance(next,otherKingSq)*PASSER_AND_KING_BONUS;
 		eval -= squareDistance(next,sideKingSq)*PASSER_AND_KING_BONUS;
 		if (board.getPiece(next)==EMPTY) {
 			const Bitboard block = evalInfo.attacks[other]|
 					board.getPieces(other);
-			const Bitboard otherQueenRook = board.getPieces(other,QUEEN) |
-					board.getPieces(other,ROOK);
-			if (!((frontSquares[color][from]&block) ||
-					(frontSquares[other][from]&otherQueenRook))) {
+			if (!(frontSquares[color][from]&block)) {
 				eval += freePasserBonus[color][squareRank[from]];
+			} else if (!(frontSquares[color][from]&board.getPieces(other))) {
+				eval += MS(+1,+3);
+			}
+			const Bitboard sideQueen = makePiece(color,QUEEN);
+			const Bitboard sideRook = makePiece(color,ROOK);
+			if (sideQueen&fileBB[squareFile[from]]) {
+				const Bitboard support = evalInfo.attacks[sideQueen] & squareToBitboard[from];
+				if (support) {
+					eval += MS(+1,+3);
+				}
+			}
+			if (sideRook&fileBB[squareFile[from]]) {
+				const Bitboard support = evalInfo.attacks[sideRook] & squareToBitboard[from];
+				if (support) {
+					eval += MS(+1,+4);
+				}
 			}
 		}
 	}
