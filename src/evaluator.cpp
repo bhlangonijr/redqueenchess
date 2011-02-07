@@ -213,17 +213,16 @@ const int Evaluator::evalPassedPawn(EvalInfo& evalInfo, PieceColor color, const 
 			} else if (!(frontSquares[color][from]&board.getPieces(other))) {
 				eval += MS(+1,+3);
 			}
-			const Bitboard sideQueen = makePiece(color,QUEEN);
-			const Bitboard sideRook = makePiece(color,ROOK);
-			if (sideQueen&fileBB[squareFile[from]]) {
-				const Bitboard support = evalInfo.attacks[sideQueen] & squareToBitboard[from];
-				if (support) {
+			const PieceTypeByColor sideQueen = makePiece(color,QUEEN);
+			const PieceTypeByColor sideRook = makePiece(color,ROOK);
+			const Bitboard fromFileMask = fileBB[squareFile[from]];
+			if (board.getPieces(sideQueen) & fromFileMask) {
+				if (evalInfo.attackers[sideQueen] & squareToBitboard[from]) {
 					eval += MS(+1,+3);
 				}
 			}
-			if (sideRook&fileBB[squareFile[from]]) {
-				const Bitboard support = evalInfo.attacks[sideRook] & squareToBitboard[from];
-				if (support) {
+			if (board.getPieces(sideRook) & fromFileMask) {
+				if (evalInfo.attackers[sideRook] & squareToBitboard[from]) {
 					eval += MS(+1,+4);
 				}
 			}
@@ -250,10 +249,9 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 	const Bitboard freeArea = ~(board.getPieces(color) |
 			evalInfo.attackers[makePiece(other,PAWN)]);
 	Bitboard pieces = EMPTY_BB;
-	evalInfo.attackers[makePiece(color,KNIGHT)] = EMPTY_BB;
-	evalInfo.attackers[makePiece(color,BISHOP)] = EMPTY_BB;
-	evalInfo.attackers[makePiece(color,ROOK)] = EMPTY_BB;
-	evalInfo.attackers[makePiece(color,QUEEN)] = EMPTY_BB;
+	for (int piece=makePiece(color,KNIGHT);piece<=makePiece(color,QUEEN);piece++) {
+		evalInfo.attackers[piece] = EMPTY_BB;
+	}
 	Square from = NONE;
 	evalInfo.kingThreat[color]=0;
 	pieces = evalInfo.board.getPieces(color,KNIGHT);

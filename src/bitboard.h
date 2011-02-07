@@ -82,11 +82,11 @@ enum Square {
 };
 //ranks - row
 enum Rank {
-	RANK_1=0, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8
+	RANK_1=0, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_NONE
 };
 //files - column
 enum File {
-	FILE_A=0, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H
+	FILE_A=0, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H, FILE_NONE
 };
 // diagonals A1..H8
 enum DiagonalA1H8 {
@@ -117,7 +117,8 @@ const Square flip[ALL_SQUARE] = {
 		A4, B4, C4, D4, E4, F4, G4, H4,
 		A3, B3, C3, D3, E3, F3, G3, H3,
 		A2, B2, C2, D2, E2, F2, G2, H2,
-		A1, B1, C1, D1, E1, F1, G1, H1
+		A1, B1, C1, D1, E1, F1, G1, H1,
+		NONE
 };
 // array with piece codes
 const char pieceChar[ALL_PIECE_TYPE_BY_COLOR+1] = "PNBRQKpnbrqk ";
@@ -155,7 +156,8 @@ const Rank squareRank[ALL_SQUARE]={
 		RANK_5, RANK_5, RANK_5, RANK_5, RANK_5, RANK_5, RANK_5, RANK_5,
 		RANK_6, RANK_6, RANK_6, RANK_6, RANK_6, RANK_6, RANK_6, RANK_6,
 		RANK_7, RANK_7, RANK_7, RANK_7, RANK_7, RANK_7, RANK_7, RANK_7,
-		RANK_8, RANK_8, RANK_8, RANK_8, RANK_8, RANK_8, RANK_8, RANK_8
+		RANK_8, RANK_8, RANK_8, RANK_8, RANK_8, RANK_8, RANK_8, RANK_8,
+		RANK_NONE
 };
 // File of a given square
 const File squareFile[ALL_SQUARE]={
@@ -166,7 +168,8 @@ const File squareFile[ALL_SQUARE]={
 		FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
 		FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
 		FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
-		FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H
+		FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
+		FILE_NONE
 };
 //encode square by rank & file
 const Square encodeSquare[ALL_RANK][ALL_FILE]= {
@@ -188,7 +191,8 @@ const Bitboard squareToBitboard[ALL_SQUARE]={
 		SqBB(A5), SqBB(B5), SqBB(C5), SqBB(D5), SqBB(E5), SqBB(F5), SqBB(G5), SqBB(H5),
 		SqBB(A6), SqBB(B6), SqBB(C6), SqBB(D6), SqBB(E6), SqBB(F6), SqBB(G6), SqBB(H6),
 		SqBB(A7), SqBB(B7), SqBB(C7), SqBB(D7), SqBB(E7), SqBB(F7), SqBB(G7), SqBB(H7),
-		SqBB(A8), SqBB(B8), SqBB(C8), SqBB(D8), SqBB(E8), SqBB(F8), SqBB(G8), SqBB(H8)
+		SqBB(A8), SqBB(B8), SqBB(C8), SqBB(D8), SqBB(E8), SqBB(F8), SqBB(G8), SqBB(H8),
+		EMPTY_BB
 };
 // bitboard for all ranks
 const Bitboard rankBB[ALL_RANK]={
@@ -198,12 +202,12 @@ const Bitboard rankBB[ALL_RANK]={
 // bitboard for all files
 const Bitboard fileBB[ALL_FILE]={
 		0x0101010101010101ULL,0x0202020202020202ULL,0x0404040404040404ULL,0x0808080808080808ULL,
-		0x1010101010101010ULL,0x2020202020202020ULL,0x4040404040404040ULL,0x8080808080808080ULL
+		0x1010101010101010ULL,0x2020202020202020ULL,0x4040404040404040ULL,0x8080808080808080ULL,
+
 };
 // bitboard for black and white space
 const Bitboard colorSpaceBB[ALL_PIECE_COLOR] ={
-		0x00000000FFFFFFFFULL, 0xFFFFFFFF00000000ULL, 0x0ULL
-
+		0x00000000FFFFFFFFULL, 0xFFFFFFFF00000000ULL, EMPTY_BB
 };
 // bitboard for all diagonal A1..H8
 const Bitboard diagonalA1H8BB[ALL_DIAGONAL]={

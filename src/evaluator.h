@@ -240,15 +240,15 @@ const int knightOutpostBonus[ALL_PIECE_COLOR][ALL_SQUARE] = {
 };
 
 const int lazyEvalMargin=200;
-const size_t pawnHashSize=1<<18;
+const size_t pawnHashSize=1<<16;
 
 class Evaluator {
 public:
 	struct EvalInfo {
-		EvalInfo(Board& _board) : board(_board) {
-			side = board.getSideToMove();
-			other = board.flipSide(side);
-			all = board.getAllPieces();
+		EvalInfo(Board& _board) : board(_board),
+				side(board.getSideToMove()),
+				other(board.flipSide(side)),
+				all(board.getAllPieces()) {
 			pawns[WHITE] = board.getPieces(makePiece(WHITE,PAWN));
 			pawns[BLACK] = board.getPieces(makePiece(BLACK,PAWN));
 			evalPieces[WHITE] = board.getPieceSquareValue(WHITE);
@@ -264,9 +264,9 @@ public:
 			eval=0;
 		}
 		Board& board;
-		Bitboard all;
 		PieceColor side;
 		PieceColor other;
+		Bitboard all;
 		Bitboard attackers[ALL_PIECE_TYPE_BY_COLOR];
 		Bitboard attacks[ALL_PIECE_COLOR];
 		Bitboard pawns[ALL_PIECE_COLOR];
