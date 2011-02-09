@@ -35,7 +35,6 @@ void SimplePVSearch::search(Board board) {
 	nodes = 0;
 	startTime = getTickCount();
 	setTimeToStop();
-	nodesToGo = getTimeToSearch()<=1000?fastNodesToGo:defaultNodesToGo;
 	searchScore = idSearch(board);
 	time = getTickCount()-startTime;
 }
@@ -169,6 +168,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 			while (true) {
 				MoveBackup backup;
 				long nodes=this->nodes;
+				nodesToGo = getTimeToSearch()<=1000?fastNodesToGo:defaultNodesToGo;
 				board.doMove(move,backup);
 				const bool givingCheck = board.setInCheck(board.getSideToMove());
 				const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
