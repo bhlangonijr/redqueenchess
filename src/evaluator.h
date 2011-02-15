@@ -240,7 +240,7 @@ const int knightOutpostBonus[ALL_PIECE_COLOR][ALL_SQUARE] = {
 };
 
 const int lazyEvalMargin=200;
-const size_t pawnHashSize=1<<16;
+const size_t pawnHashSize=1<<18;
 
 class Evaluator {
 public:
