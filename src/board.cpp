@@ -516,9 +516,7 @@ void Board::initialize() {
 	for (int piece=0; piece<ALL_PIECE_TYPE_BY_COLOR; piece++) {
 		for (int square=0; square<ALL_SQUARE; square++) {
 			const Square sq = pieceColor[piece]==WHITE?static_cast<Square>(square):flip[square];
-			const int upperValue = defaultPieceSquareTable[pieceType[piece]][sq];
-			const int lowerValue = endGamePieceSquareTable[pieceType[piece]][sq];
-			fullPst[piece][square]=makeScore(upperValue,lowerValue);
+			fullPst[piece][square]=pieceSquareTable[pieceType[piece]][sq];
 		}
 	}
 }
@@ -593,7 +591,7 @@ const int Board::interpolate(const int first, const int second, const int positi
 
 const int Board::calcPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase) {
 	const Square sq = pieceColor[piece]==WHITE?square:flip[square];
-	const int egValue = endGamePieceSquareTable[pieceType[piece]][sq];
-	const int mgValue = defaultPieceSquareTable[pieceType[piece]][sq];
+	const int egValue = lowerScore(pieceSquareTable[pieceType[piece]][sq]);
+	const int mgValue = upperScore(pieceSquareTable[pieceType[piece]][sq]);
 	return interpolate(egValue,mgValue,phase);
 }

@@ -31,7 +31,6 @@
 #include <math.h>
 #include <sstream>
 #include "board.h"
-#include "psqt.h"
 #include "bitboard.h"
 #define FSQUARE(COLOR,BB,X) (BB&(COLOR==WHITE?upperMaskBitboard[X]:lowerMaskBitboard[X]))&(~(rankBB[squareRank[X]]))
 #define PM(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]] | neighborFiles[X]), X))

@@ -210,20 +210,18 @@ const int Evaluator::evalPassedPawn(EvalInfo& evalInfo, PieceColor color, const 
 					board.getPieces(other);
 			if (!(frontSquares[color][from]&block)) {
 				eval += freePasserBonus[color][squareRank[from]];
-			} else if (!(frontSquares[color][from]&board.getPieces(other))) {
-				eval += MS(+1,+3);
 			}
 			const PieceTypeByColor sideQueen = makePiece(color,QUEEN);
 			const PieceTypeByColor sideRook = makePiece(color,ROOK);
 			const Bitboard fromFileMask = fileBB[squareFile[from]];
 			if (board.getPieces(sideQueen) & fromFileMask) {
 				if (evalInfo.attackers[sideQueen] & squareToBitboard[from]) {
-					eval += MS(+1,+3);
+					eval += MS(+0,+3);
 				}
 			}
 			if (board.getPieces(sideRook) & fromFileMask) {
 				if (evalInfo.attackers[sideRook] & squareToBitboard[from]) {
-					eval += MS(+1,+4);
+					eval += MS(+0,+4);
 				}
 			}
 		}

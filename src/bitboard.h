@@ -412,6 +412,71 @@ const Bitboard neighborFiles[ALL_SQUARE]={
 		NFILE(A7), NFILE(B7), NFILE(C7), NFILE(D7), NFILE(E7), NFILE(F7), NFILE(G7), NFILE(H7),
 		NFILE(A8), NFILE(B8), NFILE(C8), NFILE(D8), NFILE(E8), NFILE(F8), NFILE(G8), NFILE(H8)
 };
+// middlegame & endgame piece square table
+const int pieceSquareTable[ALL_PIECE_TYPE][ALL_SQUARE]={
+		{ // pawns
+				MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0),
+				MS(-21, -5), MS( -9, -7), MS( -3, -9), MS(  4,-11), MS(  4,-11), MS( -3, -9), MS( -9, -7), MS(-21, -5),
+				MS(-20, -5), MS( -8, -7), MS( -2, -9), MS(  5,-11), MS(  5,-11), MS( -2, -9), MS( -8, -7), MS(-20, -5),
+				MS(-19, -4), MS( -7, -6), MS( -1, -8), MS(  6,-10), MS(  6,-10), MS( -1, -8), MS( -7, -6), MS(-19, -4),
+				MS(-17, -3), MS( -5, -5), MS(  1, -7), MS(  8, -9), MS(  8, -9), MS(  1, -7), MS( -5, -5), MS(-17, -3),
+				MS(-16, -2), MS( -4, -4), MS(  0, -6), MS(  9, -8), MS(  9, -8), MS(  0, -6), MS( -4, -4), MS(-16, -2),
+				MS(-15,  0), MS( -3, -2), MS(  3, -4), MS( 10, -6), MS( 10, -6), MS(  3, -4), MS( -3, -2), MS(-15,  0),
+				MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0),
+		},
+		{ // knights
+				MS(-56,-20), MS(-40,-15), MS(-29,-10), MS(-25, -7), MS(-25, -7), MS(-29,-10), MS(-40,-15), MS(-56,-20),
+				MS(-34,-13), MS(-18, -6), MS( -7, -2), MS( -3,  0), MS( -3,  0), MS( -7, -2), MS(-18, -6), MS(-34,-13),
+				MS(-18, -8), MS( -2, -2), MS(  9,  3), MS( 13,  5), MS( 13,  5), MS(  9,  3), MS( -2, -2), MS(-18, -8),
+				MS( -9, -4), MS(  7,  1), MS( 18,  6), MS( 22, 10), MS( 22, 10), MS( 18,  6), MS(  7,  1), MS( -9, -4),
+				MS( -3, -2), MS( 13,  3), MS( 24,  8), MS( 28, 12), MS( 28, 12), MS( 24,  8), MS( 13,  3), MS( -3, -2),
+				MS( -5, -1), MS( 11,  5), MS( 22, 10), MS( 26, 12), MS( 26, 12), MS( 22, 10), MS( 11,  5), MS( -5, -1),
+				MS(-14, -6), MS(  0,  1), MS( 13,  5), MS( 17,  7), MS( 17,  7), MS( 13,  5), MS(  0,  1), MS(-14, -6),
+				MS(-118,-13), MS(-19, -8), MS( -8, -3), MS( -4,  0), MS( -4,  0), MS( -8, -3), MS(-19, -8), MS(-118,-13),
+		},
+		{ // bishops
+				MS( -5,  0), MS( -6, -1), MS( -9, -2), MS(-11, -2), MS(-11, -2), MS( -9, -2), MS( -6, -1), MS( -5,  0),
+				MS( -1, -1), MS(  5,  1), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  5,  1), MS( -1, -1),
+				MS( -4, -2), MS(  0,  0), MS(  9,  5), MS(  8,  4), MS(  8,  4), MS(  9,  5), MS(  0,  0), MS( -4, -2),
+				MS( -6, -2), MS(  0,  0), MS(  8,  4), MS( 17,  7), MS( 17,  7), MS(  8,  4), MS(  0,  0), MS( -6, -2),
+				MS( -6, -2), MS(  0,  0), MS(  8,  4), MS( 17,  7), MS( 17,  7), MS(  8,  4), MS(  0,  0), MS( -6, -2),
+				MS( -4, -2), MS(  0,  0), MS(  9,  5), MS(  8,  4), MS(  8,  4), MS(  9,  5), MS(  0,  0), MS( -4, -2),
+				MS( -1, -1), MS(  5,  1), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  5,  1), MS( -1, -1),
+				MS(  0,  0), MS( -1, -1), MS( -4, -2), MS( -6, -2), MS( -6, -2), MS( -4, -2), MS( -1, -1), MS(  0,  0),
+		},
+		{ // rooks
+				MS( -2,  0), MS(  0,  0), MS(  6,  0), MS( 10,  0), MS( 10,  0), MS(  6,  0), MS(  0,  0), MS( -2,  0),
+				MS( -2,  0), MS(  0,  0), MS(  6,  0), MS( 10,  0), MS( 10,  0), MS(  6,  0), MS(  0,  0), MS( -2,  0),
+				MS( -2,  0), MS(  0,  0), MS(  6,  0), MS( 10,  0), MS( 10,  0), MS(  6,  0), MS(  0,  0), MS( -2,  0),
+				MS( -2,  0), MS(  0,  0), MS(  6,  0), MS( 10,  0), MS( 10,  0), MS(  6,  0), MS(  0,  0), MS( -2,  0),
+				MS( -2,  1), MS(  0,  1), MS(  6,  1), MS( 10,  1), MS( 10,  1), MS(  6,  1), MS(  0,  1), MS( -2,  1),
+				MS( -2,  1), MS(  0,  1), MS(  6,  1), MS( 10,  1), MS( 10,  1), MS(  6,  1), MS(  0,  1), MS( -2,  1),
+				MS( -2,  1), MS(  0,  1), MS(  6,  1), MS( 10,  1), MS( 10,  1), MS(  6,  1), MS(  0,  1), MS( -2,  1),
+				MS( -2, -2), MS(  0, -2), MS(  6, -2), MS( 10, -2), MS( 10, -2), MS(  6, -2), MS(  0, -2), MS( -2, -2),
+		},
+		{ //queen
+				MS(-14,-14), MS(-10, -9), MS( -7, -7), MS( -5, -6), MS( -5, -6), MS( -7, -7), MS(-10, -9), MS(-14,-14),
+				MS( -5, -9), MS(  1, -4), MS(  3, -2), MS(  5, -2), MS(  5, -2), MS(  3, -2), MS(  1, -4), MS( -5, -9),
+				MS( -2, -7), MS(  3, -2), MS(  7,  0), MS(  8,  3), MS(  8,  3), MS(  7,  0), MS(  3, -2), MS( -2, -7),
+				MS(  0, -6), MS(  5, -2), MS(  8,  3), MS( 11,  6), MS( 11,  6), MS(  8,  3), MS(  5, -2), MS(  0, -6),
+				MS(  0, -6), MS(  5, -2), MS(  8,  3), MS( 11,  6), MS( 11,  6), MS(  8,  3), MS(  5, -2), MS(  0, -6),
+				MS( -2, -7), MS(  3, -2), MS(  7,  0), MS(  8,  3), MS(  8,  3), MS(  7,  0), MS(  3, -2), MS( -2, -7),
+				MS( -5, -9), MS(  1, -4), MS(  3, -2), MS(  5, -2), MS(  5, -2), MS(  3, -2), MS(  1, -4), MS( -5, -9),
+				MS( -9,-14), MS( -5, -9), MS( -2, -7), MS(  0, -6), MS(  0, -6), MS( -2, -7), MS( -5, -9), MS( -9,-14),
+		},
+		{	//king
+				MS( 46,-72), MS( 51,-49), MS( 21,-33), MS(  1,-27), MS(  1,-27), MS( 21,-33), MS( 51,-49), MS( 46,-72),
+				MS( 43,-39), MS( 48,-14), MS( 18, -2), MS( -2,  4), MS( -2,  4), MS( 18, -2), MS( 48,-14), MS( 43,-39),
+				MS( 40,-28), MS( 45, -7), MS( 15,  8), MS( -5, 14), MS( -5, 14), MS( 15,  8), MS( 45, -7), MS( 40,-28),
+				MS( 37,-22), MS( 42, -2), MS( 12, 14), MS( -8, 23), MS( -8, 23), MS( 12, 14), MS( 42, -2), MS( 37,-22),
+				MS( 32,-17), MS( 37,  4), MS(  7, 19), MS(-13, 28), MS(-13, 28), MS(  7, 19), MS( 37,  4), MS( 32,-17),
+				MS( 27,-23), MS( 32, -2), MS(  0, 13), MS(-18, 19), MS(-18, 19), MS(  0, 13), MS( 32, -2), MS( 27,-23),
+				MS( 17,-34), MS( 22, -9), MS( -8,  3), MS(-28,  9), MS(-28,  9), MS( -8,  3), MS( 22, -9), MS( 17,-34),
+				MS(  7,-52), MS( 12,-29), MS(-18,-13), MS(-38, -7), MS(-38, -7), MS(-18,-13), MS( 12,-29), MS(  7,-52),
+		},
+		{}
+};
+
 const Bitboard promoRank[ALL_PIECE_COLOR]={rankBB[RANK_7],rankBB[RANK_2],EMPTY_BB};
 const Bitboard eighthRank[ALL_PIECE_COLOR]={rankBB[RANK_8],rankBB[RANK_1],EMPTY_BB};
 // piece phase increment values
@@ -537,24 +602,6 @@ inline Square bitboardToSquare(const Bitboard& bitboard) {
 		return static_cast<Square>(NONE);
 	}
 	return static_cast<Square>( square );
-}
-// get slider attacks based on the attacks mask and occupance
-inline Bitboard getSliderAttacks(const Bitboard& attacks, const Bitboard& mask, const Square start) {
-	int minor=A1;
-	int major=H8;
-	const Bitboard occ= mask & attacks;
-	if (!occ) {
-		return attacks;
-	}
-	const Bitboard lowerMask= occ & lowerMaskBitboard[start];
-	const Bitboard upperMask= occ & upperMaskBitboard[start];
-	if (lowerMask && !bitScanReverse(&minor, lowerMask)) {
-		minor=A1;
-	}
-	if (upperMask && !bitScanForward(&major, upperMask)) {
-		major=H8;
-	}
-	return bitsBetween(attacks, minor, major);
 }
 // extract least significant bit of a bitboard
 inline Square extractLSB(Bitboard& bitboard) {
