@@ -32,7 +32,6 @@
 #include <inttypes.h>
 #include <time.h>
 #include <string.h>
-
 #include "stringutil.h"
 #include "mersenne.h"
 #include "bitboard.h"
@@ -43,22 +42,18 @@ namespace BoardTypes{
 
 //used for hashing
 typedef uint64_t Key;
-
 const int ALL_CASTLE_RIGHT = 4;		// all castle rights
 const int MAX_GAME_LENGTH =	1024;	// Max game lenght
-
 // castle types
 enum CastleRight {
 	NO_CASTLE, KING_SIDE_CASTLE, QUEEN_SIDE_CASTLE, BOTH_SIDE_CASTLE
 };
-
 // castle squares
 const Bitboard castleSquare[ALL_PIECE_COLOR][ALL_CASTLE_RIGHT]={
 		/*WHITE*/{EMPTY_BB, Sq2Bb(F1)|Sq2Bb(G1), Sq2Bb(D1)|Sq2Bb(C1)|Sq2Bb(B1), Sq2Bb(F1)|Sq2Bb(G1)|Sq2Bb(D1)|Sq2Bb(C1)|Sq2Bb(B1)},
 		/*BLACK*/{EMPTY_BB, Sq2Bb(F8)|Sq2Bb(G8), Sq2Bb(D8)|Sq2Bb(C8)|Sq2Bb(B8), Sq2Bb(F8)|Sq2Bb(G8)|Sq2Bb(D8)|Sq2Bb(C8)|Sq2Bb(B8)},
 		/*NONE */{EMPTY_BB, EMPTY_BB, EMPTY_BB, EMPTY_BB }
 };
-
 // castle zobrist keys index table
 const int zobristCastleIndex[ALL_CASTLE_RIGHT][ALL_CASTLE_RIGHT]={
 		{0,1,2,3},
@@ -69,13 +64,13 @@ const int zobristCastleIndex[ALL_CASTLE_RIGHT][ALL_CASTLE_RIGHT]={
 
 //start FEN position
 const std::string startFENPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
-const MoveIterator::Move empty;
-
+const MoveIterator::Move whiteoo = MoveIterator::Move(E1,G1,EMPTY);
+const MoveIterator::Move whiteooo = MoveIterator::Move(E1,C1,EMPTY);
+const MoveIterator::Move blackoo = MoveIterator::Move(E8,G8,EMPTY);
+const MoveIterator::Move blackooo = MoveIterator::Move(E8,C8,EMPTY);
 // Backup move
 struct MoveBackup {
-	MoveBackup()
-	{}
+	MoveBackup() {}
 
 	bool hasWhiteKingCastle;
 	bool hasWhiteQueenCastle;
@@ -597,22 +592,19 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 	const PieceType fromType = pieceType[fromPiece];
 
 	if (isMoveFromCache) {
-		if (color == getPieceColor(move.to) ||
-				color != getSideToMove()) {
+		if (color == getPieceColor(move.to) || move.none() ||
+				color != getSideToMove() || fromPiece==EMPTY) {
 			return false;
 		}
-		if (move.none() || fromPiece==EMPTY) {
-			return false;
-		}
-		const bool promoting = squareToBitboard[move.from] & promoRank[color];
 		if (move.promotionPiece!=EMPTY && fromType!=PAWN) {
 			return false;
 		}
+		const bool promoting = squareToBitboard[move.from] & promoRank[color];
 		if (fromType==PAWN && ((move.promotionPiece!=EMPTY) ^ promoting)) {
 			return false;
 		}
-		if (((fromPiece==WHITE_KING && move.from==E1 && (move.to==G1 || move.to==C1)) ||
-				(fromPiece==BLACK_KING && move.from==E8 && (move.to==G8 || move.to==C8)))) {
+		if (((fromPiece==WHITE_KING && (move==whiteoo || move==whiteooo)) ||
+				(fromPiece==BLACK_KING && (move==blackoo || move==blackooo)))) {
 			const CastleRight castleRight =
 					(move.to==C1 || move.to==C8) ? QUEEN_SIDE_CASTLE : KING_SIDE_CASTLE;
 			return canCastle(color, castleRight);
@@ -660,12 +652,10 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 
 // Get attacks from a given square
 inline const bool Board::isAttackedBy(const Square from, const Square to) {
-
 	const PieceTypeByColor fromPiece = getPiece(from);
 	const PieceType pieceType = getPieceType(fromPiece);
 	const Bitboard attacked = squareToBitboard[to];
 	Bitboard attacks = EMPTY_BB;
-
 	switch (pieceType) {
 	case PAWN:
 		if (getPawnCaptures(from) & attacked) {
@@ -691,22 +681,17 @@ inline const bool Board::isAttackedBy(const Square from, const Square to) {
 	default:
 		return false;
 	}
-
 	return attacks & attacked;
-
 }
 
 // verify draw by 50th move rule, 3 fold rep and insuficient material
 inline const bool Board::isDraw() {
-
 	for (int x=4;x<=getHalfMoveCounter();x+=2) {
 		if (currentBoard.keyHistory[getMoveCounter()-x]==getKey()) {
 			return true;
 		}
 	}
-
-	const Bitboard pawns = getPieces(WHITE_PAWN) |
-			getPieces(BLACK_PAWN);
+	const Bitboard pawns = getPieces(WHITE_PAWN)|getPieces(BLACK_PAWN);
 	if (!pawns) {
 		if (getMaterial(WHITE)+getMaterial(BLACK)<=minimalMaterial) {
 			return true;
@@ -724,7 +709,6 @@ inline const bool Board::isCastleDone(const PieceColor color) {
 
 // verify if move is capture
 inline const bool Board::isCaptureMove(MoveIterator::Move& move) {
-
 	if (getPiece(move.to)!=EMPTY) {
 		return true;
 	} else if (getPieceType(move.from)==PAWN){

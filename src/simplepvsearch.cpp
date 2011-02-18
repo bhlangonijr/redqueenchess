@@ -245,11 +245,8 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si, int alpha, int beta,	
 	if (depth<=0) {
 		return qSearch(board, si, alpha, beta, 0, ply, true);
 	}
-	if	(board.isDraw()) {
+	if	(board.isDraw() || ply >= maxSearchPly-1) {
 		return drawScore;
-	}
-	if	(ply >= maxSearchPly-1) {
-		return evaluator.evaluate(board,alpha,beta);
 	}
 	const int oldAlpha = alpha;
 	int score = -maxScore;
@@ -380,11 +377,8 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si, int beta, int depth, 
 	if (depth<=0) {
 		return qSearch(board, si, beta-1, beta, 0, ply, false);
 	}
-	if	(board.isDraw()) {
+	if	(board.isDraw() || ply >= maxSearchPly-1) {
 		return drawScore;
-	}
-	if	(ply >= maxSearchPly-1) {
-		return evaluator.evaluate(board,beta-1,beta);
 	}
 	if (-maxScore+ply >= beta) {
 		return beta;
@@ -585,11 +579,8 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si,
 	if (stop()) {
 		return 0;
 	}
-	if	(board.isDraw()) {
+	if	(board.isDraw() || ply >= maxSearchPly-1) {
 		return drawScore;
-	}
-	if	(ply >= maxSearchPly-1) {
-		return evaluator.evaluate(board,alpha,beta);
 	}
 	TranspositionTable::HashData hashData;
 	MoveIterator::Move hashMove;
