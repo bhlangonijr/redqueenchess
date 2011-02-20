@@ -273,6 +273,7 @@ public:
 		return transTable->newSearch();
 	}
 
+	long addExtraTime(const int iteration, int* iterationPVChange);
 	void shutdown();
 	void *startThreadSearch();
 	void initThreads();
@@ -302,6 +303,7 @@ private:
 	long moveTime;
 	bool ponder;
 	TranspositionTable* transTable;
+	const long getTimeToSearch(const long usedTime);
 	const long getTimeToSearch();
 };
 

@@ -174,20 +174,18 @@ void SearchAgent::stopSearch() {
 	}
 }
 
-const long SearchAgent::getTimeToSearch() {
+const long SearchAgent::getTimeToSearch(const long usedTime) {
 	if (getSearchMode()==SearchAgent::SEARCH_MOVETIME) {
 		return getMoveTime();
 	}
 	long time=board.getSideToMove()==WHITE? getWhiteTime():getBlackTime();
 	long incTime=board.getSideToMove()==WHITE?getWhiteIncrement():getBlackIncrement();
-	int movesLeft = defaultGameSize;
+	long movesLeft = defaultGameSize;
+	time-=usedTime;
 	if (movesToGo>0) {
-		movesLeft = movesToGo;
-		if (movesToGo<2) {
-			time=(time*95)/100;
-		}
+		movesLeft = std::min(movesToGo,25);
+		time=time*60/100;
 	} else {
-
 		for (int x=0;x<timeTableSize;x++) {
 			if (time<timeTable[x][1] && time >= timeTable[x][2]) {
 				movesLeft=timeTable[x][0]+
@@ -195,9 +193,21 @@ const long SearchAgent::getTimeToSearch() {
 				break;
 			}
 		}
-
+		time=time*97/100;
 	}
-	return time/(static_cast<long>(movesLeft))+incTime;
+	return time/movesLeft+incTime;
+}
+
+const long SearchAgent::getTimeToSearch() {
+	return getTimeToSearch(0);
+}
+
+long SearchAgent::addExtraTime(const int iteration, int* iterationPVChange) {
+	const long timeThinking = simpleSearcher.getTickCount()-simpleSearcher.getStartTime();
+	const long weight = std::min(90L, long(iterationPVChange[iteration]*15+iterationPVChange[iteration-1]*5));
+	const long newSearchTime = std::max(10L,simpleSearcher.getTimeToSearch()-timeThinking) + getTimeToSearch(timeThinking)*weight/100;
+	simpleSearcher.setTimeToSearch(newSearchTime);
+	return newSearchTime;
 }
 
 void  SearchAgent::ponderHit() {

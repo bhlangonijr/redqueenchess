@@ -202,6 +202,7 @@ private:
 	long timeToStop;
 	MoveIterator rootMoves;
 	MoveIterator::Move killer[maxSearchPly+1][2];
+	int iterationPVChange[maxSearchPly+1];
 	long nodesPerMove[MOVE_LIST_MAX_SIZE];
 	int history[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 	Evaluator evaluator;
@@ -242,7 +243,6 @@ private:
 	void updateKillers(Board& board, MoveIterator::Move& move, int ply);
 	void initRootMovesOrder();
 	void updateRootMovesScore(const long value);
-	long predictTimeUse(const long iterationTime[maxSearchPly], const long totalTime, const int depth);
 };
 
 // select a move
@@ -590,25 +590,14 @@ inline void SimplePVSearch::updateKillers(Board& board, MoveIterator::Move& move
 		killer[ply][1].type = MoveIterator::KILLER2;
 	}
 }
-
 // init root moves ordering array
 inline void SimplePVSearch::initRootMovesOrder() {
 	for(int x=0;x<MOVE_LIST_MAX_SIZE;x++) {
 		nodesPerMove[x]=0L;
 	}
 }
-
 // update root moves score
 inline void SimplePVSearch::updateRootMovesScore(const long value) {
 	nodesPerMove[rootMoves.getIndex()]+=value;
-}
-
-inline long SimplePVSearch::predictTimeUse(const long iterationTime[maxSearchPly], const long totalTime, const int depth) {
-	double ratio1 = double(iterationTime[depth-1])/double(totalTime);
-	double ratio2 = double(iterationTime[depth-2])/double(totalTime);
-	double ratio3 = double(iterationTime[depth-3])/double(totalTime);
-	double newRatio = ratio1*exp((ratio2/ratio1)*0.7 + (ratio3/ratio2)*0.3);
-	double newTime = double(iterationTime[depth-1])*exp(newRatio);
-	return long(newTime);
 }
 #endif /* SIMPLEPVSEARCH_H_ */

@@ -78,6 +78,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		int score = 0;
 		maxPlySearched = 0;
 		lastDepth=depth;
+		iterationPVChange[depth]=0;
 		// like in stockfish
 		if (depth >= aspirationDepth && abs(iterationScore[depth-1]) < winningScore)	{
 			int delta1 = iterationScore[depth-1]-iterationScore[depth-2];
@@ -109,8 +110,8 @@ int SimplePVSearch::idSearch(Board& board) {
 			}
 		}
 		if (!(searchFixedDepth || infinite)) {
-			if (depth>5 && (abs(iterationScore[depth - 0]) >= maxScore-maxSearchPly ||
-					abs(iterationScore[depth - 1]) >= maxScore-maxSearchPly ||
+			if (depth>5 && (abs(iterationScore[depth - 0]) >= maxScore-maxSearchPly &&
+					abs(iterationScore[depth - 1]) >= maxScore-maxSearchPly &&
 					abs(iterationScore[depth - 2]) >= maxScore-maxSearchPly)) {
 				break;
 			}
@@ -127,14 +128,16 @@ int SimplePVSearch::idSearch(Board& board) {
 				break;
 			}
 			if (depth>7) {
-				if (!easyMove.none() && easyMove==bestMove && nodesPerMove[0]>=(nodes*85)/100 &&
+				if (!easyMove.none() && easyMove==bestMove && nodesPerMove[0]>=nodes*85/100 &&
 						iterationTime[depth] > timeToSearch/2) {
 					break;
 				}
-				if (timeToSearch <	predictTimeUse(iterationTime,timeToSearch,depth+1) &&
-						iterationTime[depth] > (timeToSearch*80)/100) {
-					break;
-				}
+			}
+			if (iterationPVChange[depth]>0 && iterationPVChange[depth-1]>0) {
+				agent->addExtraTime(depth,iterationPVChange);
+			}
+			if (iterationTime[depth] > timeToSearch*70/100) {
+				break;
 			}
 		}
 	}
@@ -213,6 +216,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 				bestMove=move;
 				pv.moves[0]=bestMove;
 				retrievePvFromHash(board, pv);
+				iterationPVChange[depth]++;
 				uciOutput(pv, bestMove.score, getTickCount()-startTime, agent->hashFull(), depth, maxPlySearched, alpha, beta);
 			} else {
 				move.score=-maxScore;
