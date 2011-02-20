@@ -184,7 +184,7 @@ const long SearchAgent::getTimeToSearch(const long usedTime) {
 	time-=usedTime;
 	if (movesToGo>0) {
 		movesLeft = std::min(movesToGo,25);
-		if (movesToGo==0) {
+		if (movesToGo==1) {
 			time=time*60/100;
 		} else {
 			time=time*98/100;
