@@ -184,7 +184,11 @@ const long SearchAgent::getTimeToSearch(const long usedTime) {
 	time-=usedTime;
 	if (movesToGo>0) {
 		movesLeft = std::min(movesToGo,25);
-		time=time*60/100;
+		if (movesToGo==0) {
+			time=time*60/100;
+		} else {
+			time=time*98/100;
+		}
 	} else {
 		for (int x=0;x<timeTableSize;x++) {
 			if (time<timeTable[x][1] && time >= timeTable[x][2]) {
@@ -193,7 +197,7 @@ const long SearchAgent::getTimeToSearch(const long usedTime) {
 				break;
 			}
 		}
-		time=time*97/100;
+		time=time*95/100;
 	}
 	return time/movesLeft+incTime;
 }
