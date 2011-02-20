@@ -187,7 +187,7 @@ const long SearchAgent::getTimeToSearch(const long usedTime) {
 		if (movesToGo==1) {
 			time=time*60/100;
 		} else {
-			time=time*98/100;
+			time=time*99/100;
 		}
 	} else {
 		for (int x=0;x<timeTableSize;x++) {
@@ -197,7 +197,7 @@ const long SearchAgent::getTimeToSearch(const long usedTime) {
 				break;
 			}
 		}
-		time=time*95/100;
+		time=time*97/100;
 	}
 	return time/movesLeft+incTime;
 }
