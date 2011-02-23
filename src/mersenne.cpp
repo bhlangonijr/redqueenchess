@@ -101,7 +101,7 @@ static void init_by_array(uint64_t init_key[], int key_length)
 
 /* generates a random number on [0,0xffffffff]-interval */
 uint32_t genrand_int32(void) {
-  unsigned long y;
+  uint64_t y;
   static uint64_t mag01[2]={0x0UL, MATRIX_A};
   /* mag01[x] = x * MATRIX_A  for x=0,1 */
 

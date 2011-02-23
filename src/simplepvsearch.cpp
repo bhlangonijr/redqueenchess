@@ -48,7 +48,7 @@ int SimplePVSearch::getScore() {
 int SimplePVSearch::idSearch(Board& board) {
 	int bestScore = -maxScore;
 	int iterationScore[maxSearchPly];
-	long iterationTime[maxSearchPly];
+	int64_t iterationTime[maxSearchPly];
 	int alpha = -maxScore;
 	int beta = maxScore;
 	const bool isKingAttacked = board.setInCheck(board.getSideToMove());
@@ -56,7 +56,7 @@ int SimplePVSearch::idSearch(Board& board) {
 	rootSearchInfo.allowNullMove = false;
 	int searchTime;
 	int lastDepth=0;
-	uint64_t searchNodes;
+	int64_t searchNodes;
 	MoveIterator::Move bestMove;
 	MoveIterator::Move ponderMove;
 	aspirationDelta=0;
@@ -171,7 +171,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int
 			uciOutput(move, moveCounter);
 			while (true) {
 				MoveBackup backup;
-				long nodes=this->nodes;
+				int64_t nodes=this->nodes;
 				nodesToGo = getTimeToSearch()<=1000?fastNodesToGo:defaultNodesToGo;
 				board.doMove(move,backup);
 				const bool givingCheck = board.setInCheck(board.getSideToMove());
@@ -738,15 +738,15 @@ void SimplePVSearch::initialize() {
 }
 
 //perft
-long SimplePVSearch::perft(Board& board, int depth, int ply) {
+int64_t SimplePVSearch::perft(Board& board, int depth, int ply) {
 	if (depth == 0) {
 		return 1;
 	}
-	long time=0;
+	int64_t time=0;
 	if (ply==1) {
 		time=getTickCount();
 	}
-	long nodes=0;
+	int64_t nodes=0;
 	MoveIterator moves = MoveIterator();
 	board.setInCheck(board.getSideToMove());
 	while (true)  {

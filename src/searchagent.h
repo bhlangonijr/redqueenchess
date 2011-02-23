@@ -138,35 +138,35 @@ public:
 		threadNumber = _threadNumber;
 	}
 
-	inline const long getWhiteTime() const {
+	inline const int64_t getWhiteTime() const {
 		return whiteTime;
 	}
 
-	inline void setWhiteTime(long _whiteTime) {
+	inline void setWhiteTime(int64_t _whiteTime) {
 		whiteTime = _whiteTime;
 	}
 
-	inline const long getWhiteIncrement() const {
+	inline const int64_t getWhiteIncrement() const {
 		return whiteIncrement;
 	}
 
-	inline void setWhiteIncrement(long _whiteIncrement) {
+	inline void setWhiteIncrement(int64_t _whiteIncrement) {
 		whiteIncrement = _whiteIncrement;
 	}
 
-	inline const long getBlackTime() const {
+	inline const int64_t getBlackTime() const {
 		return blackTime;
 	}
 
-	inline void setBlackTime(long _blackTime) {
+	inline void setBlackTime(int64_t _blackTime) {
 		blackTime = _blackTime;
 	}
 
-	inline const long getBlackIncrement() const {
+	inline const int64_t getBlackIncrement() const {
 		return blackIncrement;
 	}
 
-	inline void setBlackIncrement(long _blackIncrement) {
+	inline void setBlackIncrement(int64_t _blackIncrement) {
 		blackIncrement = _blackIncrement;
 	}
 
@@ -186,11 +186,11 @@ public:
 		movesToGo = _movesToGo;
 	}
 
-	inline const long getMoveTime() const {
+	inline const int64_t getMoveTime() const {
 		return moveTime;
 	}
 
-	inline void setMoveTime(long _moveTime) {
+	inline void setMoveTime(int64_t _moveTime) {
 		moveTime = _moveTime;
 	}
 
@@ -273,7 +273,7 @@ public:
 		return transTable->newSearch();
 	}
 
-	long addExtraTime(const int iteration, int* iterationPVChange);
+	int64_t addExtraTime(const int iteration, int* iterationPVChange);
 	void shutdown();
 	void *startThreadSearch();
 	void initThreads();
@@ -294,17 +294,17 @@ private:
 	volatile bool quit;
 	size_t hashSize;
 	int threadNumber;
-	long whiteTime;
-	long whiteIncrement;
-	long blackTime;
-	long blackIncrement;
+	int64_t whiteTime;
+	int64_t whiteIncrement;
+	int64_t blackTime;
+	int64_t blackIncrement;
 	int depth;
 	int movesToGo;
-	long moveTime;
+	int64_t moveTime;
 	bool ponder;
 	TranspositionTable* transTable;
-	const long getTimeToSearch(const long usedTime);
-	const long getTimeToSearch();
+	const int64_t getTimeToSearch(const int64_t usedTime);
+	const int64_t getTimeToSearch();
 };
 
 #endif /* SEARCHAGENT_H_ */

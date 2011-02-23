@@ -62,8 +62,8 @@ const int sePVDepth=7;
 const int seNonPVDepth=9;
 const int lateMoveThreshold=2;
 const int scoreTable[11]={0,80000,60000,95000,90000,45000,40000,1000,-12000,50050,50000};
-const long defaultNodesToGo=0xFFF;
-const long fastNodesToGo=0xFF;
+const int64_t defaultNodesToGo=0xFFF;
+const int64_t fastNodesToGo=0xFF;
 const inline int futilityMargin(const int depth) {return depth * 150;}
 const inline int razorMargin(const int depth) {return 150 + depth * 175;}
 const inline int moveCountMargin(const int depth) {return 6 + depth * 4;}
@@ -100,16 +100,12 @@ public:
 
 	~SimplePVSearch() {}
 	void search(Board _board);
-	long perft(Board& board, int depth, int ply);
+	int64_t perft(Board& board, int depth, int ply);
 	int getScore();
 	static void initialize();
 
-	inline const long getTickCount() {
+	inline const int64_t getTickCount() {
 		return ((clock() * 1000) / CLOCKS_PER_SEC);
-	}
-
-	inline const long toClock(const long time) {
-		return long((((double)(time)/(double)1000)*(double)CLOCKS_PER_SEC));
 	}
 
 	inline const bool isUpdateUci() const {
@@ -144,35 +140,35 @@ public:
 		return depthToSearch;
 	}
 
-	inline const void setTimeToSearch(const long value) {
+	inline const void setTimeToSearch(const int64_t value) {
 		timeToSearch = value;
 	}
 
-	inline const long getTimeToSearch() const {
+	inline const int64_t getTimeToSearch() const {
 		return timeToSearch;
 	}
 
-	inline const void setStartTime(const long value) {
+	inline const void setStartTime(const int64_t value) {
 		startTime = value;
 	}
 
-	inline const long getStartTime() const {
+	inline const int64_t getStartTime() const {
 		return startTime;
 	}
 
 	inline const void setTimeToStop() {
-		timeToStop = clock() + toClock(timeToSearch-10);
+		timeToStop = getTickCount() + timeToSearch;
 	}
 
-	inline const long getTimeToStop() const {
+	inline const int64_t getTimeToStop() const {
 		return timeToStop;
 	}
 
-	inline const long getSearchedTime() const {
+	inline const int64_t getSearchedTime() const {
 		return time;
 	}
 
-	inline const long getSearchedNodes() const {
+	inline const int64_t getSearchedNodes() const {
 		return nodes;
 	}
 
@@ -193,17 +189,17 @@ private:
 	int depthToSearch;
 	int searchScore;
 	bool updateUci;
-	long timeToSearch;
-	long startTime;
-	long time;
+	int64_t timeToSearch;
+	int64_t startTime;
+	int64_t time;
 	bool searchFixedDepth;
 	bool infinite;
-	long nodes;
-	long timeToStop;
+	int64_t nodes;
+	int64_t timeToStop;
 	MoveIterator rootMoves;
 	MoveIterator::Move killer[maxSearchPly+1][2];
 	int iterationPVChange[maxSearchPly+1];
-	long nodesPerMove[MOVE_LIST_MAX_SIZE];
+	int64_t nodesPerMove[MOVE_LIST_MAX_SIZE];
 	int history[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 	Evaluator evaluator;
 	SearchAgent* agent;
@@ -211,7 +207,7 @@ private:
 	SearchInfo rootSearchInfo;
 	int maxPlySearched;
 	int aspirationDelta;
-	long nodesToGo;
+	int64_t nodesToGo;
 	int idSearch(Board& board);
 	int rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int* betaRoot, int depth, int ply, PvLine& pv);
 	int pvSearch(Board& board,  SearchInfo& si, int alpha, int beta, int depth, int ply);
@@ -242,7 +238,7 @@ private:
 	void updateHistory(Board& board, MoveIterator::Move& move, int depth);
 	void updateKillers(Board& board, MoveIterator::Move& move, int ply);
 	void initRootMovesOrder();
-	void updateRootMovesScore(const long value);
+	void updateRootMovesScore(const int64_t value);
 };
 
 // select a move
@@ -493,7 +489,7 @@ inline const bool SimplePVSearch::timeIsUp() {
 	if (searchFixedDepth || infinite || nodes & nodesToGo) {
 		return false;
 	}
-	return clock()>=timeToStop;
+	return getTickCount()>=timeToStop;
 }
 
 inline void SimplePVSearch::uciOutput(PvLine& pv, const int score, const int totalTime,
@@ -513,7 +509,7 @@ inline void SimplePVSearch::uciOutput(PvLine& pv, const int score, const int tot
 		} else if (score <= alpha) {
 			scoreString += " upperbound";
 		}
-		long nps = totalTime>1000 ?  ((nodes)/(totalTime/1000)) : nodes;
+		int64_t nps = totalTime>1000 ?  ((nodes)/(totalTime/1000)) : nodes;
 		std::cout << "info depth "<< depth << " seldepth " << selDepth << std::endl;
 		std::cout << "info depth "<< depth << " score " << scoreString << " time " << totalTime
 				<< " nodes " << (nodes) << " nps " << nps << " pv" << pvLineToString(pv) << std::endl;
@@ -538,7 +534,7 @@ inline void SimplePVSearch::uciOutput(MoveIterator::Move& bestMove, MoveIterator
 }
 
 inline void SimplePVSearch::uciOutput(MoveIterator::Move& move, const int moveCounter) {
-	const long uciOutputSecs=1500;
+	const int64_t uciOutputSecs=1500;
 	if (isUpdateUci()) {
 		if (startTime+uciOutputSecs < getTickCount()) {
 			std::cout << "info currmove " << move.toString() << " currmovenumber " << moveCounter << std::endl;
@@ -547,7 +543,7 @@ inline void SimplePVSearch::uciOutput(MoveIterator::Move& move, const int moveCo
 }
 
 inline void SimplePVSearch::uciOutput(const int depth) {
-	const long uciOutputSecs=1500;
+	const int64_t uciOutputSecs=1500;
 	if (isUpdateUci()) {
 		if (startTime+uciOutputSecs < getTickCount()) {
 			std::cout << "info depth "<< depth << " seldepth " << maxPlySearched << " nodes " << nodes << std::endl;
@@ -597,7 +593,7 @@ inline void SimplePVSearch::initRootMovesOrder() {
 	}
 }
 // update root moves score
-inline void SimplePVSearch::updateRootMovesScore(const long value) {
+inline void SimplePVSearch::updateRootMovesScore(const int64_t value) {
 	nodesPerMove[rootMoves.getIndex()]+=value;
 }
 #endif /* SIMPLEPVSEARCH_H_ */

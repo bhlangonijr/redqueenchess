@@ -126,8 +126,8 @@ public:
 	const size_t size();
 	void sort();
 	void sort(const int after);
-	void sort(long* moveScore);
-	void sortOrderingBy(long moveScore[MOVE_LIST_MAX_SIZE]);
+	void sort(int64_t* moveScore);
+	void sortOrderingBy(int64_t moveScore[MOVE_LIST_MAX_SIZE]);
 
 	const IteratorStage getStage() {
 		return _data.stage;

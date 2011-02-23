@@ -131,15 +131,15 @@ void SearchAgent::startSearch() {
 // start perft
 void SearchAgent::doPerft() {
 	std::cout << "info Executing perft..." << std::endl;
-	long nodes = simpleSearcher.perft(board,this->getDepth(),1);
+	int64_t nodes = simpleSearcher.perft(board,this->getDepth(),1);
 	std::cout << "info Finished perft: " << nodes << std::endl;
 }
 
 // bench test
 void SearchAgent::doBench() {
 	std::cout << "Executing benchmark..." << std::endl;
-	long time = 0;
-	long nodes = 0;
+	int64_t time = 0;
+	int64_t nodes = 0;
 	simpleSearcher.setUpdateUci(false);
 	for (int i=0;i<benchSize;i++) {
 		pthread_mutex_lock(&mutex2);
@@ -174,13 +174,13 @@ void SearchAgent::stopSearch() {
 	}
 }
 
-const long SearchAgent::getTimeToSearch(const long usedTime) {
+const int64_t SearchAgent::getTimeToSearch(const int64_t usedTime) {
 	if (getSearchMode()==SearchAgent::SEARCH_MOVETIME) {
 		return getMoveTime();
 	}
-	long time=board.getSideToMove()==WHITE? getWhiteTime():getBlackTime();
-	long incTime=board.getSideToMove()==WHITE?getWhiteIncrement():getBlackIncrement();
-	long movesLeft = defaultGameSize;
+	int64_t time=board.getSideToMove()==WHITE? getWhiteTime():getBlackTime();
+	int64_t incTime=board.getSideToMove()==WHITE?getWhiteIncrement():getBlackIncrement();
+	int64_t movesLeft = defaultGameSize;
 	time-=usedTime;
 	if (movesToGo>0) {
 		movesLeft = std::min(movesToGo,25);
@@ -202,20 +202,20 @@ const long SearchAgent::getTimeToSearch(const long usedTime) {
 	return time/movesLeft+incTime;
 }
 
-const long SearchAgent::getTimeToSearch() {
+const int64_t SearchAgent::getTimeToSearch() {
 	return getTimeToSearch(0);
 }
 
-long SearchAgent::addExtraTime(const int iteration, int* iterationPVChange) {
-	const long timeThinking = simpleSearcher.getTickCount()-simpleSearcher.getStartTime();
-	const long weight = std::min(90L, long(iterationPVChange[iteration]*15+iterationPVChange[iteration-1]*5));
-	const long newSearchTime = std::max(10L,simpleSearcher.getTimeToSearch()-timeThinking) + getTimeToSearch(timeThinking)*weight/100;
+int64_t SearchAgent::addExtraTime(const int iteration, int* iterationPVChange) {
+	const int64_t timeThinking = simpleSearcher.getTickCount()-simpleSearcher.getStartTime();
+	const int64_t weight = std::min(90L, int64_t(iterationPVChange[iteration]*15+iterationPVChange[iteration-1]*5));
+	const int64_t newSearchTime = std::max(10L,simpleSearcher.getTimeToSearch()-timeThinking) + getTimeToSearch(timeThinking)*weight/100;
 	simpleSearcher.setTimeToSearch(newSearchTime);
 	return newSearchTime;
 }
 
 void  SearchAgent::ponderHit() {
-	const long timeThinking = simpleSearcher.getTickCount()-simpleSearcher.getStartTime();
+	const int64_t timeThinking = simpleSearcher.getTickCount()-simpleSearcher.getStartTime();
 	simpleSearcher.setSearchFixedDepth(false);
 	simpleSearcher.setInfinite(false);
 	simpleSearcher.setTimeToSearch(getTimeToSearch()-std::max(10L,timeThinking));

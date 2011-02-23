@@ -65,7 +65,7 @@ void MoveIterator::sort(const int after) {
 }
 
 // sort
-void MoveIterator::sort(long* moveScore) {
+void MoveIterator::sort(int64_t* moveScore) {
 	bool flag=true;
 	for(int i = 0; i <static_cast<int>(_data.size)&&flag; i++) {
 		flag=false;
@@ -74,7 +74,7 @@ void MoveIterator::sort(long* moveScore) {
 				Move tmp=_data.list[j];
 				_data.list[j]=_data.list[j+1];
 				_data.list[j+1]=tmp;
-				const long tmpLong = moveScore[j];
+				const int64_t tmpLong = moveScore[j];
 				moveScore[j]=moveScore[j+1];
 				moveScore[j+1]=tmpLong;
 				flag=true;
@@ -83,7 +83,7 @@ void MoveIterator::sort(long* moveScore) {
 	}
 }
 // sort root moves
-void MoveIterator::sortOrderingBy(long moveScore[MOVE_LIST_MAX_SIZE]) {
+void MoveIterator::sortOrderingBy(int64_t moveScore[MOVE_LIST_MAX_SIZE]) {
 	bool flag=true;
 	for(int i = 0; i <static_cast<int>(_data.size)&&flag; i++) {
 		flag=false;
@@ -92,7 +92,7 @@ void MoveIterator::sortOrderingBy(long moveScore[MOVE_LIST_MAX_SIZE]) {
 				Move tmp=_data.list[j];
 				_data.list[j]=_data.list[j+1];
 				_data.list[j+1]=tmp;
-				const long tmpLong = moveScore[j];
+				const int64_t tmpLong = moveScore[j];
 				moveScore[j]=moveScore[j+1];
 				moveScore[j+1]=tmpLong;
 				flag=true;
