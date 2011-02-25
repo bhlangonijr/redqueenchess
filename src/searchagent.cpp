@@ -158,7 +158,7 @@ void SearchAgent::doBench() {
 	std::cout << std::endl << "Finished benchmark:  " << std::endl;
 	std::cout << "Total time(seconds): " << (time/1000) << std::endl;
 	std::cout << "Total nodes:         " << (nodes) << std::endl;
-	std::cout << "Nodes/Seconds:       " << (nodes/(std::max(1L,time/1000))) << std::endl;
+	std::cout << "Nodes/Seconds:       " << (nodes/(std::max(int64_t(1),time/1000))) << std::endl;
 }
 // eval test
 void SearchAgent::doEval() {
@@ -208,8 +208,8 @@ const int64_t SearchAgent::getTimeToSearch() {
 
 int64_t SearchAgent::addExtraTime(const int iteration, int* iterationPVChange) {
 	const int64_t timeThinking = simpleSearcher.getTickCount()-simpleSearcher.getStartTime();
-	const int64_t weight = std::min(90L, int64_t(iterationPVChange[iteration]*15+iterationPVChange[iteration-1]*5));
-	const int64_t newSearchTime = std::max(10L,simpleSearcher.getTimeToSearch()-timeThinking) + getTimeToSearch(timeThinking)*weight/100;
+	const int64_t weight = std::min(int64_t(90), int64_t(iterationPVChange[iteration]*15+iterationPVChange[iteration-1]*5));
+	const int64_t newSearchTime = std::max(int64_t(10),simpleSearcher.getTimeToSearch()-timeThinking) + getTimeToSearch(timeThinking)*weight/100;
 	simpleSearcher.setTimeToSearch(newSearchTime);
 	return newSearchTime;
 }
@@ -218,7 +218,7 @@ void  SearchAgent::ponderHit() {
 	const int64_t timeThinking = simpleSearcher.getTickCount()-simpleSearcher.getStartTime();
 	simpleSearcher.setSearchFixedDepth(false);
 	simpleSearcher.setInfinite(false);
-	simpleSearcher.setTimeToSearch(getTimeToSearch()-std::max(10L,timeThinking));
+	simpleSearcher.setTimeToSearch(getTimeToSearch()-std::max(int64_t(10),timeThinking));
 	simpleSearcher.setTimeToStop();
 }
 
