@@ -234,7 +234,6 @@ void Evaluator::evalPieces(PieceColor color, EvalInfo& evalInfo) {
 	evalInfo.evalPieces[color] +=
 			board.isCastleDone(color)?DONE_CASTLE_BONUS:
 	board.getCastleRights(color)==NO_CASTLE?-DONE_CASTLE_BONUS:0;
-	//imbalances - Larry Kaufman
 	const Bitboard bishop = board.getPieces(color,BISHOP);
 	if ((bishop & WHITE_SQUARES) && (bishop & BLACK_SQUARES)) {
 		evalInfo.imbalance[color] += lowerScore(BISHOP_PAIR_BONUS);
@@ -244,20 +243,15 @@ void Evaluator::evalPieces(PieceColor color, EvalInfo& evalInfo) {
 		const int balance = board.getMaterial(color)-
 				board.getMaterial(other);
 		if (balance>0) {
-			if (balance <= knightValue) {
-				evalInfo.imbalance[color] -= balance/3;
-			} else if (balance <= rookValue) {
-				evalInfo.imbalance[color] -= balance/10;
+			if (board.getMaterial(color) <= kingValue+bishopValue) {
+				evalInfo.imbalance[color] += -balance*95/100;
+			} else {
+				if (balance <= bishopValue) {
+					evalInfo.imbalance[color] += -balance/3;
+				} else if (balance <= rookValue) {
+					evalInfo.imbalance[color] += -balance/12;
+				}
 			}
-		}
-	} else {
-		if (board.getPieces(color,KNIGHT)) {
-			const int knightCount = board.getPieceCount(makePiece(color,KNIGHT));
-			evalInfo.imbalance[color] += knightCount*(pawnValue/16)*(pawnCount-5);
-		}
-		if (board.getPieces(color,ROOK)) {
-			const int rookCount = board.getPieceCount(makePiece(color,ROOK));
-			evalInfo.imbalance[color] += rookCount+(pawnValue/8)*(5-pawnCount);
 		}
 	}
 }
