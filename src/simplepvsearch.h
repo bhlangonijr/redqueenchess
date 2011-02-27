@@ -250,7 +250,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 		case MoveIterator::END_STAGE:
 			return emptyMove;
 		case MoveIterator::BEGIN_STAGE:
-			if (!board.isInCheck() || (quiescenceMoves && depth<-1)) {
+			if (!board.isInCheck() /*|| (quiescenceMoves && depth<-1)*/) {
 				moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
 			} else {
 				moves.setStage(MoveIterator::INIT_EVASION_STAGE);
