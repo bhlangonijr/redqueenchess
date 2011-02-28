@@ -75,6 +75,9 @@ class MoveIterator;
 class SimplePVSearch {
 
 public:
+	enum NodeType {
+		PV_NODE, NONPV_NODE, NODE_NONE
+	};
 	typedef struct PvLine {
 		int index;
 		MoveIterator::Move moves[maxSearchPly+1];
@@ -84,15 +87,39 @@ public:
 		}
 	} PvLine;
 	typedef struct SearchInfo {
-		SearchInfo(): allowNullMove(false), move(MoveIterator::Move()), partialSearch(false) {}
-		SearchInfo(const bool _allowNullMove, const MoveIterator::Move _move):
-			allowNullMove(_allowNullMove), move(_move), partialSearch(false) {}
-		SearchInfo(const bool _allowNullMove, const MoveIterator::Move _move, const bool _partialSearch):
-			allowNullMove(_allowNullMove), move(_move), partialSearch(_partialSearch) {}
+		SearchInfo(): allowNullMove(false), move(MoveIterator::Move()), partialSearch(false),
+				alpha(0), beta(0), depth(0), ply(0), nodeType(NODE_NONE) {}
+		SearchInfo(const bool _allowNullMove, const MoveIterator::Move _move, const int _alpha, const int _beta,
+				const int _depth, const int _ply, const NodeType _nodeType): allowNullMove(_allowNullMove), move(_move), partialSearch(false),
+				alpha(_alpha), beta(_beta), depth(_depth), ply(_ply), nodeType(_nodeType) {}
+		SearchInfo(const bool _allowNullMove, const MoveIterator::Move _move, const bool _partialSearch,
+				const int _alpha, const int _beta, const int _depth, const int _ply, const NodeType _nodeType):
+					allowNullMove(_allowNullMove), move(_move), partialSearch(_partialSearch),
+					alpha(_alpha), beta(_beta), depth(_depth), ply(_ply), nodeType(_nodeType) {}
 
+		inline void update(const int _depth, const NodeType _nodeType) {
+			depth=_depth;
+			nodeType=_nodeType;
+		}
+		inline void update(const int _depth, const NodeType _nodeType, const int _beta) {
+			depth=_depth;
+			nodeType=_nodeType;
+			beta=_beta;
+		}
+		inline void update(const int _depth, const NodeType _nodeType, const int _alpha, const int _beta) {
+			depth=_depth;
+			nodeType=_nodeType;
+			alpha=_alpha;
+			beta=_beta;
+		}
 		bool allowNullMove;
 		MoveIterator::Move move;
 		bool partialSearch;
+		int alpha;
+		int beta;
+		int depth;
+		int ply;
+		NodeType nodeType;
 	} SearchInfo;
 
 	SimplePVSearch() : depthToSearch(maxSearchDepth), updateUci(true), startTime(0), searchFixedDepth(false),
@@ -209,10 +236,10 @@ private:
 	int aspirationDelta;
 	int64_t nodesToGo;
 	int idSearch(Board& board);
-	int rootSearch(Board& board, SearchInfo& si, int* alphaRoot, int* betaRoot, int depth, int ply, PvLine& pv);
-	int pvSearch(Board& board,  SearchInfo& si, int alpha, int beta, int depth, int ply);
-	int zwSearch(Board& board,  SearchInfo& si, int beta, int depth, int ply);
-	int qSearch(Board& board,  SearchInfo& si, int alpha, int beta, int depth, int ply, const bool isPV);
+	int rootSearch(Board& board, SearchInfo& si, PvLine& pv);
+	int pvSearch(Board& board,  SearchInfo& si);
+	int zwSearch(Board& board,  SearchInfo& si);
+	int qSearch(Board& board,  SearchInfo& si);
 	void uciOutput(PvLine& pv, const int score, const int totalTime,
 			const int hashFull, const int depth, const int selDepth, const int alpha, const int beta);
 	void uciOutput(MoveIterator::Move& bestMove, MoveIterator::Move& ponderMove);
@@ -419,8 +446,8 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 		const int value = isCapture ? evaluator.see<false>(board,move) : 0;
 		board.doMove(move,backup);
 		board.setInCheck(board.getSideToMove());
-		SearchInfo newSi(false,move);
-		move.score = -qSearch(board,newSi,-maxScore,maxScore,0,0,true);
+		SearchInfo newSi(false,move,true,-maxScore,maxScore,0,0,PV_NODE);
+		move.score = -qSearch(board,newSi);
 		if (move.type==MoveIterator::UNKNOW) {
 			if (isCapture) {
 				move.type = (value >= 0 ?
