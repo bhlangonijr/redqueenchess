@@ -41,6 +41,7 @@ const int defaultGameSize			= 30;
 const int timeTableSize				= 7;
 const int benchSize					= 12;
 const int benchDepth				= 14;
+const int maxThreads				= 16;
 const int timeTable [7][3] = {
 		{25, 900000, 180000},
 		{23, 180000, 60000},
@@ -75,10 +76,41 @@ public:
 		SEARCH_TIME, SEARCH_DEPTH, SEARCH_MOVESTOGO, SEARCH_MOVETIME, SEARCH_MOVES, SEARCH_INFINITE
 	};
 
+	enum ThreadType {
+		MAIN_THREAD=0,
+		INACTIVE_THREAD=maxThreads+1
+	};
+
+	enum ThreadStatus {
+		THREAD_STATUS_AVAILABLE,
+		THREAD_STATUS_SEARCHING,
+		THREAD_STATUS_IDLE
+	};
+
+	struct ThreadPool {
+		ThreadPool() : threadId(0), threadType(INACTIVE_THREAD), ss(0), status(THREAD_STATUS_AVAILABLE) {
+			init();
+		}
+		ThreadPool(const int _threadId, const ThreadType _threadType, SimplePVSearch* _ss, ThreadStatus _status):
+			threadId(_threadId), threadType(_threadType), ss(_ss), status(_status) {
+			init();
+		}
+		void init() {
+			pthread_mutex_init(&mutex,NULL);
+			pthread_cond_init(&waitCond,NULL);
+		}
+		int threadId;
+		ThreadType threadType;
+		pthread_t executor;
+		SimplePVSearch* ss;
+		ThreadStatus status;
+		pthread_mutex_t mutex;
+		pthread_cond_t waitCond;
+	};
+
 	static SearchAgent* getInstance();
 
 	void newGame();
-
 	const Board getBoard() const;
 	void setBoard(Board _board);
 
@@ -206,7 +238,6 @@ public:
 
 	inline void clearHash() {
 		transTable->clearHash();
-
 	}
 
 	inline bool hashPut(const Key _key, int value, int evalValue, const int depth, const int ply,
@@ -244,7 +275,7 @@ public:
 					(allowNullMove || !(hashData.flag() & TranspositionTable::NODE_NULL)) &&
 					(hashData.depth()>=depth) &&
 					(((hashData.flag() & TranspositionTable::LOWER) && hashData.value() >= beta) ||
-					((hashData.flag() & TranspositionTable::UPPER) && hashData.value() <= alpha));
+							((hashData.flag() & TranspositionTable::UPPER) && hashData.value() <= alpha));
 		} else {
 			okToPrune = false;
 		}
@@ -273,9 +304,27 @@ public:
 		return transTable->newSearch();
 	}
 
+	const int getThreadPoolSize() const {
+		return threadPoolSize;
+	}
+
+	const ThreadPool& getThread(const int index) {
+		return threadPool[index];
+	}
+
+	const ThreadPool& getThread() {
+		return threadPool[getCurrentThreadId()];
+	}
+
+	const int getCurrentThreadId() const {
+		return currentThread;
+	}
+
 	int64_t addExtraTime(const int iteration, int* iterationPVChange);
+	void initializeThreadPool(const int size);
 	void shutdown();
 	void *startThreadSearch();
+	void *executeThread(const int threadId);
 	void initThreads();
 
 protected:
@@ -303,6 +352,10 @@ private:
 	int64_t moveTime;
 	bool ponder;
 	TranspositionTable* transTable;
+	ThreadPool threadPool[maxThreads];
+	int threadPoolSize;
+	SimplePVSearch* mainSearcher;
+	int currentThread;
 	const int64_t getTimeToSearch(const int64_t usedTime);
 	const int64_t getTimeToSearch();
 };

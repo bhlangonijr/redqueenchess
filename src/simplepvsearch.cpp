@@ -29,10 +29,7 @@ static int reductionTableNonPV[maxSearchDepth+1][maxMoveCount];
 
 // root search
 void SimplePVSearch::search(Board board) {
-	clearHistory();
-	initRootMovesOrder();
-	rootMoves.clear();
-	nodes = 0;
+	prepareToSearch();
 	startTime = getTickCount();
 	setTimeToStop();
 	searchScore = idSearch(board);

@@ -177,6 +177,7 @@ void Uci::executeSetOption() {
 	// Handle Thread Number
 	if (optionName=="Threads") {
 		SearchAgent::getInstance()->setThreadNumber(toInt(this->getUciOption("Threads").getValue()));
+		SearchAgent::getInstance()->initializeThreadPool(SearchAgent::getInstance()->getThreadNumber());
 	}
 	// Handle Hash Size
 	if (optionName=="Hash") {

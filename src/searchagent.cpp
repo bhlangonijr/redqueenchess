@@ -25,13 +25,11 @@
  */
 
 #include "searchagent.h"
-extern "C" void *threadRun(void *);
+extern "C" void *mainThreadRun(void *);
+extern "C" void *workerThreadRun(void *);
 SearchAgent* SearchAgent::searchAgent = 0;
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t waitCond = PTHREAD_COND_INITIALIZER;
 pthread_cond_t waitCond2 = PTHREAD_COND_INITIALIZER;
-pthread_t executor;
 
 SearchAgent* SearchAgent::getInstance () {
 	if (searchAgent == 0) {
@@ -40,14 +38,12 @@ SearchAgent* SearchAgent::getInstance () {
 	return searchAgent;
 }
 
-SimplePVSearch simpleSearcher;
-
 SearchAgent::SearchAgent() : searchMode(SEARCH_TIME), searchInProgress(false), requestStop(false), quit(false),
 		hashSize(defaultHashSize),	threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
-		blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), ponder(false) {
+		blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), ponder(false), mainSearcher(0) {
 	// creates initial hashtables
 	createHash();
-	simpleSearcher.setSearchAgent(this);
+	initializeThreadPool(getThreadNumber());
 	initThreads();
 }
 
@@ -64,7 +60,7 @@ void SearchAgent::newGame() {
 	setMovesToGo(0);
 	setMoveTime(0);
 	setPonder(false);
-	simpleSearcher.cleanUp();
+	mainSearcher->cleanUp();
 }
 
 // get board
@@ -89,49 +85,63 @@ void SearchAgent::setPositionFromFEN(std::string fenMoves) {
 
 // start search
 void* SearchAgent::startThreadSearch() {
-	pthread_mutex_lock(&mutex);
+	pthread_mutex_lock(&threadPool[MAIN_THREAD].mutex);
 	while (!quit) {
-		pthread_cond_wait(&waitCond, &mutex);
+		pthread_cond_wait(&threadPool[MAIN_THREAD].waitCond, &threadPool[MAIN_THREAD].mutex);
 		if (quit) {
 			break;
 		}
 		setRequestStop(false);
 		setSearchInProgress(true);
 		newSearchHash();
-		simpleSearcher.setInfinite(getPonder());
+		mainSearcher->setInfinite(getPonder());
 		if (getSearchMode()==SearchAgent::SEARCH_DEPTH) {
-			simpleSearcher.setSearchFixedDepth(true);
-			simpleSearcher.setDepth(getDepth());
+			mainSearcher->setSearchFixedDepth(true);
+			mainSearcher->setDepth(getDepth());
 		} else if (getSearchMode()==SearchAgent::SEARCH_TIME ||
 				getSearchMode()==SearchAgent::SEARCH_MOVETIME) {
-			simpleSearcher.setSearchFixedDepth(false);
-			simpleSearcher.setTimeToSearch(getTimeToSearch());
+			mainSearcher->setSearchFixedDepth(false);
+			mainSearcher->setTimeToSearch(getTimeToSearch());
 		} else if (getSearchMode()==SearchAgent::SEARCH_INFINITE) {
-			simpleSearcher.setSearchFixedDepth(false);
-			simpleSearcher.setInfinite(true);
-			simpleSearcher.setDepth(maxSearchDepth);
+			mainSearcher->setSearchFixedDepth(false);
+			mainSearcher->setInfinite(true);
+			mainSearcher->setDepth(maxSearchDepth);
 		}
-		simpleSearcher.search(board);
+		mainSearcher->search(board);
 		setSearchInProgress(false);
 		pthread_cond_signal(&waitCond2);
 	}
-	pthread_mutex_unlock(&mutex);
+	pthread_mutex_unlock(&threadPool[MAIN_THREAD].mutex);
 	pthread_exit(NULL);
-	return 0;
+	return NULL;
+}
+
+// worker threads loop
+void* SearchAgent::executeThread(const int threadId) {
+	pthread_mutex_lock(&threadPool[threadId].mutex);
+	while (!quit) {
+		pthread_cond_wait(&threadPool[threadId].waitCond, &threadPool[threadId].mutex);
+		if (quit) {
+			break;
+		}
+	}
+	pthread_mutex_unlock(&threadPool[threadId].mutex);
+	pthread_exit(NULL);
+	return NULL;
 }
 
 // start search
 void SearchAgent::startSearch() {
-	pthread_mutex_lock(&mutex);
+	pthread_mutex_lock(&threadPool[MAIN_THREAD].mutex);
 	setRequestStop(true);
-	pthread_cond_signal(&waitCond);
-	pthread_mutex_unlock(&mutex);
+	pthread_cond_signal(&threadPool[MAIN_THREAD].waitCond);
+	pthread_mutex_unlock(&threadPool[MAIN_THREAD].mutex);
 }
 
 // start perft
 void SearchAgent::doPerft() {
 	std::cout << "info Executing perft..." << std::endl;
-	int64_t nodes = simpleSearcher.perft(board,this->getDepth(),1);
+	int64_t nodes = mainSearcher->perft(board,this->getDepth(),1);
 	std::cout << "info Finished perft: " << nodes << std::endl;
 }
 
@@ -140,7 +150,7 @@ void SearchAgent::doBench() {
 	std::cout << "Executing benchmark..." << std::endl;
 	int64_t time = 0;
 	int64_t nodes = 0;
-	simpleSearcher.setUpdateUci(false);
+	mainSearcher->setUpdateUci(false);
 	for (int i=0;i<benchSize;i++) {
 		pthread_mutex_lock(&mutex2);
 		std::cout << "Position[" << (i+1) << "]: " << benchPositions[i] << std::endl;
@@ -150,11 +160,11 @@ void SearchAgent::doBench() {
 		setDepth(benchDepth);
 		startSearch();
 		pthread_cond_wait(&waitCond2, &mutex2);
-		time+=simpleSearcher.getSearchedTime();
-		nodes+=simpleSearcher.getSearchedNodes();
+		time+=mainSearcher->getSearchedTime();
+		nodes+=mainSearcher->getSearchedNodes();
 		pthread_mutex_unlock(&mutex2);
 	}
-	simpleSearcher.setUpdateUci(true);
+	mainSearcher->setUpdateUci(true);
 	std::cout << std::endl << "Finished benchmark:  " << std::endl;
 	std::cout << "Total time(seconds): " << (time/1000) << std::endl;
 	std::cout << "Total nodes:         " << (nodes) << std::endl;
@@ -162,9 +172,9 @@ void SearchAgent::doBench() {
 }
 // eval test
 void SearchAgent::doEval() {
-	simpleSearcher.getEvaluator().setDebugEnabled(true);
-	simpleSearcher.getEvaluator().evaluate(board,-maxScore,maxScore);
-	simpleSearcher.getEvaluator().setDebugEnabled(false);
+	mainSearcher->getEvaluator().setDebugEnabled(true);
+	mainSearcher->getEvaluator().evaluate(board,-maxScore,maxScore);
+	mainSearcher->getEvaluator().setDebugEnabled(false);
 }
 
 // stop search
@@ -207,36 +217,73 @@ const int64_t SearchAgent::getTimeToSearch() {
 }
 
 int64_t SearchAgent::addExtraTime(const int iteration, int* iterationPVChange) {
-	const int64_t timeThinking = simpleSearcher.getTickCount()-simpleSearcher.getStartTime();
-	const int64_t weight = std::min(int64_t(90), int64_t(iterationPVChange[iteration]*15+iterationPVChange[iteration-1]*5));
-	const int64_t newSearchTime = std::max(int64_t(10),simpleSearcher.getTimeToSearch()-timeThinking) + getTimeToSearch(timeThinking)*weight/100;
-	simpleSearcher.setTimeToSearch(newSearchTime);
+	const int64_t timeThinking = mainSearcher->getTickCount()-mainSearcher->getStartTime();
+	const int64_t weight = std::min(int64_t(90), int64_t(iterationPVChange[iteration]*15+
+			iterationPVChange[iteration-1]*5));
+	const int64_t newSearchTime = std::max(int64_t(10),mainSearcher->getTimeToSearch()-timeThinking) +
+			getTimeToSearch(timeThinking)*weight/100;
+	mainSearcher->setTimeToSearch(newSearchTime);
 	return newSearchTime;
 }
 
 void  SearchAgent::ponderHit() {
-	const int64_t timeThinking = simpleSearcher.getTickCount()-simpleSearcher.getStartTime();
-	simpleSearcher.setSearchFixedDepth(false);
-	simpleSearcher.setInfinite(false);
-	simpleSearcher.setTimeToSearch(getTimeToSearch()-std::max(int64_t(10),timeThinking));
-	simpleSearcher.setTimeToStop();
+	const int64_t timeThinking = mainSearcher->getTickCount()-mainSearcher->getStartTime();
+	mainSearcher->setSearchFixedDepth(false);
+	mainSearcher->setInfinite(false);
+	mainSearcher->setTimeToSearch(getTimeToSearch()-std::max(int64_t(10),timeThinking));
+	mainSearcher->setTimeToStop();
 }
 
 void SearchAgent::initThreads() {
-	int rCode = pthread_create( &executor, NULL, threadRun, this);
+	int rCode = pthread_create( &(threadPool[MAIN_THREAD].executor), NULL, mainThreadRun, this);
 	if (rCode) {
-		std::cerr << "Failed to created new thread. pthread_create return code:  " << rCode << std::endl;
+		std::cerr << "Failed to created main thread. pthread_create return code:  " << rCode << std::endl;
 		exit(EXIT_FAILURE);
+	}
+	currentThread=MAIN_THREAD;
+	for (int i=1;i<threadPoolSize;i++) {
+		int rCode = pthread_create( &(threadPool[i].executor), NULL, workerThreadRun, this);
+		if (rCode) {
+			std::cerr << "Failed to created worker thread. pthread_create return code:  " << rCode << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		currentThread=i;
 	}
 }
 
-void *threadRun(void *_object) {
+void *mainThreadRun(void *_object) {
 	SearchAgent *object = (SearchAgent *)_object;
 	void *threadResult = object->startThreadSearch();
 	return threadResult;
 }
 
+void *workerThreadRun(void *_object) {
+	SearchAgent *object = (SearchAgent *)_object;
+	void *threadResult = object->executeThread(object->getCurrentThreadId());
+	return threadResult;
+}
+
+void SearchAgent::initializeThreadPool(const int size) {
+	for (int i=0;i<size;i++) {
+		threadPool[i].threadId=i;
+		threadPool[i].threadType=ThreadType(i);
+		if (!threadPool[i].ss) {
+			delete threadPool[i].ss;
+		}
+		threadPool[i].ss=new SimplePVSearch();
+		threadPool[i].ss->setSearchAgent(this);
+
+	}
+	mainSearcher = threadPool[0].ss;
+	threadPoolSize=size;
+}
+
 void SearchAgent::shutdown() {
+	for (int i=0;i<threadPoolSize;i++) {
+		if (!threadPool[i].ss) {
+			delete threadPool[i].ss;
+		}
+	}
 	destroyHash();
 	setQuit(true);
 }

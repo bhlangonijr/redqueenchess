@@ -209,7 +209,22 @@ public:
 
 	inline void cleanUp() {
 		evaluator.cleanPawnInfo();
+	}
+
+	inline void prepareToSearch() {
+		resetStats();
 		clearHistory();
+		initRootMovesOrder();
+		rootMoves.clear();
+	}
+
+	inline void resetStats() {
+		searchScore=0;
+		timeToSearch=0;
+		startTime=0;
+		time=0;
+		timeToStop=0;
+		nodes = 0;
 	}
 
 private:
