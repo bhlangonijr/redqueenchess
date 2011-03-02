@@ -39,6 +39,7 @@ void SimplePVSearch::search(Board board) {
 // get current score
 int SimplePVSearch::getScore() {
 	return searchScore;
+
 }
 
 // iterative deepening
@@ -758,6 +759,7 @@ int64_t SimplePVSearch::perft(Board& board, int depth, int ply) {
 	}
 	int64_t time=0;
 	if (ply==1) {
+		prepareToSearch();
 		time=getTickCount();
 	}
 	int64_t nodes=0;

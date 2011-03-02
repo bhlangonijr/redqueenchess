@@ -275,7 +275,7 @@ public:
 					(allowNullMove || !(hashData.flag() & TranspositionTable::NODE_NULL)) &&
 					(hashData.depth()>=depth) &&
 					(((hashData.flag() & TranspositionTable::LOWER) && hashData.value() >= beta) ||
-							((hashData.flag() & TranspositionTable::UPPER) && hashData.value() <= alpha));
+					((hashData.flag() & TranspositionTable::UPPER) && hashData.value() <= alpha));
 		} else {
 			okToPrune = false;
 		}

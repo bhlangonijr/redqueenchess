@@ -235,19 +235,19 @@ void  SearchAgent::ponderHit() {
 }
 
 void SearchAgent::initThreads() {
+	currentThread=MAIN_THREAD;
 	int rCode = pthread_create( &(threadPool[MAIN_THREAD].executor), NULL, mainThreadRun, this);
 	if (rCode) {
 		std::cerr << "Failed to created main thread. pthread_create return code:  " << rCode << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	currentThread=MAIN_THREAD;
 	for (int i=1;i<threadPoolSize;i++) {
+		currentThread=i;
 		int rCode = pthread_create( &(threadPool[i].executor), NULL, workerThreadRun, this);
 		if (rCode) {
 			std::cerr << "Failed to created worker thread. pthread_create return code:  " << rCode << std::endl;
 			exit(EXIT_FAILURE);
 		}
-		currentThread=i;
 	}
 }
 

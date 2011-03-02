@@ -209,6 +209,7 @@ public:
 
 	inline void cleanUp() {
 		evaluator.cleanPawnInfo();
+		clearHistory();
 	}
 
 	inline void prepareToSearch() {
@@ -220,7 +221,6 @@ public:
 
 	inline void resetStats() {
 		searchScore=0;
-		timeToSearch=0;
 		startTime=0;
 		time=0;
 		timeToStop=0;
@@ -385,8 +385,9 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 		case MoveIterator::ON_QUIET_STAGE:
 			while (moves.hasNext()) {
 				MoveIterator::Move& move=moves.selectBest();
-				if (move==ttMove || move==killer[ply][0] ||
-						move==killer[ply][1] || !board.isMoveLegal<false>(move)) {
+				if (move==ttMove || !board.isMoveLegal<false>(move) ||
+						((move==killer[ply][0] || move==killer[ply][1]) &&
+								!board.isCaptureMove(move))) {
 					continue;
 				}
 				return move;
