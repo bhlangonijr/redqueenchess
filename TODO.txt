@@ -11,6 +11,8 @@ Ben-Hur Langoni Junior
 	+ Improve concept of mobility	
 3) Create pawn hashtable
 4) Implement SMP search
+5) Try prune negative see moves even at depth = 0
+6) Try "lazy" see at selectMove
 
 
 

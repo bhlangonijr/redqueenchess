@@ -83,7 +83,8 @@ public:
 
 	enum ThreadStatus {
 		THREAD_STATUS_AVAILABLE,
-		THREAD_STATUS_SEARCHING,
+		THREAD_STATUS_WORK_ASSIGNED,
+		THREAD_STATUS_WORKING,
 		THREAD_STATUS_IDLE
 	};
 
@@ -106,6 +107,15 @@ public:
 		ThreadStatus status;
 		pthread_mutex_t mutex;
 		pthread_cond_t waitCond;
+		bool isPV;
+		Board* board;
+		int alpha;
+		int beta;
+		int depth;
+		int ply;
+		bool allowNullMove;
+		bool partialSearch;
+		MoveIterator::Move move;
 	};
 
 	static SearchAgent* getInstance();

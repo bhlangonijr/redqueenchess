@@ -211,19 +211,3 @@ go infinite
 ;a6
 
 r1bqkb1r/pppppppp/2n2n2/6P1/4PP2/8/PPPP3P/RNBQKBNR b KQkq - 0 8
-
-/*
-MoveIterator::Move move = MoveIterator::Move(F6,E4,EMPTY);
-int see = evaluator.see<false>(board,move);
-std::cout << "see " <<  see << std::endl;
-board.printBoard();
-
-				if (board.isCaptureMove(move) && board.isMoveLegal<false>(move) && move != ttMove &&
-							(move==killer[ply][0] || move==killer[ply][1])) {
-						std::cout << "ignored: " << move.toString() << " type: " << move.type << std::endl;
-						board.printBoard();
-						std::cout << board.getFEN() << std::endl;
-					}
-
-
-*/

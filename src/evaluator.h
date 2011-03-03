@@ -429,7 +429,7 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 	}
 	if (lazySee && secondPiece!=EMPTY &&
 			materialValues[secondPiece]>=materialValues[firstPiece]) {
-		return 1;
+		return materialValues[secondPiece]-materialValues[firstPiece];
 	}
 	const Bitboard bishopAttacks =  board.getBishopAttacks(move.to,occupied);
 	const Bitboard rookAttacks =  board.getRookAttacks(move.to,occupied);

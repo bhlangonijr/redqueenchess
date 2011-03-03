@@ -127,6 +127,9 @@ public:
 
 	~SimplePVSearch() {}
 	void search(Board _board);
+	int pvSearch(Board& board,  SearchInfo& si);
+	int zwSearch(Board& board,  SearchInfo& si);
+	int qSearch(Board& board,  SearchInfo& si);
 	int64_t perft(Board& board, int depth, int ply);
 	int getScore();
 	static void initialize();
@@ -252,9 +255,6 @@ private:
 	int64_t nodesToGo;
 	int idSearch(Board& board);
 	int rootSearch(Board& board, SearchInfo& si, PvLine& pv);
-	int pvSearch(Board& board,  SearchInfo& si);
-	int zwSearch(Board& board,  SearchInfo& si);
-	int qSearch(Board& board,  SearchInfo& si);
 	void uciOutput(PvLine& pv, const int score, const int totalTime,
 			const int hashFull, const int depth, const int selDepth, const int alpha, const int beta);
 	void uciOutput(MoveIterator::Move& bestMove, MoveIterator::Move& ponderMove);
@@ -334,7 +334,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 					continue;
 				}
 				if (move.type==MoveIterator::UNKNOW_CAPTURE) {
-					move.score=evaluator.see<false>(board,move);
+					move.score=evaluator.see<true>(board,move);
 					if (move.score >= 0) {
 						move.type=MoveIterator::GOOD_CAPTURE;
 						move.score+=scoreTable[move.type];

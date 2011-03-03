@@ -118,14 +118,32 @@ void* SearchAgent::startThreadSearch() {
 
 // worker threads loop
 void* SearchAgent::executeThread(const int threadId) {
-	pthread_mutex_lock(&threadPool[threadId].mutex);
 	while (!quit) {
-		pthread_cond_wait(&threadPool[threadId].waitCond, &threadPool[threadId].mutex);
+		ThreadPool& thread = threadPool[threadId];
+		pthread_mutex_lock(&thread.mutex);
+		pthread_cond_wait(&thread.waitCond, &thread.mutex);
 		if (quit) {
 			break;
 		}
+		if (thread.status==THREAD_STATUS_WORK_ASSIGNED) {
+			thread.status = THREAD_STATUS_WORKING;
+		}
+		thread.ss->resetStats();
+		pthread_mutex_unlock(&thread.mutex);
+		int score=0;
+		if (thread.status == THREAD_STATUS_WORKING) {
+			if (thread.isPV) {
+				SimplePVSearch::SearchInfo si = SimplePVSearch::SearchInfo(thread.allowNullMove,thread.move,
+						thread.partialSearch,thread.alpha,thread.beta,thread.depth,thread.ply,SimplePVSearch::PV_NODE);
+				score = thread.ss->pvSearch(*thread.board, si);
+			} else {
+				SimplePVSearch::SearchInfo si = SimplePVSearch::SearchInfo(thread.allowNullMove,thread.move,
+						thread.partialSearch,thread.alpha,thread.beta,thread.depth,thread.ply,SimplePVSearch::NONPV_NODE);
+				score = thread.ss->zwSearch(*thread.board, si);
+			}
+			thread.status = THREAD_STATUS_AVAILABLE;
+		}
 	}
-	pthread_mutex_unlock(&threadPool[threadId].mutex);
 	pthread_exit(NULL);
 	return NULL;
 }

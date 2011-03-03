@@ -657,7 +657,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 		moveCounter++;
 		nodes++;
 		if (!isKingAttacked && !(si.nodeType==PV_NODE) && move != hashMove &&
-				move.type==MoveIterator::BAD_CAPTURE && si.depth < 0) {
+				move.type==MoveIterator::BAD_CAPTURE/* && si.depth < 0*/) {
 			continue;
 		}
 		if (move.promotionPiece==makePiece(sideToMove,ROOK) ||
