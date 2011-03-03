@@ -205,3 +205,25 @@ go depth 0
 
 position fen r1bq1r1k/1ppn2pp/p1n1pN2/4P2Q/8/3B4/PPPB2PP/R3K2R b KQkq - 0 1
 test eval
+
+position fen 2r4r/p4k2/5p2/2b1pNp1/bpR1P3/6BP/1P1R1PP1/6K1 b - - 4 31
+go infinite
+;a6
+
+r1bqkb1r/pppppppp/2n2n2/6P1/4PP2/8/PPPP3P/RNBQKBNR b KQkq - 0 8
+
+/*
+MoveIterator::Move move = MoveIterator::Move(F6,E4,EMPTY);
+int see = evaluator.see<false>(board,move);
+std::cout << "see " <<  see << std::endl;
+board.printBoard();
+
+				if (board.isCaptureMove(move) && board.isMoveLegal<false>(move) && move != ttMove &&
+							(move==killer[ply][0] || move==killer[ply][1])) {
+						std::cout << "ignored: " << move.toString() << " type: " << move.type << std::endl;
+						board.printBoard();
+						std::cout << board.getFEN() << std::endl;
+					}
+
+
+*/

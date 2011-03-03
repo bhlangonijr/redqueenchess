@@ -387,7 +387,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 				MoveIterator::Move& move=moves.selectBest();
 				if (move==ttMove || !board.isMoveLegal<false>(move) ||
 						((move==killer[ply][0] || move==killer[ply][1]) &&
-								!board.isCaptureMove(move))) {
+						!board.isCaptureMove(move))) {
 					continue;
 				}
 				return move;

@@ -326,8 +326,8 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 			score = -pvSearch(board, newSi);
 		} else {
 			int reduction=0;
-			if (si.depth>lmrDepthThreshold && !extension && !givingCheck && !isPawnPush(board,move.to) &&
-					(move.type == MoveIterator::NON_CAPTURE || move.type == MoveIterator::BAD_CAPTURE)) {
+			if (si.depth>lmrDepthThreshold && !extension && !givingCheck &&
+					!isPawnPush(board,move.to) && move.type == MoveIterator::NON_CAPTURE) {
 				reduction=reductionTablePV[si.depth][moveCounter];
 			}
 			SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth-reduction,si.ply+1,NONPV_NODE);
@@ -549,8 +549,8 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		if (isKingAttacked || pawnOn7thExtension ||
 				(isSingularMove && move==hashMove)) {
 			extension++;
-		} else if (si.depth>lmrDepthThreshold && !givingCheck && !passedPawn && !nmMateScore &&
-				(move.type == MoveIterator::NON_CAPTURE || move.type == MoveIterator::BAD_CAPTURE)) {
+		} else if (si.depth>lmrDepthThreshold && !givingCheck && !passedPawn &&
+				!nmMateScore &&	move.type == MoveIterator::NON_CAPTURE) {
 			reduction=reductionTableNonPV[si.depth][moveCounter];
 		}
 		int newDepth=si.depth-1+extension;

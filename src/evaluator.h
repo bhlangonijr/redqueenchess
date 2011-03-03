@@ -311,7 +311,7 @@ public:
 			const int whiteScore=evalPieces[WHITE]+evalPawns[WHITE]+mobility[WHITE]+
 					pieceThreat[WHITE]+kingThreat[WHITE];
 			const int blackScore=evalPieces[BLACK]+evalPawns[BLACK]+mobility[BLACK]+
-								pieceThreat[BLACK]+kingThreat[BLACK];
+					pieceThreat[BLACK]+kingThreat[BLACK];
 			out << "Material[WHITE]:          " << ((board.getMaterial(WHITE)+imbalance[WHITE])-kingValue) << std::endl;
 			out << "Material[BLACK]:          " << ((board.getMaterial(BLACK)+imbalance[BLACK])-kingValue) << std::endl;
 			out << "Pieces(PST&Other)[WHITE]: " << interpolate(evalPieces[WHITE],board.getGamePhase()) << std::endl;
@@ -451,6 +451,7 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 	int gain[gainTableSize];
 	PieceColor sideToMove = side;
 	Bitboard allAttackers = EMPTY_BB;
+	Bitboard moreAttackers = EMPTY_BB;
 	gain[0] = materialValues[secondPiece];
 	if (board.getPieceType(secondPiece)==KING) {
 		return queenValue*10;
@@ -461,14 +462,13 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 		gain[idx]  = materialValues[firstPiece] - gain[idx-1];
 		attackers ^= fromPiece;
 		occupied  ^= fromPiece;
-		Bitboard moreAttackers = (bishopAndQueen | rookAndQueen) & (~allAttackers);
+		moreAttackers = bishopAndQueen & ~allAttackers;
 		if (moreAttackers) {
-			const Bitboard findMoreAttackers = moreAttackers &
-					(board.getBishopAttacks(move.to,occupied) |
-							board.getRookAttacks(move.to,occupied)) ;
-			if (findMoreAttackers) {
-				attackers |= findMoreAttackers;
-			}
+			attackers |= moreAttackers & board.getBishopAttacks(move.to,occupied);
+		}
+		moreAttackers = rookAndQueen & ~allAttackers;
+		if (moreAttackers) {
+			attackers |= moreAttackers & board.getRookAttacks(move.to,occupied);
 		}
 		sideToMove=board.flipSide(sideToMove);
 		fromPiece  = getLeastValuablePiece (board, attackers, sideToMove, firstPiece);
