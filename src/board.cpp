@@ -46,7 +46,7 @@ const void Board::printBoard() {
 const void Board::printBoard(const std::string pad) {
 	std::string ranks[8];
 	int j=0;
-	for(int x=0;x<ALL_SQUARE;x++) {
+	for(int x=0;x<ALL_SQUARE-1;x++) {
 		if (currentBoard.piece.array[currentBoard.square[x]]&squareToBitboard[x]) {
 			ranks[j]+= " ";
 			ranks[j]+= pieceChar[currentBoard.square[x]];
@@ -438,45 +438,49 @@ void Board::loadFromFEN(const std::string startFENMoves) {
 // get FEN from current board
 const std::string Board::getFEN() {
 	std::string fen="";
-	size_t count=0;
-	size_t rank=1;
-	for(size_t sq=A1;sq<=H8;sq++) {
-		PieceTypeByColor piece = getPiece(Square(sq));
-		if (piece!=EMPTY) {
-			if (count>0) {
-				fen+=StringUtil::toStr(count);
-			}
-			fen+=pieceChar[piece];
-			count=0;
-		} else {
-			count++;
-		}
-		if ((sq+1)%8==0) {
-			if (count>0) {
-				fen+=StringUtil::toStr(count);
+	int count=0;
+	int rankCounter=1;
+	int sqCount=0;
+	for (int rank=RANK_8;rank>=RANK_1;rank--) {
+		for (int file=FILE_A;file<=FILE_H;file++) {
+			PieceTypeByColor piece = getPiece(makeSquare(Rank(rank),File(file)));
+			if (piece!=EMPTY) {
+				if (count>0) {
+					fen+=StringUtil::toStr(count);
+				}
+				fen+=pieceChar[piece];
 				count=0;
+			} else {
+				count++;
 			}
-			if (rank<8) {
-				fen+="/";
+			if ((sqCount+1)%8==0) {
+				if (count>0) {
+					fen+=StringUtil::toStr(count);
+					count=0;
+				}
+				if (rankCounter<8) {
+					fen+="/";
+				}
+				rankCounter++;
 			}
-			rank++;
+			sqCount++;
 		}
 	}
 	fen+=this->getSideToMove()==WHITE?" w":" b";
 	std::string castleRights = "";
-	if (this->getCastleRights(BLACK)==BOTH_SIDE_CASTLE) {
-		castleRights+="kq";
-	} else if (this->getCastleRights(BLACK)==KING_SIDE_CASTLE) {
-		castleRights+="k";
-	} if (this->getCastleRights(BLACK)==QUEEN_SIDE_CASTLE) {
-		castleRights+="q";
-	}
 	if (this->getCastleRights(WHITE)==BOTH_SIDE_CASTLE) {
 		castleRights+="KQ";
 	} else if (this->getCastleRights(WHITE)==KING_SIDE_CASTLE) {
 		castleRights+="K";
 	} if (this->getCastleRights(WHITE)==QUEEN_SIDE_CASTLE) {
 		castleRights+="Q";
+	}
+	if (this->getCastleRights(BLACK)==BOTH_SIDE_CASTLE) {
+		castleRights+="kq";
+	} else if (this->getCastleRights(BLACK)==KING_SIDE_CASTLE) {
+		castleRights+="k";
+	} if (this->getCastleRights(BLACK)==QUEEN_SIDE_CASTLE) {
+		castleRights+="q";
 	}
 	castleRights = castleRights.length()==0?"-":castleRights;
 	fen+=" "+castleRights;
