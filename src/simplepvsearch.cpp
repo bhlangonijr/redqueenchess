@@ -432,7 +432,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 			currentScore < si.beta-razorMargin(si.depth)) {
 		const int newBeta = si.beta-razorMargin(si.depth);
 		SearchInfo newSi(si.allowNullMove,si.move,newBeta-1, newBeta, 0, si.ply,NONPV_NODE);
-		score = qSearch(board, si);
+		score = qSearch(board, newSi);
 		if (score < newBeta) {
 			return score;
 		}

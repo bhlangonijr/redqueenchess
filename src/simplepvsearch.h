@@ -48,8 +48,8 @@ const int maxMoveCount = 64;
 const int allowIIDAtPV = 6;
 const int allowIIDAtNormal = 8;
 // margin constants
-const int iidMargin=260;
-const int easyMargin=500;
+const int iidMargin=160;
+const int easyMargin=400;
 const int deltaMargin=950;
 const int nullMoveMargin=512;
 const int seMargin=35;
