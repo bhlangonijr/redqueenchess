@@ -29,9 +29,12 @@
 
 #include <time.h>
 #include <iostream>
+
+
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <limits.h>
 #include "searchagent.h"
 #include "evaluator.h"
 
@@ -64,6 +67,7 @@ const int lateMoveThreshold=2;
 const int scoreTable[11]={0,80000,60000,95000,90000,45000,40000,1000,-12000,50050,50000};
 const int64_t defaultNodesToGo=0xFFF;
 const int64_t fastNodesToGo=0xFF;
+const int maxWorkers = 32;
 const inline int futilityMargin(const int depth) {return depth * 150;}
 const inline int razorMargin(const int depth) {return 150 + depth * 175;}
 const inline int moveCountMargin(const int depth) {return 6 + depth * 4;}
@@ -122,16 +126,34 @@ public:
 		NodeType nodeType;
 	} SearchInfo;
 
-	SimplePVSearch() : depthToSearch(maxSearchDepth), updateUci(true), startTime(0), searchFixedDepth(false),
-			infinite(false), nodes(0), nodesToGo(defaultNodesToGo) {}
+	typedef struct Worker {
+		Worker() : threadId(0), score(0), hasBetaCutoff(false) {}
+		int threadId;
+		int score;
+		bool hasBetaCutoff;
+		inline void clear() {
+			threadId=0;
+			score=0;
+			hasBetaCutoff=false;
+		}
+	} Worker;
 
-	~SimplePVSearch() {}
+	SimplePVSearch() : depthToSearch(maxSearchDepth), updateUci(true), startTime(0), searchFixedDepth(false),
+			infinite(false), nodes(0), nodesToGo(defaultNodesToGo) {
+		initMutex();
+	}
+
+	~SimplePVSearch() {
+		destoryMutex();
+	}
+
 	void search(Board _board);
 	int pvSearch(Board& board,  SearchInfo& si);
 	int zwSearch(Board& board,  SearchInfo& si);
 	int qSearch(Board& board,  SearchInfo& si);
 	int64_t perft(Board& board, int depth, int ply);
 	int getScore();
+	void clearHistory();
 	static void initialize();
 
 	inline const int64_t getTickCount() {
@@ -202,12 +224,70 @@ public:
 		return nodes;
 	}
 
+	inline const int getThreadId() const {
+		return threadId;
+	}
+
+	inline void setThreadId(const int _threadId) {
+		threadId = _threadId;
+	}
+
+	inline const int getThreadGroup() const {
+		return threadGroup;
+	}
+
+	inline void setThreadGroup(const int _threadGroup) {
+		threadGroup = _threadGroup;
+	}
+
 	inline Evaluator& getEvaluator() {
 		return evaluator;
 	}
 
 	inline void setSearchAgent(SearchAgent* _agent) {
 		this->agent=_agent;
+	}
+
+	inline void resetWorkers() {
+		for(int i=0;i<maxWorkers;i++) {
+			worker[i].clear();
+		}
+		numberOfWorkers=0;
+	}
+
+	inline int getNumberOfWorkers() {
+		return numberOfWorkers;
+	}
+
+	inline void addWorker(const int threadId) {
+		int idx = numberOfWorkers++;
+		worker[idx].threadId=threadId;
+	}
+
+	inline void updateWorker(const int threadId, const int score, const bool hasBetaCutoff) {
+		if (numberOfWorkers>0) {
+			for(int i=0;i<numberOfWorkers;i++) {
+				if (threadId==worker[i].threadId) {
+					worker[i].score = score;
+					worker[i].hasBetaCutoff = hasBetaCutoff;
+					break;
+				}
+			}
+		}
+	}
+
+	inline void removeWorker(const int threadId) {
+		if (numberOfWorkers>0) {
+			for(int i=0;i<numberOfWorkers;i++) {
+				if (threadId==worker[i].threadId) {
+					if (i<numberOfWorkers-1) {
+						worker[i]=worker[numberOfWorkers-1];
+					}
+					numberOfWorkers--;
+					break;
+				}
+			}
+		}
 	}
 
 	inline void cleanUp() {
@@ -220,6 +300,7 @@ public:
 		clearHistory();
 		initRootMovesOrder();
 		rootMoves.clear();
+		resetWorkers();
 	}
 
 	inline void resetStats() {
@@ -228,6 +309,32 @@ public:
 		time=0;
 		timeToStop=0;
 		nodes = 0;
+	}
+
+	inline void initMutex() {
+		pthread_mutex_init(&mutex,NULL);
+		pthread_cond_init(&waitCond,NULL);
+	}
+
+	inline void destoryMutex() {
+		pthread_mutex_destroy(&mutex);
+		pthread_cond_destroy(&waitCond);
+	}
+
+	inline void wakeUp() {
+		pthread_cond_signal(&waitCond);
+	}
+
+	inline void lock() {
+		pthread_mutex_lock(&mutex);
+	}
+
+	inline void unlock() {
+		pthread_mutex_unlock(&mutex);
+	}
+
+	inline void wait() {
+		pthread_cond_wait(&waitCond, &mutex);
 	}
 
 private:
@@ -253,6 +360,12 @@ private:
 	int maxPlySearched;
 	int aspirationDelta;
 	int64_t nodesToGo;
+	int threadId;
+	int threadGroup;
+	Worker worker[maxWorkers];
+	int numberOfWorkers;
+	pthread_mutex_t mutex;
+	pthread_cond_t waitCond;
 	int idSearch(Board& board);
 	int rootSearch(Board& board, SearchInfo& si, PvLine& pv);
 	void uciOutput(PvLine& pv, const int score, const int totalTime,
@@ -276,7 +389,6 @@ private:
 	bool isPawnPromoting(const Board& board);
 	const bool stop();
 	const bool timeIsUp();
-	void clearHistory();
 	void updateHistory(Board& board, MoveIterator::Move& move, int depth);
 	void updateKillers(Board& board, MoveIterator::Move& move, int ply);
 	void initRootMovesOrder();
@@ -387,7 +499,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 				MoveIterator::Move& move=moves.selectBest();
 				if (move==ttMove || !board.isMoveLegal<false>(move) ||
 						((move==killer[ply][0] || move==killer[ply][1]) &&
-						!board.isCaptureMove(move))) {
+								!board.isCaptureMove(move))) {
 					continue;
 				}
 				return move;
@@ -614,7 +726,8 @@ inline void SimplePVSearch::updateHistory(Board& board, MoveIterator::Move& move
 	if (isCaptureOrPromotion(board,move) || move.none()) {
 		return;
 	}
-	history[board.getPiece(move.from)][move.to]+=depth*depth;
+	int& h = history[board.getPiece(move.from)][move.to];
+	h=std::min(h+depth*depth,INT_MAX);
 }
 
 // update killers

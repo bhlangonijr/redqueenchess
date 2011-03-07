@@ -41,7 +41,7 @@ const int defaultGameSize			= 30;
 const int timeTableSize				= 7;
 const int benchSize					= 12;
 const int benchDepth				= 14;
-const int maxThreads				= 16;
+const int maxThreads				= 16+1;
 const int timeTable [7][3] = {
 		{25, 900000, 180000},
 		{23, 180000, 60000},
@@ -89,22 +89,37 @@ public:
 	};
 
 	struct ThreadPool {
-		ThreadPool() : threadId(0), threadType(INACTIVE_THREAD), ss(0), status(THREAD_STATUS_AVAILABLE) {
+		ThreadPool() : threadId(0), threadType(INACTIVE_THREAD), ss(0), status(THREAD_STATUS_AVAILABLE),
+				threadGroup(0), masterThreadId(0), reduction(0) {
 			init();
 		}
-		ThreadPool(const int _threadId, const ThreadType _threadType, SimplePVSearch* _ss, ThreadStatus _status):
-			threadId(_threadId), threadType(_threadType), ss(_ss), status(_status) {
-			init();
-		}
-		void init() {
+		inline void init() {
 			pthread_mutex_init(&mutex,NULL);
 			pthread_cond_init(&waitCond,NULL);
 		}
+		inline void clear() {
+			isPV=false;
+			move=MoveIterator::Move();
+			alpha=0;
+			beta=0;
+			depth=0;
+			ply=0;
+			allowNullMove=false;
+			partialSearch=false;
+			threadGroup=0;
+			masterThreadId=0;
+			status=THREAD_STATUS_AVAILABLE;
+			if (board) {
+				delete board;
+			}
+		}
 		int threadId;
 		ThreadType threadType;
-		pthread_t executor;
 		SimplePVSearch* ss;
 		ThreadStatus status;
+		int threadGroup;
+		int masterThreadId;
+		pthread_t executor;
 		pthread_mutex_t mutex;
 		pthread_cond_t waitCond;
 		bool isPV;
@@ -116,6 +131,7 @@ public:
 		bool allowNullMove;
 		bool partialSearch;
 		MoveIterator::Move move;
+		int reduction;
 	};
 
 	static SearchAgent* getInstance();
@@ -126,6 +142,14 @@ public:
 
 	const bool shouldStop() const {
 		return requestStop;
+	}
+
+	const bool threadShouldStop(const int threadGroup) const {
+		return threadStop[threadGroup];
+	}
+
+	void requestThreadStop(const int threadGroup) {
+		threadStop[threadGroup]=true;
 	}
 
 	const bool getSearchInProgress() const {
@@ -251,7 +275,7 @@ public:
 	}
 
 	inline bool hashPut(const Key _key, int value, int evalValue, const int depth, const int ply,
-			const TranspositionTable::NodeFlag flag, MoveIterator::Move move) {
+			const TranspositionTable::NodeFlag flag, const MoveIterator::Move move) {
 		TranspositionTable::HashKey key=static_cast<TranspositionTable::HashKey>(_key>>32);
 		if (value >= maxScore-100) {
 			value -= ply;
@@ -285,12 +309,21 @@ public:
 					(allowNullMove || !(hashData.flag() & TranspositionTable::NODE_NULL)) &&
 					(hashData.depth()>=depth) &&
 					(((hashData.flag() & TranspositionTable::LOWER) && hashData.value() >= beta) ||
-					((hashData.flag() & TranspositionTable::UPPER) && hashData.value() <= alpha));
+							((hashData.flag() & TranspositionTable::UPPER) && hashData.value() <= alpha));
 		} else {
 			okToPrune = false;
 		}
 		return result;
 	}
+#if defined(_SC_NPROCESSORS_ONLN)
+inline int getNumProcs() {
+	return std::min(sysconf( _SC_NPROCESSORS_ONLN ), 16L);
+}
+#else
+inline int getNumProcs() {
+	return 1;
+}
+#endif
 
 	inline bool isHashFull() {
 		return transTable->isHashFull();
@@ -330,12 +363,18 @@ public:
 		return currentThread;
 	}
 
+	void resetThread(const int threadId) {
+		threadPool[threadId].clear();
+	}
+
 	int64_t addExtraTime(const int iteration, int* iterationPVChange);
 	void initializeThreadPool(const int size);
-	void shutdown();
 	void *startThreadSearch();
 	void *executeThread(const int threadId);
-	void initThreads();
+	const int spawnThread(Board& board, const int alpha, const int beta, const int depth,
+			const int ply, const bool isPV, const bool isNullMoveAllowed, const bool isPartialSearch,
+			const MoveIterator::Move move, const int threadGroup, const int masterThreadId, const int reduction);
+	void shutdown();
 
 protected:
 
@@ -363,11 +402,14 @@ private:
 	bool ponder;
 	TranspositionTable* transTable;
 	ThreadPool threadPool[maxThreads];
+	volatile bool threadStop[maxThreads];
 	int threadPoolSize;
 	SimplePVSearch* mainSearcher;
 	int currentThread;
 	const int64_t getTimeToSearch(const int64_t usedTime);
 	const int64_t getTimeToSearch();
+	const int requestThread();
+	void initThreads();
 };
 
 #endif /* SEARCHAGENT_H_ */

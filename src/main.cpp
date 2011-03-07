@@ -36,15 +36,6 @@
 #include "mersenne.h"
 #include "stringutil.h"
 #include "magicmoves.h"
-#  if defined(_SC_NPROCESSORS_ONLN)
-int getNumProcs() {
-	return std::min(sysconf( _SC_NPROCESSORS_ONLN ), 8L);
-}
-#  else
-int getNumProcs() {
-	return 1;
-}
-#  endif
 
 int main(int argc, char* argv[]) {
 	setbuf(stdin, NULL);
@@ -59,7 +50,7 @@ int main(int argc, char* argv[]) {
 	SearchAgent::getInstance();
 	SimplePVSearch::initialize();
 	Uci *uci = Uci::getInstance();
-	std::string paramNumProcs = StringUtil::toStr(getNumProcs());
+	std::string paramNumProcs = StringUtil::toStr(SearchAgent::getInstance()->getNumProcs());
 	// creating uci options
 	std::vector< UciOption *> options;
 	options.push_back(new UciOption("Hash",UciOption::SPIN,"128","128",1,4096,""));

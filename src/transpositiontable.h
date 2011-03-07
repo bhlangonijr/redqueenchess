@@ -146,7 +146,7 @@ public:
 	void setHashSize(const size_t _hashSize);
 	void clearHash();
 	bool hashPut(const HashKey key, const int value, const int evalValue, const NodeFlag flag,
-			MoveIterator::Move&move, const int depth);
+			MoveIterator::Move move, const int depth);
 	bool hashGet(const HashKey key, HashData& hashData);
 	void resizeHash();
 	bool isHashFull();
@@ -197,7 +197,7 @@ inline void TranspositionTable::clearHash() {
 }
 
 inline bool TranspositionTable::hashPut(const HashKey key, const int value, const int evalValue,
-		const NodeFlag flag, MoveIterator::Move&move, const int depth) {
+		const NodeFlag flag, MoveIterator::Move move, const int depth) {
 	HashData *entry = transTable[key & _mask].entry;
 	HashData *replace = entry;
 	for (int x=0;x<BUCKET_SIZE;x++,entry++) {

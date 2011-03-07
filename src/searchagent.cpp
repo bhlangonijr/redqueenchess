@@ -28,6 +28,8 @@
 extern "C" void *mainThreadRun(void *);
 extern "C" void *workerThreadRun(void *);
 SearchAgent* SearchAgent::searchAgent = 0;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t waitCond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t mutex2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t waitCond2 = PTHREAD_COND_INITIALIZER;
 
@@ -43,8 +45,7 @@ SearchAgent::SearchAgent() : searchMode(SEARCH_TIME), searchInProgress(false), r
 		blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), ponder(false), mainSearcher(0) {
 	// creates initial hashtables
 	createHash();
-	initializeThreadPool(getThreadNumber());
-	initThreads();
+	initializeThreadPool(getNumProcs());
 }
 
 // start a new game
@@ -91,6 +92,7 @@ void* SearchAgent::startThreadSearch() {
 		if (quit) {
 			break;
 		}
+		mainSearcher->setThreadId(MAIN_THREAD);
 		setRequestStop(false);
 		setSearchInProgress(true);
 		newSearchHash();
@@ -128,24 +130,120 @@ void* SearchAgent::executeThread(const int threadId) {
 		if (thread.status==THREAD_STATUS_WORK_ASSIGNED) {
 			thread.status = THREAD_STATUS_WORKING;
 		}
+		thread.ss->setSearchFixedDepth(mainSearcher->isSearchFixedDepth());
+		thread.ss->setTimeToSearch(mainSearcher->getTimeToSearch());
+		thread.ss->setInfinite(mainSearcher->isInfinite());
+		thread.ss->setDepth(mainSearcher->getDepth());
 		thread.ss->resetStats();
+		thread.ss->clearHistory();
+		thread.ss->resetWorkers();
+		thread.ss->setStartTime(thread.ss->getTickCount());
+		thread.ss->setTimeToStop();
 		pthread_mutex_unlock(&thread.mutex);
 		int score=0;
 		if (thread.status == THREAD_STATUS_WORKING) {
+			SimplePVSearch::SearchInfo si = SimplePVSearch::SearchInfo(thread.allowNullMove,thread.move,
+					thread.alpha,thread.beta,thread.depth,thread.ply,SimplePVSearch::NONPV_NODE);
 			if (thread.isPV) {
-				SimplePVSearch::SearchInfo si = SimplePVSearch::SearchInfo(thread.allowNullMove,thread.move,
-						thread.partialSearch,thread.alpha,thread.beta,thread.depth,thread.ply,SimplePVSearch::PV_NODE);
-				score = thread.ss->pvSearch(*thread.board, si);
+				SimplePVSearch::SearchInfo newSi(si.allowNullMove,si.move,-si.beta,
+						-si.alpha,thread.depth-thread.reduction,si.ply+1,si.nodeType);
+				score = -thread.ss->zwSearch(*thread.board, newSi);
+				if (score > si.alpha && score < si.beta) {
+					if (thread.reduction>0) {
+						bool research=true;
+						if (thread.reduction>2) {
+							SimplePVSearch::SearchInfo newSi(si.allowNullMove,si.move,-si.beta,-si.alpha,
+									thread.depth-1,si.ply+1,si.nodeType);
+							score = -thread.ss->zwSearch(*thread.board, newSi);
+							research=(score >= si.beta);
+						}
+						if (research) {
+							SimplePVSearch::SearchInfo newSi(si.allowNullMove,si.move,-si.beta,-si.alpha,
+									thread.depth,si.ply+1,si.nodeType);
+							score = -thread.ss->zwSearch(*thread.board, newSi);
+						}
+					}
+					if (score > si.alpha && score < si.beta) {
+						SimplePVSearch::SearchInfo newSi(si.allowNullMove,si.move,-si.beta,-si.alpha,
+								thread.depth,si.ply+1,SimplePVSearch::PV_NODE);
+						score = -thread.ss->pvSearch(*thread.board, newSi);
+					}
+				}
 			} else {
-				SimplePVSearch::SearchInfo si = SimplePVSearch::SearchInfo(thread.allowNullMove,thread.move,
-						thread.partialSearch,thread.alpha,thread.beta,thread.depth,thread.ply,SimplePVSearch::NONPV_NODE);
-				score = thread.ss->zwSearch(*thread.board, si);
+				SimplePVSearch::SearchInfo newSi(si.allowNullMove,thread.move,si.beta,1-si.beta,
+						thread.depth-thread.reduction, si.ply+1, si.nodeType);
+				score = -thread.ss->zwSearch(*thread.board, newSi);
+				if (score >= si.beta && thread.reduction>0) {
+					bool research=true;
+					if (thread.reduction>2) {
+						newSi.update(si.depth-1,si.nodeType);
+						score = -thread.ss->zwSearch(*thread.board, newSi);
+						research=(score >= si.beta);
+					}
+					if (research) {
+						newSi.update(si.depth,si.nodeType);
+						score = -thread.ss->zwSearch(*thread.board, newSi);
+					}
+				}
 			}
-			thread.status = THREAD_STATUS_AVAILABLE;
+			pthread_mutex_lock(&thread.mutex);
+			if (score>=si.beta) {
+				threadStop[thread.threadGroup]=true;
+			}
+			threadPool[thread.masterThreadId].ss->updateWorker(threadId,score,score>=si.beta);
+			threadPool[thread.masterThreadId].ss->wakeUp();
+			//TODO move to search class resetThread(threadId);
+			pthread_mutex_unlock(&thread.mutex);
 		}
+
 	}
 	pthread_exit(NULL);
 	return NULL;
+}
+
+// Spawn a new search
+const int SearchAgent::spawnThread(Board& board, const int alpha, const int beta, const int depth,
+		const int ply, const bool isPV, const bool isNullMoveAllowed, const bool isPartialSearch,
+		const MoveIterator::Move move, const int threadGroup, const int masterThreadId, const int reduction) {
+	const int threadId = requestThread();
+	pthread_mutex_lock(&mutex);
+	if (threadId) {
+		ThreadPool& thread = threadPool[threadId];
+		thread.alpha = alpha;
+		thread.beta = beta;
+		thread.depth = depth;
+		thread.ply = ply;
+		thread.isPV = isPV;
+		thread.allowNullMove = isNullMoveAllowed;
+		thread.partialSearch = isPartialSearch;
+		thread.move = move;
+		thread.threadGroup = threadGroup;
+		thread.board = new Board(board);
+		thread.ss->setThreadGroup(threadGroup);
+		thread.masterThreadId = masterThreadId;
+		thread.reduction=reduction;
+		threadStop[threadGroup]=false;
+		threadPool[thread.masterThreadId].ss->addWorker(threadId);
+		pthread_cond_signal(&threadPool[threadId].waitCond);
+	}
+	pthread_mutex_unlock(&mutex);
+	return threadId;
+};
+
+// retrieve a thread from the pool
+const int SearchAgent::requestThread() {
+	pthread_mutex_lock(&mutex);
+	int threadId=0;
+	for(int i=1;i<threadPoolSize;i++) {
+		ThreadPool& thread = threadPool[i];
+		if (thread.status==THREAD_STATUS_AVAILABLE) {
+			thread.status = THREAD_STATUS_WORK_ASSIGNED;
+			threadId=i;
+			break;
+		}
+	}
+	pthread_mutex_unlock(&mutex);
+	return threadId;
 }
 
 // start search
@@ -290,10 +388,12 @@ void SearchAgent::initializeThreadPool(const int size) {
 		}
 		threadPool[i].ss=new SimplePVSearch();
 		threadPool[i].ss->setSearchAgent(this);
+		threadPool[i].ss->setThreadId(i);
 
 	}
 	mainSearcher = threadPool[0].ss;
 	threadPoolSize=size;
+	initThreads();
 }
 
 void SearchAgent::shutdown() {

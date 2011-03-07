@@ -32,6 +32,7 @@ void SimplePVSearch::search(Board board) {
 	prepareToSearch();
 	startTime = getTickCount();
 	setTimeToStop();
+	//agent->spawnThread(board,-maxScore,maxScore,depthToSearch,0,true,true,false,MoveIterator::Move(),1,threadId,0);
 	searchScore = idSearch(board);
 	time = getTickCount()-startTime;
 }
@@ -39,7 +40,6 @@ void SimplePVSearch::search(Board board) {
 // get current score
 int SimplePVSearch::getScore() {
 	return searchScore;
-
 }
 
 // iterative deepening
@@ -133,8 +133,8 @@ int SimplePVSearch::idSearch(Board& board) {
 					break;
 				}
 			}
-			if (iterationPVChange[depth]>0 && iterationPVChange[depth-1]>0 &&
-					depth > 6 && depth < 40) {
+			if (depth > 6 && depth < 40 &&
+					iterationPVChange[depth]>0 && iterationPVChange[depth-1]>0) {
 				agent->addExtraTime(depth,iterationPVChange);
 			}
 			if (iterationTime[depth] > timeToSearch*70/100) {
@@ -346,7 +346,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 					}
 				}
 				if (score > si.alpha && score < si.beta) {
-					SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth,si.ply+1,NONPV_NODE);
+					SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth,si.ply+1,PV_NODE);
 					score = -pvSearch(board, newSi);
 				}
 			}
@@ -491,7 +491,6 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		}
 	}
 	MoveIterator moves = MoveIterator();
-	MoveIterator::Move bestMove;
 	int moveCounter=0;
 	int bestScore=-maxScore;
 	bool isSingularMove = false;
@@ -709,7 +708,8 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 }
 
 const bool SimplePVSearch::stop() {
-	return (timeIsUp() || agent->shouldStop());
+	return (timeIsUp() || agent->shouldStop() ||
+			agent->threadShouldStop(getThreadGroup()));
 
 }
 
