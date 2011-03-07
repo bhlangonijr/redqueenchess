@@ -78,6 +78,7 @@ public:
 
 		inline void clear() {
 			from=NONE;
+			promotionPiece=EMPTY;
 		}
 
 		Square from;

@@ -286,6 +286,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 	}
 	MoveIterator moves = MoveIterator();
 	MoveIterator::Move bestMove;
+	MoveIterator::Move move;
 	int moveCounter=0;
 	int bestScore=-maxScore;
 	bool isSingularMove = false;
@@ -302,7 +303,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 		}
 	}
 	while (true) {
-		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, si.ply, si.depth);
+		move = selectMove<false>(board, moves, hashMove, si.ply, si.depth);
 		if (move.none()) {
 			break;
 		}
@@ -356,10 +357,10 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 			return 0;
 		}
 		if( score >= si.beta) {
-			updateKillers(board,move,si.ply);
-			updateHistory(board,move,si.depth);
 			const TranspositionTable::NodeFlag flag = TranspositionTable::LOWER;
 			agent->hashPut(key,score,0,si.depth,si.ply,flag,move);
+			updateHistory(board,move,si.depth);
+			updateKillers(board,move,si.ply);
 			return score;
 		}
 		if (score>bestScore) {
@@ -491,6 +492,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		}
 	}
 	MoveIterator moves = MoveIterator();
+	MoveIterator::Move move;
 	int moveCounter=0;
 	int bestScore=-maxScore;
 	bool isSingularMove = false;
@@ -506,7 +508,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		}
 	}
 	while (true) {
-		MoveIterator::Move& move = selectMove<false>(board, moves, hashMove, si.ply, si.depth);
+		move = selectMove<false>(board, moves, hashMove, si.ply, si.depth);
 		if (move.none()) {
 			break;
 		}
@@ -574,11 +576,11 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		if (score > bestScore) {
 			bestScore=score;
 			if( score >= si.beta) {
-				updateKillers(board,move,si.ply);
-				updateHistory(board,move,si.depth);
 				const TranspositionTable::NodeFlag flag = currentScore!=-maxScore?
 						TranspositionTable::LOWER_EVAL:TranspositionTable::LOWER;
 				agent->hashPut(key,bestScore,currentScore,si.depth,si.ply,flag,move);
+				updateHistory(board,move,si.depth);
+				updateKillers(board,move,si.ply);
 				return bestScore;
 			}
 		}
@@ -647,9 +649,10 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 	int moveCounter=0;
 	MoveIterator moves = MoveIterator();
 	MoveIterator::Move bestMove;
+	MoveIterator::Move move;
 	const PieceColor sideToMove = board.getSideToMove();
 	while (true)  {
-		MoveIterator::Move& move = selectMove<true>(board, moves, hashMove, si.ply, si.depth);
+		move = selectMove<true>(board, moves, hashMove, si.ply, si.depth);
 		if (move.none()) {
 			break;
 		}
@@ -764,9 +767,10 @@ int64_t SimplePVSearch::perft(Board& board, int depth, int ply) {
 	}
 	int64_t nodes=0;
 	MoveIterator moves = MoveIterator();
+	MoveIterator::Move move;
 	board.setInCheck(board.getSideToMove());
 	while (true)  {
-		MoveIterator::Move& move = selectMove<false>(board, moves, emptyMove, ply, depth);
+		move = selectMove<false>(board, moves, emptyMove, ply, depth);
 		if (moves.end()) {
 			break;
 		}

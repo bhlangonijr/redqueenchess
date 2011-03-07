@@ -275,7 +275,7 @@ public:
 	}
 
 	inline bool hashPut(const Key _key, int value, int evalValue, const int depth, const int ply,
-			const TranspositionTable::NodeFlag flag, const MoveIterator::Move move) {
+			const TranspositionTable::NodeFlag flag, MoveIterator::Move move) {
 		TranspositionTable::HashKey key=static_cast<TranspositionTable::HashKey>(_key>>32);
 		if (value >= maxScore-100) {
 			value -= ply;
