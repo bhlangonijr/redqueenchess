@@ -59,6 +59,8 @@ int main(int argc, char* argv[]) {
 	options.push_back(new UciOption("Clear Hash",UciOption::BUTTON,"",""));
 	// set options into uci handler
 	uci->setUciOption(options);
+	SearchAgent::getInstance()->setThreadNumber(SearchAgent::getInstance()->getNumProcs());
+	SearchAgent::getInstance()->initializeThreadPool(SearchAgent::getInstance()->getThreadNumber());
 	std::cout << Constant::ENGINE_COPYRIGHT << std::endl;
 	if (argc<=1) {
 		//uci loop

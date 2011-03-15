@@ -210,9 +210,9 @@ inline bool TranspositionTable::hashPut(const HashKey key, const int value, cons
 		} else if (x==0) {
 			continue;
 		}
-		const bool b1 = entry->_generation==generation;
-		const bool b2 = replace->_generation==generation;
-		const bool b3 = replace->_depth>entry->_depth;
+		const int b1 = entry->_generation==generation;
+		const int b2 = replace->_generation==generation;
+		const int b3 = replace->_depth>entry->_depth;
 		if ((!b1 && b2) || (!(b1 ^ b2) && b3)) {
 			replace=entry;
 		}

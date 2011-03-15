@@ -34,6 +34,7 @@
 #include "simplepvsearch.h"
 #include "transpositiontable.h"
 #include "uci.h"
+
 const std::string mainHashName 		= "DefaultHashTable";
 const size_t defaultDepth			= 5;
 const size_t defaultHashSize		= 128;
@@ -42,6 +43,7 @@ const int timeTableSize				= 7;
 const int benchSize					= 12;
 const int benchDepth				= 14;
 const int maxThreads				= 16+1;
+const int minSplitDepth				= 6;
 const int timeTable [7][3] = {
 		{25, 900000, 180000},
 		{23, 180000, 60000},
@@ -50,6 +52,7 @@ const int timeTable [7][3] = {
 		{17, 5000, 1000},
 		{15, 1000, 0}
 };
+const bool singleProcessor=true;
 
 const std::string benchPositions[benchSize] = {
 		"8/7p/5k2/5p2/p1p2P2/Pr1pPK2/1P1R3P/8 b - - 0 1",
@@ -85,12 +88,13 @@ public:
 		THREAD_STATUS_AVAILABLE,
 		THREAD_STATUS_WORK_ASSIGNED,
 		THREAD_STATUS_WORKING,
-		THREAD_STATUS_IDLE
+		THREAD_STATUS_WAITING
 	};
 
 	struct ThreadPool {
 		ThreadPool() : threadId(0), threadType(INACTIVE_THREAD), ss(0), status(THREAD_STATUS_AVAILABLE),
-				threadGroup(0), masterThreadId(0), reduction(0) {
+				threadGroup(0), masterThreadId(0), board(0), reduction(0),
+				bestMove(0), bestScore(0), currentAlpha(0), busyThreads(0) {
 			init();
 		}
 		inline void init() {
@@ -99,7 +103,7 @@ public:
 		}
 		inline void clear() {
 			isPV=false;
-			move=MoveIterator::Move();
+			move.clear();
 			alpha=0;
 			beta=0;
 			depth=0;
@@ -111,7 +115,13 @@ public:
 			status=THREAD_STATUS_AVAILABLE;
 			if (board) {
 				delete board;
+				board=0;
 			}
+			reduction=0;
+			bestMove=0;
+			bestScore=0;
+			currentAlpha=0;
+			busyThreads=0;
 		}
 		int threadId;
 		ThreadType threadType;
@@ -132,6 +142,10 @@ public:
 		bool partialSearch;
 		MoveIterator::Move move;
 		int reduction;
+		MoveIterator::Move* bestMove;
+		int* bestScore;
+		int* currentAlpha;
+		int* busyThreads;
 	};
 
 	static SearchAgent* getInstance();
@@ -150,6 +164,10 @@ public:
 
 	void requestThreadStop(const int threadGroup) {
 		threadStop[threadGroup]=true;
+	}
+
+	void resetThreadStop(const int threadGroup) {
+		threadStop[threadGroup]=false;
 	}
 
 	const bool getSearchInProgress() const {
@@ -316,13 +334,13 @@ public:
 		return result;
 	}
 #if defined(_SC_NPROCESSORS_ONLN)
-inline int getNumProcs() {
-	return std::min(sysconf( _SC_NPROCESSORS_ONLN ), 16L);
-}
+	inline int getNumProcs() {
+		return std::min(sysconf( _SC_NPROCESSORS_ONLN ), 16L);
+	}
 #else
-inline int getNumProcs() {
-	return 1;
-}
+	inline int getNumProcs() {
+		return 1;
+	}
 #endif
 
 	inline bool isHashFull() {
@@ -363,17 +381,28 @@ inline int getNumProcs() {
 		return currentThread;
 	}
 
+	const int getAndIncCurrentThread() {
+		pthread_mutex_lock(&mutex);
+		int t = ++currentThread;
+		pthread_mutex_unlock(&mutex);
+		return t;
+	}
+
 	void resetThread(const int threadId) {
 		threadPool[threadId].clear();
 	}
 
+	const inline int getFreeThreads() const {
+		return freeThreads;
+	}
+
 	int64_t addExtraTime(const int iteration, int* iterationPVChange);
 	void initializeThreadPool(const int size);
+	void prepareThreadPool();
 	void *startThreadSearch();
 	void *executeThread(const int threadId);
-	const int spawnThread(Board& board, const int alpha, const int beta, const int depth,
-			const int ply, const bool isPV, const bool isNullMoveAllowed, const bool isPartialSearch,
-			const MoveIterator::Move move, const int threadGroup, const int masterThreadId, const int reduction);
+	const int spawnThread(Board& board, void* data, const int threadGroup, const int masterThreadId, const int reduction,
+			MoveIterator::Move* move, int* bestScore, int* currentAlpha, int* busyThreads);
 	void shutdown();
 
 protected:
@@ -406,9 +435,13 @@ private:
 	int threadPoolSize;
 	SimplePVSearch* mainSearcher;
 	int currentThread;
+	int freeThreads;
+	static pthread_mutex_t mutex;
+	static pthread_cond_t waitCond;
+	static pthread_mutex_t mutex2;
+	static pthread_cond_t waitCond2;
 	const int64_t getTimeToSearch(const int64_t usedTime);
 	const int64_t getTimeToSearch();
-	const int requestThread();
 	void initThreads();
 };
 

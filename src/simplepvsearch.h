@@ -35,7 +35,6 @@
 #include <limits.h>
 #include "searchagent.h"
 #include "evaluator.h"
-
 // game constants
 const int maxScoreRepetition = 25;
 const int mateRangeScore = 300;
@@ -65,10 +64,49 @@ const int lateMoveThreshold=2;
 const int scoreTable[11]={0,80000,60000,95000,90000,45000,40000,1000,-12000,50050,50000};
 const int64_t defaultNodesToGo=0xFFF;
 const int64_t fastNodesToGo=0xFF;
-const int maxWorkers = 32;
 const inline int futilityMargin(const int depth) {return depth * 150;}
 const inline int razorMargin(const int depth) {return 150 + depth * 175;}
 const inline int moveCountMargin(const int depth) {return 6 + depth * 4;}
+namespace SearchTypes {
+enum NodeType {
+	PV_NODE, NONPV_NODE, NODE_NONE
+};
+
+typedef struct SearchInfo {
+	SearchInfo(): allowNullMove(false), move(MoveIterator::Move()), partialSearch(false),
+			alpha(0), beta(0), depth(0), ply(0), nodeType(NODE_NONE) {}
+	SearchInfo(const bool _allowNullMove, const MoveIterator::Move _move, const int _alpha, const int _beta,
+			const int _depth, const int _ply, const NodeType _nodeType): allowNullMove(_allowNullMove), move(_move), partialSearch(false),
+			alpha(_alpha), beta(_beta), depth(_depth), ply(_ply), nodeType(_nodeType) {}
+	SearchInfo(const bool _allowNullMove, const MoveIterator::Move _move, const bool _partialSearch,
+			const int _alpha, const int _beta, const int _depth, const int _ply, const NodeType _nodeType):
+				allowNullMove(_allowNullMove), move(_move), partialSearch(_partialSearch),
+				alpha(_alpha), beta(_beta), depth(_depth), ply(_ply), nodeType(_nodeType) {}
+
+	inline void update(const int _depth, const NodeType _nodeType) {
+		depth=_depth;
+		nodeType=_nodeType;
+	}
+	inline void update(const int _depth, const NodeType _nodeType, const int _alpha, const int _beta,
+			MoveIterator::Move& _move) {
+		depth=_depth;
+		nodeType=_nodeType;
+		alpha=_alpha;
+		beta=_beta;
+		move=_move;
+	}
+	bool allowNullMove;
+	MoveIterator::Move move;
+	bool partialSearch;
+	int alpha;
+	int beta;
+	int depth;
+	int ply;
+	NodeType nodeType;
+} SearchInfo;
+}
+
+using namespace SearchTypes;
 
 class SearchAgent;
 
@@ -77,9 +115,7 @@ class MoveIterator;
 class SimplePVSearch {
 
 public:
-	enum NodeType {
-		PV_NODE, NONPV_NODE, NODE_NONE
-	};
+
 	typedef struct PvLine {
 		int index;
 		MoveIterator::Move moves[maxSearchPly+1];
@@ -88,53 +124,6 @@ public:
 			memcpy(moves, line.moves, (maxSearchPly+1) * sizeof(MoveIterator::Move));
 		}
 	} PvLine;
-	typedef struct SearchInfo {
-		SearchInfo(): allowNullMove(false), move(MoveIterator::Move()), partialSearch(false),
-				alpha(0), beta(0), depth(0), ply(0), nodeType(NODE_NONE) {}
-		SearchInfo(const bool _allowNullMove, const MoveIterator::Move _move, const int _alpha, const int _beta,
-				const int _depth, const int _ply, const NodeType _nodeType): allowNullMove(_allowNullMove), move(_move), partialSearch(false),
-				alpha(_alpha), beta(_beta), depth(_depth), ply(_ply), nodeType(_nodeType) {}
-		SearchInfo(const bool _allowNullMove, const MoveIterator::Move _move, const bool _partialSearch,
-				const int _alpha, const int _beta, const int _depth, const int _ply, const NodeType _nodeType):
-					allowNullMove(_allowNullMove), move(_move), partialSearch(_partialSearch),
-					alpha(_alpha), beta(_beta), depth(_depth), ply(_ply), nodeType(_nodeType) {}
-
-		inline void update(const int _depth, const NodeType _nodeType) {
-			depth=_depth;
-			nodeType=_nodeType;
-		}
-		inline void update(const int _depth, const NodeType _nodeType, const int _beta) {
-			depth=_depth;
-			nodeType=_nodeType;
-			beta=_beta;
-		}
-		inline void update(const int _depth, const NodeType _nodeType, const int _alpha, const int _beta) {
-			depth=_depth;
-			nodeType=_nodeType;
-			alpha=_alpha;
-			beta=_beta;
-		}
-		bool allowNullMove;
-		MoveIterator::Move move;
-		bool partialSearch;
-		int alpha;
-		int beta;
-		int depth;
-		int ply;
-		NodeType nodeType;
-	} SearchInfo;
-
-	typedef struct Worker {
-		Worker() : threadId(0), score(0), hasBetaCutoff(false) {}
-		int threadId;
-		int score;
-		bool hasBetaCutoff;
-		inline void clear() {
-			threadId=0;
-			score=0;
-			hasBetaCutoff=false;
-		}
-	} Worker;
 
 	SimplePVSearch() : depthToSearch(maxSearchDepth), updateUci(true), startTime(0), searchFixedDepth(false),
 			infinite(false), nodes(0), nodesToGo(defaultNodesToGo) {
@@ -246,48 +235,6 @@ public:
 		this->agent=_agent;
 	}
 
-	inline void resetWorkers() {
-		for(int i=0;i<maxWorkers;i++) {
-			worker[i].clear();
-		}
-		numberOfWorkers=0;
-	}
-
-	inline int getNumberOfWorkers() {
-		return numberOfWorkers;
-	}
-
-	inline void addWorker(const int threadId) {
-		int idx = numberOfWorkers++;
-		worker[idx].threadId=threadId;
-	}
-
-	inline void updateWorker(const int threadId, const int score, const bool hasBetaCutoff) {
-		if (numberOfWorkers>0) {
-			for(int i=0;i<numberOfWorkers;i++) {
-				if (threadId==worker[i].threadId) {
-					worker[i].score = score;
-					worker[i].hasBetaCutoff = hasBetaCutoff;
-					break;
-				}
-			}
-		}
-	}
-
-	inline void removeWorker(const int threadId) {
-		if (numberOfWorkers>0) {
-			for(int i=0;i<numberOfWorkers;i++) {
-				if (threadId==worker[i].threadId) {
-					if (i<numberOfWorkers-1) {
-						worker[i]=worker[numberOfWorkers-1];
-					}
-					numberOfWorkers--;
-					break;
-				}
-			}
-		}
-	}
-
 	inline void cleanUp() {
 		evaluator.cleanPawnInfo();
 		clearHistory();
@@ -298,7 +245,6 @@ public:
 		clearHistory();
 		initRootMovesOrder();
 		rootMoves.clear();
-		resetWorkers();
 	}
 
 	inline void resetStats() {
@@ -331,7 +277,7 @@ public:
 		pthread_mutex_unlock(&mutex);
 	}
 
-	inline void wait() {
+	inline void waitThread() {
 		pthread_cond_wait(&waitCond, &mutex);
 	}
 
@@ -360,7 +306,6 @@ private:
 	int64_t nodesToGo;
 	int threadId;
 	int threadGroup;
-	Worker worker[maxWorkers];
 	int numberOfWorkers;
 	pthread_mutex_t mutex;
 	pthread_cond_t waitCond;

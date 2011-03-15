@@ -9,10 +9,7 @@ Ben-Hur Langoni Junior
 	+ King shelter & Pawn storm knowledge
 	+ Improve bishop mobility	
 	+ Improve concept of mobility	
-3) Create pawn hashtable
-4) Implement SMP search
-5) Try prune negative see moves even at depth = 0
-6) Try "lazy" see at selectMove
+3) Implement SMP search
 
 
 
