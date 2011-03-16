@@ -388,6 +388,10 @@ public:
 		return t;
 	}
 
+	void setThreadStatus(const int threadId, const ThreadStatus _status) {
+		threadPool[threadId].status = _status;
+	}
+
 	void resetThread(const int threadId) {
 		threadPool[threadId].clear();
 	}
@@ -398,6 +402,7 @@ public:
 
 	int64_t addExtraTime(const int iteration, int* iterationPVChange);
 	void initializeThreadPool(const int size);
+	void awakeSleepingThreads();
 	void prepareThreadPool();
 	void *startThreadSearch();
 	void *executeThread(const int threadId);

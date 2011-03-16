@@ -200,6 +200,7 @@ void* SearchAgent::executeThread(const int threadId) {
 			}
 			freeThreads++;
 			master.ss->wakeUp();
+			awakeSleepingThreads();
 			std::cout << "Thread free " << freeThreads << " - score " << score << " - time spent: " << (thread.ss->getTickCount()-startTime) << std::endl;
 			pthread_mutex_unlock(&mutex);
 		}
@@ -392,7 +393,7 @@ void *workerThreadRun(void *_object) {
 }
 
 void SearchAgent::initializeThreadPool(const int size) {
-	const int newSize=size*2;
+	const int newSize=singleProcessor?1:size*2;
 	for (int i=0;i<newSize;i++) {
 		threadPool[i].threadId=i;
 		threadPool[i].threadType=ThreadType(i);
@@ -410,6 +411,15 @@ void SearchAgent::initializeThreadPool(const int size) {
 	freeThreads=newSize;
 	currentThread=MAIN_THREAD;
 	initThreads();
+}
+
+void SearchAgent::awakeSleepingThreads() {
+	for(int i=0;i<threadPoolSize;i++) {
+		ThreadPool& thread = threadPool[i];
+		if (thread.status==THREAD_STATUS_WAITING) {
+			thread.ss->wakeUp();
+		}
+	}
 }
 
 void SearchAgent::prepareThreadPool() {

@@ -313,7 +313,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 			}
 		}
 	}
-	while (bestScore<si.beta) {
+	while (true) {
 		move = selectMove<false>(board, moves, hashMove, si.ply, si.depth);
 		if (move.none()) {
 			break;
@@ -334,93 +334,102 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 			extension++;
 		}
 		int newDepth=si.depth-1+extension;
-		if (moveCounter==1) {
-			SearchInfo newSi(true,move, -si.beta, -si.alpha, newDepth, si.ply+1, PV_NODE);
-			score = -pvSearch(board, newSi);
-		} else {
-			int reduction=0;
-			if (si.depth>lmrDepthThreshold && !extension && !givingCheck &&
-					!isPawnPush(board,move.to) && move.type == MoveIterator::NON_CAPTURE) {
-				reduction=reductionTablePV[si.depth][moveCounter];
-			}
-			if (agent->getFreeThreads()>0 && bestScore<si.beta) {
-				smpSi.update(newDepth,NONPV_NODE,si.alpha,si.beta,move);
-				childThreadId = agent->spawnThread(board,&smpSi,threadId,threadId,reduction,
-						&move,&bestScore,&si.alpha,&busyThreads);
-				if (childThreadId!=0) {
-					if (!inParallel) {
-						inParallel=true;
-					}
-				}
-			}
-			if (inParallel) {
-				if (busyThreads>0&&childThreadId==0) {
-					lock();
-					waitThread();
-					unlock();
-				}
+		while (true) {
+			if (moveCounter==1) {
+				SearchInfo newSi(true,move, -si.beta, -si.alpha, newDepth, si.ply+1, PV_NODE);
+				score = -pvSearch(board, newSi);
 			} else {
-				SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth-reduction,si.ply+1,NONPV_NODE);
-				score = -zwSearch(board, newSi);
-				if (score > si.alpha && score < si.beta) {
-					if (reduction>0) {
-						bool research=true;
-						if (reduction>2) {
-							SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth-1,si.ply+1,NONPV_NODE);
-							score = -zwSearch(board, newSi);
-							research=(score >= si.beta);
-						}
-						if (research) {
-							SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth,si.ply+1,NONPV_NODE);
-							score = -zwSearch(board, newSi);
+				int reduction=0;
+				if (si.depth>lmrDepthThreshold && !extension && !givingCheck &&
+						!isPawnPush(board,move.to) && move.type == MoveIterator::NON_CAPTURE) {
+					reduction=reductionTablePV[si.depth][moveCounter];
+				}
+				if (agent->getFreeThreads()>0) {
+					smpSi.update(newDepth,NONPV_NODE,si.alpha,si.beta,move);
+					childThreadId = agent->spawnThread(board,&smpSi,threadId,threadId,reduction,
+							&move,&bestScore,&si.alpha,&busyThreads);
+					if (childThreadId!=0) {
+						if (!inParallel) {
+							inParallel=true;
 						}
 					}
+				}
+				if (inParallel) {
+					if (childThreadId==0) {
+						lock();
+						std::cout << "---->waiting " << move.toString() << " - " << si.depth << std::endl;
+						agent->setThreadStatus(getThreadId(), SearchAgent::THREAD_STATUS_WAITING);
+						waitThread();
+						agent->setThreadStatus(getThreadId(), SearchAgent::THREAD_STATUS_WORKING);
+						std::cout << "<----exiting " << move.toString() << " - " << si.depth << std::endl;
+						unlock();
+						continue;
+					}
+				} else {
+					SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth-reduction,si.ply+1,NONPV_NODE);
+					score = -zwSearch(board, newSi);
 					if (score > si.alpha && score < si.beta) {
-						SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth,si.ply+1,PV_NODE);
-						score = -pvSearch(board, newSi);
+						if (reduction>0) {
+							bool research=true;
+							if (reduction>2) {
+								SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth-1,si.ply+1,NONPV_NODE);
+								score = -zwSearch(board, newSi);
+								research=(score >= si.beta);
+							}
+							if (research) {
+								SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth,si.ply+1,NONPV_NODE);
+								score = -zwSearch(board, newSi);
+							}
+						}
+						if (score > si.alpha && score < si.beta) {
+							SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth,si.ply+1,PV_NODE);
+							score = -pvSearch(board, newSi);
+						}
 					}
 				}
 			}
+			break;
 		}
 		board.undoMove(backup);
 		if (stop()) {
 			return 0;
 		}
-		while (busyThreads>0) {
-			if (inParallel) {
-				if (busyThreads>0) {
-					lock();
-					waitThread();
-					unlock();
-				} else {
-					break;
-				}
-			}
-		}
-		if (childThreadId==0) {
+		if (!inParallel) {
 			if (score>=si.beta) {
 				bestScore=score;
 				bestMove=move;
-			} else if (score>bestScore) {
+				TranspositionTable::NodeFlag flag = currentScore!=-maxScore?
+						TranspositionTable::LOWER_EVAL:TranspositionTable::LOWER ;
+				updateHistory(board,bestMove,si.depth);
+				updateKillers(board,bestMove,si.ply);
+				agent->hashPut(key,bestScore,currentScore,si.depth,si.ply,flag,bestMove);
+				return bestScore;
+			}
+			if (score>bestScore) {
 				bestScore=score;
-				if( score > si.alpha ) {
+				if(score>si.alpha ) {
 					si.alpha = score;
 					bestMove=move;
 				}
 			}
 		}
 	}
+	if (inParallel && busyThreads>0) {
+		std::cout << "+++Entering in busy threads... best Score: " << bestScore <<  std::endl;
+		while (busyThreads>0) {
+			lock();
+			agent->setThreadStatus(getThreadId(), SearchAgent::THREAD_STATUS_WAITING);
+			waitThread();
+			agent->setThreadStatus(getThreadId(), SearchAgent::THREAD_STATUS_WORKING);
+			unlock();
+		}
+		std::cout << "---Exiting busy threads... best Score: " << bestScore << std::endl;
+	}
 	if (!moveCounter) {
 		return si.partialSearch?oldAlpha:isKingAttacked?-maxScore+si.ply:drawScore;
 	}
 	TranspositionTable::NodeFlag flag;
-	if(bestScore>=si.beta) {
-		flag = currentScore!=-maxScore?
-				TranspositionTable::LOWER_EVAL:TranspositionTable::LOWER ;
-		updateHistory(board,bestMove,si.depth);
-		updateKillers(board,bestMove,si.ply);
-		return score;
-	} else if (bestScore>oldAlpha) {
+	if (bestScore>oldAlpha) {
 		flag = currentScore!=-maxScore?
 				TranspositionTable::EXACT_EVAL:TranspositionTable::EXACT;
 	} else {
@@ -542,6 +551,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 	MoveIterator::Move move;
 	MoveIterator::Move bestMove=emptyMove;
 	int moveCounter=0;
+	int searchedMoves=0;
 	int bestScore=-maxScore;
 	bool isSingularMove = false;
 	if (si.depth > seNonPVDepth && hashOk && !hashMove.none() && !si.partialSearch &&
@@ -555,7 +565,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 			}
 		}
 	}
-	while (bestScore<si.beta) {
+	while (true) {
 		move = selectMove<false>(board, moves, hashMove, si.ply, si.depth);
 		if (move.none()) {
 			break;
@@ -595,6 +605,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		//reductions
 		int reduction=0;
 		int extension=0;
+		searchedMoves++;
 		if (isKingAttacked || pawnOn7thExtension ||
 				(isSingularMove && move==hashMove)) {
 			extension++;
@@ -621,26 +632,33 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		if (stop()) {
 			return 0;
 		}
-		if (score > bestScore) {
+		if (score>=si.beta) {
+			bestScore=score;
+			bestMove=move;
+			TranspositionTable::NodeFlag flag = currentScore!=-maxScore?
+					TranspositionTable::LOWER_EVAL:TranspositionTable::LOWER;
+			updateHistory(board,bestMove,si.depth);
+			updateKillers(board,bestMove,si.ply);
+			agent->hashPut(key,bestScore,currentScore,si.depth,si.ply,flag,bestMove);
+			return bestScore;
+		}
+		if (score>bestScore) {
 			bestScore=score;
 			bestMove=move;
 		}
 	}
-	if (!moveCounter) {
+	if (moveCounter) {
+		if (!searchedMoves) {
+			si.update(0,NONPV_NODE,si.beta-1, si.beta, si.move);
+			return qSearch(board, si);
+		}
+	} else {
 		return si.partialSearch?si.beta-1:isKingAttacked?-maxScore+si.ply:drawScore;
 	}
-	TranspositionTable::NodeFlag flag;
-	if( score >= si.beta) {
-		flag = currentScore!=-maxScore?
-				TranspositionTable::LOWER_EVAL:TranspositionTable::LOWER;
-		updateHistory(board,bestMove,si.depth);
-		updateKillers(board,bestMove,si.ply);
-	} else {
-		flag = currentScore!=-maxScore?
-				TranspositionTable::UPPER_EVAL:TranspositionTable::UPPER;
-		bestMove=emptyMove;
-	}
-	agent->hashPut(key,bestScore,currentScore,si.depth,si.ply,flag,bestMove);
+	TranspositionTable::NodeFlag flag = currentScore!=-maxScore?
+			TranspositionTable::UPPER_EVAL:TranspositionTable::UPPER;
+	bestMove=emptyMove;
+	agent->hashPut(key,bestScore,currentScore,si.depth,si.ply,flag,emptyMove);
 	return bestScore;
 }
 
