@@ -26,7 +26,6 @@
 #include "simplepvsearch.h"
 static int reductionTablePV[maxSearchDepth+1][maxMoveCount];
 static int reductionTableNonPV[maxSearchDepth+1][maxMoveCount];
-
 // root search
 void SimplePVSearch::search(Board board) {
 	prepareToSearch();
@@ -238,7 +237,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 	rootMoves.sortOrderingBy(nodesPerMove);
 	rootMoves.first();
 	if (!moveCounter) {
-		return isKingAttacked ? -maxScore+si.ply : drawScore;
+		return isKingAttacked?-maxScore+si.ply:drawScore;
 	}
 	return alpha;
 }
@@ -298,9 +297,6 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 	int moveCounter=0;
 	int bestScore=-maxScore;
 	bool isSingularMove = false;
-	bool inParallel=false;
-	int childThreadId = 0;
-	int busyThreads = 0;
 	// se
 	if (si.depth > sePVDepth && hashOk && !hashMove.none() && !si.partialSearch &&
 			hashData.depth() >= si.depth-3 && (hashData.flag() & TranspositionTable::LOWER)) {
@@ -313,7 +309,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 			}
 		}
 	}
-	while (true) {
+	while (bestScore<si.beta) {
 		move = selectMove<false>(board, moves, hashMove, si.ply, si.depth);
 		if (move.none()) {
 			break;
@@ -325,7 +321,6 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 		board.doMove(move,backup);
 		moveCounter++;
 		nodes++;
-		childThreadId = 0;
 		const bool givingCheck = board.setInCheck(board.getSideToMove());
 		const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
 		int extension=0;
@@ -334,96 +329,54 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 			extension++;
 		}
 		int newDepth=si.depth-1+extension;
-		while (true) {
-			if (moveCounter==1) {
-				SearchInfo newSi(true,move, -si.beta, -si.alpha, newDepth, si.ply+1, PV_NODE);
-				score = -pvSearch(board, newSi);
-			} else {
-				int reduction=0;
-				if (si.depth>lmrDepthThreshold && !extension && !givingCheck &&
-						!isPawnPush(board,move.to) && move.type == MoveIterator::NON_CAPTURE) {
-					reduction=reductionTablePV[si.depth][moveCounter];
-				}
-				if (agent->getFreeThreads()>0) {
-					smpSi.update(newDepth,NONPV_NODE,si.alpha,si.beta,move);
-					childThreadId = agent->spawnThread(board,&smpSi,threadId,threadId,reduction,
-							&move,&bestScore,&si.alpha,&busyThreads);
-					if (childThreadId!=0) {
-						if (!inParallel) {
-							inParallel=true;
-						}
+		if (moveCounter==1) {
+			SearchInfo newSi(true,move, -si.beta, -si.alpha, newDepth, si.ply+1, PV_NODE);
+			score = -pvSearch(board, newSi);
+		} else {
+			int reduction=0;
+			if (si.depth>lmrDepthThreshold && !extension && !givingCheck &&
+					!isPawnPush(board,move.to) && move.type == MoveIterator::NON_CAPTURE) {
+				reduction=getReduction(true,si.depth,moveCounter);
+			}
+			SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth-reduction,si.ply+1,NONPV_NODE);
+			score = -zwSearch(board, newSi);
+			if (score > si.alpha && score < si.beta) {
+				if (reduction>0) {
+					bool research=true;
+					if (reduction>2) {
+						SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth-1,si.ply+1,NONPV_NODE);
+						score = -zwSearch(board, newSi);
+						research=(score >= si.beta);
+					}
+					if (research) {
+						SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth,si.ply+1,NONPV_NODE);
+						score = -zwSearch(board, newSi);
 					}
 				}
-				if (inParallel) {
-					if (childThreadId==0) {
-						lock();
-						std::cout << "---->waiting " << move.toString() << " - " << si.depth << std::endl;
-						agent->setThreadStatus(getThreadId(), SearchAgent::THREAD_STATUS_WAITING);
-						waitThread();
-						agent->setThreadStatus(getThreadId(), SearchAgent::THREAD_STATUS_WORKING);
-						std::cout << "<----exiting " << move.toString() << " - " << si.depth << std::endl;
-						unlock();
-						continue;
-					}
-				} else {
-					SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth-reduction,si.ply+1,NONPV_NODE);
-					score = -zwSearch(board, newSi);
-					if (score > si.alpha && score < si.beta) {
-						if (reduction>0) {
-							bool research=true;
-							if (reduction>2) {
-								SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth-1,si.ply+1,NONPV_NODE);
-								score = -zwSearch(board, newSi);
-								research=(score >= si.beta);
-							}
-							if (research) {
-								SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth,si.ply+1,NONPV_NODE);
-								score = -zwSearch(board, newSi);
-							}
-						}
-						if (score > si.alpha && score < si.beta) {
-							SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth,si.ply+1,PV_NODE);
-							score = -pvSearch(board, newSi);
-						}
-					}
+				if (score > si.alpha && score < si.beta) {
+					SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth,si.ply+1,PV_NODE);
+					score = -pvSearch(board, newSi);
 				}
 			}
-			break;
 		}
 		board.undoMove(backup);
-		if (stop()) {
-			return 0;
+		if (score>=si.beta) {
+			bestScore=score;
+			bestMove=move;
+			TranspositionTable::NodeFlag flag = currentScore!=-maxScore?
+					TranspositionTable::LOWER_EVAL:TranspositionTable::LOWER ;
+			updateHistory(board,bestMove,si.depth);
+			updateKillers(board,bestMove,si.ply);
+			agent->hashPut(key,bestScore,currentScore,si.depth,si.ply,flag,bestMove);
+			return bestScore;
 		}
-		if (!inParallel) {
-			if (score>=si.beta) {
-				bestScore=score;
+		if (score>bestScore) {
+			bestScore=score;
+			if(score>si.alpha ) {
+				si.alpha = score;
 				bestMove=move;
-				TranspositionTable::NodeFlag flag = currentScore!=-maxScore?
-						TranspositionTable::LOWER_EVAL:TranspositionTable::LOWER ;
-				updateHistory(board,bestMove,si.depth);
-				updateKillers(board,bestMove,si.ply);
-				agent->hashPut(key,bestScore,currentScore,si.depth,si.ply,flag,bestMove);
-				return bestScore;
-			}
-			if (score>bestScore) {
-				bestScore=score;
-				if(score>si.alpha ) {
-					si.alpha = score;
-					bestMove=move;
-				}
 			}
 		}
-	}
-	if (inParallel && busyThreads>0) {
-		std::cout << "+++Entering in busy threads... best Score: " << bestScore <<  std::endl;
-		while (busyThreads>0) {
-			lock();
-			agent->setThreadStatus(getThreadId(), SearchAgent::THREAD_STATUS_WAITING);
-			waitThread();
-			agent->setThreadStatus(getThreadId(), SearchAgent::THREAD_STATUS_WORKING);
-			unlock();
-		}
-		std::cout << "---Exiting busy threads... best Score: " << bestScore << std::endl;
 	}
 	if (!moveCounter) {
 		return si.partialSearch?oldAlpha:isKingAttacked?-maxScore+si.ply:drawScore;
@@ -445,6 +398,9 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 	if (stop()) {
 		return 0;
+	}
+	if (si.ply>maxPlySearched) {
+		maxPlySearched=si.ply;
 	}
 	if (si.depth<=0) {
 		si.update(0,NONPV_NODE,si.beta-1, si.beta, si.move);
@@ -565,7 +521,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 			}
 		}
 	}
-	while (true) {
+	while (bestScore<si.beta) {
 		move = selectMove<false>(board, moves, hashMove, si.ply, si.depth);
 		if (move.none()) {
 			break;
@@ -611,7 +567,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 			extension++;
 		} else if (si.depth>lmrDepthThreshold && !givingCheck && !passedPawn &&
 				!nmMateScore &&	move.type == MoveIterator::NON_CAPTURE) {
-			reduction=reductionTableNonPV[si.depth][moveCounter];
+			reduction=getReduction(false,si.depth,moveCounter);
 		}
 		int newDepth=si.depth-1+extension;
 		SearchInfo newSi(true,move,si.beta,1-si.beta, newDepth-reduction, si.ply+1, NONPV_NODE);
@@ -780,8 +736,8 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 
 const bool SimplePVSearch::stop() {
 	return timeIsUp() || agent->shouldStop() ||
-			(agent->threadShouldStop(getThreadGroup()) && getThreadId()!=0);
-
+			(agent->threadShouldStop(getThreadGroup()) &&
+					getThreadId()!=0 && getThreadGroup()!=getThreadId());
 }
 
 //retrieve PV from transposition table
@@ -814,6 +770,12 @@ inline void SimplePVSearch::retrievePvFromHash(Board& board, PvLine& pv) {
 	}
 }
 
+const int SimplePVSearch::getReduction(const bool isPV, const int depth, const int moveCounter) const {
+	int reduction = isPV?reductionTablePV[depth][moveCounter]:
+			reductionTableNonPV[depth][moveCounter];
+	return reduction;
+}
+//initialize reduction arrays
 void SimplePVSearch::initialize() {
 	for (int x=0;x<=maxSearchDepth;x++) {
 		for (int y=0;y<maxMoveCount;y++) {
@@ -822,7 +784,6 @@ void SimplePVSearch::initialize() {
 		}
 	}
 }
-
 //perft
 int64_t SimplePVSearch::perft(Board& board, int depth, int ply) {
 	if (depth == 0) {

@@ -30,6 +30,8 @@ extern "C" void *workerThreadRun(void *);
 SearchAgent* SearchAgent::searchAgent = 0;
 pthread_mutex_t SearchAgent::mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t SearchAgent::waitCond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t SearchAgent::mutex1 = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t SearchAgent::waitCond1 = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t SearchAgent::mutex2 = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t SearchAgent::waitCond2 = PTHREAD_COND_INITIALIZER;
 
@@ -43,7 +45,7 @@ SearchAgent* SearchAgent::getInstance () {
 SearchAgent::SearchAgent() : searchMode(SEARCH_TIME), searchInProgress(false), requestStop(false), quit(false),
 		hashSize(defaultHashSize),	threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
 		blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), ponder(false), mainSearcher(0),
-		freeThreads(0) {
+		freeThreads(0), threadShouldWait(false) {
 	// creates initial hashtables
 	createHash();
 }
@@ -86,13 +88,15 @@ void SearchAgent::setPositionFromFEN(std::string fenMoves) {
 
 // start search
 void* SearchAgent::startThreadSearch() {
-	pthread_mutex_lock(&threadPool[MAIN_THREAD].mutex);
+	lock(&threadPool[MAIN_THREAD].mutex);
 	while (!quit) {
-		pthread_cond_wait(&threadPool[MAIN_THREAD].waitCond, &threadPool[MAIN_THREAD].mutex);
+		wait(&threadPool[MAIN_THREAD].waitCond, &threadPool[MAIN_THREAD].mutex);
 		if (quit) {
 			break;
 		}
 		mainSearcher->setThreadId(MAIN_THREAD);
+		setThreadsShouldWait(false);
+		wakeUp(&waitCond1);
 		setRequestStop(false);
 		setSearchInProgress(true);
 		newSearchHash();
@@ -112,9 +116,10 @@ void* SearchAgent::startThreadSearch() {
 		prepareThreadPool();
 		mainSearcher->search(board);
 		setSearchInProgress(false);
-		pthread_cond_signal(&waitCond2);
+		setThreadsShouldWait(true);
+		wakeUp(&waitCond2);
 	}
-	pthread_mutex_unlock(&threadPool[MAIN_THREAD].mutex);
+	unlock(&threadPool[MAIN_THREAD].mutex);
 	pthread_exit(NULL);
 	return NULL;
 }
@@ -122,150 +127,187 @@ void* SearchAgent::startThreadSearch() {
 // worker threads loop
 void* SearchAgent::executeThread(const int threadId) {
 	ThreadPool& thread = threadPool[threadId];
+	ThreadPool& master = threadPool[thread.masterThreadId];
 	while (!quit) {
-		pthread_mutex_lock(&thread.mutex);
-		std::cout << "Thread waiting: " << threadId << std::endl;
-		resetThread(threadId);
-		pthread_cond_wait(&thread.waitCond, &thread.mutex);
+		lock(&mutex1);
+		if (getThreadsShouldWait()) {
+			wait(&waitCond1, &mutex1);
+		}
+		unlock(&mutex1);
 		if (quit) {
 			break;
 		}
 		if (thread.status==THREAD_STATUS_WORK_ASSIGNED) {
 			thread.status = THREAD_STATUS_WORKING;
-		}
-		pthread_mutex_unlock(&thread.mutex);
-		int score=0;
-		int64_t startTime = thread.ss->getTickCount();
-		if (thread.status == THREAD_STATUS_WORKING) {
-			std::cout << "Thread launched: " << threadId << " - " << thread.move.toString() << " - depth " <<
-					thread.depth << " - reduction " << thread.reduction <<  std::endl;
-			SearchInfo si = SearchInfo(thread.allowNullMove,thread.move,
-					thread.alpha,thread.beta,thread.depth,thread.ply,NONPV_NODE);
-			if (thread.isPV) {
-				SearchInfo newSi(si.allowNullMove,si.move,-si.beta,
-						-si.alpha,thread.depth-thread.reduction,si.ply+1,si.nodeType);
-				score = -thread.ss->zwSearch(*thread.board, newSi);
-				if (score > si.alpha && score < si.beta) {
-					if (thread.reduction>0) {
-						bool research=true;
-						if (thread.reduction>2) {
-							SearchInfo newSi(si.allowNullMove,si.move,-si.beta,-si.alpha,
-									thread.depth-1,si.ply+1,si.nodeType);
-							score = -thread.ss->zwSearch(*thread.board, newSi);
-							research=(score >= si.beta);
-						}
-						if (research) {
-							SearchInfo newSi(si.allowNullMove,si.move,-si.beta,-si.alpha,
-									thread.depth,si.ply+1,si.nodeType);
-							score = -thread.ss->zwSearch(*thread.board, newSi);
-						}
-					}
-					if (score > si.alpha && score < si.beta) {
-						SearchInfo newSi(si.allowNullMove,si.move,-si.beta,-si.alpha,
-								thread.depth,si.ply+1,PV_NODE);
-						score = -thread.ss->pvSearch(*thread.board, newSi);
-					}
-				}
-			} else {
-				SearchInfo newSi(si.allowNullMove,thread.move,si.beta,1-si.beta,
-						thread.depth-thread.reduction, si.ply+1, si.nodeType);
-				score = -thread.ss->zwSearch(*thread.board, newSi);
-				if (score >= si.beta && thread.reduction>0) {
-					bool research=true;
-					if (thread.reduction>2) {
-						newSi.update(si.depth-1,si.nodeType);
-						score = -thread.ss->zwSearch(*thread.board, newSi);
-						research=(score >= si.beta);
-					}
-					if (research) {
-						newSi.update(si.depth,si.nodeType);
-						score = -thread.ss->zwSearch(*thread.board, newSi);
-					}
-				}
-			}
-			pthread_mutex_lock(&mutex);
-			ThreadPool& master = threadPool[thread.masterThreadId];
-			if (thread.bestScore!=0 && thread.currentAlpha!=0 && thread.bestMove!=0) {
-				if (score>*thread.bestScore || score>=si.beta) {
-					*thread.bestScore = score;
-					*thread.bestMove = thread.move;
-					if (score > *thread.currentAlpha) {
-						*thread.currentAlpha = score;
-					}
-				}
-			}
-			--(*thread.busyThreads);
-			if (score>=si.beta) {
-				threadStop[thread.threadGroup]=true;
-			}
+			smpPVSearch(*thread.board,master.ss,thread.ss,master);
+			lock(&mutex1);
 			freeThreads++;
-			master.ss->wakeUp();
-			awakeSleepingThreads();
-			std::cout << "Thread free " << freeThreads << " - score " << score << " - time spent: " << (thread.ss->getTickCount()-startTime) << std::endl;
-			pthread_mutex_unlock(&mutex);
+			thread.status=THREAD_STATUS_AVAILABLE;
+			unlock(&mutex1);
 		}
-
 	}
 	pthread_exit(NULL);
 	return NULL;
 }
 // Spawn a new search thread
-const int SearchAgent::spawnThread(Board& board, void* data, const int threadGroup, const int masterThreadId,
-		const int reduction, MoveIterator::Move* move, int* bestScore, int* currentAlpha, int* busyThreads) {
-	pthread_mutex_lock(&mutex);
-	SearchTypes::SearchInfo* si = (SearchTypes::SearchInfo*)data;
+const bool SearchAgent::spawnThreads(Board& board, void* data, const int threadGroup, const int masterThreadId,
+		MoveIterator* moves, MoveIterator::Move* move, MoveIterator::Move* hashMove, int* bestScore,
+		int* currentAlpha, int* currentScore, int* moveCounter, bool* nmMateScore) {
+	lock(&mutex1);
+	SearchTypes::SearchInfo* si = static_cast<SearchTypes::SearchInfo*>(data);
 	if (singleProcessor || getFreeThreads()<1 || getThreadNumber() < 2 ||
 			si->depth<minSplitDepth || getRequestStop()) {
-		pthread_mutex_unlock(&mutex);
-		return 0;
+		unlock(&mutex1);
+		return false;
 	}
 	int threadId=0;
-	for(int i=1;i<threadPoolSize;i++) {
+	threadPool[masterThreadId].status=THREAD_STATUS_AVAILABLE;
+	resetThreadStop(masterThreadId);
+	for(int i=0;i<threadPoolSize;i++) {
 		ThreadPool& thread = threadPool[i];
 		if (thread.status==THREAD_STATUS_AVAILABLE) {
-			thread.status = THREAD_STATUS_WORK_ASSIGNED;
 			threadId=i;
+			ThreadPool& thread = threadPool[threadId];
+			if (i==masterThreadId) {
+				thread.alpha = si->alpha;
+				thread.beta = si->beta;
+				thread.depth = si->depth;
+				thread.ply = si->ply;
+				thread.isPV = si->nodeType==PV_NODE;
+				thread.allowNullMove = si->allowNullMove;
+				thread.partialSearch = si->partialSearch;
+				thread.moves = moves;
+				thread.move = si->move;
+				thread.threadGroup = threadGroup;
+				thread.board = new Board(board);
+				thread.bestMove=move;
+				thread.bestScore=bestScore;
+				thread.currentAlpha=currentAlpha;
+				thread.currentScore=currentScore;
+				thread.moveCounter=moveCounter;
+				thread.nmMateScore=nmMateScore;
+				thread.hashMove=hashMove;
+			}
+			thread.ss->setThreadGroup(threadGroup);
+			thread.masterThreadId = masterThreadId;
+			thread.status = THREAD_STATUS_WORK_ASSIGNED;
 			freeThreads--;
+		}
+	}
+	unlock(&mutex1);
+	executeThread(masterThreadId);
+	return threadId>0;
+};
+
+// parallel search
+void SearchAgent::smpPVSearch(Board& board, SimplePVSearch* master,
+		SimplePVSearch* ss, SearchAgent::ThreadPool& thread) {
+	const bool isKingAttacked = board.isInCheck();
+	const bool isPV = thread.isPV;
+	int score = 0;
+	MoveIterator::Move move;
+	while (true) {
+		master->lock();
+		move = master->selectMove<false>(board, *thread.moves, *thread.hashMove, thread.ply, thread.depth);
+		*thread.moveCounter++;
+		master->unlock();
+		if (move.none()) {
 			break;
 		}
-	}
-	if (threadId) {
-		ThreadPool& thread = threadPool[threadId];
-		if (busyThreads==0) {
-			resetThreadStop(thread.masterThreadId);
+		MoveBackup backup;
+		board.doMove(move,backup);
+		const bool givingCheck = board.setInCheck(board.getSideToMove());
+		const bool passedPawn = master->isPawnPush(board,move.to);
+		const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
+		//futility
+		if  (	!isPV &&
+				move.type == MoveIterator::NON_CAPTURE &&
+				thread.depth < futilityDepth &&
+				!isKingAttacked &&
+				!givingCheck &&
+				!pawnOn7thExtension &&
+				!passedPawn &&
+				!*thread.nmMateScore) {
+			if (moveCountMargin(thread.depth) < *thread.moveCounter
+					&& !master->isMateScore(*thread.bestScore) ) {
+				board.undoMove(backup);
+				continue;
+			}
+			const int futilityScore = *thread.currentScore + futilityMargin(thread.depth);
+			master->lock();
+			if (futilityScore < thread.beta) {
+				if (futilityScore>*thread.bestScore) {
+					*thread.bestScore=futilityScore;
+				}
+				master->unlock();
+				board.undoMove(backup);
+				continue;
+			}
+			master->unlock();
 		}
-		thread.alpha = si->alpha;
-		thread.beta = si->beta;
-		thread.depth = si->depth;
-		thread.ply = si->ply;
-		thread.isPV = si->nodeType==PV_NODE;
-		thread.allowNullMove = si->allowNullMove;
-		thread.partialSearch = si->partialSearch;
-		thread.move = si->move;
-		thread.threadGroup = threadGroup;
-		thread.board = new Board(board);
-		thread.ss->setThreadGroup(threadGroup);
-		thread.masterThreadId = masterThreadId;
-		thread.reduction=reduction;
-		thread.bestMove=move;
-		thread.bestScore=bestScore;
-		thread.currentAlpha=currentAlpha;
-		thread.busyThreads=busyThreads;
-		++(*thread.busyThreads);
-		std::cout << "spawn thread: " << thread.move.toString() << " - master " <<
-				thread.masterThreadId << " - busy threads " << (*thread.busyThreads) << std::endl;
-		pthread_cond_signal(&threadPool[threadId].waitCond);
+		//reductions
+		int reduction=0;
+		int extension=0;
+		if (isKingAttacked || pawnOn7thExtension) {
+			extension++;
+		} else if (thread.depth>lmrDepthThreshold && !givingCheck && !passedPawn &&
+				!*thread.nmMateScore &&	move.type == MoveIterator::NON_CAPTURE) {
+			reduction=master->getReduction(isPV,thread.depth,*thread.moveCounter);
+		}
+		int newDepth=thread.depth-1+extension;
+		SearchInfo newSi(true,move,thread.beta,1-thread.beta, newDepth-reduction, thread.ply+1, NONPV_NODE);
+		if (isPV) {
+			newSi.update(newDepth,NONPV_NODE,-thread.beta,-thread.alpha,move);
+		}
+		score = -ss->zwSearch(board, newSi);
+		bool research=isPV?score > thread.alpha && score < thread.beta:score >= thread.beta && reduction>0;
+		if (research) {
+			if (reduction>2) {
+				newSi.update(newDepth-1,NONPV_NODE);
+				score = -ss->zwSearch(board, newSi);
+				research=(score >= thread.beta);
+			}
+			if (research) {
+				newSi.update(newDepth,NONPV_NODE);
+				score = -ss->zwSearch(board, newSi);
+			}
+			if (isPV && score > thread.alpha && score < thread.beta) {
+				newSi.update(newDepth,PV_NODE);
+				score = -ss->pvSearch(board, newSi);
+			}
+		}
+		board.undoMove(backup);
+		master->lock();
+		if (score>=thread.beta && !master->stop()) {
+			*thread.bestScore=score;
+			*thread.bestMove=move;
+			master->updateHistory(board,*thread.bestMove,thread.depth);
+			master->updateKillers(board,*thread.bestMove,thread.ply);
+			TranspositionTable::NodeFlag flag = *thread.currentScore!=-maxScore?
+					TranspositionTable::LOWER_EVAL:TranspositionTable::LOWER ;
+			SearchAgent::getInstance()->hashPut(board.getKey(),*thread.bestScore,*thread.currentScore,
+					thread.depth,thread.ply,flag,*thread.bestMove);
+			SearchAgent::getInstance()->requestThreadStop(master->getThreadId());
+			master->unlock();
+			break;
+		}
+		if (score>*thread.bestScore) {
+			*thread.bestScore=score;
+			if(score>*thread.currentAlpha ) {
+				*thread.currentAlpha = score;
+				*thread.bestMove=move;
+			}
+		}
+		master->unlock();
 	}
-	pthread_mutex_unlock(&mutex);
-	return threadId;
-};
+}
 
 // start search
 void SearchAgent::startSearch() {
-	pthread_mutex_lock(&threadPool[MAIN_THREAD].mutex);
+	lock(&threadPool[MAIN_THREAD].mutex);
 	setRequestStop(true);
-	pthread_cond_signal(&threadPool[MAIN_THREAD].waitCond);
-	pthread_mutex_unlock(&threadPool[MAIN_THREAD].mutex);
+	wakeUp(&threadPool[MAIN_THREAD].waitCond);
+	unlock(&threadPool[MAIN_THREAD].mutex);
 }
 
 // start perft
@@ -282,17 +324,17 @@ void SearchAgent::doBench() {
 	int64_t nodes = 0;
 	mainSearcher->setUpdateUci(false);
 	for (int i=0;i<benchSize;i++) {
-		pthread_mutex_lock(&mutex2);
+		lock(&mutex2);
 		std::cout << "Position[" << (i+1) << "]: " << benchPositions[i] << std::endl;
 		newGame();
 		setPositionFromFEN(benchPositions[i]);
 		setSearchMode(SearchAgent::SEARCH_DEPTH);
 		setDepth(benchDepth);
 		startSearch();
-		pthread_cond_wait(&waitCond2, &mutex2);
+		wait(&waitCond2, &mutex2);
 		time+=mainSearcher->getSearchedTime();
 		nodes+=mainSearcher->getSearchedNodes();
-		pthread_mutex_unlock(&mutex2);
+		unlock(&mutex2);
 	}
 	mainSearcher->setUpdateUci(true);
 	std::cout << std::endl << "Finished benchmark:  " << std::endl;
@@ -366,7 +408,7 @@ void  SearchAgent::ponderHit() {
 
 void SearchAgent::initThreads() {
 	currentThread=MAIN_THREAD;
-	int rCode = pthread_create( &(threadPool[MAIN_THREAD].executor), NULL, mainThreadRun, this);
+	int rCode = pthread_create(&(threadPool[MAIN_THREAD].executor), NULL, mainThreadRun, this);
 	if (rCode) {
 		std::cerr << "Failed to created main thread. pthread_create return code:  " << rCode << std::endl;
 		exit(EXIT_FAILURE);
@@ -393,7 +435,7 @@ void *workerThreadRun(void *_object) {
 }
 
 void SearchAgent::initializeThreadPool(const int size) {
-	const int newSize=singleProcessor?1:size*2;
+	const int newSize=singleProcessor?1:size;
 	for (int i=0;i<newSize;i++) {
 		threadPool[i].threadId=i;
 		threadPool[i].threadType=ThreadType(i);

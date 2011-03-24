@@ -93,13 +93,14 @@ public:
 
 	struct ThreadPool {
 		ThreadPool() : threadId(0), threadType(INACTIVE_THREAD), ss(0), status(THREAD_STATUS_AVAILABLE),
-				threadGroup(0), masterThreadId(0), board(0), reduction(0),
-				bestMove(0), bestScore(0), currentAlpha(0), busyThreads(0) {
+				threadGroup(0), masterThreadId(0), board(0), moves(0), bestMove(0), hashMove(0),
+				bestScore(0), currentAlpha(0), currentScore(0), moveCounter(0), nmMateScore(0) {
 			init();
 		}
 		inline void init() {
 			pthread_mutex_init(&mutex,NULL);
 			pthread_cond_init(&waitCond,NULL);
+			clear();
 		}
 		inline void clear() {
 			isPV=false;
@@ -113,15 +114,18 @@ public:
 			threadGroup=0;
 			masterThreadId=0;
 			status=THREAD_STATUS_AVAILABLE;
-			if (board) {
-				delete board;
-				board=0;
-			}
-			reduction=0;
+			moves=0;
 			bestMove=0;
+			hashMove=0;
 			bestScore=0;
 			currentAlpha=0;
-			busyThreads=0;
+			currentScore=0;
+			moveCounter=0;
+			nmMateScore=0;
+			if (board) {
+				delete board;
+			}
+			board=0;
 		}
 		int threadId;
 		ThreadType threadType;
@@ -141,11 +145,14 @@ public:
 		bool allowNullMove;
 		bool partialSearch;
 		MoveIterator::Move move;
-		int reduction;
+		MoveIterator* moves;
 		MoveIterator::Move* bestMove;
+		MoveIterator::Move* hashMove;
 		int* bestScore;
 		int* currentAlpha;
-		int* busyThreads;
+		int* currentScore;
+		int* moveCounter;
+		bool* nmMateScore;
 	};
 
 	static SearchAgent* getInstance();
@@ -158,43 +165,67 @@ public:
 		return requestStop;
 	}
 
-	const bool threadShouldStop(const int threadGroup) const {
+	inline void lock(pthread_mutex_t* mutex) {
+		pthread_mutex_lock(mutex);
+	}
+
+	inline void unlock(pthread_mutex_t* mutex) {
+		pthread_mutex_unlock(mutex);
+	}
+
+	inline void wait(pthread_cond_t* cond, pthread_mutex_t* mutex) {
+		pthread_cond_wait(cond, mutex);
+	}
+
+	inline void wakeUp(pthread_cond_t* cond) {
+		pthread_cond_signal(cond);
+	}
+
+	inline const bool threadShouldStop(const int threadGroup) const {
 		return threadStop[threadGroup];
 	}
 
-	void requestThreadStop(const int threadGroup) {
+	inline const bool getThreadsShouldWait() const {
+		return threadShouldWait;
+	}
+
+	inline void setThreadsShouldWait(const bool shouldWait) {
+		threadShouldWait = shouldWait;
+	}
+
+	inline void requestThreadStop(const int threadGroup) {
 		threadStop[threadGroup]=true;
 	}
 
-	void resetThreadStop(const int threadGroup) {
+	inline void resetThreadStop(const int threadGroup) {
 		threadStop[threadGroup]=false;
 	}
 
-	const bool getSearchInProgress() const {
+	inline const bool getSearchInProgress() const {
 		return searchInProgress;
 	}
 
-	void setSearchInProgress(bool _searchInProgress) {
+	inline void setSearchInProgress(bool _searchInProgress) {
 		searchInProgress = _searchInProgress;
 	}
 
-	void setRequestStop(bool shouldStop) {
+	inline void setRequestStop(bool shouldStop) {
 		requestStop = shouldStop;
 	}
 
-	bool getRequestStop() {
+	inline bool getRequestStop() {
 		return requestStop;
 	}
 
-	void setQuit(bool shouldQuit) {
+	inline void setQuit(bool shouldQuit) {
 		quit = shouldQuit;
 	}
 
-	const SearchMode getSearchMode() const {
+	inline const SearchMode getSearchMode() const {
 		return searchMode;
 	}
 
-	void setSearchMode(SearchMode _searchMode) {
+	inline void setSearchMode(SearchMode _searchMode) {
 		searchMode = _searchMode;
 	}
 
@@ -406,8 +437,10 @@ public:
 	void prepareThreadPool();
 	void *startThreadSearch();
 	void *executeThread(const int threadId);
-	const int spawnThread(Board& board, void* data, const int threadGroup, const int masterThreadId, const int reduction,
-			MoveIterator::Move* move, int* bestScore, int* currentAlpha, int* busyThreads);
+	const bool spawnThreads(Board& board, void* data, const int threadGroup, const int masterThreadId,
+			MoveIterator* moves, MoveIterator::Move* move, MoveIterator::Move* hashMove, int* bestScore,
+			int* currentAlpha, int* currentScore, int* moveCounter, bool* nmMateScore);
+	void smpPVSearch(Board& board, SimplePVSearch* master, SimplePVSearch* ss, ThreadPool& thread);
 	void shutdown();
 
 protected:
@@ -441,8 +474,11 @@ private:
 	SimplePVSearch* mainSearcher;
 	int currentThread;
 	int freeThreads;
+	bool threadShouldWait;
 	static pthread_mutex_t mutex;
 	static pthread_cond_t waitCond;
+	static pthread_mutex_t mutex1;
+	static pthread_cond_t waitCond1;
 	static pthread_mutex_t mutex2;
 	static pthread_cond_t waitCond2;
 	const int64_t getTimeToSearch(const int64_t usedTime);

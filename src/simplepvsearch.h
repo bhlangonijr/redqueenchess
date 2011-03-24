@@ -141,8 +141,19 @@ public:
 	int64_t perft(Board& board, int depth, int ply);
 	int getScore();
 	void clearHistory();
+	template <bool quiescenceMoves>
+	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves,
+			MoveIterator::Move& ttMove, int ply, int depth);
+	bool isMateScore(const int score);
+	bool isPawnFinal(Board& board);
+	bool isPawnPush(Board& board, Square& square);
+	bool isCaptureOrPromotion(Board& board, MoveIterator::Move& move);
+	bool isPawnPromoting(const Board& board);
+	const bool stop();
+	const bool timeIsUp();
+	void updateHistory(Board& board, MoveIterator::Move& move, int depth);
+	void updateKillers(Board& board, MoveIterator::Move& move, int ply);
 	static void initialize();
-
 	inline const int64_t getTickCount() {
 		return ((clock() * 1000) / CLOCKS_PER_SEC);
 	}
@@ -178,6 +189,8 @@ public:
 	inline const int getDepth() const {
 		return depthToSearch;
 	}
+
+	const int getReduction(const bool isPV, const int depth, const int moveCounter) const;
 
 	inline const void setTimeToSearch(const int64_t value) {
 		timeToSearch = value;
@@ -317,23 +330,11 @@ private:
 	void uciOutput(MoveIterator::Move& move, const int moveCounter);
 	void uciOutput(const int depth);
 	const std::string pvLineToString(const PvLine& pv);
-	template <bool quiescenceMoves>
-	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves,
-			MoveIterator::Move& ttMove, int ply, int depth);
 	template <bool isEvasion>
 	void scoreMoves(Board& board, MoveIterator& moves);
 	void scoreRootMoves(Board& board, MoveIterator& moves);
 	void retrievePvFromHash(Board& board, PvLine& pv);
 	void filterLegalMoves(Board& board, MoveIterator& moves);
-	bool isMateScore(const int score);
-	bool isPawnFinal(Board& board);
-	bool isPawnPush(Board& board, Square& square);
-	bool isCaptureOrPromotion(Board& board, MoveIterator::Move& move);
-	bool isPawnPromoting(const Board& board);
-	const bool stop();
-	const bool timeIsUp();
-	void updateHistory(Board& board, MoveIterator::Move& move, int depth);
-	void updateKillers(Board& board, MoveIterator::Move& move, int ply);
 	void initRootMovesOrder();
 	void updateRootMovesScore(const int64_t value);
 };
@@ -347,7 +348,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 		case MoveIterator::END_STAGE:
 			return emptyMove;
 		case MoveIterator::BEGIN_STAGE:
-			if (!board.isInCheck() /*|| (quiescenceMoves && depth<-1)*/) {
+			if (!board.isInCheck()) {
 				moves.setStage(MoveIterator::INIT_CAPTURE_STAGE);
 			} else {
 				moves.setStage(MoveIterator::INIT_EVASION_STAGE);
