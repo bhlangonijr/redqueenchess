@@ -43,7 +43,8 @@ const int timeTableSize				= 7;
 const int benchSize					= 12;
 const int benchDepth				= 14;
 const int maxThreads				= 16+1;
-const int minSplitDepth				= 6;
+const int minSplitDepth				= 8;
+const int maxWorkersPerSplitPoint	= 8;
 const int timeTable [7][3] = {
 		{25, 900000, 180000},
 		{23, 180000, 60000},
@@ -93,8 +94,8 @@ public:
 
 	struct ThreadPool {
 		ThreadPool() : threadId(0), threadType(INACTIVE_THREAD), ss(0), status(THREAD_STATUS_AVAILABLE),
-				threadGroup(0), masterThreadId(0), board(0), moves(0), bestMove(0), hashMove(0),
-				bestScore(0), currentAlpha(0), currentScore(0), moveCounter(0), nmMateScore(0) {
+				threadGroup(0), masterThreadId(0), board(0), workers(0),isMaster(false), moves(0), bestMove(0),
+				hashMove(0), bestScore(0), currentAlpha(0), currentScore(0), moveCounter(0), nmMateScore(0) {
 			init();
 		}
 		inline void init() {
@@ -114,6 +115,8 @@ public:
 			threadGroup=0;
 			masterThreadId=0;
 			status=THREAD_STATUS_AVAILABLE;
+			workers=0;
+			isMaster=false;
 			moves=0;
 			bestMove=0;
 			hashMove=0;
@@ -145,6 +148,8 @@ public:
 		bool allowNullMove;
 		bool partialSearch;
 		MoveIterator::Move move;
+		int workers;
+		bool isMaster;
 		MoveIterator* moves;
 		MoveIterator::Move* bestMove;
 		MoveIterator::Move* hashMove;

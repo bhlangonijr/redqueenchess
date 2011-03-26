@@ -297,6 +297,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 	int moveCounter=0;
 	int bestScore=-maxScore;
 	bool isSingularMove = false;
+	bool nmMateScore=false;
 	// se
 	if (si.depth > sePVDepth && hashOk && !hashMove.none() && !si.partialSearch &&
 			hashData.depth() >= si.depth-3 && (hashData.flag() & TranspositionTable::LOWER)) {
@@ -309,7 +310,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 			}
 		}
 	}
-	while (bestScore<si.beta) {
+	while (true) {
 		move = selectMove<false>(board, moves, hashMove, si.ply, si.depth);
 		if (move.none()) {
 			break;
@@ -375,6 +376,14 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 			if(score>si.alpha ) {
 				si.alpha = score;
 				bestMove=move;
+			}
+		}
+		if (!stop() && agent->getFreeThreads()>0 && si.depth>minSplitDepth) {
+			if (agent->spawnThreads(board, &si, getThreadId(), getThreadId(), &moves, &move,
+					&hashMove, &bestScore, &si.alpha, &currentScore, &moveCounter, &nmMateScore)) {
+				if (bestScore>=si.beta) {
+					return bestScore;
+				}
 			}
 		}
 	}
@@ -602,6 +611,14 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 			bestScore=score;
 			bestMove=move;
 		}
+		if (!stop() && agent->getFreeThreads()>0 && si.depth>minSplitDepth) {
+			if (agent->spawnThreads(board, &si, getThreadId(), getThreadId(), &moves, &move,
+					&hashMove, &bestScore, &si.alpha, &currentScore, &moveCounter, &nmMateScore)) {
+				if (bestScore>=si.beta) {
+					return bestScore;
+				}
+			}
+		}
 	}
 	if (moveCounter) {
 		if (!searchedMoves) {
@@ -736,8 +753,8 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 
 const bool SimplePVSearch::stop() {
 	return timeIsUp() || agent->shouldStop() ||
-			(agent->threadShouldStop(getThreadGroup()) &&
-					getThreadId()!=0 && getThreadGroup()!=getThreadId());
+			(getThreadId()!=0 && getThreadGroup()!=getThreadId() &&
+					agent->threadShouldStop(getThreadGroup()));
 }
 
 //retrieve PV from transposition table
