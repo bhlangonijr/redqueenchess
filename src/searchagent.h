@@ -53,7 +53,7 @@ const int timeTable [7][3] = {
 		{17, 5000, 1000},
 		{15, 1000, 0}
 };
-const bool singleProcessor=true;
+const bool singleProcessor=false;
 
 const std::string benchPositions[benchSize] = {
 		"8/7p/5k2/5p2/p1p2P2/Pr1pPK2/1P1R3P/8 b - - 0 1",
@@ -438,7 +438,7 @@ public:
 
 	int64_t addExtraTime(const int iteration, int* iterationPVChange);
 	void initializeThreadPool(const int size);
-	void awakeSleepingThreads();
+	void awakeWaitingThreads();
 	void prepareThreadPool();
 	void *startThreadSearch();
 	void *executeThread(const int threadId);
@@ -486,6 +486,8 @@ private:
 	static pthread_cond_t waitCond1;
 	static pthread_mutex_t mutex2;
 	static pthread_cond_t waitCond2;
+	static pthread_mutex_t mutex3;
+	static pthread_cond_t waitCond3;
 	const int64_t getTimeToSearch(const int64_t usedTime);
 	const int64_t getTimeToSearch();
 	void initThreads();

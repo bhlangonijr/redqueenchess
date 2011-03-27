@@ -753,8 +753,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 
 const bool SimplePVSearch::stop() {
 	return timeIsUp() || agent->shouldStop() ||
-			(getThreadId()!=0 && getThreadGroup()!=getThreadId() &&
-					agent->threadShouldStop(getThreadGroup()));
+			(getThreadId()!=0 && agent->threadShouldStop(getThreadGroup()));
 }
 
 //retrieve PV from transposition table
