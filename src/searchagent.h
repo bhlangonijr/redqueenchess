@@ -52,7 +52,7 @@ const int timeTable [7][3] = {
 		{17, 5000, 1000},
 		{15, 1000, 0}
 };
-const bool singleProcessor=false;
+const bool singleProcessor=true;
 
 const std::string benchPositions[benchSize] = {
 		"8/7p/5k2/5p2/p1p2P2/Pr1pPK2/1P1R3P/8 b - - 0 1",

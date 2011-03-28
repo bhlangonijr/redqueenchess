@@ -160,7 +160,8 @@ void* SearchAgent::executeThread(const int threadId) {
 				thread.status=THREAD_STATUS_AVAILABLE;
 			} else {
 				master.nodes+=thread.ss->getSearchedNodes();
-				master.ss->mergeHistory(thread.ss->getKillerArray(),thread.ss->getHistoryArray());
+				master.ss->mergeHistory(thread.ss->getKillerArray(),
+						thread.ss->getHistoryArray());
 				resetThread(threadId);
 				thread.ss->resetStats();
 			}
@@ -431,7 +432,7 @@ const int64_t SearchAgent::getTimeToSearch() {
 }
 
 int64_t SearchAgent::addExtraTime(const int iteration, int* iterationPVChange) {
-	const int64_t timeThinking = mainSearcher->getTickCount()-mainSearcher->getStartTime();
+	const int64_t timeThinking = getTickCount()-mainSearcher->getStartTime();
 	const int64_t weight = std::min(int64_t(90), int64_t(iterationPVChange[iteration]*15+
 			iterationPVChange[iteration-1]*5));
 	const int64_t newSearchTime = std::max(int64_t(10),mainSearcher->getTimeToSearch()-timeThinking) +
@@ -441,7 +442,7 @@ int64_t SearchAgent::addExtraTime(const int iteration, int* iterationPVChange) {
 }
 
 void  SearchAgent::ponderHit() {
-	const int64_t timeThinking = mainSearcher->getTickCount()-mainSearcher->getStartTime();
+	const int64_t timeThinking = getTickCount()-mainSearcher->getStartTime();
 	mainSearcher->setSearchFixedDepth(false);
 	mainSearcher->setInfinite(false);
 	mainSearcher->setTimeToSearch(getTimeToSearch()-std::max(int64_t(10),timeThinking));
@@ -516,7 +517,7 @@ void SearchAgent::prepareThreadPool() {
 		thread.ss->setTimeToSearch(mainSearcher->getTimeToSearch());
 		thread.ss->setInfinite(mainSearcher->isInfinite());
 		thread.ss->setDepth(mainSearcher->getDepth());
-		thread.ss->setStartTime(thread.ss->getTickCount());
+		thread.ss->setStartTime(mainSearcher->getStartTime());
 		thread.ss->setTimeToStop();
 	}
 }

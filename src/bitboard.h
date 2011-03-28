@@ -29,6 +29,7 @@
 #include <inttypes.h>
 #include <iostream>
 #include <stdlib.h>
+#include <sys/time.h>
 //Bitboard type - unsigned long int (8 bytes)
 typedef uint64_t Bitboard;
 #define SqBB(S)					(0x1ULL << static_cast<int>(S))										// Encode a square enum to a bitboard
@@ -630,5 +631,12 @@ inline const int lowerScore(const int value) {
 
 inline const int makeScore(const int upperValue, const int lowerValue) {
 	return MS(upperValue,lowerValue);
+}
+
+inline const int64_t getTickCount() {
+	struct timeval t;
+	gettimeofday(&t, NULL);
+	const int64_t r = static_cast<uint64_t>(t.tv_sec*1000 + t.tv_usec/1000);
+	return r;
 }
 #endif /* BITBOARD_H_ */

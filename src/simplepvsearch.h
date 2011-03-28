@@ -32,7 +32,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <limits.h>
-#include <sys/time.h>
 #include "searchagent.h"
 #include "evaluator.h"
 // game constants
@@ -154,13 +153,6 @@ public:
 	void updateHistory(Board& board, MoveIterator::Move& move, int depth);
 	void updateKillers(Board& board, MoveIterator::Move& move, int ply);
 	static void initialize();
-
-	inline const int64_t getTickCount() {
-		struct timeval t;
-		gettimeofday(&t, NULL);
-		const int64_t r = static_cast<uint64_t>(t.tv_sec*1000 + t.tv_usec/1000);
-		return r;
-	}
 
 	inline const bool isUpdateUci() const {
 		return updateUci;
