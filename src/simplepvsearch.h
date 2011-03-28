@@ -27,12 +27,12 @@
 #ifndef SIMPLEPVSEARCH_H_
 #define SIMPLEPVSEARCH_H_
 
-#include <time.h>
 #include <iostream>
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
 #include <limits.h>
+#include <sys/time.h>
 #include "searchagent.h"
 #include "evaluator.h"
 // game constants
@@ -154,8 +154,12 @@ public:
 	void updateHistory(Board& board, MoveIterator::Move& move, int depth);
 	void updateKillers(Board& board, MoveIterator::Move& move, int ply);
 	static void initialize();
+
 	inline const int64_t getTickCount() {
-		return ((clock() * 1000) / CLOCKS_PER_SEC);
+		struct timeval t;
+		gettimeofday(&t, NULL);
+		const int64_t r = static_cast<uint64_t>(t.tv_sec*1000 + t.tv_usec/1000);
+		return r;
 	}
 
 	inline const bool isUpdateUci() const {
@@ -222,6 +226,10 @@ public:
 
 	inline const int64_t getSearchedNodes() const {
 		return nodes;
+	}
+
+	inline void updateSearchedNodes(const int64_t _nodes) {
+		nodes += _nodes;
 	}
 
 	inline const int getThreadId() const {
@@ -319,12 +327,11 @@ private:
 	int64_t nodesToGo;
 	int threadId;
 	int threadGroup;
-	int numberOfWorkers;
 	pthread_mutex_t mutex;
 	pthread_cond_t waitCond;
 	int idSearch(Board& board);
 	int rootSearch(Board& board, SearchInfo& si, PvLine& pv);
-	void uciOutput(PvLine& pv, const int score, const int totalTime,
+	void uciOutput(PvLine& pv, const int score, const int64_t totalTime,
 			const int hashFull, const int depth, const int selDepth, const int alpha, const int beta);
 	void uciOutput(MoveIterator::Move& bestMove, MoveIterator::Move& ponderMove);
 	void uciOutput(MoveIterator::Move& move, const int moveCounter);
@@ -591,7 +598,7 @@ inline const bool SimplePVSearch::timeIsUp() {
 	return getTickCount()>=timeToStop;
 }
 
-inline void SimplePVSearch::uciOutput(PvLine& pv, const int score, const int totalTime,
+inline void SimplePVSearch::uciOutput(PvLine& pv, const int score, const int64_t totalTime,
 		const int hashFull, const int depth, const int selDepth, const int alpha, const int beta) {
 	MoveIterator::Move& move = pv.moves[0];
 	if (isUpdateUci() && !move.none()) {

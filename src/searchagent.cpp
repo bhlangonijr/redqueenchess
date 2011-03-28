@@ -130,48 +130,43 @@ void* SearchAgent::executeThread(const int threadId) {
 		ThreadPool& thread = threadPool[threadId];
 		if (getThreadsShouldWait()) {
 			lock(&thread.mutex);
-//			std::cout << "waiting " << threadId << std::endl;
 			thread.status = THREAD_STATUS_WAITING;
 			wait(&thread.waitCond, &thread.mutex);
 			if (thread.status == THREAD_STATUS_WAITING) {
 				thread.status = THREAD_STATUS_AVAILABLE;
 			}
-//			std::cout << "released " << threadId << std::endl;
 			unlock(&thread.mutex);
-		}
-		if (thread.status==THREAD_STATUS_WORK_ASSIGNED) {
-			thread.status = THREAD_STATUS_WORKING;
 		}
 		ThreadPool& master = threadPool[thread.masterThreadId];
 		if (quit) {
 			break;
 		}
-		if (thread.status==THREAD_STATUS_WORKING) {
-/*
-			lock(&mutex1);
-			long time = thread.ss->getTickCount();
-			std::cout << "Launching thread - workers " << master.workers << " freethreads: " << freeThreads <<
-					" id.master " << thread.masterThreadId << " id.slave " << threadId << std::endl;
-			unlock(&mutex1);
-*/
-
+		if (thread.status==THREAD_STATUS_WORK_ASSIGNED) {
+			thread.status = THREAD_STATUS_WORKING;
+//			lock(&mutex1);
+//			long time = thread.ss->getTickCount();
+//			std::cout << "Launching thread - workers " << master.workers << " freethreads: " << freeThreads <<
+//					" id.master " << thread.masterThreadId << " id.slave " << threadId << std::endl;
+//			unlock(&mutex1);
 			smpPVSearch(*thread.board,master.ss,thread.ss,master);
 			lock(&mutex1);
-/*
-			std::cout << "Launched thread " << master.workers << " freethreads: " << freeThreads <<
-					" id.master " << thread.masterThreadId << " id.slave " << threadId << " time " << (thread.ss->getTickCount()-time) << std::endl;
-*/
+//			std::cout << "Launched thread " << master.workers << " freethreads: " << freeThreads <<
+//					" id.master " << thread.masterThreadId << " id.slave " << threadId << " time " <<
+//					(thread.ss->getTickCount()-time) << " nodes = " << thread.ss->getSearchedNodes() << std::endl;
+
 			master.workers--;
 			freeThreads++;
 			if (thread.isMaster) {
 				thread.status=THREAD_STATUS_AVAILABLE;
 			} else {
+				master.nodes+=thread.ss->getSearchedNodes();
 				resetThread(threadId);
+				thread.ss->resetStats();
 			}
 			unlock(&mutex1);
 		}
 		if (thread.isMaster && master.workers<=0) {
-//			std::cout << "master exit " << threadId << std::endl;
+			master.ss->updateSearchedNodes(master.nodes);
 			return NULL;
 		}
 	}
@@ -198,6 +193,9 @@ const bool SearchAgent::spawnThreads(Board& board, void* data, const int threadG
 			threadId=i;
 			ThreadPool& thread = threadPool[threadId];
 			thread.isMaster = masterThreadId == i;
+			if (i!=0) {
+				thread.ss->resetStats();
+			}
 			thread.alpha = si->alpha;
 			thread.beta = si->beta;
 			thread.depth = si->depth;
@@ -291,7 +289,8 @@ void SearchAgent::smpPVSearch(Board& board, SimplePVSearch* master,
 			newSi.update(newDepth-reduction,NONPV_NODE,-thread.beta,-(*thread.currentAlpha),move);
 		}
 		score = -ss->zwSearch(board, newSi);
-		bool research=isPV?score > *thread.currentAlpha && score < thread.beta:score >= thread.beta && reduction>0;
+		bool research=isPV?score > *thread.currentAlpha &&
+				score < thread.beta:score >= thread.beta && reduction>0;
 		if (research) {
 			if (reduction>2) {
 				newSi.update(newDepth-1,NONPV_NODE);
@@ -485,8 +484,8 @@ void SearchAgent::initializeThreadPool(const int size) {
 	threadPoolSize=newSize;
 	freeThreads=newSize;
 	currentThread=MAIN_THREAD;
-	initThreads();
 	setThreadsShouldWait(true);
+	initThreads();
 }
 
 void SearchAgent::awakeWaitingThreads() {
@@ -501,14 +500,14 @@ void SearchAgent::awakeWaitingThreads() {
 void SearchAgent::prepareThreadPool() {
 	for(int i=1;i<threadPoolSize;i++) {
 		ThreadPool& thread = threadPool[i];
+		thread.ss->resetStats();
+		thread.ss->clearHistory();
 		thread.ss->setSearchFixedDepth(true);
 		thread.ss->setTimeToSearch(mainSearcher->getTimeToSearch());
 		thread.ss->setInfinite(mainSearcher->isInfinite());
 		thread.ss->setDepth(mainSearcher->getDepth());
 		thread.ss->setStartTime(thread.ss->getTickCount());
 		thread.ss->setTimeToStop();
-		thread.ss->resetStats();
-		thread.ss->clearHistory();
 	}
 }
 

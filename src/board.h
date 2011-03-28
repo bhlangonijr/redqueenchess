@@ -30,7 +30,6 @@
 #include <iostream>
 #include <vector>
 #include <inttypes.h>
-#include <time.h>
 #include <string.h>
 #include "stringutil.h"
 #include "mersenne.h"

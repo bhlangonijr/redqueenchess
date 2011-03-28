@@ -29,7 +29,6 @@
 #include <iostream>
 #include <assert.h>
 #include <pthread.h>
-#include <time.h>
 #include "board.h"
 #include "simplepvsearch.h"
 #include "transpositiontable.h"
@@ -43,7 +42,7 @@ const int timeTableSize				= 7;
 const int benchSize					= 12;
 const int benchDepth				= 14;
 const int maxThreads				= 16+1;
-const int minSplitDepth				= 8;
+const int minSplitDepth				= 6;
 const int maxWorkersPerSplitPoint	= 8;
 const int timeTable [7][3] = {
 		{25, 900000, 180000},
@@ -94,7 +93,7 @@ public:
 
 	struct ThreadPool {
 		ThreadPool() : threadId(0), threadType(INACTIVE_THREAD), ss(0), status(THREAD_STATUS_AVAILABLE),
-				threadGroup(0), masterThreadId(0), board(0), workers(0),isMaster(false), moves(0), bestMove(0),
+				threadGroup(0), masterThreadId(0), board(0), workers(0),isMaster(false), nodes(0), moves(0), bestMove(0),
 				hashMove(0), bestScore(0), currentAlpha(0), currentScore(0), moveCounter(0), nmMateScore(0) {
 			init();
 		}
@@ -129,6 +128,7 @@ public:
 				delete board;
 			}
 			board=0;
+			nodes=0;
 		}
 		int threadId;
 		ThreadType threadType;
@@ -150,6 +150,7 @@ public:
 		MoveIterator::Move move;
 		int workers;
 		bool isMaster;
+		int64_t nodes;
 		MoveIterator* moves;
 		MoveIterator::Move* bestMove;
 		MoveIterator::Move* hashMove;

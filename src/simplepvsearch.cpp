@@ -361,6 +361,9 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 			}
 		}
 		board.undoMove(backup);
+		if (stop()) {
+			return 0;
+		}
 		if (score>=si.beta) {
 			bestScore=score;
 			bestMove=move;
@@ -530,7 +533,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 			}
 		}
 	}
-	while (bestScore<si.beta) {
+	while (true) {
 		move = selectMove<false>(board, moves, hashMove, si.ply, si.depth);
 		if (move.none()) {
 			break;
