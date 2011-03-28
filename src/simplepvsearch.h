@@ -216,6 +216,10 @@ public:
 		timeToStop = getTickCount() + timeToSearch;
 	}
 
+	inline const void setTimeToStop(const uint64_t _timeToStop) {
+		timeToStop = _timeToStop;
+	}
+
 	inline const int64_t getTimeToStop() const {
 		return timeToStop;
 	}
@@ -254,6 +258,40 @@ public:
 
 	inline void setSearchAgent(SearchAgent* _agent) {
 		this->agent=_agent;
+	}
+
+	// merge history/killers arrays
+	inline void mergeHistory(MoveIterator::Move* _killer, int* _history) {
+		for (int i=0;i<=maxSearchPly;i++) {
+			for (int n=1;n>=0;n--) {
+				MoveIterator::Move& move = _killer[i*2+n];
+				if (!move.none()) {
+					if (move != killer[i][0]) {
+						killer[i][1] = killer[i][0];
+						killer[i][0] = move;
+						killer[i][0].type = MoveIterator::KILLER1;
+						killer[i][1].type = MoveIterator::KILLER2;
+					}
+
+				}
+			}
+		}
+		for (int i=0;i<ALL_PIECE_TYPE_BY_COLOR;i++) {
+			for (int n=0;n<ALL_SQUARE;n++) {
+				int& h = _history[i*ALL_SQUARE+n];
+				if (h>0) {
+					history[i][n]=std::min(h+history[i][n],INT_MAX);
+				}
+			}
+		}
+	}
+
+	inline MoveIterator::Move* getKillerArray() {
+		return &killer[0][0];
+	}
+
+	inline int* getHistoryArray() {
+		return &history[0][0];
 	}
 
 	inline void cleanUp() {
@@ -315,9 +353,9 @@ private:
 	int64_t timeToStop;
 	MoveIterator rootMoves;
 	MoveIterator::Move killer[maxSearchPly+1][2];
+	int history[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 	int iterationPVChange[maxSearchPly+1];
 	int64_t nodesPerMove[MOVE_LIST_MAX_SIZE];
-	int history[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 	Evaluator evaluator;
 	SearchAgent* agent;
 	MoveIterator::Move emptyMove;
@@ -693,6 +731,7 @@ inline void SimplePVSearch::updateKillers(Board& board, MoveIterator::Move& move
 		killer[ply][1].type = MoveIterator::KILLER2;
 	}
 }
+
 // init root moves ordering array
 inline void SimplePVSearch::initRootMovesOrder() {
 	for(int x=0;x<MOVE_LIST_MAX_SIZE;x++) {

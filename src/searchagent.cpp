@@ -160,6 +160,7 @@ void* SearchAgent::executeThread(const int threadId) {
 				thread.status=THREAD_STATUS_AVAILABLE;
 			} else {
 				master.nodes+=thread.ss->getSearchedNodes();
+				master.ss->mergeHistory(thread.ss->getKillerArray(),thread.ss->getHistoryArray());
 				resetThread(threadId);
 				thread.ss->resetStats();
 			}
@@ -195,6 +196,15 @@ const bool SearchAgent::spawnThreads(Board& board, void* data, const int threadG
 			thread.isMaster = masterThreadId == i;
 			if (i!=0) {
 				thread.ss->resetStats();
+				thread.ss->clearHistory();
+				thread.ss->setSearchFixedDepth(mainSearcher->isSearchFixedDepth());
+				thread.ss->setTimeToSearch(mainSearcher->getTimeToSearch());
+				thread.ss->setInfinite(mainSearcher->isInfinite());
+				thread.ss->setDepth(mainSearcher->getDepth());
+				thread.ss->setStartTime(mainSearcher->getStartTime());
+				thread.ss->setTimeToStop(mainSearcher->getTimeToStop());
+				thread.ss->mergeHistory(threadPool[masterThreadId].ss->getKillerArray(),
+						threadPool[masterThreadId].ss->getHistoryArray());
 			}
 			thread.alpha = si->alpha;
 			thread.beta = si->beta;
@@ -308,7 +318,7 @@ void SearchAgent::smpPVSearch(Board& board, SimplePVSearch* master,
 		}
 		board.undoMove(backup);
 		master->lock();
-		if (!threadShouldStop(thread.threadGroup)) {
+		if (!(master->stop() || threadShouldStop(thread.threadGroup))) {
 			if (score>=thread.beta) {
 				*thread.bestScore=score;
 				*thread.bestMove=move;
@@ -501,8 +511,8 @@ void SearchAgent::prepareThreadPool() {
 	for(int i=1;i<threadPoolSize;i++) {
 		ThreadPool& thread = threadPool[i];
 		thread.ss->resetStats();
-		thread.ss->clearHistory();
-		thread.ss->setSearchFixedDepth(true);
+		thread.ss->cleanUp();
+		thread.ss->setSearchFixedDepth(mainSearcher->isSearchFixedDepth());
 		thread.ss->setTimeToSearch(mainSearcher->getTimeToSearch());
 		thread.ss->setInfinite(mainSearcher->isInfinite());
 		thread.ss->setDepth(mainSearcher->getDepth());
