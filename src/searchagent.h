@@ -41,7 +41,7 @@ const int defaultGameSize			= 30;
 const int timeTableSize				= 7;
 const int benchSize					= 12;
 const int benchDepth				= 14;
-const int maxThreads				= 16+1;
+const int maxThreads				= 16;
 const int minSplitDepth				= 6;
 const int maxWorkersPerSplitPoint	= 8;
 const int timeTable [7][3] = {
@@ -91,15 +91,12 @@ public:
 		THREAD_STATUS_WAITING
 	};
 
-	struct ThreadPool {
-		ThreadPool() : threadId(0), threadType(INACTIVE_THREAD), ss(0), status(THREAD_STATUS_AVAILABLE),
-				threadGroup(0), masterThreadId(0), board(0), workers(0),isMaster(false), nodes(0), moves(0), bestMove(0),
-				hashMove(0), bestScore(0), currentAlpha(0), currentScore(0), moveCounter(0), nmMateScore(0) {
+	struct SplitPoint {
+		SplitPoint() :	threadGroup(0), masterThreadId(0), board(0), workers(0), nodes(0), moves(0), bestMove(0),
+				hashMove(0), bestScore(0), currentAlpha(0), currentScore(0), moveCounter(0), nmMateScore(0), masterDone(true) {
 			init();
 		}
 		inline void init() {
-			pthread_mutex_init(&mutex,NULL);
-			pthread_cond_init(&waitCond,NULL);
 			clear();
 		}
 		inline void clear() {
@@ -113,9 +110,7 @@ public:
 			partialSearch=false;
 			threadGroup=0;
 			masterThreadId=0;
-			status=THREAD_STATUS_AVAILABLE;
 			workers=0;
-			isMaster=false;
 			moves=0;
 			bestMove=0;
 			hashMove=0;
@@ -129,16 +124,10 @@ public:
 			}
 			board=0;
 			nodes=0;
+			masterDone=false;
 		}
-		int threadId;
-		ThreadType threadType;
-		SimplePVSearch* ss;
-		ThreadStatus status;
 		int threadGroup;
 		int masterThreadId;
-		pthread_t executor;
-		pthread_mutex_t mutex;
-		pthread_cond_t waitCond;
 		bool isPV;
 		Board* board;
 		int alpha;
@@ -149,7 +138,6 @@ public:
 		bool partialSearch;
 		MoveIterator::Move move;
 		int workers;
-		bool isMaster;
 		int64_t nodes;
 		MoveIterator* moves;
 		MoveIterator::Move* bestMove;
@@ -159,10 +147,36 @@ public:
 		int* currentScore;
 		int* moveCounter;
 		bool* nmMateScore;
+		bool masterDone;
+	};
+
+	struct ThreadPool {
+		ThreadPool() : threadId(0), threadType(INACTIVE_THREAD), ss(0), status(THREAD_STATUS_AVAILABLE),
+				splitPoint(NULL), spNumber(0) {
+			init();
+		}
+		inline void init() {
+			pthread_mutex_init(&mutex,NULL);
+			pthread_cond_init(&waitCond,NULL);
+			clear();
+		}
+		inline void clear() {
+			status=THREAD_STATUS_AVAILABLE;
+			splitPoint=NULL;
+			spNumber=0;
+		}
+		int threadId;
+		ThreadType threadType;
+		SimplePVSearch* ss;
+		ThreadStatus status;
+		pthread_t executor;
+		pthread_mutex_t mutex;
+		pthread_cond_t waitCond;
+		SplitPoint* splitPoint;
+		int spNumber;
 	};
 
 	static SearchAgent* getInstance();
-
 	void newGame();
 	const Board getBoard() const;
 	void setBoard(Board _board);
@@ -442,11 +456,11 @@ public:
 	void awakeWaitingThreads();
 	void prepareThreadPool();
 	void *startThreadSearch();
-	void *executeThread(const int threadId);
-	const bool spawnThreads(Board& board, void* data, const int threadGroup, const int masterThreadId,
+	void *executeThread(const int threadId, SplitPoint* sp);
+	const bool spawnThreads(Board& board, void* data, const int threadGroup, const int currentThreadId,
 			MoveIterator* moves, MoveIterator::Move* move, MoveIterator::Move* hashMove, int* bestScore,
 			int* currentAlpha, int* currentScore, int* moveCounter, bool* nmMateScore);
-	void smpPVSearch(Board& board, SimplePVSearch* master, SimplePVSearch* ss, ThreadPool& thread);
+	void smpPVSearch(Board board, SimplePVSearch* master, SimplePVSearch* ss, SplitPoint* sp);
 	void shutdown();
 
 protected:
@@ -489,6 +503,7 @@ private:
 	static pthread_cond_t waitCond2;
 	static pthread_mutex_t mutex3;
 	static pthread_cond_t waitCond3;
+	SplitPoint splitPoint[maxThreads][maxThreads];
 	const int64_t getTimeToSearch(const int64_t usedTime);
 	const int64_t getTimeToSearch();
 	void initThreads();

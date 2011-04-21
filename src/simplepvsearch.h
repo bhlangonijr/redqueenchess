@@ -254,25 +254,30 @@ public:
 
 	// merge history/killers arrays
 	inline void mergeHistory(MoveIterator::Move* _killer, int* _history) {
-		for (int i=0;i<=maxSearchPly;i++) {
-			for (int n=1;n>=0;n--) {
-				MoveIterator::Move& move = _killer[i*2+n];
-				if (!move.none()) {
-					if (move != killer[i][0]) {
-						killer[i][1] = killer[i][0];
-						killer[i][0] = move;
-						killer[i][0].type = MoveIterator::KILLER1;
-						killer[i][1].type = MoveIterator::KILLER2;
-					}
+		if (_killer!=NULL) {
+			for (int i=0;i<=maxSearchPly;i++) {
 
+				for (int n=1;n>=0;n--) {
+					MoveIterator::Move& move = _killer[i*2+n];
+					if (!move.none()) {
+						if (move != killer[i][0]) {
+							killer[i][1] = killer[i][0];
+							killer[i][0] = move;
+							killer[i][0].type = MoveIterator::KILLER1;
+							killer[i][1].type = MoveIterator::KILLER2;
+						}
+
+					}
 				}
 			}
 		}
-		for (int i=0;i<ALL_PIECE_TYPE_BY_COLOR;i++) {
-			for (int n=0;n<ALL_SQUARE;n++) {
-				int& h = _history[i*ALL_SQUARE+n];
-				if (h>0) {
-					history[i][n]=std::min(h+history[i][n],INT_MAX);
+		if (_history!=NULL) {
+			for (int i=0;i<ALL_PIECE_TYPE_BY_COLOR;i++) {
+				for (int n=0;n<ALL_SQUARE;n++) {
+					int& h = _history[i*ALL_SQUARE+n];
+					if (h>0) {
+						history[i][n]=std::min(h+history[i][n],INT_MAX);
+					}
 				}
 			}
 		}

@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
 	// creating uci options
 	std::vector< UciOption *> options;
 	options.push_back(new UciOption("Hash",UciOption::SPIN,"128","128",1,4096,""));
-	options.push_back(new UciOption("Threads",UciOption::SPIN,paramNumProcs,paramNumProcs,1,8,""));
+	options.push_back(new UciOption("Threads",UciOption::SPIN,paramNumProcs,paramNumProcs,1,16,""));
 	options.push_back(new UciOption("Ponder",UciOption::CHECK,"true","true"));
 	options.push_back(new UciOption("Clear Hash",UciOption::BUTTON,"",""));
 	// set options into uci handler
