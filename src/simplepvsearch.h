@@ -34,6 +34,7 @@
 #include <limits.h>
 #include "searchagent.h"
 #include "evaluator.h"
+#include "smp.h"
 // game constants
 const int maxScoreRepetition = 25;
 const int mateRangeScore = 300;
@@ -73,14 +74,15 @@ enum NodeType {
 
 typedef struct SearchInfo {
 	SearchInfo(): allowNullMove(false), move(MoveIterator::Move()), partialSearch(false),
-			alpha(0), beta(0), depth(0), ply(0), nodeType(NODE_NONE) {}
+			alpha(0), beta(0), depth(0), ply(0), nodeType(NODE_NONE), splitPoint(NULL) {}
 	SearchInfo(const bool _allowNullMove, const MoveIterator::Move _move, const int _alpha, const int _beta,
-			const int _depth, const int _ply, const NodeType _nodeType): allowNullMove(_allowNullMove), move(_move), partialSearch(false),
-			alpha(_alpha), beta(_beta), depth(_depth), ply(_ply), nodeType(_nodeType) {}
-	SearchInfo(const bool _allowNullMove, const MoveIterator::Move _move, const bool _partialSearch,
-			const int _alpha, const int _beta, const int _depth, const int _ply, const NodeType _nodeType):
+			const int _depth, const int _ply, const NodeType _nodeType, SplitPoint* sp):
+				allowNullMove(_allowNullMove), move(_move), partialSearch(false),
+			alpha(_alpha), beta(_beta), depth(_depth), ply(_ply), nodeType(_nodeType), splitPoint(sp) {}
+	SearchInfo(const bool _allowNullMove, const MoveIterator::Move _move, const bool _partialSearch, const int _alpha,
+			const int _beta, const int _depth, const int _ply, const NodeType _nodeType, SplitPoint* sp):
 				allowNullMove(_allowNullMove), move(_move), partialSearch(_partialSearch),
-				alpha(_alpha), beta(_beta), depth(_depth), ply(_ply), nodeType(_nodeType) {}
+				alpha(_alpha), beta(_beta), depth(_depth), ply(_ply), nodeType(_nodeType), splitPoint(sp) {}
 
 	inline void update(const int _depth, const NodeType _nodeType) {
 		depth=_depth;
@@ -102,6 +104,7 @@ typedef struct SearchInfo {
 	int depth;
 	int ply;
 	NodeType nodeType;
+	SplitPoint* splitPoint;
 } SearchInfo;
 }
 
@@ -124,8 +127,8 @@ public:
 		}
 	} PvLine;
 
-	SimplePVSearch() : depthToSearch(maxSearchDepth), updateUci(true), startTime(0), searchFixedDepth(false),
-			infinite(false), nodes(0), nodesToGo(defaultNodesToGo) {
+	SimplePVSearch(int* _history) : depthToSearch(maxSearchDepth), updateUci(true), startTime(0), searchFixedDepth(false),
+			infinite(false), nodes(0), nodesToGo(defaultNodesToGo), history(_history) {
 		initMutex();
 	}
 
@@ -139,7 +142,7 @@ public:
 	int qSearch(Board& board,  SearchInfo& si);
 	int64_t perft(Board& board, int depth, int ply);
 	int getScore();
-	void clearHistory();
+	void clearKillers();
 	template <bool quiescenceMoves>
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves,
 			MoveIterator::Move& ttMove, int ply, int depth);
@@ -148,9 +151,9 @@ public:
 	bool isPawnPush(Board& board, Square& square);
 	bool isCaptureOrPromotion(Board& board, MoveIterator::Move& move);
 	bool isPawnPromoting(const Board& board);
-	const bool stop();
+	const bool stop(SearchInfo& info);
 	const bool timeIsUp();
-	void updateHistory(Board& board, MoveIterator::Move& move, int depth);
+
 	void updateKillers(Board& board, MoveIterator::Move& move, int ply);
 	static void initialize();
 
@@ -252,11 +255,10 @@ public:
 		this->agent=_agent;
 	}
 
-	// merge history/killers arrays
-	inline void mergeHistory(MoveIterator::Move* _killer, int* _history) {
+	// merge killers arrays
+	inline void mergeKillers(MoveIterator::Move* _killer) {
 		if (_killer!=NULL) {
 			for (int i=0;i<=maxSearchPly;i++) {
-
 				for (int n=1;n>=0;n--) {
 					MoveIterator::Move& move = _killer[i*2+n];
 					if (!move.none()) {
@@ -271,34 +273,27 @@ public:
 				}
 			}
 		}
-		if (_history!=NULL) {
-			for (int i=0;i<ALL_PIECE_TYPE_BY_COLOR;i++) {
-				for (int n=0;n<ALL_SQUARE;n++) {
-					int& h = _history[i*ALL_SQUARE+n];
-					if (h>0) {
-						history[i][n]=std::min(h+history[i][n],INT_MAX);
-					}
-				}
-			}
+	}
+	// copy killers arrays
+	inline void copyKillers(MoveIterator::Move* _killer) {
+		if (_killer!=NULL) {
+			memcpy(&killer[0][0],_killer,sizeof(MoveIterator::Move)*maxSearchPly*2);
 		}
 	}
+
 
 	inline MoveIterator::Move* getKillerArray() {
 		return &killer[0][0];
 	}
 
-	inline int* getHistoryArray() {
-		return &history[0][0];
-	}
-
 	inline void cleanUp() {
 		evaluator.cleanPawnInfo();
-		clearHistory();
+		clearKillers();
 	}
 
 	inline void prepareToSearch() {
 		resetStats();
-		clearHistory();
+		clearKillers();
 		initRootMovesOrder();
 		rootMoves.clear();
 	}
@@ -350,7 +345,6 @@ private:
 	int64_t timeToStop;
 	MoveIterator rootMoves;
 	MoveIterator::Move killer[maxSearchPly+1][2];
-	int history[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 	int iterationPVChange[maxSearchPly+1];
 	int64_t nodesPerMove[MOVE_LIST_MAX_SIZE];
 	Evaluator evaluator;
@@ -364,6 +358,8 @@ private:
 	int threadGroup;
 	pthread_mutex_t mutex;
 	pthread_cond_t waitCond;
+	int* history;
+	//SplitPoint* splitPoint;
 	int idSearch(Board& board);
 	int rootSearch(Board& board, SearchInfo& si, PvLine& pv);
 	void uciOutput(PvLine& pv, const int score, const int64_t totalTime,
@@ -537,7 +533,7 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 			} else {
 				move.type=MoveIterator::NON_CAPTURE;
 				if (move.score==-maxScore) {
-					const int hist = history[pieceFrom][move.to];
+					const int hist = history[pieceFrom*ALL_SQUARE+move.to];
 					const GamePhase phase = board.getGamePhase();
 					const int gain =
 							board.getPieceSquareValue(pieceFrom,move.to,phase)-
@@ -560,7 +556,7 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 		const int value = isCapture ? evaluator.see<false>(board,move) : 0;
 		board.doMove(move,backup);
 		board.setInCheck(board.getSideToMove());
-		SearchInfo newSi(false,move,true,-maxScore,maxScore,0,0,PV_NODE);
+		SearchInfo newSi(false,move,true,-maxScore,maxScore,0,0,PV_NODE,NULL);
 		move.score = -qSearch(board,newSi);
 		if (move.type==MoveIterator::UNKNOW) {
 			if (isCapture) {
@@ -701,19 +697,9 @@ inline const std::string SimplePVSearch::pvLineToString(const PvLine& pv) {
 	return result;
 }
 
-// clear history
-inline void SimplePVSearch::clearHistory() {
-	memset(history, 0, sizeof(int)*ALL_PIECE_TYPE_BY_COLOR*ALL_SQUARE);
+// clear killers
+inline void SimplePVSearch::clearKillers() {
 	memset(killer, 0, sizeof(MoveIterator::Move)*maxSearchPly*2);
-}
-
-// update history
-inline void SimplePVSearch::updateHistory(Board& board, MoveIterator::Move& move, int depth) {
-	if (isCaptureOrPromotion(board,move) || move.none()) {
-		return;
-	}
-	int& h = history[board.getPiece(move.from)][move.to];
-	h=std::min(h+depth*depth,INT_MAX);
 }
 
 // update killers

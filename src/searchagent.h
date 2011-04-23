@@ -33,6 +33,7 @@
 #include "simplepvsearch.h"
 #include "transpositiontable.h"
 #include "uci.h"
+#include "smp.h"
 
 const std::string mainHashName 		= "DefaultHashTable";
 const size_t defaultDepth			= 5;
@@ -41,9 +42,6 @@ const int defaultGameSize			= 30;
 const int timeTableSize				= 7;
 const int benchSize					= 12;
 const int benchDepth				= 14;
-const int maxThreads				= 16;
-const int minSplitDepth				= 6;
-const int maxWorkersPerSplitPoint	= 8;
 const int timeTable [7][3] = {
 		{25, 900000, 180000},
 		{23, 180000, 60000},
@@ -52,7 +50,6 @@ const int timeTable [7][3] = {
 		{17, 5000, 1000},
 		{15, 1000, 0}
 };
-const bool singleProcessor=true;
 
 const std::string benchPositions[benchSize] = {
 		"8/7p/5k2/5p2/p1p2P2/Pr1pPK2/1P1R3P/8 b - - 0 1",
@@ -77,103 +74,6 @@ public:
 
 	enum SearchMode {
 		SEARCH_TIME, SEARCH_DEPTH, SEARCH_MOVESTOGO, SEARCH_MOVETIME, SEARCH_MOVES, SEARCH_INFINITE
-	};
-
-	enum ThreadType {
-		MAIN_THREAD=0,
-		INACTIVE_THREAD=maxThreads+1
-	};
-
-	enum ThreadStatus {
-		THREAD_STATUS_AVAILABLE,
-		THREAD_STATUS_WORK_ASSIGNED,
-		THREAD_STATUS_WORKING,
-		THREAD_STATUS_WAITING
-	};
-
-	struct SplitPoint {
-		SplitPoint() :	threadGroup(0), masterThreadId(0), board(0), workers(0), nodes(0), moves(0), bestMove(0),
-				hashMove(0), bestScore(0), currentAlpha(0), currentScore(0), moveCounter(0), nmMateScore(0), masterDone(true) {
-			init();
-		}
-		inline void init() {
-			clear();
-		}
-		inline void clear() {
-			isPV=false;
-			move.clear();
-			alpha=0;
-			beta=0;
-			depth=0;
-			ply=0;
-			allowNullMove=false;
-			partialSearch=false;
-			threadGroup=0;
-			masterThreadId=0;
-			workers=0;
-			moves=0;
-			bestMove=0;
-			hashMove=0;
-			bestScore=0;
-			currentAlpha=0;
-			currentScore=0;
-			moveCounter=0;
-			nmMateScore=0;
-			if (board) {
-				delete board;
-			}
-			board=0;
-			nodes=0;
-			masterDone=false;
-		}
-		int threadGroup;
-		int masterThreadId;
-		bool isPV;
-		Board* board;
-		int alpha;
-		int beta;
-		int depth;
-		int ply;
-		bool allowNullMove;
-		bool partialSearch;
-		MoveIterator::Move move;
-		int workers;
-		int64_t nodes;
-		MoveIterator* moves;
-		MoveIterator::Move* bestMove;
-		MoveIterator::Move* hashMove;
-		int* bestScore;
-		int* currentAlpha;
-		int* currentScore;
-		int* moveCounter;
-		bool* nmMateScore;
-		bool masterDone;
-	};
-
-	struct ThreadPool {
-		ThreadPool() : threadId(0), threadType(INACTIVE_THREAD), ss(0), status(THREAD_STATUS_AVAILABLE),
-				splitPoint(NULL), spNumber(0) {
-			init();
-		}
-		inline void init() {
-			pthread_mutex_init(&mutex,NULL);
-			pthread_cond_init(&waitCond,NULL);
-			clear();
-		}
-		inline void clear() {
-			status=THREAD_STATUS_AVAILABLE;
-			splitPoint=NULL;
-			spNumber=0;
-		}
-		int threadId;
-		ThreadType threadType;
-		SimplePVSearch* ss;
-		ThreadStatus status;
-		pthread_t executor;
-		pthread_mutex_t mutex;
-		pthread_cond_t waitCond;
-		SplitPoint* splitPoint;
-		int spNumber;
 	};
 
 	static SearchAgent* getInstance();
@@ -201,24 +101,12 @@ public:
 		pthread_cond_signal(cond);
 	}
 
-	inline const bool threadShouldStop(const int threadGroup) const {
-		return threadStop[threadGroup];
-	}
-
 	inline const bool getThreadsShouldWait() const {
 		return threadShouldWait;
 	}
 
 	inline void setThreadsShouldWait(const bool shouldWait) {
 		threadShouldWait = shouldWait;
-	}
-
-	inline void requestThreadStop(const int threadGroup) {
-		threadStop[threadGroup]=true;
-	}
-
-	inline void resetThreadStop(const int threadGroup) {
-		threadStop[threadGroup]=false;
 	}
 
 	inline const bool getSearchInProgress() const {
@@ -378,12 +266,29 @@ public:
 					(allowNullMove || !(hashData.flag() & TranspositionTable::NODE_NULL)) &&
 					(hashData.depth()>=depth) &&
 					(((hashData.flag() & TranspositionTable::LOWER) && hashData.value() >= beta) ||
-							((hashData.flag() & TranspositionTable::UPPER) && hashData.value() <= alpha));
+					((hashData.flag() & TranspositionTable::UPPER) && hashData.value() <= alpha));
 		} else {
 			okToPrune = false;
 		}
 		return result;
 	}
+
+	inline void clearHistory() {
+		memset(history, 0, sizeof(int)*ALL_PIECE_TYPE_BY_COLOR*ALL_SQUARE);
+	}
+
+	inline void updateHistory(Board& board, MoveIterator::Move& move, int depth) {
+		if (board.isCaptureMove(move) || move.promotionPiece != EMPTY || move.none()) {
+			return;
+		}
+		int& h = history[board.getPiece(move.from)][move.to];
+		h=std::min(h+depth*depth,INT_MAX);
+	}
+
+	inline int getHistory(const PieceTypeByColor pieceFrom, const int squareTo) {
+		return history[pieceFrom][squareTo];
+	}
+
 #if defined(_SC_NPROCESSORS_ONLN)
 	inline int getNumProcs() {
 		return std::min(sysconf( _SC_NPROCESSORS_ONLN ), 16L);
@@ -451,6 +356,10 @@ public:
 		return freeThreads;
 	}
 
+	inline SimplePVSearch* getSearcher(const int threadId) {
+		return mainSearcher[threadId];
+	}
+
 	int64_t addExtraTime(const int iteration, int* iterationPVChange);
 	void initializeThreadPool(const int size);
 	void awakeWaitingThreads();
@@ -489,9 +398,9 @@ private:
 	bool ponder;
 	TranspositionTable* transTable;
 	ThreadPool threadPool[maxThreads];
-	volatile bool threadStop[maxThreads];
+	int history[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 	int threadPoolSize;
-	SimplePVSearch* mainSearcher;
+	SimplePVSearch* mainSearcher[maxThreads];
 	int currentThread;
 	int freeThreads;
 	bool threadShouldWait;
