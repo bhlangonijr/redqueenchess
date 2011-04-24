@@ -10,8 +10,8 @@ Ben-Hur Langoni Junior
 	+ Improve bishop mobility	
 	+ Improve concept of mobility	
 3) Implement SMP search
-	Fix copy of killers
-	implement beta cutoff exit
+	What do with killers in SMP mode?
+	
 	
 
 
