@@ -381,9 +381,10 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 				bestMove=move;
 			}
 		}
-		if (!stop(si) && agent->getFreeThreads()>0 && si.depth>minSplitDepth) {
-			if (agent->spawnThreads(board, &si, getThreadId(), getThreadId(), &moves, &move,
-					&hashMove, &bestScore, &si.alpha, &currentScore, &moveCounter, &nmMateScore)) {
+		if (!stop(si) && agent->getThreadNumber()>1 &&
+				agent->getFreeThreads()>0 && si.depth>minSplitDepth) {
+			if (agent->spawnThreads(board, &si, getThreadId(), &moves, &move, &hashMove,
+					&bestScore, &si.alpha, &currentScore, &moveCounter, &nmMateScore)) {
 				if (bestScore>=si.beta) {
 					return bestScore;
 				}
@@ -614,9 +615,10 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 			bestScore=score;
 			bestMove=move;
 		}
-		if (!stop(si) && agent->getFreeThreads()>0 && si.depth>minSplitDepth) {
-			if (agent->spawnThreads(board, &si, getThreadId(), getThreadId(), &moves, &move,
-					&hashMove, &bestScore, &si.alpha, &currentScore, &moveCounter, &nmMateScore)) {
+		if (!stop(si) && agent->getThreadNumber()>1 &&
+				agent->getFreeThreads()>0 && si.depth>minSplitDepth) {
+			if (agent->spawnThreads(board, &si, getThreadId(), &moves, &move, &hashMove,
+					&bestScore, &si.alpha, &currentScore, &moveCounter, &nmMateScore)) {
 				if (bestScore>=si.beta) {
 					return bestScore;
 				}

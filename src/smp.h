@@ -30,7 +30,6 @@
 #include "simplepvsearch.h"
 #include "moveiterator.h"
 
-const bool singleProcessor 			= false;
 const int maxThreads				= 16;
 const int minSplitDepth				= 6;
 const int maxWorkersPerSplitPoint	= 8;

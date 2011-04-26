@@ -336,8 +336,8 @@ public:
 
 	struct PawnInfo {
 		Key key;
-		int value[ALL_PIECE_COLOR];
-		Bitboard passers[ALL_PIECE_COLOR];
+		int value[ALL_PIECE_COLOR-1];
+		Bitboard passers[ALL_PIECE_COLOR-1];
 	}__attribute__ ((aligned(64)));
 
 	Evaluator();

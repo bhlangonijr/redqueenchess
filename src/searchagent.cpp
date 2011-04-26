@@ -184,11 +184,11 @@ void* SearchAgent::executeThread(const int threadId, SplitPoint* sp) {
 	return NULL;
 }
 // Spawn a new search thread
-const bool SearchAgent::spawnThreads(Board& board, void* data, const int threadGroup, const int currentThreadId,
+const bool SearchAgent::spawnThreads(Board& board, void* data, const int currentThreadId,
 		MoveIterator* moves, MoveIterator::Move* move, MoveIterator::Move* hashMove, int* bestScore,
 		int* currentAlpha, int* currentScore, int* moveCounter, bool* nmMateScore) {
 	lock(&mutex1);
-	if (singleProcessor || getFreeThreads()<1 || getThreadNumber() < 2 || getRequestStop() ||
+	if (getFreeThreads()<1 || getRequestStop() ||
 			threadPool[currentThreadId].spNumber > 2) {
 		unlock(&mutex1);
 		return false;
@@ -488,7 +488,7 @@ void *workerThreadRun(void *_object) {
 }
 
 void SearchAgent::initializeThreadPool(const int size) {
-	const int newSize=singleProcessor?1:size;
+	const int newSize=size;
 	for (int i=0;i<newSize;i++) {
 		threadPool[i].threadId=i;
 		threadPool[i].threadType=ThreadType(i);

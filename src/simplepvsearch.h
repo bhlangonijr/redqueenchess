@@ -254,33 +254,12 @@ public:
 	inline void setSearchAgent(SearchAgent* _agent) {
 		this->agent=_agent;
 	}
-
-	// merge killers arrays
-	inline void mergeKillers(MoveIterator::Move* _killer) {
-		if (_killer!=NULL) {
-			for (int i=0;i<=maxSearchPly;i++) {
-				for (int n=1;n>=0;n--) {
-					MoveIterator::Move& move = _killer[i*2+n];
-					if (!move.none()) {
-						if (move != killer[i][0]) {
-							killer[i][1] = killer[i][0];
-							killer[i][0] = move;
-							killer[i][0].type = MoveIterator::KILLER1;
-							killer[i][1].type = MoveIterator::KILLER2;
-						}
-
-					}
-				}
-			}
-		}
-	}
 	// copy killers arrays
 	inline void copyKillers(MoveIterator::Move* _killer) {
 		if (_killer!=NULL) {
 			memcpy(&killer[0][0],_killer,sizeof(MoveIterator::Move)*maxSearchPly*2);
 		}
 	}
-
 
 	inline MoveIterator::Move* getKillerArray() {
 		return &killer[0][0];

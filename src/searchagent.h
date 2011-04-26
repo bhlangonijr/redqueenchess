@@ -291,11 +291,13 @@ public:
 
 #if defined(_SC_NPROCESSORS_ONLN)
 	inline int getNumProcs() {
-		return std::min(sysconf( _SC_NPROCESSORS_ONLN ), 16L);
+		return std::min(static_cast<int>(sysconf( _SC_NPROCESSORS_ONLN )), maxThreads);
 	}
 #else
 	inline int getNumProcs() {
-		return 1;
+		SYSTEM_INFO sysinfo;
+		GetSystemInfo( &sysinfo );
+		return std::min(static_cast<int>(sysinfo.dwNumberOfProcessors), maxThreads);
 	}
 #endif
 
@@ -366,7 +368,7 @@ public:
 	void prepareThreadPool();
 	void *startThreadSearch();
 	void *executeThread(const int threadId, SplitPoint* sp);
-	const bool spawnThreads(Board& board, void* data, const int threadGroup, const int currentThreadId,
+	const bool spawnThreads(Board& board, void* data, const int currentThreadId,
 			MoveIterator* moves, MoveIterator::Move* move, MoveIterator::Move* hashMove, int* bestScore,
 			int* currentAlpha, int* currentScore, int* moveCounter, bool* nmMateScore);
 	void smpPVSearch(Board board, SimplePVSearch* master, SimplePVSearch* ss, SplitPoint* sp);
