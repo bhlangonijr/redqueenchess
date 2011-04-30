@@ -160,7 +160,7 @@ void* SearchAgent::executeThread(const int threadId, SplitPoint* sp) {
 		SimplePVSearch* searchSlave = getSearcher(threadId);
 		if (thread.status==THREAD_STATUS_WORKING &&
 				(sp==NULL || (sp!=NULL && !sp->masterDone))) {
-			smpPVSearch(*splitPoint->board,searchMaster,searchSlave,splitPoint);
+			smpPVSearch(splitPoint->board,searchMaster,searchSlave,splitPoint);
 			lock(&mutex1);
 			if (sp==NULL) {
 				splitPoint->workers--;
@@ -206,7 +206,7 @@ const bool SearchAgent::spawnThreads(Board& board, void* data, const int current
 	sp->partialSearch = si->partialSearch;
 	sp->moves = moves;
 	sp->move = si->move;
-	sp->board = new Board(board);
+	sp->board = board;
 	sp->bestMove=move;
 	sp->bestScore=bestScore;
 	sp->currentAlpha=currentAlpha;

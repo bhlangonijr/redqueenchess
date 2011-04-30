@@ -47,7 +47,7 @@ enum ThreadStatus {
 };
 
 struct SplitPoint {
-	SplitPoint() : masterThreadId(0), board(0), workers(0), nodes(0), moves(0), bestMove(0),
+	SplitPoint() : masterThreadId(0), workers(0), nodes(0), moves(0), bestMove(0),
 			hashMove(0), bestScore(0), currentAlpha(0), currentScore(0), moveCounter(0), nmMateScore(0),
 			masterDone(true), shouldStop(false) {
 		init();
@@ -74,17 +74,14 @@ struct SplitPoint {
 		currentScore=0;
 		moveCounter=0;
 		nmMateScore=0;
-		if (board) {
-			delete board;
-		}
-		board=0;
+		//board.clearBoard();
 		nodes=0;
 		masterDone=false;
 		shouldStop=false;
 	}
 	int masterThreadId;
 	bool isPV;
-	Board* board;
+	Board board;
 	int alpha;
 	int beta;
 	int depth;

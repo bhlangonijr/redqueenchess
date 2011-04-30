@@ -352,11 +352,11 @@ public:
 	static const int interpolate(const int first, const int second, const int position);
 	const int getPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase);
 	static const int calcPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase);
+	void clearBoard();
 
 private:
 
 	Node& getBoard();
-	void clearBoard();
 	void putPiece(const PieceTypeByColor piece, const Square square);
 	void removePiece(const PieceTypeByColor piece, const Square square);
 
