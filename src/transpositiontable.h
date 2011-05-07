@@ -31,7 +31,7 @@
 #include <cmath>
 #include <stdlib.h>
 const int DEFAULT_INITIAL_SIZE = 64;
-const int BUCKET_SIZE = 4;
+const int BUCKET_SIZE = 3;
 class TranspositionTable {
 public:
 

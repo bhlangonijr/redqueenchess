@@ -293,7 +293,6 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 	MoveIterator moves = MoveIterator();
 	MoveIterator::Move bestMove;
 	MoveIterator::Move move;
-	//SearchInfo smpSi = SearchInfo(true,si.move,si.alpha,si.beta,si.depth,si.ply,PV_NODE,si);
 	int moveCounter=0;
 	int bestScore=-maxScore;
 	bool isSingularMove = false;
@@ -337,7 +336,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 			int reduction=0;
 			if (si.depth>lmrDepthThreshold && !extension && !givingCheck &&
 					!isPawnPush(board,move.to) && move.type == MoveIterator::NON_CAPTURE) {
-				reduction=getReduction(true,si.depth,moveCounter);
+				reduction++;//=getReduction(true,si.depth,moveCounter);
 			}
 			SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth-reduction,si.ply+1,NONPV_NODE,si.splitPoint);
 			score = -zwSearch(board, newSi);

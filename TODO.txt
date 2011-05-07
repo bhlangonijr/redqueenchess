@@ -10,6 +10,7 @@ Ben-Hur Langoni Junior
 	+ Improve bishop mobility	
 	+ Improve concept of mobility	
 3) Create opening book code
+4) Add support to Gaviota's EGTB
 	
 	
 

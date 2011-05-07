@@ -24,7 +24,7 @@
  *
  * 	Main source
  * 	Author: Ben-Hur Carlos Vieira Langoni Junior
- * 	e-mail: bhlangonijr@gmail.com.br
+ * 	e-mail: bhlangonijr@gmail.com
  */
 #include <iostream>
 #include <stdio.h>
