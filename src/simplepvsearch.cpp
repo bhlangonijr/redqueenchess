@@ -188,13 +188,27 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 					if (!extension && !givingCheck && !isPawnPush(board,move.to) &&
 							moveCounter>lateMoveThreshold && si.depth>lmrDepthThresholdRoot &&
 							move.type == MoveIterator::NON_CAPTURE) {
-						reduction++;
+						reduction=getReduction(true,si.depth,moveCounter);
 					}
 					SearchInfo newSi(true,move, -beta, -alpha, newDepth-reduction, si.ply+1,NONPV_NODE,NULL);
 					score = -zwSearch(board, newSi);
 					if (score>alpha) {
-						SearchInfo newSi(true,move, -beta, -alpha, newDepth, si.ply+1,PV_NODE,NULL);
-						score = -pvSearch(board, newSi);
+						if (reduction>0) {
+							bool research=true;
+							if (reduction>2) {
+								SearchInfo newSi(true,move, -beta, -alpha, newDepth-1, si.ply+1,NONPV_NODE,NULL);
+								score = -zwSearch(board, newSi);
+								research=(score >= beta);
+							}
+							if (research) {
+								SearchInfo newSi(true,move, -beta, -alpha, newDepth, si.ply+1,NONPV_NODE,NULL);
+								score = -zwSearch(board, newSi);
+							}
+						}
+						if (score>alpha) {
+							SearchInfo newSi(true,move, -beta, -alpha, newDepth, si.ply+1,PV_NODE,NULL);
+							score = -pvSearch(board, newSi);
+						}
 					}
 				}
 				board.undoMove(backup);
@@ -336,7 +350,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 			int reduction=0;
 			if (si.depth>lmrDepthThreshold && !extension && !givingCheck &&
 					!isPawnPush(board,move.to) && move.type == MoveIterator::NON_CAPTURE) {
-				reduction++;//=getReduction(true,si.depth,moveCounter);
+				reduction=getReduction(true,si.depth,moveCounter);
 			}
 			SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth-reduction,si.ply+1,NONPV_NODE,si.splitPoint);
 			score = -zwSearch(board, newSi);
