@@ -142,6 +142,7 @@ public:
 		delete [] transTable;
 	}
 
+	const uint16_t getGeneration() const;
 	const size_t getHashSize() const;
 	void setHashSize(const size_t _hashSize);
 	void clearHash();
@@ -176,6 +177,10 @@ private:
 	size_t writes;
 	uint16_t generation;
 };
+
+inline const uint16_t TranspositionTable::getGeneration() const {
+	return generation;
+}
 
 inline const size_t TranspositionTable::getHashSize() const {
 	return hashSize;

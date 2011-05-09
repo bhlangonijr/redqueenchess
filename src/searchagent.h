@@ -258,7 +258,7 @@ public:
 		return result;
 	}
 
-	inline bool hashPruneGet(bool& okToPrune, const Key _key, TranspositionTable::HashData& hashData, const int ply,
+	inline bool hashGet(bool& okToPrune, const Key _key, TranspositionTable::HashData& hashData, const int ply,
 			const int depth, const bool allowNullMove, const int alpha, const int beta) {
 		const bool result = hashGet(_key, hashData, ply);
 		if (result) {
@@ -281,8 +281,8 @@ public:
 		if (board.isCaptureMove(move) || move.promotionPiece != EMPTY || move.none()) {
 			return;
 		}
-		int& h = history[board.getPiece(move.from)][move.to];
-		h=std::min(h+depth*depth,INT_MAX);
+		int* h = &history[board.getPiece(move.from)][move.to];
+		*h=std::min(*h+depth*depth,INT_MAX);
 	}
 
 	inline int getHistory(const PieceTypeByColor pieceFrom, const int squareTo) {
