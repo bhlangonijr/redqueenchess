@@ -590,12 +590,10 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 				color != getSideToMove() || fromPiece==EMPTY) {
 			return false;
 		}
-		if (move.promotionPiece!=EMPTY && fromType!=PAWN) {
-			return false;
-		}
-		const bool promoting = squareToBitboard[move.from] & promoRank[color];
-		if (fromType==PAWN && ((move.promotionPiece!=EMPTY) ^ promoting)) {
-			return false;
+		if (move.promotionPiece!=EMPTY) {
+			if (!(fromType==PAWN && (squareToBitboard[move.from] & promoRank[color])) ) {
+				return false;
+			}
 		}
 		if (((fromPiece==WHITE_KING && (move==whiteoo || move==whiteooo)) ||
 				(fromPiece==BLACK_KING && (move==blackoo || move==blackooo)))) {

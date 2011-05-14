@@ -505,7 +505,8 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 			}
 			bool okToPrune = true;
 			if (si.depth>6) {
-				SearchInfo newSi(false,emptyMove,si.beta,si.beta,si.depth-reduction,si.ply+1,NONPV_NODE,si.splitPoint);
+				SearchInfo newSi(false,emptyMove,si.beta,si.beta,si.depth-reduction,
+						si.ply+1,NONPV_NODE,si.splitPoint);
 				const int newScore = zwSearch(board, newSi);
 				if (newScore<si.beta) {
 					okToPrune = false;
@@ -723,7 +724,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 		moveCounter++;
 		nodes++;
 		if (!isKingAttacked && !(si.nodeType==PV_NODE) && move != hashMove &&
-				move.type==MoveIterator::BAD_CAPTURE) {
+				move.type==MoveIterator::BAD_CAPTURE && move.promotionPiece == EMPTY) {
 			continue;
 		}
 		if (move.promotionPiece==makePiece(sideToMove,ROOK) ||
