@@ -339,8 +339,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 		const bool givingCheck = board.setInCheck(board.getSideToMove());
 		const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
 		int extension=0;
-		if (isKingAttacked || pawnOn7thExtension ||
-				(isSingularMove && move==hashMove)) {
+		if (isKingAttacked || (isSingularMove && move==hashMove)) {
 			extension++;
 		}
 		int newDepth=si.depth-1+extension;
@@ -350,7 +349,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 			score = -pvSearch(board, newSi);
 		} else {
 			int reduction=0;
-			if (si.depth>lmrDepthThreshold && !extension && !givingCheck &&
+			if (si.depth>lmrDepthThreshold && !extension && !givingCheck && !pawnOn7thExtension &&
 					!isPawnPush(board,move.to) && move.type == MoveIterator::NON_CAPTURE) {
 				reduction=getReduction(true, si.depth, moveCounter);
 			}
@@ -538,7 +537,6 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 	MoveIterator::Move move;
 	MoveIterator::Move bestMove=emptyMove;
 	int moveCounter=0;
-	int searchedMoves=0;
 	int bestScore=-maxScore;
 	bool isSingularMove = false;
 	if (si.depth > seNonPVDepth && hashOk && !hashMove.none() && !si.partialSearch &&
@@ -592,12 +590,11 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		//reductions
 		int reduction=0;
 		int extension=0;
-		searchedMoves++;
-		if (isKingAttacked || pawnOn7thExtension ||
-				(isSingularMove && move==hashMove)) {
+		if (isKingAttacked || (isSingularMove && move==hashMove)) {
 			extension++;
-		} else if (si.depth>lmrDepthThreshold && !givingCheck && !passedPawn &&
-				!nmMateScore &&	move.type == MoveIterator::NON_CAPTURE) {
+		} else if (si.depth>lmrDepthThreshold && !givingCheck &&
+				!pawnOn7thExtension && !nmMateScore && !passedPawn &&
+				move.type == MoveIterator::NON_CAPTURE) {
 			reduction=getReduction(false,si.depth,moveCounter);
 		}
 		int newDepth=si.depth-1+extension;
@@ -644,12 +641,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 			}
 		}
 	}
-	if (moveCounter) {
-		if (!searchedMoves) {
-			si.update(0,NONPV_NODE,si.beta-1, si.beta, si.move);
-			return qSearch(board, si);
-		}
-	} else {
+	if (!moveCounter) {
 		return si.partialSearch?si.beta-1:isKingAttacked?-maxScore+si.ply:drawScore;
 	}
 	TranspositionTable::NodeFlag flag = currentScore!=-maxScore?

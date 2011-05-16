@@ -590,8 +590,13 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 				color != getSideToMove() || fromPiece==EMPTY) {
 			return false;
 		}
+		const bool pawnPromoting = fromType==PAWN && (squareToBitboard[move.from] & promoRank[color]);
 		if (move.promotionPiece!=EMPTY) {
-			if (!(fromType==PAWN && (squareToBitboard[move.from] & promoRank[color])) ) {
+			if (!pawnPromoting ) {
+				return false;
+			}
+		} else {
+			if (pawnPromoting) {
 				return false;
 			}
 		}
@@ -650,10 +655,11 @@ inline const bool Board::isAttackedBy(const Square from, const Square to) {
 	Bitboard attacks = EMPTY_BB;
 	switch (pieceType) {
 	case PAWN:
-		if (getPawnCaptures(from) & attacked) {
-			return true;
+		if (getSquareFile(from)!=getSquareFile(to)) {
+			attacks=getPawnCaptures(from);
+		} else {
+			attacks = getPawnMoves(from);
 		}
-		attacks = getPawnMoves(from);
 		break;
 	case KNIGHT:
 		attacks = getKnightAttacks(from);
