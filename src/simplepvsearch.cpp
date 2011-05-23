@@ -216,6 +216,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 				board.undoMove(backup);
 				nodes = this->nodes-nodes;
 				updateRootMovesScore(nodes);
+				move.score=-maxScore;
 				if(score<beta || stop(si)) {
 					break;
 				}
@@ -223,10 +224,10 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 				bestMove=move;
 				pv.moves[0]=bestMove;
 				retrievePvFromHash(board, pv);
-				uciOutput(pv, bestMove.score, getTickCount()-startTime,
-						agent->hashFull(), si.depth, maxPlySearched, alpha, beta);
 				beta =  std::min(beta+aspirationDelta*(1<<countFH),maxScore);
 				si.beta = beta;
+				uciOutput(pv, bestMove.score, getTickCount()-startTime,
+						agent->hashFull(), si.depth, maxPlySearched, alpha, beta);
 				countFH++;
 			}
 			if (stop(si)) {
@@ -310,7 +311,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 		}
 	}
 	MoveIterator moves = MoveIterator();
-	MoveIterator::Move bestMove;
+	MoveIterator::Move bestMove=emptyMove;
 	MoveIterator::Move move;
 	int moveCounter=0;
 	int bestScore=-maxScore;
@@ -492,7 +493,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 	// null move
 	if (si.depth>1 && !isKingAttacked && si.allowNullMove &&
 			!isPawnFinal(board) && !isMateScore(si.beta) &&
-			currentScore >= si.beta-(si.depth>=nullMoveDepth?nullMoveMargin:0)) {
+			currentScore >= si.beta) {
 		const int reduction = 3 + (si.depth > 4 ? si.depth/6 : 0);
 		MoveBackup backup;
 		board.doNullMove(backup);
@@ -523,7 +524,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 				return score;
 			}
 		} else {
-			if (score < -maxScore-maxSearchPly) {
+			if (score < -maxScore+maxSearchPly) {
 				nmMateScore=true;
 			}
 		}
@@ -589,6 +590,12 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 				if (futilityScore>bestScore) {
 					bestScore=futilityScore;
 				}
+				board.undoMove(backup);
+				continue;
+			}
+			if (si.depth <= 1 &&
+					!isMateScore(bestScore) &&
+					evaluator.see<false>(board,move)<0) {
 				board.undoMove(backup);
 				continue;
 			}
@@ -711,7 +718,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 	}
 	int moveCounter=0;
 	MoveIterator moves = MoveIterator();
-	MoveIterator::Move bestMove;
+	MoveIterator::Move bestMove=emptyMove;
 	MoveIterator::Move move;
 	const PieceColor sideToMove = board.getSideToMove();
 	while (true)  {

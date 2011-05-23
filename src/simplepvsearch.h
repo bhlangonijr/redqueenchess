@@ -696,9 +696,7 @@ inline void SimplePVSearch::updateKillers(Board& board, MoveIterator::Move& move
 
 // init root moves ordering array
 inline void SimplePVSearch::initRootMovesOrder() {
-	for(int x=0;x<MOVE_LIST_MAX_SIZE;x++) {
-		nodesPerMove[x]=0L;
-	}
+	memset(nodesPerMove, 0, sizeof(int64_t)*MOVE_LIST_MAX_SIZE);
 }
 // update root moves score
 inline void SimplePVSearch::updateRootMovesScore(const int64_t value) {
