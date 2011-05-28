@@ -407,7 +407,7 @@ inline MoveIterator::Move& SimplePVSearch::selectMove(Board& board, MoveIterator
 					continue;
 				}
 				if (move.type==MoveIterator::UNKNOW_CAPTURE) {
-					move.score=evaluator.see<true>(board,move);
+					move.score=evaluator.see<true,false>(board,move);
 					if (move.score >= 0) {
 						move.type=MoveIterator::GOOD_CAPTURE;
 						move.score+=scoreTable[move.type];
@@ -486,7 +486,7 @@ inline void SimplePVSearch::scoreMoves(Board& board, MoveIterator& moves) {
 		if (move.type==MoveIterator::UNKNOW) {
 			move.score=-maxScore;
 			if (isEvasion) {
-				int seeValue = evaluator.see<true>(board,move);
+				int seeValue = evaluator.see<true,false>(board,move);
 				if (seeValue<0) {
 					move.score = seeValue-10000;
 				}
@@ -532,7 +532,7 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 		MoveIterator::Move& move = moves.next();
 		MoveBackup backup;
 		const bool isCapture = board.isCaptureMove(move);
-		const int value = isCapture ? evaluator.see<false>(board,move) : 0;
+		const int value = isCapture ? evaluator.see<false,false>(board,move) : 0;
 		board.doMove(move,backup);
 		board.setInCheck(board.getSideToMove());
 		SearchInfo newSi(false,move,true,-maxScore,maxScore,0,0,PV_NODE,NULL);
