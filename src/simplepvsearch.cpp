@@ -595,7 +595,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 			}
 			if (si.depth <= 1 &&
 					!isMateScore(bestScore) &&
-					evaluator.see<false,true>(board,move)<0) {
+					evaluator.see<false,true>(board,move)+pawnValue<0) {
 				board.undoMove(backup);
 				continue;
 			}
