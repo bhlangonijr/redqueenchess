@@ -585,17 +585,12 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 				board.undoMove(backup);
 				continue;
 			}
-			const int futilityScore = currentScore + futilityMargin(si.depth);
+			const int futilityScore = currentScore + evaluator.see<false,true>(board,move) +
+					futilityMargin(si.depth);
 			if (futilityScore < si.beta) {
 				if (futilityScore>bestScore) {
 					bestScore=futilityScore;
 				}
-				board.undoMove(backup);
-				continue;
-			}
-			if (si.depth <= 1 &&
-					!isMateScore(bestScore) &&
-					evaluator.see<false,true>(board,move)+pawnValue<0) {
 				board.undoMove(backup);
 				continue;
 			}
