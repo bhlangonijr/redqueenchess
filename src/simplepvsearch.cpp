@@ -524,7 +524,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 				return score;
 			}
 		} else {
-			if (score < -maxScore+maxSearchPly) {
+			if (score == -maxScore+si.ply+2) {
 				nmMateScore=true;
 			}
 		}
@@ -585,8 +585,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 				board.undoMove(backup);
 				continue;
 			}
-			const int futilityScore = currentScore + evaluator.see<false,true>(board,move) +
-					futilityMargin(si.depth);
+			const int futilityScore = currentScore + futilityMargin(si.depth);
 			if (futilityScore < si.beta) {
 				if (futilityScore>bestScore) {
 					bestScore=futilityScore;

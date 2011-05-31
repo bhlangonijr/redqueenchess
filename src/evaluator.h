@@ -353,7 +353,7 @@ public:
 	void evalThreats(PieceColor color, EvalInfo& evalInfo);
 	const bool isPawnPassed(Board& board, const Square from);
 	const void setGameStage(const GamePhase phase);
-	template <bool lazySee, bool moveDone>
+	template <bool lazySee>
 	const int see(Board& board, MoveIterator::Move& move);
 
 	inline const bool isDebugEnabled() {
@@ -413,23 +413,19 @@ inline const bool Evaluator::isPawnPassed(Board& board, const Square from) {
 }
 
 // static exchange evaluation
-template <bool lazySee, bool moveDone>
+template <bool lazySee>
 inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 	const int gainTableSize=32;
-	PieceColor side = board.getPieceColor(moveDone?move.to:move.from);
+	PieceColor side = board.getPieceColor(move.from);
 	PieceColor other = board.flipSide(side);
-	PieceTypeByColor firstPiece = moveDone?board.getPiece(move.to):
-			board.getPiece(move.from);
-	PieceTypeByColor secondPiece = moveDone?EMPTY:board.getPiece(move.to);
-	Bitboard fromPiece = squareToBitboard[moveDone?move.to:move.from];
+	PieceTypeByColor firstPiece = board.getPiece(move.from);
+	PieceTypeByColor secondPiece = board.getPiece(move.to);
+	Bitboard fromPiece = squareToBitboard[move.from];
 	Bitboard occupied = board.getAllPieces();
 	if (secondPiece==EMPTY && board.getPieceType(firstPiece)==PAWN && board.getEnPassant()!=NONE &&
 			board.getSquareFile(move.from)!=board.getSquareFile(move.to)) {
 		secondPiece=makePiece(other,PAWN);
 		occupied^=squareToBitboard[board.getEnPassant()];
-	}
-	if (board.getPieceType(secondPiece)==KING) {
-		return queenValue*10;
 	}
 	if (lazySee && secondPiece!=EMPTY &&
 			materialValues[secondPiece]>=materialValues[firstPiece]) {
@@ -457,6 +453,9 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 	Bitboard allAttackers = EMPTY_BB;
 	Bitboard moreAttackers = EMPTY_BB;
 	gain[0] = materialValues[secondPiece];
+	if (board.getPieceType(secondPiece)==KING) {
+		return queenValue*10;
+	}
 	while (fromPiece) {
 		allAttackers |= attackers;
 		idx++;
