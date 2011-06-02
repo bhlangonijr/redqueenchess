@@ -837,11 +837,12 @@ const int SimplePVSearch::getRazorMargin(const int depth) {
 //initialize reduction arrays
 void SimplePVSearch::initialize() {
 	for (int x=0;x<=maxSearchDepth;x++) {
-		moveCountMargin[x]=3 + x * x / 4;
+		moveCountMargin[x]=4 + x * x / 3;
+		//std::cout << "mc["<<x<<"]=\t"<<moveCountMargin[x]<<std::endl;
 		for (int y=0;y<maxMoveCount;y++) {
 			reductionTablePV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/3.0);
 			reductionTableNonPV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/2.0);
-			futilityMargin[x][y]=static_cast<int>(60.01 * exp(0.43*x+-y*0.02));
+			futilityMargin[x][y]=static_cast<int>(100.01 * exp(0.33*x+-y*0.02));
 //			if (x<15 && y <5)
 //			std::cout << "fm["<<x<<"]["<<y<<"]=\t"<<futilityMargin[x][y]<<std::endl;
 		}

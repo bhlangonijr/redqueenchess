@@ -49,10 +49,10 @@ const int iidMargin=160;
 const int easyMargin=400;
 const int deltaMargin=950;
 const int nullMoveMargin=512;
-const int seMargin=50;
+const int seMargin=35;
 //depth prunning threshold
 const int aspirationDepth=6;
-const int futilityDepth=8;
+const int futilityDepth=6;
 const int nullMoveDepth=4;
 const int razorDepth=4;
 const int hardPruneDepth=3;
