@@ -278,12 +278,12 @@ void SearchAgent::smpPVSearch(Board board, SimplePVSearch* master,
 				!pawnOn7thExtension &&
 				!passedPawn &&
 				!*sp->nmMateScore) {
-			if (moveCountMargin(sp->depth) < *sp->moveCounter
+			if (ss->getMoveCountMargin(sp->depth) < *sp->moveCounter
 					&& !master->isMateScore(*sp->bestScore) ) {
 				board.undoMove(backup);
 				continue;
 			}
-			const int futilityScore = *sp->currentScore + futilityMargin(sp->depth);
+			const int futilityScore = *sp->currentScore + ss->getFutilityMargin(sp->depth, *sp->moveCounter);
 			master->lock();
 			if (futilityScore < sp->beta) {
 				if (futilityScore>*sp->bestScore) {

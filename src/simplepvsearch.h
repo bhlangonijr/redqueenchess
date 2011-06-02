@@ -49,10 +49,10 @@ const int iidMargin=160;
 const int easyMargin=400;
 const int deltaMargin=950;
 const int nullMoveMargin=512;
-const int seMargin=35;
+const int seMargin=50;
 //depth prunning threshold
 const int aspirationDepth=6;
-const int futilityDepth=5;
+const int futilityDepth=8;
 const int nullMoveDepth=4;
 const int razorDepth=4;
 const int hardPruneDepth=3;
@@ -64,9 +64,6 @@ const int lateMoveThreshold=2;
 const int scoreTable[11]={0,80000,60000,95000,90000,45000,40000,1000,-12000,50050,50000};
 const int64_t defaultNodesToGo=0xFFF;
 const int64_t fastNodesToGo=0xFF;
-const inline int futilityMargin(const int depth) {return depth * 150;}
-const inline int razorMargin(const int depth) {return 150 + depth * 175;}
-const inline int moveCountMargin(const int depth) {return 6 + depth * 4;}
 namespace SearchTypes {
 enum NodeType {
 	PV_NODE, NONPV_NODE, NODE_NONE
@@ -190,6 +187,12 @@ public:
 	}
 
 	const int getReduction(const bool isPV, const int depth, const int moveCounter) const;
+
+	const int getFutilityMargin(const int depth, const int moveCounter) const;
+
+	const int getMoveCountMargin(const int depth) const;
+
+	const int getRazorMargin(const int depth);
 
 	inline const void setTimeToSearch(const int64_t value) {
 		timeToSearch = value;

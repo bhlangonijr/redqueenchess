@@ -26,6 +26,8 @@
 #include "simplepvsearch.h"
 static int reductionTablePV[maxSearchDepth+1][maxMoveCount];
 static int reductionTableNonPV[maxSearchDepth+1][maxMoveCount];
+static int futilityMargin[maxSearchDepth+1][maxMoveCount];
+static int moveCountMargin[maxSearchDepth+1];
 // root search
 void SimplePVSearch::search(Board board) {
 	prepareToSearch();
@@ -475,8 +477,8 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 	if (si.depth < razorDepth && hashMove.none() && si.allowNullMove &&
 			!isKingAttacked && !isMateScore(si.beta) &&
 			!isPawnPromoting(board) && !si.move.none() &&
-			currentScore < si.beta-razorMargin(si.depth)) {
-		const int newBeta = si.beta-razorMargin(si.depth);
+			currentScore < si.beta-getRazorMargin(si.depth)) {
+		const int newBeta = si.beta-getRazorMargin(si.depth);
 		SearchInfo newSi(si.allowNullMove,si.move,newBeta-1,newBeta,0,
 				si.ply,NONPV_NODE,si.splitPoint);
 		score = qSearch(board, newSi);
@@ -487,8 +489,8 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 	if (!isKingAttacked && si.allowNullMove &&
 			si.depth < nullMoveDepth && !isPawnFinal(board) &&
 			!isMateScore(si.beta) && !si.move.none() &&
-			currentScore >= si.beta+futilityMargin(si.depth)) {
-		return currentScore-futilityMargin(si.depth);
+			currentScore >= si.beta+getFutilityMargin(si.depth,0)) {
+		return currentScore-getFutilityMargin(si.depth,0);
 	}
 	// null move
 	if (si.depth>1 && !isKingAttacked && si.allowNullMove &&
@@ -580,12 +582,12 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 				!pawnOn7thExtension &&
 				!passedPawn &&
 				!nmMateScore) {
-			if (moveCountMargin(si.depth) < moveCounter
+			if (getMoveCountMargin(si.depth) < moveCounter
 					&& !isMateScore(bestScore) ) {
 				board.undoMove(backup);
 				continue;
 			}
-			const int futilityScore = currentScore + futilityMargin(si.depth);
+			const int futilityScore = currentScore + getFutilityMargin(si.depth,moveCounter);
 			if (futilityScore < si.beta) {
 				if (futilityScore>bestScore) {
 					bestScore=futilityScore;
@@ -811,18 +813,37 @@ inline void SimplePVSearch::retrievePvFromHash(Board& board, PvLine& pv) {
 		board.undoMove(backup[i]);
 	}
 }
-
+//const inline int futilityMargin(const int depth, const int moveCount) {return ((depth * depth / 2) * 60) - (moveCount*depth*2);}
+//const inline int getRazorMargin(const int depth) {return 25 * depth + 450;}
+//const inline int moveCountMargin(const int depth) {return 3 + depth * depth / 4;}
+// get reduction factor
 const int SimplePVSearch::getReduction(const bool isPV, const int depth, const int moveCounter) const {
 	int reduction = isPV?reductionTablePV[depth][moveCounter]:
 			reductionTableNonPV[depth][moveCounter];
 	return reduction;
 }
+//get futility margins
+const int SimplePVSearch::getFutilityMargin(const int depth, const int moveCounter) const {
+	return futilityMargin[std::min(maxSearchDepth,depth)][std::min(maxMoveCount,moveCounter)];
+}
+//get move count margins
+const int SimplePVSearch::getMoveCountMargin(const int depth) const {
+	return moveCountMargin[std::min(maxSearchDepth,depth)];
+}
+//get razor margins
+const int SimplePVSearch::getRazorMargin(const int depth) {
+	return 25 * depth + 450;
+}
 //initialize reduction arrays
 void SimplePVSearch::initialize() {
 	for (int x=0;x<=maxSearchDepth;x++) {
+		moveCountMargin[x]=3 + x * x / 4;
 		for (int y=0;y<maxMoveCount;y++) {
 			reductionTablePV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/3.0);
 			reductionTableNonPV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/2.0);
+			futilityMargin[x][y]=static_cast<int>(60.01 * exp(0.43*x+-y*0.02));
+//			if (x<15 && y <5)
+//			std::cout << "fm["<<x<<"]["<<y<<"]=\t"<<futilityMargin[x][y]<<std::endl;
 		}
 	}
 }
