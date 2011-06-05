@@ -187,6 +187,7 @@ const int Evaluator::evalPassedPawn(EvalInfo& evalInfo, PieceColor color, const 
 	} else {
 		eval += passedPawnBonus[color][squareRank[from]];
 	}
+	eval += pawnWeight[color][squareFile[from]];
 	if (isPawnFinal) {
 		const Rank rank = color==WHITE?RANK_8:RANK_1;
 		const Square target = board.makeSquare(rank,squareFile[from]);

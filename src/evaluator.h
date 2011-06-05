@@ -127,6 +127,12 @@ const int candidatePasserBonus[ALL_PIECE_COLOR][ALL_RANK] = {
 		{}
 };
 
+const int pawnWeight[ALL_PIECE_COLOR][ALL_FILE] = {
+		{0,MS(-3,-2),MS(-2,-1),MS(+1,+2),MS(+1,+2),MS(-2,-1),MS(-3,-2),0},
+		{0,MS(-3,-2),MS(-2,-1),MS(+1,+2),MS(+1,+2),MS(-2,-1),MS(-3,-2),0},
+		{}
+};
+
 const int spaceBonus[18] = {
 		MS(+0,+0),MS(+0,+0),MS(+5,+5),MS(+7,+7),MS(+9,+9),MS(+15,+13),MS(+20,+17),MS(+25,+23),MS(+30,+27),
 		MS(+35,+33),MS(+45,+45),MS(+50,+50),MS(+60,+60),MS(+70,+70),MS(+80,+80),MS(+90,+90),MS(+100,+100),MS(+100,+100)

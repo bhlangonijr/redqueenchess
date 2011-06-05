@@ -832,20 +832,17 @@ const int SimplePVSearch::getMoveCountMargin(const int depth) const {
 }
 //get razor margins
 const int SimplePVSearch::getRazorMargin(const int depth) {
-	return 62 * depth + 450;
+	return 125 + depth * 175;
 }
 //initialize reduction arrays
 void SimplePVSearch::initialize() {
 	for (int x=0;x<=maxSearchDepth;x++) {
 		moveCountMargin[x]=5 + x * x / 2;
-		//std::cout << "mc["<<x<<"]=\t"<<moveCountMargin[x]<<std::endl;
 		for (int y=0;y<maxMoveCount;y++) {
 			reductionTablePV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/3.0);
 			reductionTableNonPV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/2.0);
 			futilityMargin[x][y]=static_cast<int>(100.03 * exp(0.35*(double(x))+-double(y*x)*0.01)) +
 					(x>1 ? 90.0 * exp(0.03*(double(x))): 0);
-//			if (x<15 && y <5)
-//			std::cout << "fm["<<x<<"]["<<y<<"]=\t"<<futilityMargin[x][y]<<std::endl;
 		}
 	}
 }

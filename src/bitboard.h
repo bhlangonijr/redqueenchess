@@ -560,16 +560,17 @@ inline int bitCount(const uint64_t data) {
 #if defined(__LP64__)
 	return __builtin_popcountll( data );
 #else
-	uint64_t x = data;
-	const uint64_t k1 = 0x5555555555555555ULL;
-	const uint64_t k2 = 0x3333333333333333ULL;
-	const uint64_t k4 = 0x0f0f0f0f0f0f0f0fULL;
-	const uint64_t kf = 0x0101010101010101ULL;
-	x =  x       - ((x >> 1)  & k1);
-	x = (x & k2) + ((x >> 2)  & k2);
-	x = (x       +  (x >> 4)) & k4 ;
-	x = (x * kf) >> 56;
-	return int(x);
+	//from stockfish
+	unsigned w = unsigned(data >> 32);
+	unsigned v = unsigned(data);
+	v -= (v >> 1) & 0x55555555;
+	w -= (w >> 1) & 0x55555555;
+	v = ((v >> 2) & 0x33333333) + (v & 0x33333333);
+	w = ((w >> 2) & 0x33333333) + (w & 0x33333333);
+	v = ((v >> 4) + v) & 0x0F0F0F0F;
+	v += (((w >> 4) + w) & 0x0F0F0F0F);
+	v *= 0x01010101;
+	return int(v >> 24);
 #endif
 }
 
@@ -580,6 +581,7 @@ inline uint32_t bitCount15(const uint64_t data) {
 #if defined(__LP64__)
 	return __builtin_popcountll( data );
 #else
+	//from stockfish
 	unsigned w = unsigned(data >> 32);
 	unsigned v = unsigned(data);
 	v -= (v >> 1) & 0x55555555;
