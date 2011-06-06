@@ -353,7 +353,6 @@ void Evaluator::evalEndGame(PieceColor color, EvalInfo& evalInfo) {
 				board.getMaterial(other);
 		if (balance>0) {
 			const bool otherHasNonPawnMaterial = board.getPieces(other)^board.getPieces(other,PAWN);
-			const bool otherHasPawnMaterial = board.getPieces(other,PAWN);
 			if (board.getMaterial(color) <= kingValue+drawishMaxValue) {
 				if (board.getMaterial(other) <= kingValue ||
 						otherHasNonPawnMaterial) {
@@ -367,18 +366,10 @@ void Evaluator::evalEndGame(PieceColor color, EvalInfo& evalInfo) {
 					}
 				}
 			} else {
-				if (otherHasPawnMaterial) {
-					if (balance <= drawishMaxValue) {
-						evalInfo.imbalance[color] += -balance/3;
-					} else if (balance <= rookValue) {
-						evalInfo.imbalance[color] += -balance/10;
-					}
-				} else {
-					if (balance <= drawishMaxValue) {
-						evalInfo.imbalance[color] += -balance/6;
-					} else if (balance <= rookValue) {
-						evalInfo.imbalance[color] += -balance/12;
-					}
+				if (balance <= drawishMaxValue) {
+					evalInfo.imbalance[color] += -balance/3;
+				} else if (balance <= rookValue) {
+					evalInfo.imbalance[color] += -balance/12;
 				}
 			}
 		}
