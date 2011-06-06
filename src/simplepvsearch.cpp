@@ -813,13 +813,10 @@ inline void SimplePVSearch::retrievePvFromHash(Board& board, PvLine& pv) {
 		board.undoMove(backup[i]);
 	}
 }
-//const inline int futilityMargin(const int depth, const int moveCount) {return ((depth * depth / 2) * 60) - (moveCount*depth*2);}
-//const inline int getRazorMargin(const int depth) {return 25 * depth + 450;}
-//const inline int moveCountMargin(const int depth) {return 3 + depth * depth / 4;}
 // get reduction factor
 const int SimplePVSearch::getReduction(const bool isPV, const int depth, const int moveCounter) const {
-	int reduction = isPV?reductionTablePV[depth][moveCounter]:
-			reductionTableNonPV[depth][moveCounter];
+	int reduction = isPV?reductionTablePV[std::min(maxSearchDepth,depth)][std::min(maxMoveCount,moveCounter)]:
+			reductionTableNonPV[std::min(maxSearchDepth,depth)][std::min(maxMoveCount,moveCounter)];
 	return reduction;
 }
 //get futility margins

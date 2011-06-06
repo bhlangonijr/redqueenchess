@@ -357,6 +357,7 @@ public:
 	void evalPieces(PieceColor color, EvalInfo& evalInfo);
 	void evalBoardControl(PieceColor color, EvalInfo& evalInfo);
 	void evalThreats(PieceColor color, EvalInfo& evalInfo);
+	void evalEndGame(PieceColor color, EvalInfo& evalInfo);
 	const bool isPawnPassed(Board& board, const Square from);
 	const void setGameStage(const GamePhase phase);
 	template <bool lazySee>

@@ -58,8 +58,10 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 		evalThreats(evalInfo.other, evalInfo);
 		evalKing(evalInfo.side, evalInfo);
 		evalKing(evalInfo.other, evalInfo);
-		evalInfo.computeEval();
 	}
+	evalEndGame(evalInfo.side, evalInfo);
+	evalEndGame(evalInfo.other, evalInfo);
+	evalInfo.computeEval();
 	if (isDebugEnabled()) {
 		std::cout << evalInfo.toString();
 	}
@@ -231,29 +233,14 @@ const int Evaluator::evalPassedPawn(EvalInfo& evalInfo, PieceColor color, const 
 // Pieces eval function
 void Evaluator::evalPieces(PieceColor color, EvalInfo& evalInfo) {
 	Board& board = evalInfo.board;
-	const PieceColor other = board.flipSide(color);
 	evalInfo.evalPieces[color] +=
 			board.isCastleDone(color)?DONE_CASTLE_BONUS:
 	board.getCastleRights(color)==NO_CASTLE?-DONE_CASTLE_BONUS:0;
 	const Bitboard bishop = board.getPieces(color,BISHOP);
-	if ((bishop & WHITE_SQUARES) && (bishop & BLACK_SQUARES)) {
+	const Bitboard lightBishop = bishop & WHITE_SQUARES;
+	const Bitboard darkBishop = bishop & BLACK_SQUARES;
+	if (lightBishop && darkBishop) {
 		evalInfo.imbalance[color] += lowerScore(BISHOP_PAIR_BONUS);
-	}
-	const int pawnCount = board.getPieceCount(makePiece(color,PAWN));
-	if (pawnCount==0) {
-		const int balance = board.getMaterial(color)-
-				board.getMaterial(other);
-		if (balance>0) {
-			if (board.getMaterial(color) <= kingValue+bishopValue) {
-				evalInfo.imbalance[color] += -balance*95/100;
-			} else {
-				if (balance <= bishopValue) {
-					evalInfo.imbalance[color] += -balance/3;
-				} else if (balance <= rookValue) {
-					evalInfo.imbalance[color] += -balance/12;
-				}
-			}
-		}
 	}
 }
 // mobility eval function
@@ -350,6 +337,47 @@ void Evaluator::evalThreats(PieceColor color, EvalInfo& evalInfo) {
 					const PieceTypeByColor otherPiece = makePiece(other,PieceType(otherType));
 					if (attacked & evalInfo.board.getPieces(otherPiece)) {
 						evalInfo.pieceThreat[color] += threatBonus[sideType][otherType];
+					}
+				}
+			}
+		}
+	}
+}
+// End game eval
+void Evaluator::evalEndGame(PieceColor color, EvalInfo& evalInfo) {
+	Board& board = evalInfo.board;
+	const PieceColor other = board.flipSide(color);
+	const int pawnCount = board.getPieceCount(makePiece(color,PAWN));
+	if (pawnCount==0) {
+		const int balance = board.getMaterial(color)-
+				board.getMaterial(other);
+		if (balance>0) {
+			const bool otherHasNonPawnMaterial = board.getPieces(other)^board.getPieces(other,PAWN);
+			const bool otherHasPawnMaterial = board.getPieces(other,PAWN);
+			if (board.getMaterial(color) <= kingValue+drawishMaxValue) {
+				if (board.getMaterial(other) <= kingValue ||
+						otherHasNonPawnMaterial) {
+					evalInfo.imbalance[color] += -balance; //draw
+				} else {
+					const int otherPawnCount=board.getPieceCount(makePiece(other,PAWN));
+					if (otherPawnCount<2) {
+						evalInfo.imbalance[color] += -(balance*95)/100;
+					} else {
+						evalInfo.imbalance[color] += -balance + -((pawnValue/2)*otherPawnCount);
+					}
+				}
+			} else {
+				if (otherHasPawnMaterial) {
+					if (balance <= drawishMaxValue) {
+						evalInfo.imbalance[color] += -balance/3;
+					} else if (balance <= rookValue) {
+						evalInfo.imbalance[color] += -balance/10;
+					}
+				} else {
+					if (balance <= drawishMaxValue) {
+						evalInfo.imbalance[color] += -balance/6;
+					} else if (balance <= rookValue) {
+						evalInfo.imbalance[color] += -balance/12;
 					}
 				}
 			}
