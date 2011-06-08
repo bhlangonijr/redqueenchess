@@ -70,10 +70,10 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 // king eval function
 void Evaluator::evalKing(PieceColor color, EvalInfo& evalInfo) {
 	const PieceColor other = evalInfo.board.flipSide(color);
-	const Square kingSq = evalInfo.board.getKingSquare(color);
+	const Square kingSq = evalInfo.board.getKingSquare(other);
 	const Bitboard kingSquareBB = adjacentSquares[kingSq];
 	int pressure = 0;
-	for (int piece=makePiece(other,KNIGHT);piece<=makePiece(other,QUEEN);piece++) {
+	for (int piece=makePiece(color,KNIGHT);piece<=makePiece(color,QUEEN);piece++) {
 		// king area safety
 		const Bitboard attacks = evalInfo.attackers[piece]&kingSquareBB;
 		if (attacks) {
@@ -81,7 +81,7 @@ void Evaluator::evalKing(PieceColor color, EvalInfo& evalInfo) {
 			pressure += getKingAttackWeight(piece,attackCount);
 		}
 	}
-	evalInfo.kingThreat[color] -= pressure;
+	evalInfo.kingThreat[color] += pressure;
 }
 
 void Evaluator::evalPawnsFromCache(PieceColor color, PawnInfo& info, EvalInfo& evalInfo) {
@@ -267,7 +267,9 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 				!(evalInfo.attackers[makePiece(other,PAWN)]&squareToBitboard[from])) {
 			evalInfo.evalPieces[color] += knightOutpostBonus[color][from];
 		}
-		evalInfo.kingThreat[color] += knightKingBonus[squareDistance(from,otherKingSq)];
+		if(!(evalInfo.attackers[makePiece(other,PAWN)]&squareToBitboard[from])) {
+			evalInfo.kingThreat[color] += knightKingBonus[squareDistance(from,otherKingSq)];
+		}
 		from = extractLSB(pieces);
 	}
 	pieces = board.getPieces(color,BISHOP);
@@ -276,7 +278,9 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 		const Bitboard attacks = board.getBishopAttacks(from);
 		evalInfo.attackers[makePiece(color,BISHOP)] |= attacks;
 		evalInfo.mobility[color] += bishopMobility[bitCount(attacks&freeArea)];
-		evalInfo.kingThreat[color] += bishopKingBonus[squareDistance(from,otherKingSq)];
+		if(!(evalInfo.attackers[makePiece(other,PAWN)]&squareToBitboard[from])) {
+			evalInfo.kingThreat[color] += bishopKingBonus[squareDistance(from,otherKingSq)];
+		}
 		from = extractLSB(pieces);
 	}
 	pieces = board.getPieces(color,ROOK);
@@ -296,7 +300,9 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 				evalInfo.evalPieces[color] += ROOK_ON_HALF_OPEN_FILE_BONUS;
 			}
 		}
-		evalInfo.kingThreat[color] += rookKingBonus[squareDistance(from,otherKingSq)];
+		if(!(evalInfo.attackers[makePiece(other,PAWN)]&squareToBitboard[from])) {
+			evalInfo.kingThreat[color] += rookKingBonus[squareDistance(from,otherKingSq)];
+		}
 		from = extractLSB(pieces);
 	}
 	pieces = board.getPieces(color,QUEEN);
@@ -310,7 +316,9 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 				(otherKingBB & eighthRank[color])) {
 			evalInfo.evalPieces[color] += QUEEN_ON_7TH_RANK_BONUS;
 		}
-		evalInfo.kingThreat[color] += queenKingBonus[squareDistance(from,otherKingSq)];
+		if(!(evalInfo.attackers[makePiece(other,PAWN)]&squareToBitboard[from])) {
+			evalInfo.kingThreat[color] += queenKingBonus[squareDistance(from,otherKingSq)];
+		}
 		from = extractLSB(pieces);
 	}
 	// evaluate space
