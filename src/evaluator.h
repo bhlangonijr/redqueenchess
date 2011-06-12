@@ -37,6 +37,7 @@
 #define BP(COLOR, X) ((FSQUARE((COLOR==WHITE?BLACK:WHITE), (neighborFiles[X]), X)) | (rankBB[squareRank[X]] & adjacentSquares[X]))
 #define FQ(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]]), X))
 const int DOUBLED_PAWN_PENALTY =   		 MS(-10,-16);
+const int PAWN_MOBILITY_PENALTY =   	 MS(-5,-7);
 const int ISOLATED_PAWN_PENALTY =  		 MS(-20,-10);
 const int ISOLATED_OPEN_PAWN_PENALTY =   MS(-20,-20);
 const int BACKWARD_PAWN_PENALTY =  		 MS(-13,-10);
@@ -51,10 +52,12 @@ const int ROOK_ON_HALF_OPEN_FILE_BONUS = MS(+10,+10);
 const int QUEEN_ON_7TH_RANK_BONUS = 	 MS(+10,+15);
 const int PASSER_AND_KING_BONUS = 		 MS(0,+5);
 
+
 const int knightMobility[9] = {
 		-4*MS(+8,+4),-2*MS(+8,+4),+0*MS(+8,+4),+1*MS(+8,+4),+2*MS(+8,+4),
 		+3*MS(+8,+4),+4*MS(+8,+4),+5*MS(+8,+4),+6*MS(+8,+4)
 };
+
 const int bishopMobility[16] = {
 		-7*MS(+6,+4),-4*MS(+6,+4),-2*MS(+6,+4),+0*MS(+6,+4),+1*MS(+6,+4),+2*MS(+6,+4),+3*MS(+6,+4),+4*MS(+6,+4),
 		+5*MS(+6,+4),+6*MS(+6,+4),+7*MS(+6,+4),+8*MS(+6,+4),+9*MS(+6,+4),+10*MS(+6,+4),+10*MS(+6,+4),+10*MS(+6,+4)

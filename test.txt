@@ -211,3 +211,8 @@ go infinite
 ;a6
 
 r1bqkb1r/pppppppp/2n2n2/6P1/4PP2/8/PPPP3P/RNBQKBNR b KQkq - 0 8
+
+
+;king safety tests
+position fen 8/8/8/8/8/3k1q2/8/r4K1R w - - 0 1
+test eval

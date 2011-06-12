@@ -255,6 +255,11 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 	for (int piece=makePiece(color,KNIGHT);piece<=makePiece(color,QUEEN);piece++) {
 		evalInfo.attackers[piece] = EMPTY_BB;
 	}
+	pieces = evalInfo.board.getAllPieces();
+	pieces = (color==WHITE?pieces>>8:pieces<<8) & evalInfo.board.getPieces(color,PAWN);
+	if (pieces) {
+		evalInfo.mobility[color] += PAWN_MOBILITY_PENALTY * bitCount(pieces);
+	}
 	Square from = NONE;
 	evalInfo.kingThreat[color]=0;
 	pieces = evalInfo.board.getPieces(color,KNIGHT);
