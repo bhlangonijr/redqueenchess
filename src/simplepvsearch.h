@@ -56,6 +56,7 @@ const int futilityDepth=6;
 const int nullMoveDepth=4;
 const int razorDepth=4;
 const int hardPruneDepth=3;
+const int qsOnlyRecaptureDepth=-6;
 const int lmrDepthThresholdRoot=3;
 const int lmrDepthThreshold=2;
 const int sePVDepth=7;
@@ -144,10 +145,7 @@ public:
 	MoveIterator::Move& selectMove(Board& board, MoveIterator& moves,
 			MoveIterator::Move& ttMove, int ply, int depth);
 	bool isMateScore(const int score);
-	bool isPawnFinal(Board& board);
 	bool isPawnPush(Board& board, Square& square);
-	bool isCaptureOrPromotion(Board& board, MoveIterator::Move& move);
-	bool isPawnPromoting(const Board& board);
 	const bool stop(SearchInfo& info);
 	const bool timeIsUp();
 
@@ -193,6 +191,8 @@ public:
 	const int getMoveCountMargin(const int depth) const;
 
 	const int getRazorMargin(const int depth);
+
+	const int getDeltaMargin(const int depth);
 
 	inline const void setTimeToSearch(const int64_t value) {
 		timeToSearch = value;
@@ -579,13 +579,6 @@ inline bool SimplePVSearch::isMateScore(const int score) {
 	return score < -maxScore+maxSearchPly || score > maxScore-maxSearchPly;
 }
 
-// remains pawns & kings only?
-inline bool SimplePVSearch::isPawnFinal(Board& board) {
-	Bitboard pieces = board.getPieces(WHITE_PAWN) |	board.getPieces(BLACK_PAWN) |
-			board.getPieces(WHITE_KING) | board.getPieces(BLACK_KING);
-	return !(pieces^board.getAllPieces());
-}
-
 // pawn push
 inline bool SimplePVSearch::isPawnPush(Board& board, Square& square) {
 	if (board.getPieceType(square)!=PAWN) {
@@ -594,16 +587,7 @@ inline bool SimplePVSearch::isPawnPush(Board& board, Square& square) {
 	return evaluator.isPawnPassed(board,square);
 }
 
-inline bool SimplePVSearch::isCaptureOrPromotion(Board& board, MoveIterator::Move& move) {
-	return board.isCaptureMove(move) ||	move.promotionPiece != EMPTY;
-}
-
-// pawn promoting
-inline bool SimplePVSearch::isPawnPromoting(const Board& board) {
-	return (board.getPieces(WHITE_PAWN) & rankBB[RANK_7]) ||
-			(board.getPieces(BLACK_PAWN) & rankBB[RANK_2]);
-}
-
+// time is up?
 inline const bool SimplePVSearch::timeIsUp() {
 	if (searchFixedDepth || infinite || nodes & nodesToGo) {
 		return false;
@@ -686,7 +670,7 @@ inline void SimplePVSearch::clearKillers() {
 
 // update killers
 inline void SimplePVSearch::updateKillers(Board& board, MoveIterator::Move& move, int ply) {
-	if (isCaptureOrPromotion(board,move) || move.none()) {
+	if (board.isCaptureOrPromotion(move) || move.none()) {
 		return;
 	}
 	if (move != killer[ply][0]) {

@@ -26,7 +26,7 @@
 
 #include "evaluator.h"
 
-Evaluator::Evaluator() : debug(false) {
+Evaluator::Evaluator() : debug(false), lazyEval(false) {
 	cleanPawnInfo();
 }
 
@@ -36,10 +36,16 @@ Evaluator::~Evaluator() {
 // main eval function
 const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 	EvalInfo evalInfo(board);
+	setLazyEval(true);
 	evalPieces(evalInfo.side, evalInfo);
 	evalPieces(evalInfo.other, evalInfo);
-	evalInfo.computeEval();
-	if (evalInfo.getEval() > alpha-lazyEvalMargin && evalInfo.getEval() < beta+lazyEvalMargin) {
+	bool doFullEval = board.isInCheck() || board.isPawnPromoting();
+	if (!doFullEval) {
+		evalInfo.computeEval();
+		doFullEval = evalInfo.getEval() > alpha-lazyEvalMargin && evalInfo.getEval() < beta+lazyEvalMargin;
+	}
+	if (doFullEval) {
+		setLazyEval(false);
 		evalInfo.attackers[WHITE_PAWN] = ((evalInfo.pawns[WHITE] & midBoardNoFileA) << 7) |
 				((evalInfo.pawns[WHITE] & midBoardNoFileH) << 9);
 		evalInfo.attackers[BLACK_PAWN] = ((evalInfo.pawns[BLACK] & midBoardNoFileA) >> 9) |

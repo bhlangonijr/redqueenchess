@@ -374,6 +374,14 @@ public:
 		this->debug = enabled;
 	}
 
+	inline const bool isLazyEval() {
+		return lazyEval;
+	}
+
+	inline const void setLazyEval(const bool _lazyEval) {
+		this->lazyEval = _lazyEval;
+	}
+
 	inline const static int interpolate(const int value, const int gamePhase) {
 		const int mgValue = upperScore(value);
 		const int egValue = lowerScore(value);
@@ -412,6 +420,7 @@ private:
 	Bitboard getLeastValuablePiece(Board& board, Bitboard attackers, PieceColor& color, PieceTypeByColor& piece);
 	PawnInfo pawnInfo[pawnHashSize];
 	bool debug;
+	bool lazyEval;
 };
 
 // verify if pawn is passer

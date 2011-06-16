@@ -349,6 +349,10 @@ public:
 	void setGamePhase(const GamePhase phase);
 
 	Square getKingSquare(const PieceColor color);
+	bool isPawnFinal();
+	bool isCaptureOrPromotion(MoveIterator::Move& move);
+	bool isPawnPromoting();
+	bool isPawnOn6th();
 	static const int interpolate(const int first, const int second, const int position);
 	const int getPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase);
 	static const int calcPieceSquareValue(const PieceTypeByColor piece, const Square square, GamePhase phase);
@@ -1357,6 +1361,29 @@ inline void Board::setGamePhase(const GamePhase phase) {
 
 inline Square Board::getKingSquare(const PieceColor color) {
 	return currentBoard.kingSquare[color];
+}
+
+// remains pawns & kings only?
+inline bool Board::isPawnFinal() {
+	Bitboard pieces = getPieces(WHITE_PAWN) |	getPieces(BLACK_PAWN) |
+			getPieces(WHITE_KING) | getPieces(BLACK_KING);
+	return !(pieces^getAllPieces());
+}
+
+// capture or promotion
+inline bool Board::isCaptureOrPromotion(MoveIterator::Move& move) {
+	return isCaptureMove(move) ||	move.promotionPiece != EMPTY;
+}
+
+// pawn promoting
+inline bool Board::isPawnPromoting() {
+	return (getPieces(WHITE_PAWN) & rankBB[RANK_7]) ||
+			(getPieces(BLACK_PAWN) & rankBB[RANK_2]);
+}
+// pawn close to promotion
+inline bool Board::isPawnOn6th() {
+	return (getPieces(WHITE_PAWN) & rankBB[RANK_6]) ||
+			(getPieces(BLACK_PAWN) & rankBB[RANK_3]);
 }
 
 #endif /* BOARD_H_ */

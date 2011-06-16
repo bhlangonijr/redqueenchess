@@ -296,11 +296,13 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 		hashMove = hashData.move();
 	}
 	const bool isKingAttacked = board.isInCheck();
+	bool isLazyEval=false;
 	if (!isKingAttacked) {
 		if (hashOk && (hashData.flag() & TranspositionTable::NODE_EVAL)) {
 			currentScore = hashData.evalValue();
 		} else {
 			currentScore = evaluator.evaluate(board,si.alpha,si.beta);
+			isLazyEval = evaluator.isLazyEval();
 		}
 	}
 	//iid
@@ -389,7 +391,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 		if (score>=si.beta) {
 			bestScore=score;
 			bestMove=move;
-			TranspositionTable::NodeFlag flag = currentScore!=-maxScore?
+			TranspositionTable::NodeFlag flag = currentScore!=-maxScore && !isLazyEval?
 					TranspositionTable::LOWER_EVAL:TranspositionTable::LOWER ;
 			agent->updateHistory(board,bestMove,si.depth);
 			updateKillers(board,bestMove,si.ply);
@@ -418,10 +420,10 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 	}
 	TranspositionTable::NodeFlag flag;
 	if (bestScore>oldAlpha) {
-		flag = currentScore!=-maxScore?
+		flag = currentScore!=-maxScore && !isLazyEval?
 				TranspositionTable::EXACT_EVAL:TranspositionTable::EXACT;
 	} else {
-		flag = TranspositionTable::EXACT?
+		flag = currentScore!=-maxScore && !isLazyEval?
 				TranspositionTable::UPPER_EVAL:TranspositionTable::UPPER;
 		bestMove=emptyMove;
 	}
@@ -451,6 +453,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		return si.beta-1;
 	}
 	const bool isKingAttacked = board.isInCheck();
+	bool isLazyEval = false;
 	bool nmMateScore=false;
 	bool okToPrune=false;
 	int score = 0;
@@ -472,11 +475,12 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 			currentScore = hashData.evalValue();
 		} else {
 			currentScore = evaluator.evaluate(board,si.beta-1,si.beta);
+			isLazyEval = evaluator.isLazyEval();
 		}
 	}
 	if (si.depth < razorDepth && hashMove.none() && si.allowNullMove &&
 			!isKingAttacked && !isMateScore(si.beta) &&
-			!isPawnPromoting(board) && !si.move.none() &&
+			!board.isPawnPromoting() && !si.move.none() &&
 			currentScore < si.beta-getRazorMargin(si.depth)) {
 		const int newBeta = si.beta-getRazorMargin(si.depth);
 		SearchInfo newSi(si.allowNullMove,si.move,newBeta-1,newBeta,0,
@@ -487,14 +491,14 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		}
 	}
 	if (!isKingAttacked && si.allowNullMove &&
-			si.depth < nullMoveDepth && !isPawnFinal(board) &&
+			si.depth < nullMoveDepth && !board.isPawnFinal() &&
 			!isMateScore(si.beta) && !si.move.none() &&
 			currentScore >= si.beta+getFutilityMargin(si.depth,0)) {
 		return currentScore-getFutilityMargin(si.depth,0);
 	}
 	// null move
 	if (si.depth>1 && !isKingAttacked && si.allowNullMove &&
-			!isPawnFinal(board) && !isMateScore(si.beta) &&
+			!board.isPawnFinal() && !isMateScore(si.beta) &&
 			currentScore >= si.beta-(si.depth>=nullMoveDepth?nullMoveMargin:0)) {
 		const int reduction = 3 + (si.depth > 4 ? si.depth/6 : 0);
 		MoveBackup backup;
@@ -520,7 +524,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 				}
 			}
 			if (okToPrune) {
-				const TranspositionTable::NodeFlag flag = currentScore!=-maxScore?
+				const TranspositionTable::NodeFlag flag = currentScore!=-maxScore && !isLazyEval?
 						TranspositionTable::NM_LOWER_EVAL:TranspositionTable::NM_LOWER;
 				agent->hashPut(key,score,currentScore,si.depth,si.ply,flag,emptyMove);
 				return score;
@@ -629,7 +633,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		if (score>=si.beta) {
 			bestScore=score;
 			bestMove=move;
-			TranspositionTable::NodeFlag flag = currentScore!=-maxScore?
+			TranspositionTable::NodeFlag flag = currentScore!=-maxScore && !isLazyEval?
 					TranspositionTable::LOWER_EVAL:TranspositionTable::LOWER;
 			agent->updateHistory(board,bestMove,si.depth);
 			updateKillers(board,bestMove,si.ply);
@@ -653,7 +657,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 	if (!moveCounter) {
 		return si.partialSearch?si.beta-1:isKingAttacked?-maxScore+si.ply:drawScore;
 	}
-	TranspositionTable::NodeFlag flag = currentScore!=-maxScore?
+	TranspositionTable::NodeFlag flag = currentScore!=-maxScore && !isLazyEval?
 			TranspositionTable::UPPER_EVAL:TranspositionTable::UPPER;
 	bestMove=emptyMove;
 	agent->hashPut(key,bestScore,currentScore,si.depth,si.ply,flag,emptyMove);
@@ -683,6 +687,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 		}
 	}
 	const bool isKingAttacked = board.isInCheck();
+	bool isLazyEval = false;
 	int bestScore = -maxScore;
 	int currentScore = -maxScore;
 	if (!isKingAttacked) {
@@ -690,19 +695,20 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 			currentScore = hashData.evalValue();
 		} else {
 			currentScore=evaluator.evaluate(board,si.alpha,si.beta);
+			isLazyEval = evaluator.isLazyEval();
 		}
 		bestScore=currentScore;
 		if(bestScore>=si.beta) {
-			if (!hashOk) {
+			if (!hashOk && !isLazyEval) {
 				const TranspositionTable::NodeFlag flag = TranspositionTable::NODE_EVAL;
 				agent->hashPut(key,bestScore,currentScore,-maxSearchPly,si.ply,flag,emptyMove);
 			}
 			return bestScore;
 		}
-		const int delta = isPawnPromoting(board)?deltaMargin*2:deltaMargin;
+		const int delta = board.isPawnPromoting()?getDeltaMargin(si.depth)*2:getDeltaMargin(si.depth);
 		if (bestScore < si.alpha - delta && !(si.nodeType==PV_NODE) && hashMove.none() &&
 				board.getGamePhase()<ENDGAME && !isMateScore(si.beta)) {
-			if (!hashOk) {
+			if (!hashOk && !isLazyEval) {
 				const TranspositionTable::NodeFlag flag = TranspositionTable::NODE_EVAL;
 				agent->hashPut(key,si.alpha,currentScore,-maxSearchPly,si.ply,flag,emptyMove);
 			}
@@ -725,13 +731,18 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 		const bool isHashMove = move.type==MoveIterator::TT_MOVE;
 		moveCounter++;
 		nodes++;
-		if (!isKingAttacked && !(si.nodeType==PV_NODE) && !isHashMove &&
-				move.type==MoveIterator::BAD_CAPTURE && move.promotionPiece == EMPTY) {
-			continue;
-		}
 		if (move.promotionPiece==makePiece(sideToMove,ROOK) ||
 				move.promotionPiece==makePiece(sideToMove,BISHOP)	) {
 			continue;
+		}
+		if (!isKingAttacked && !(si.nodeType==PV_NODE) && !isHashMove &&
+				 move.promotionPiece == EMPTY) {
+			if (si.depth < qsOnlyRecaptureDepth && move.to != si.move.to) {
+				continue;
+			}
+			if (move.type==MoveIterator::BAD_CAPTURE) {
+				continue;
+			}
 		}
 		MoveBackup backup;
 		board.doMove(move,backup);
@@ -748,7 +759,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 			return 0;
 		}
 		if( score >= si.beta ) {
-			const TranspositionTable::NodeFlag flag = currentScore!=-maxScore?
+			const TranspositionTable::NodeFlag flag = currentScore!=-maxScore && !isLazyEval?
 					TranspositionTable::LOWER_EVAL:TranspositionTable::LOWER;
 			agent->hashPut(key,score,currentScore,si.depth!=0?-1:0,si.ply,flag,move);
 			return score;
@@ -766,10 +777,10 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 	}
 	TranspositionTable::NodeFlag flag;
 	if (bestScore>oldAlpha) {
-		flag = currentScore!=-maxScore?
+		flag = currentScore!=-maxScore && !isLazyEval?
 				TranspositionTable::EXACT_EVAL:TranspositionTable::EXACT;
 	} else {
-		flag = currentScore!=-maxScore?
+		flag = currentScore!=-maxScore && !isLazyEval?
 				TranspositionTable::UPPER_EVAL:TranspositionTable::UPPER;
 		bestMove=emptyMove;
 	}
@@ -830,6 +841,10 @@ const int SimplePVSearch::getMoveCountMargin(const int depth) const {
 //get razor margins
 const int SimplePVSearch::getRazorMargin(const int depth) {
 	return 125 + depth * 175;
+}
+//get razor margins
+const int SimplePVSearch::getDeltaMargin(const int depth) {
+	return deltaMargin + depth * 30;
 }
 //initialize reduction arrays
 void SimplePVSearch::initialize() {
