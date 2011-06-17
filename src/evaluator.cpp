@@ -39,7 +39,7 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 	setLazyEval(true);
 	evalPieces(evalInfo.side, evalInfo);
 	evalPieces(evalInfo.other, evalInfo);
-	bool doFullEval = board.isInCheck() || board.isPawnPromoting();
+	bool doFullEval = board.isPawnPromoting();
 	if (!doFullEval) {
 		evalInfo.computeEval();
 		doFullEval = evalInfo.getEval() > alpha-lazyEvalMargin && evalInfo.getEval() < beta+lazyEvalMargin;
@@ -247,6 +247,9 @@ void Evaluator::evalPieces(PieceColor color, EvalInfo& evalInfo) {
 	const Bitboard darkBishop = bishop & BLACK_SQUARES;
 	if (lightBishop && darkBishop) {
 		evalInfo.imbalance[color] += lowerScore(BISHOP_PAIR_BONUS);
+	}
+	if (evalInfo.board.isInCheck() && color == evalInfo.side) {
+		evalInfo.evalPieces[color] += MS(-15,-20);
 	}
 }
 // mobility eval function

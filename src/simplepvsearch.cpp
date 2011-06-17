@@ -77,18 +77,28 @@ int SimplePVSearch::idSearch(Board& board) {
 		maxPlySearched = 0;
 		lastDepth=depth;
 		iterationPVChange[depth]=0;
-		// like in stockfish
-		if (depth >= aspirationDepth && abs(iterationScore[depth-1]) < winningScore)	{
-			int delta1 = iterationScore[depth-1]-iterationScore[depth-2];
-			int delta2 = iterationScore[depth-2]-iterationScore[depth-3];
-			aspirationDelta = std::max(abs(delta1)+abs(delta2)/2, 16)+7;
-			rootSearchInfo.alpha = std::max(iterationScore[depth-1]-aspirationDelta,-maxScore);
-			rootSearchInfo.beta  = std::min(iterationScore[depth-1]+aspirationDelta,+maxScore);
-		}
 		rootSearchInfo.depth=depth;
 		rootSearchInfo.ply=0;
-		score = rootSearch(board, rootSearchInfo, pv);
-		iterationScore[depth]=score;
+		score=-maxScore;
+		bool okay=false;
+		int d=-1;
+		while (!(okay || stop(rootSearchInfo))) {
+			// like in stockfish
+			if (depth >= aspirationDepth && abs(iterationScore[depth+d]) < winningScore)	{
+				const int delta1 = iterationScore[depth+d]-iterationScore[depth+d-1];
+				const int delta2 = iterationScore[depth+d-1]-iterationScore[depth+d-2];
+				aspirationDelta = std::max(abs(delta1)+abs(delta2)/2, 25)+5;
+				rootSearchInfo.alpha = std::max(iterationScore[depth+d]-aspirationDelta,-maxScore);
+				rootSearchInfo.beta  = std::min(iterationScore[depth+d]+aspirationDelta,+maxScore);
+			} else {
+				rootSearchInfo.alpha = -maxScore;
+				rootSearchInfo.beta  = +maxScore;
+			}
+			score = rootSearch(board, rootSearchInfo, pv);
+			okay = score >= rootSearchInfo.alpha && score <= rootSearchInfo.beta;
+			d=0;
+			iterationScore[depth]=score;
+		}
 		iterationTime[depth]=getTickCount()-startTime;
 		if (stop(rootSearchInfo) && depth > 1) {
 			break;
@@ -157,104 +167,85 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 	const bool isKingAttacked = board.isInCheck();
 	int alpha=si.alpha;
 	int beta=si.beta;
-	int countFH=0;
-	int countFL=0;
 	int moveCounter=0;
 	MoveIterator::Move bestMove;
-	while (true) {
-		rootMoves.sortOrderingBy(nodesPerMove);
-		rootMoves.first();
-		moveCounter=0;
-		int score = -maxScore;
-		while (rootMoves.hasNext() && !stop(si)) {
-			MoveIterator::Move& move = rootMoves.next();
-			moveCounter++;
-			uciOutput(move, moveCounter);
-			while (true) {
-				MoveBackup backup;
-				int64_t nodes=this->nodes;
-				nodesToGo = getTimeToSearch()<=1000?fastNodesToGo:defaultNodesToGo;
-				board.doMove(move,backup);
-				const bool givingCheck = board.setInCheck(board.getSideToMove());
-				const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
-				int extension=0;
-				if (isKingAttacked) {
-					extension++;
+	rootMoves.sortOrderingBy(nodesPerMove);
+	rootMoves.first();
+	int score = -maxScore;
+	while (rootMoves.hasNext() && !stop(si)) {
+		MoveIterator::Move& move = rootMoves.next();
+		moveCounter++;
+		uciOutput(move, moveCounter);
+		move.score=-maxScore;
+		MoveBackup backup;
+		int64_t nodes=this->nodes;
+		nodesToGo = getTimeToSearch()<=1000?fastNodesToGo:defaultNodesToGo;
+		board.doMove(move,backup);
+		const bool givingCheck = board.setInCheck(board.getSideToMove());
+		const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
+		int extension=0;
+		if (isKingAttacked) {
+			extension++;
+		}
+		int newDepth=si.depth-1+extension;
+		SearchInfo newSi(true,move,-beta,-alpha,newDepth,si.ply+1,PV_NODE,NULL);
+		if (score>alpha || moveCounter==1) {
+			newSi.update(newDepth,PV_NODE);
+			score = -pvSearch(board, newSi);
+		} else {
+			int reduction=0;
+			if (!extension && !givingCheck && !isPawnPush(board,move.to) &&
+					moveCounter>lateMoveThreshold && !pawnOn7thExtension &&
+					si.depth>lmrDepthThresholdRoot &&
+					move.type == MoveIterator::NON_CAPTURE) {
+				reduction=getReduction(true,si.depth,moveCounter);
+			}
+			newSi.update(newDepth-reduction,NONPV_NODE);
+			score = -zwSearch(board, newSi);
+			if (score>alpha) {
+				if (reduction>0) {
+					bool research=true;
+					if (reduction>2) {
+						newSi.update(newDepth-1,NONPV_NODE);
+						score = -zwSearch(board, newSi);
+						research=(score >= beta);
+					}
+					if (research) {
+						newSi.update(newDepth,NONPV_NODE);
+						score = -zwSearch(board, newSi);
+					}
 				}
-				int newDepth=si.depth-1+extension;
-				SearchInfo newSi(true,move,-beta,-alpha,newDepth,si.ply+1,PV_NODE,NULL);
-				if (score>alpha || moveCounter==1) {
+				if (score>alpha) {
 					newSi.update(newDepth,PV_NODE);
 					score = -pvSearch(board, newSi);
-				} else {
-					int reduction=0;
-					if (!extension && !givingCheck && !isPawnPush(board,move.to) &&
-							moveCounter>lateMoveThreshold && !pawnOn7thExtension &&
-							si.depth>lmrDepthThresholdRoot &&
-							move.type == MoveIterator::NON_CAPTURE) {
-						reduction=getReduction(true,si.depth,moveCounter);
-					}
-					newSi.update(newDepth-reduction,NONPV_NODE);
-					score = -zwSearch(board, newSi);
-					if (score>alpha) {
-						if (reduction>0) {
-							bool research=true;
-							if (reduction>2) {
-								newSi.update(newDepth-1,NONPV_NODE);
-								score = -zwSearch(board, newSi);
-								research=(score >= beta);
-							}
-							if (research) {
-								newSi.update(newDepth,NONPV_NODE);
-								score = -zwSearch(board, newSi);
-							}
-						}
-						if (score>alpha) {
-							newSi.update(newDepth,PV_NODE);
-							score = -pvSearch(board, newSi);
-						}
-					}
 				}
-				board.undoMove(backup);
-				nodes = this->nodes-nodes;
-				updateRootMovesScore(nodes);
-				move.score=-maxScore;
-				if(score<beta || stop(si)) {
-					break;
-				}
-				move.score=score;
-				bestMove=move;
-				pv.moves[0]=bestMove;
-				retrievePvFromHash(board, pv);
-				beta =  std::min(beta+aspirationDelta*(1<<countFH),maxScore);
-				si.beta = beta;
-				uciOutput(pv, bestMove.score, getTickCount()-startTime,
-						agent->hashFull(), si.depth, maxPlySearched, alpha, beta);
-				countFH++;
-			}
-			if (stop(si)) {
-				break;
-			}
-			if( score > alpha ) {
-				alpha = score;
-				move.score=score;
-				bestMove=move;
-				pv.moves[0]=bestMove;
-				retrievePvFromHash(board, pv);
-				iterationPVChange[si.depth]++;
-				uciOutput(pv, bestMove.score, getTickCount()-startTime,
-						agent->hashFull(), si.depth, maxPlySearched, alpha, beta);
-			} else {
-				move.score=-maxScore;
 			}
 		}
-		uciOutput(si.depth);
-		if (si.alpha!=alpha || stop(si)) {
+		board.undoMove(backup);
+		nodes = this->nodes-nodes;
+		updateRootMovesScore(nodes);
+		if (stop(si)) {
 			break;
 		}
-		alpha = std::max(alpha-aspirationDelta*(1<<countFL),-maxScore);
-		si.alpha = alpha;
-		countFL++;
+		if(score>=beta) {
+			move.score=score;
+			bestMove=move;
+			pv.moves[0]=bestMove;
+			retrievePvFromHash(board, pv);
+			uciOutput(pv, bestMove.score, getTickCount()-startTime,
+					agent->hashFull(), si.depth, maxPlySearched, alpha, beta);
+			return score;
+		}
+		if( score > alpha ) {
+			alpha = score;
+			move.score=score;
+			bestMove=move;
+			pv.moves[0]=bestMove;
+			retrievePvFromHash(board, pv);
+			iterationPVChange[si.depth]++;
+			uciOutput(pv, bestMove.score, getTickCount()-startTime,
+					agent->hashFull(), si.depth, maxPlySearched, alpha, beta);
+		}
 	}
 	rootMoves.sortOrderingBy(nodesPerMove);
 	rootMoves.first();
