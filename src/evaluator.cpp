@@ -39,19 +39,17 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 	setLazyEval(true);
 	evalPieces(evalInfo.side, evalInfo);
 	evalPieces(evalInfo.other, evalInfo);
-	bool doFullEval = board.isPawnPromoting();
-	if (!doFullEval) {
-		evalInfo.computeEval();
-		doFullEval = evalInfo.getEval() > alpha-lazyEvalMargin && evalInfo.getEval() < beta+lazyEvalMargin;
-	}
-	if (doFullEval) {
+	evalEndGame(evalInfo.side, evalInfo);
+	evalEndGame(evalInfo.other, evalInfo);
+	evalInfo.computeEval();
+	bool doNotLazyEval = evalInfo.getEval() > alpha-lazyEvalMargin && evalInfo.getEval() < beta+lazyEvalMargin;
+	bool doPawnEval = doNotLazyEval || board.isPawnPromoting() || board.isPawnFinal();
+	if (doPawnEval) {
 		setLazyEval(false);
 		evalInfo.attackers[WHITE_PAWN] = ((evalInfo.pawns[WHITE] & midBoardNoFileA) << 7) |
 				((evalInfo.pawns[WHITE] & midBoardNoFileH) << 9);
 		evalInfo.attackers[BLACK_PAWN] = ((evalInfo.pawns[BLACK] & midBoardNoFileA) >> 9) |
 				((evalInfo.pawns[BLACK] & midBoardNoFileH) >> 7);
-		evalBoardControl(evalInfo.side, evalInfo);
-		evalBoardControl(evalInfo.other, evalInfo);
 		PawnInfo info;
 		if (getPawnInfo(board.getPawnKey(),info)) {
 			evalPawnsFromCache(evalInfo.side, info, evalInfo);
@@ -60,14 +58,21 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 			evalPawns(evalInfo.side, evalInfo);
 			evalPawns(evalInfo.other, evalInfo);
 		}
+		evalInfo.computeEval();
+	}
+	doNotLazyEval = evalInfo.getEval() > alpha-lazyEvalMargin && evalInfo.getEval() < beta+lazyEvalMargin;
+	if (doNotLazyEval) {
+		setLazyEval(false);
+		evalBoardControl(evalInfo.side, evalInfo);
+		evalBoardControl(evalInfo.other, evalInfo);
 		evalThreats(evalInfo.side, evalInfo);
 		evalThreats(evalInfo.other, evalInfo);
 		evalKing(evalInfo.side, evalInfo);
 		evalKing(evalInfo.other, evalInfo);
+		evalInfo.computeEval();
+	} else {
+		evalInfo.evalPieces[evalInfo.side]+= doPawnEval? MS(-20,-10):MS(-30,-20);
 	}
-	evalEndGame(evalInfo.side, evalInfo);
-	evalEndGame(evalInfo.other, evalInfo);
-	evalInfo.computeEval();
 	if (isDebugEnabled()) {
 		std::cout << evalInfo.toString();
 	}
@@ -247,9 +252,6 @@ void Evaluator::evalPieces(PieceColor color, EvalInfo& evalInfo) {
 	const Bitboard darkBishop = bishop & BLACK_SQUARES;
 	if (lightBishop && darkBishop) {
 		evalInfo.imbalance[color] += lowerScore(BISHOP_PAIR_BONUS);
-	}
-	if (evalInfo.board.isInCheck() && color == evalInfo.side) {
-		evalInfo.evalPieces[color] += MS(-15,-20);
 	}
 }
 // mobility eval function
