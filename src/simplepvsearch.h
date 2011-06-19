@@ -334,7 +334,6 @@ private:
 	MoveIterator::Move emptyMove;
 	SearchInfo rootSearchInfo;
 	int maxPlySearched;
-	int aspirationDelta;
 	int64_t nodesToGo;
 	int threadId;
 	int threadGroup;
