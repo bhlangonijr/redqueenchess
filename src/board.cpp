@@ -330,7 +330,6 @@ void Board::loadFromString(const std::string startPosMoves) {
 	std::string moveFrom = "";
 	std::string moveTo = "";
 	PieceTypeByColor promotionPiece=EMPTY;
-	setInitialPosition();
 	StringUtil::normalizeString(moves);
 	size_t last = 0;
 	size_t position = moves.find(" ");

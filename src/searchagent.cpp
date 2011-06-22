@@ -78,7 +78,10 @@ void SearchAgent::setBoard(Board _board) {
 }
 
 // set position from SAN moves
-void SearchAgent::setPositionFromSAN(std::string startPosMoves) {
+void SearchAgent::setPositionFromSAN(std::string startPosMoves, const bool startPos) {
+	if (startPos) {
+		board.setInitialPosition();
+	}
 	board.loadFromString(startPosMoves);
 }
 

@@ -394,7 +394,7 @@ public:
 
 	inline bool getPawnInfo(const Key key, PawnInfo& pawnHash) {
 		PawnInfo& entry = pawnInfo[static_cast<size_t>(key) & (pawnHashSize-1)];
-		if (entry.key==key) {
+		if (key!=0 && entry.key==key) {
 			pawnHash.key=entry.key;
 			pawnHash.passers[WHITE]=entry.passers[WHITE];
 			pawnHash.passers[BLACK]=entry.passers[BLACK];

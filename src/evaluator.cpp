@@ -70,8 +70,6 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 		evalKing(evalInfo.side, evalInfo);
 		evalKing(evalInfo.other, evalInfo);
 		evalInfo.computeEval();
-	} else {
-		evalInfo.evalPieces[evalInfo.side]+= doPawnEval? MS(-20,-10):MS(-30,-20);
 	}
 	if (isDebugEnabled()) {
 		std::cout << evalInfo.toString();

@@ -507,7 +507,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 			}
 			bool okToPrune = true;
 			if (si.depth>6) {
-				SearchInfo newSi(false,emptyMove,si.beta,si.beta,si.depth-reduction,
+				SearchInfo newSi(false,emptyMove,si.alpha,si.beta,si.depth-reduction,
 						si.ply+1,NONPV_NODE,si.splitPoint);
 				const int newScore = zwSearch(board, newSi);
 				if (newScore<si.beta) {

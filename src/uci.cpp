@@ -225,10 +225,14 @@ void Uci::executePosition() {
 	SearchAgent *searchAgent = SearchAgent::getInstance();
 	if (containsString(this->rawInput,"position startpos moves ")) {
 		std::string startPosMoves = getMiddleString(this->rawInput,"position startpos moves ");
-		searchAgent->setPositionFromSAN(startPosMoves);
+		searchAgent->setPositionFromSAN(startPosMoves,true);
 	} else if (containsString(this->rawInput,"position fen ")) {
 		std::string startPosMoves = getMiddleString(this->rawInput,"position fen ");
 		searchAgent->setPositionFromFEN(startPosMoves);
+		 if (containsString(this->rawInput," moves ")) {
+			 startPosMoves = getMiddleString(this->rawInput," moves ");
+			 searchAgent->setPositionFromSAN(startPosMoves,false);
+		 }
 	}
 }
 // execute position uci command

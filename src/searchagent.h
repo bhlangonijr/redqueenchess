@@ -137,7 +137,7 @@ public:
 		searchMode = _searchMode;
 	}
 
-	void setPositionFromSAN(std::string startPosMoves);
+	void setPositionFromSAN(std::string startPosMoves, const bool startPos);
 	void setPositionFromFEN(std::string fenMoves);
 	void startSearch();
 	void doPerft();
