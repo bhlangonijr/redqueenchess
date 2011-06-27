@@ -42,7 +42,7 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 	evalImbalances(evalInfo.side, evalInfo);
 	evalImbalances(evalInfo.other, evalInfo);
 	evalInfo.computeEval();
-	bool doNotLazyEval = evalInfo.getEval() > alpha-lazyEvalMargin/2 && evalInfo.getEval() < beta+lazyEvalMargin/2;
+	bool doNotLazyEval = evalInfo.getEval() > alpha-lazyEvalMargin && evalInfo.getEval() < beta+lazyEvalMargin;
 	bool doPawnEval = doNotLazyEval || board.isPawnPromoting() || board.isPawnFinal();
 	if (doPawnEval) {
 		setLazyEval(false);
