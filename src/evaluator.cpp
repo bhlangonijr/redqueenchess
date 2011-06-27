@@ -39,10 +39,10 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 	setLazyEval(true);
 	evalPieces(evalInfo.side, evalInfo);
 	evalPieces(evalInfo.other, evalInfo);
-	evalEndGame(evalInfo.side, evalInfo);
-	evalEndGame(evalInfo.other, evalInfo);
+	evalImbalances(evalInfo.side, evalInfo);
+	evalImbalances(evalInfo.other, evalInfo);
 	evalInfo.computeEval();
-	bool doNotLazyEval = evalInfo.getEval() > alpha-lazyEvalMargin && evalInfo.getEval() < beta+lazyEvalMargin;
+	bool doNotLazyEval = evalInfo.getEval() > alpha-lazyEvalMargin/2 && evalInfo.getEval() < beta+lazyEvalMargin/2;
 	bool doPawnEval = doNotLazyEval || board.isPawnPromoting() || board.isPawnFinal();
 	if (doPawnEval) {
 		setLazyEval(false);
@@ -366,10 +366,11 @@ void Evaluator::evalThreats(PieceColor color, EvalInfo& evalInfo) {
 	}
 }
 // End game eval
-void Evaluator::evalEndGame(PieceColor color, EvalInfo& evalInfo) {
+void Evaluator::evalImbalances(PieceColor color, EvalInfo& evalInfo) {
 	Board& board = evalInfo.board;
 	const PieceColor other = board.flipSide(color);
 	const int pawnCount = board.getPieceCount(makePiece(color,PAWN));
+	const int otherPawnCount = board.getPieceCount(makePiece(other,PAWN));
 	if (pawnCount==0) {
 		const int balance = board.getMaterial(color)-
 				board.getMaterial(other);
@@ -396,4 +397,9 @@ void Evaluator::evalEndGame(PieceColor color, EvalInfo& evalInfo) {
 			}
 		}
 	}
+	const int pawnDiff = pawnCount-otherPawnCount;
+	if (pawnDiff>0) {
+		evalInfo.imbalance[color] += interpolate(PAWN_END_GAME_BONUS,board.getGamePhase())*pawnDiff;
+	}
+
 }

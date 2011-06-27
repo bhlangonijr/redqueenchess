@@ -192,7 +192,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 		int newDepth=si.depth-1+extension;
 		SearchInfo newSi(true,move,-beta,-alpha,newDepth,si.ply+1,PV_NODE,NULL);
 		if (score>alpha || moveCounter==1) {
-			newSi.update(newDepth,PV_NODE);
+			newSi.update(newDepth,PV_NODE,-beta,-alpha,move);
 			score = -pvSearch(board, newSi);
 		} else {
 			int reduction=0;
@@ -202,23 +202,23 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 					move.type == MoveIterator::NON_CAPTURE) {
 				reduction=getReduction(true,si.depth,moveCounter);
 			}
-			newSi.update(newDepth-reduction,NONPV_NODE);
+			newSi.update(newDepth-reduction,NONPV_NODE,-beta,-alpha,move);
 			score = -zwSearch(board, newSi);
 			if (score>alpha) {
 				if (reduction>0) {
 					bool research=true;
 					if (reduction>2) {
-						newSi.update(newDepth-1,NONPV_NODE);
+						newSi.update(newDepth-1,NONPV_NODE,-beta,-alpha,move);
 						score = -zwSearch(board, newSi);
 						research=(score >= beta);
 					}
 					if (research) {
-						newSi.update(newDepth,NONPV_NODE);
+						newSi.update(newDepth,NONPV_NODE,-beta,-alpha,move);
 						score = -zwSearch(board, newSi);
 					}
 				}
 				if (score>alpha) {
-					newSi.update(newDepth,PV_NODE);
+					newSi.update(newDepth,PV_NODE,-beta,-alpha,move);
 					score = -pvSearch(board, newSi);
 				}
 			}
@@ -346,7 +346,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 		int newDepth=si.depth-1+extension;
 		SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth,si.ply+1,PV_NODE,si.splitPoint);
 		if (moveCounter==1) {
-			newSi.update(newDepth,PV_NODE);
+			newSi.update(newDepth,PV_NODE,-si.beta,-si.alpha,move);
 			score = -pvSearch(board, newSi);
 		} else {
 			int reduction=0;
@@ -354,23 +354,23 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 					!isPawnPush(board,move.to) && move.type == MoveIterator::NON_CAPTURE) {
 				reduction=getReduction(true, si.depth, moveCounter);
 			}
-			newSi.update(newDepth-reduction,NONPV_NODE);
+			newSi.update(newDepth-reduction,NONPV_NODE,-si.beta,-si.alpha,move);
 			score = -zwSearch(board, newSi);
 			if (score > si.alpha && score < si.beta) {
 				if (reduction>0) {
 					bool research=true;
 					if (reduction>2) {
-						newSi.update(newDepth-1,NONPV_NODE);
+						newSi.update(newDepth-1,NONPV_NODE,-si.beta,-si.alpha,move);
 						score = -zwSearch(board, newSi);
 						research=(score >= si.beta);
 					}
 					if (research) {
-						newSi.update(newDepth,NONPV_NODE);
+						newSi.update(newDepth,NONPV_NODE,-si.beta,-si.alpha,move);
 						score = -zwSearch(board, newSi);
 					}
 				}
 				if (score > si.alpha && score < si.beta) {
-					newSi.update(newDepth,PV_NODE);
+					newSi.update(newDepth,PV_NODE,-si.beta,-si.alpha,move);
 					score = -pvSearch(board, newSi);
 				}
 			}
@@ -608,12 +608,12 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		if (score >= si.beta && reduction>0) {
 			bool research=true;
 			if (reduction>2) {
-				newSi.update(newDepth-1,NONPV_NODE);
+				newSi.update(newDepth-1,NONPV_NODE,si.beta,1-si.beta,move);
 				score = -zwSearch(board, newSi);
 				research=(score >= si.beta);
 			}
 			if (research) {
-				newSi.update(newDepth,NONPV_NODE);
+				newSi.update(newDepth,NONPV_NODE,si.beta,1-si.beta,move);
 				score = -zwSearch(board, newSi);
 			}
 		}

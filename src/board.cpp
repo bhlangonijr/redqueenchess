@@ -227,7 +227,7 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	}
 	if (backup.capturedPiece!=EMPTY) {
 		if (pieceType[backup.capturedPiece]==PAWN) {
-			setPawnKey(getPawnKey()^zobrist.pieceSquare[backup.capturedPiece][move.to]);
+			setPawnKey(getPawnKey()^zobrist.pieceSquare[backup.capturedPiece][backup.capturedSquare]);
 		}
 		setGamePhase(GamePhase(currentBoard.gamePhase+
 				phaseIncrement[getPieceType(backup.capturedPiece)]));
