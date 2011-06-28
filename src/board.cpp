@@ -338,20 +338,20 @@ void Board::loadFromString(const std::string startPosMoves) {
 		std::string move=moves.substr(last,(position-last));
 		moveFrom = move.substr(0,2);
 		moveTo = move.substr(2,2);
+		promotionPiece=EMPTY;
 		if (move.length()>4) {
-			if (move[4]=='q'){
+			if (toupper(move[4])=='Q'){
 				promotionPiece=makePiece(getSideToMove(),QUEEN);
-			} else if (move[4]=='r'){
+			} else if (toupper(move[4])=='R'){
 				promotionPiece=makePiece(getSideToMove(),ROOK);
-			} else if (move[4]=='n'){
+			} else if (toupper(move[4])=='N'){
 				promotionPiece=makePiece(getSideToMove(),KNIGHT);
-			} else if (move[4]=='b'){
+			} else if (toupper(move[4])=='B'){
 				promotionPiece=makePiece(getSideToMove(),BISHOP);
 			}
 		}
 		this->doMove(MoveIterator::Move(Square(St2Sq(moveFrom[0],moveFrom[1])),
 				Square(St2Sq(moveTo[0],moveTo[1])), promotionPiece),backup);
-		promotionPiece=EMPTY;
 		last=position+1;
 		position = moves.find(" ", position+1);
 	}

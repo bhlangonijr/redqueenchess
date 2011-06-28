@@ -51,7 +51,7 @@ const int ROOK_ON_OPEN_FILE_BONUS = 	 MS(+17,+17);
 const int ROOK_ON_HALF_OPEN_FILE_BONUS = MS(+10,+10);
 const int QUEEN_ON_7TH_RANK_BONUS = 	 MS(+10,+15);
 const int PASSER_AND_KING_BONUS = 		 MS(+0,+5);
-const int PAWN_END_GAME_BONUS = 		 MS(+0,+45);
+const int PAWN_END_GAME_BONUS = 		 MS(+0,+30);
 
 
 const int knightMobility[9] = {
