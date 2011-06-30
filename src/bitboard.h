@@ -492,13 +492,12 @@ enum PiecePhase {
 //phase increment values
 const int phaseIncrement[ALL_PIECE_TYPE] = {PAWN_PHASE_INCREMENT,KNIGHT_PHASE_INCREMENT,BISHOP_PHASE_INCREMENT,
 		ROOK_PHASE_INCREMENT,QUEEN_PHASE_INCREMENT,KING_PHASE_INCREMENT};
-const int maxGamePhase = PAWN_PHASE_INCREMENT*16+KNIGHT_PHASE_INCREMENT*4+BISHOP_PHASE_INCREMENT*4+
-		ROOK_PHASE_INCREMENT*4+QUEEN_PHASE_INCREMENT*2+KING_PHASE_INCREMENT*2;
+const int maxGamePhase = 32;
 // game phase
 enum GamePhase {
 	OPENING=		 2,
-	MIDDLEGAME=		 maxGamePhase/3,
-	ENDGAME=		 maxGamePhase*60/100
+	MIDDLEGAME=		 maxGamePhase/2,
+	ENDGAME=		 26
 };
 //constants
 const int maxScore = 15000;

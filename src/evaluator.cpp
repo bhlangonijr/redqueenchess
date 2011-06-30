@@ -399,7 +399,7 @@ void Evaluator::evalImbalances(PieceColor color, EvalInfo& evalInfo) {
 	}
 	const int pawnDiff = pawnCount-otherPawnCount;
 	if (pawnDiff>0) {
-		evalInfo.evalPieces[color] += PAWN_END_GAME_BONUS*pawnDiff;
+		evalInfo.imbalance[color] += interpolate(PAWN_END_GAME_BONUS*pawnDiff,board.getGamePhase());
 	}
 
 }

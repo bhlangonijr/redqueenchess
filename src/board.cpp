@@ -340,13 +340,13 @@ void Board::loadFromString(const std::string startPosMoves) {
 		moveTo = move.substr(2,2);
 		promotionPiece=EMPTY;
 		if (move.length()>4) {
-			if (toupper(move[4])=='Q'){
+			if (move[4]=='Q' || move[4]=='q'){
 				promotionPiece=makePiece(getSideToMove(),QUEEN);
-			} else if (toupper(move[4])=='R'){
+			} else if (move[4]=='R' || move[4]=='r'){
 				promotionPiece=makePiece(getSideToMove(),ROOK);
-			} else if (toupper(move[4])=='N'){
+			} else if (move[4]=='N' || move[4]=='n'){
 				promotionPiece=makePiece(getSideToMove(),KNIGHT);
-			} else if (toupper(move[4])=='B'){
+			} else if (move[4]=='B' || move[4]=='b'){
 				promotionPiece=makePiece(getSideToMove(),BISHOP);
 			}
 		}
