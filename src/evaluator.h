@@ -32,7 +32,7 @@
 #include <sstream>
 #include "board.h"
 #include "bitboard.h"
-#define FSQUARE(COLOR,BB,X) (BB&(COLOR==WHITE?upperMaskBitboard[X]:lowerMaskBitboard[X]))&(~(rankBB[squareRank[X]]))
+#define FSQUARE(COLOR,BB,X) (BB&(COLOR==WHITE?(~(squareToBitboard[X]-1)):(squareToBitboard[X]-1)))&(~(rankBB[squareRank[X]]))
 #define PM(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]] | neighborFiles[X]), X))
 #define BP(COLOR, X) ((FSQUARE((COLOR==WHITE?BLACK:WHITE), (neighborFiles[X]), X)) | (rankBB[squareRank[X]] & adjacentSquares[X]))
 #define FQ(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]]), X))
