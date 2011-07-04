@@ -426,8 +426,7 @@ void Evaluator::evalImbalances(PieceColor color, EvalInfo& evalInfo) {
 				}
 			}
 		} else if (minors <= 1 && sidePawnCount==0 && otherPawnCount==1) {
-			evalInfo.imbalance[color] += MSE(-balance); //draw
-			evalInfo.drawFlag = true;
+			evalInfo.imbalance[color] += MSE(-balance*95/100); //drawish
 		}
 	}
 	if (!evalInfo.drawFlag) {
