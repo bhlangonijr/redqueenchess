@@ -525,11 +525,14 @@ void Board::initialize() {
 }
 // game phase full calculation
 const GamePhase Board::predictGamePhase() {
+	const int pawns = getPieceCount(WHITE_PAWN)+getPieceCount(BLACK_PAWN);
 	const int knights = getPieceCount(WHITE_KNIGHT)+getPieceCount(BLACK_KNIGHT);
 	const int bishops = getPieceCount(WHITE_BISHOP)+getPieceCount(BLACK_BISHOP);
 	const int rooks = getPieceCount(WHITE_ROOK)+getPieceCount(BLACK_ROOK);
 	const int queens = getPieceCount(WHITE_QUEEN)+getPieceCount(BLACK_QUEEN);
-	return GamePhase((4-knights)*phaseIncrement[KNIGHT]+
+	return GamePhase(
+			(16-pawns)*phaseIncrement[PAWN]+
+			(4-knights)*phaseIncrement[KNIGHT]+
 			(4-bishops)*phaseIncrement[BISHOP]+
 			(4-rooks)*phaseIncrement[ROOK]+
 			(2-queens)*phaseIncrement[QUEEN]);

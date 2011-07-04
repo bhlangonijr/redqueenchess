@@ -44,14 +44,14 @@ const int BACKWARD_PAWN_PENALTY =  		 MS(-13,-10);
 const int BACKWARD_OPEN_PAWN_PENALTY =   MS(-17,-13);
 const int DONE_CASTLE_BONUS=       		 MS(+20,-1);
 const int CONNECTED_PAWN_BONUS =   		 MS(+5,-1);
-const int BISHOP_PAIR_BONUS = 	   		 MS(+30,+30);
+const int BISHOP_PAIR_BONUS = 	   		 MS(+30,+45);
 const int UNSTOPPABLE_PAWN_BONUS = 		 MS(+300,+300);
 const int ROOK_ON_7TH_RANK_BONUS = 		 MS(+15,+25);
 const int ROOK_ON_OPEN_FILE_BONUS = 	 MS(+17,+17);
 const int ROOK_ON_HALF_OPEN_FILE_BONUS = MS(+10,+10);
 const int QUEEN_ON_7TH_RANK_BONUS = 	 MS(+10,+15);
 const int PASSER_AND_KING_BONUS = 		 MS(+0,+5);
-const int PAWN_END_GAME_BONUS = 		 MS(+0,+25);
+const int PAWN_END_GAME_BONUS = 		 MS(+0,+15);
 
 
 const int knightMobility[9] = {
@@ -120,14 +120,14 @@ const int freePasserBonus[ALL_PIECE_COLOR][ALL_RANK] = {
 };
 
 const int passedPawnBonus[ALL_PIECE_COLOR][ALL_RANK] = {
-		{0,MS(+5,+10),MS(+15,+25),MS(+25,+35),MS(+35,+40),MS(+40,+50),MS(+40,+70),0},
-		{0,MS(+40,+70),MS(+40,+50),MS(+35,+40),MS(+25,+35),MS(+15,+25),MS(+5,+10),0},
+		{0,MS(+5,+10),MS(+10,+20),MS(+20,+40),MS(+40,+80),MS(+60,+100),MS(+90,+120),0},
+		{0,MS(+90,+120),MS(+60,+100),MS(+40,+80),MS(+20,+40),MS(+10,+20),MS(+5,+10),0},
 		{}
 };
 
 const int candidatePasserBonus[ALL_PIECE_COLOR][ALL_RANK] = {
-		{0,MS(+5,+7),MS(+9,+12),MS(+15,+17),MS(+18,+25),MS(+27,+35),0,0},
-		{0,0,MS(+27,+35),MS(+18,+25),MS(+15,+17),MS(+9,+12),MS(+5,+7),0},
+		{0,MS(+5,+7),MS(+10,+15),MS(+17,+25),MS(+30,+40),MS(+53,+71),0,0},
+		{0,0,MS(+53,+71),MS(+30,+40),MS(+17,+25),MS(+10,+15),MS(+5,+7),0},
 		{}
 };
 
@@ -257,11 +257,12 @@ public:
 		EvalInfo(Board& _board) : board(_board),
 				side(board.getSideToMove()),
 				other(board.flipSide(side)),
-				all(board.getAllPieces()) {
+				all(board.getAllPieces()),
+				drawFlag(false) {
 			pawns[WHITE] = board.getPieces(makePiece(WHITE,PAWN));
 			pawns[BLACK] = board.getPieces(makePiece(BLACK,PAWN));
-			evalPieces[WHITE] = board.getPieceSquareValue(WHITE);
-			evalPieces[BLACK] = board.getPieceSquareValue(BLACK);
+			evalPieces[WHITE] = 0;
+			evalPieces[BLACK] = 0;
 			evalPawns[WHITE] = 0;
 			evalPawns[BLACK] = 0;
 			mobility[WHITE] = 0;
@@ -288,13 +289,17 @@ public:
 		int pieceThreat[ALL_PIECE_COLOR];
 		int imbalance[ALL_PIECE_COLOR];
 		int eval;
+		bool drawFlag;
 
 		inline const int getScore() {
-			return (evalPieces[side]-evalPieces[other]) +
+			return (!drawFlag?(evalPieces[side]-evalPieces[other]) +
 					(evalPawns[side]-evalPawns[other]) +
 					(mobility[side]-mobility[other]) +
 					(pieceThreat[side]-pieceThreat[other]) +
-					(kingThreat[side]-kingThreat[other]);
+					(kingThreat[side]-kingThreat[other]) +
+					(board.getPieceSquareValue(side)-
+					board.getPieceSquareValue(other)):0)+
+					(imbalance[side]-imbalance[other]);
 		}
 
 		inline const int getEval() {
@@ -303,8 +308,7 @@ public:
 
 		inline void computeEval() {
 			eval = interpolate(getScore(),board.getGamePhase())+
-					(board.getMaterial(side)+imbalance[side])-
-					(board.getMaterial(other)+imbalance[other]);
+					(board.getMaterial(side)-board.getMaterial(other));
 			normalize();
 		}
 
@@ -322,8 +326,10 @@ public:
 					pieceThreat[WHITE]+kingThreat[WHITE];
 			const int blackScore=evalPieces[BLACK]+evalPawns[BLACK]+mobility[BLACK]+
 					pieceThreat[BLACK]+kingThreat[BLACK];
-			out << "Material[WHITE]:          " << ((board.getMaterial(WHITE)+imbalance[WHITE])-kingValue) << std::endl;
-			out << "Material[BLACK]:          " << ((board.getMaterial(BLACK)+imbalance[BLACK])-kingValue) << std::endl;
+			out << "Material[WHITE]:          " << ((board.getMaterial(WHITE)+
+					interpolate(imbalance[WHITE],board.getGamePhase()))-kingValue) << std::endl;
+			out << "Material[BLACK]:          " << ((board.getMaterial(BLACK)+
+					interpolate(imbalance[BLACK],board.getGamePhase()))-kingValue) << std::endl;
 			out << "Pieces(PST&Other)[WHITE]: " << interpolate(evalPieces[WHITE],board.getGamePhase()) << std::endl;
 			out << "Pieces(PST&Other)[BLACK]: " << interpolate(evalPieces[BLACK],board.getGamePhase()) << std::endl;
 			out << "Pawns[WHITE]:             " << interpolate(evalPawns[WHITE],board.getGamePhase()) << std::endl;
@@ -358,7 +364,6 @@ public:
 	void evalPawns(PieceColor color, EvalInfo& evalInfo);
 	const int evalPassedPawn(EvalInfo& evalInfo, PieceColor color, const Square from,
 			const bool isPawnFinal, const bool isChained);
-	void evalPieces(PieceColor color, EvalInfo& evalInfo);
 	void evalBoardControl(PieceColor color, EvalInfo& evalInfo);
 	void evalThreats(PieceColor color, EvalInfo& evalInfo);
 	void evalImbalances(PieceColor color, EvalInfo& evalInfo);

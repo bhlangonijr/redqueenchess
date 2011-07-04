@@ -216,3 +216,16 @@ r1bqkb1r/pppppppp/2n2n2/6P1/4PP2/8/PPPP3P/RNBQKBNR b KQkq - 0 8
 ;king safety tests
 position fen 8/8/8/8/8/3k1q2/8/r4K1R w - - 0 1
 test eval
+
+;test candidate passer
+position fen 3k4/8/8/pp1p4/3P4/4P1P1/1P5P/7K w KQkq - 0 1
+test eval
+
+;draw
+position fen 7k/8/8/8/6K1/8/2B4P/8 b - - 0 1
+test eval
+
+;not draw
+position fen 8/8/8/8/3k2K1/8/2B4P/8 b - - 0 1
+test eval
+

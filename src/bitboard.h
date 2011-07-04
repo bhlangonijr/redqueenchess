@@ -41,7 +41,8 @@ typedef uint64_t Bitboard;
 #define St2Sq(F,R)				(((static_cast<int>(F)-96)+(static_cast<int>(R)-49)*8)-1)			// encode String to Square enum
 #define NFILE(X) ((squareFile[X]!=FILE_H ? fileBB[squareFile[X]+1] : EMPTY_BB) | \
 		(squareFile[X]!=FILE_A ? fileBB[squareFile[X]-1] : EMPTY_BB))
-#define MS(X,Y) ((Y)+(X<<16))
+#define MS(X,Y) ((Y)+((X)<<16))
+#define MSE(X)  ((X)+((X)<<16))
 const int ALL_PIECE_TYPE =				7;  														// pawn, knight, bishop, rook, queen, king
 const int ALL_PIECE_TYPE_BY_COLOR =		13; 														// (black, white) X (pawn, knight, bishop, rook, queen, king) + empty
 const int ALL_PIECE_COLOR	=			3;  														// black, white, none
@@ -206,6 +207,34 @@ const Bitboard fileBB[ALL_FILE]={
 const Bitboard colorSpaceBB[ALL_PIECE_COLOR] ={
 		0x00000000FFFFFFFFULL, 0xFFFFFFFF00000000ULL, EMPTY_BB
 };
+
+// board middle without the A file
+const Bitboard midBoardNoFileA = MID_BOARD & ~fileBB[FILE_A];
+
+// board middle without the H file
+const Bitboard midBoardNoFileH = MID_BOARD & ~fileBB[FILE_H];
+
+// king corner in A File
+const Bitboard kingFileHCorner[ALL_PIECE_COLOR]={
+		0x000000000000C0C0ULL, 0xC0C0000000000000ULL, EMPTY_BB
+};
+
+// king corner in H File
+const Bitboard kingFileACorner[ALL_PIECE_COLOR]={
+		0x0000000000000303ULL, 0x0303000000000000ULL, EMPTY_BB
+};
+
+const Bitboard blockedRank[ALL_PIECE_COLOR]={
+		rankBB[RANK_5], rankBB[RANK_2], EMPTY_BB
+};
+const Bitboard blockRankOnAFile[ALL_PIECE_COLOR]={
+		0x0000000000000707ULL, 0x0707000000000000ULL, EMPTY_BB
+};
+
+const Bitboard blockRankOnHFile[ALL_PIECE_COLOR]={
+		0x000000000000E0E0ULL, 0xE0E0000000000000ULL, EMPTY_BB
+};
+
 // bitboard for all diagonal A1..H8
 const Bitboard diagonalA1H8BB[ALL_DIAGONAL]={
 		Sq2Bb(A8),
@@ -308,8 +337,7 @@ const Bitboard diagH1A8Attacks[ALL_SQUARE]={
 		Sq2H1(A7), Sq2H1(B7), Sq2H1(C7), Sq2H1(D7), Sq2H1(E7), Sq2H1(F7), Sq2H1(G7), Sq2H1(H7),
 		Sq2H1(A8), Sq2H1(B8), Sq2H1(C8), Sq2H1(D8), Sq2H1(E8), Sq2H1(F8), Sq2H1(G8), Sq2H1(H8)
 };
-const Bitboard midBoardNoFileA = MID_BOARD & ~fileBB[FILE_A];
-const Bitboard midBoardNoFileH = MID_BOARD & ~fileBB[FILE_H];
+
 // bitboard for all knight attacks
 const Bitboard knightAttacks[ALL_SQUARE]={
 		0x0000000000020400ULL,0x0000000000050800ULL,0x00000000000a1100ULL,0x0000000000142200ULL,0x0000000000284400ULL,0x0000000000508800ULL,0x0000000000a01000ULL,0x0000000000402000ULL,
@@ -456,11 +484,11 @@ const Bitboard promoRank[ALL_PIECE_COLOR]={rankBB[RANK_7],rankBB[RANK_2],EMPTY_B
 const Bitboard eighthRank[ALL_PIECE_COLOR]={rankBB[RANK_8],rankBB[RANK_1],EMPTY_BB};
 // piece phase increment values
 enum PiecePhase {
-	PAWN_PHASE_INCREMENT=		0,
-	KNIGHT_PHASE_INCREMENT=		2,
-	BISHOP_PHASE_INCREMENT=		2,
-	ROOK_PHASE_INCREMENT= 		4,
-	QUEEN_PHASE_INCREMENT=		8,
+	PAWN_PHASE_INCREMENT=		1,
+	KNIGHT_PHASE_INCREMENT=		1,
+	BISHOP_PHASE_INCREMENT=		1,
+	ROOK_PHASE_INCREMENT= 		2,
+	QUEEN_PHASE_INCREMENT=		4,
 	KING_PHASE_INCREMENT=		0
 };
 //phase increment values
