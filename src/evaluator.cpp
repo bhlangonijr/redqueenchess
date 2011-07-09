@@ -445,7 +445,7 @@ void Evaluator::evalImbalances(PieceColor color, EvalInfo& evalInfo) {
 		if (hasLightBishop && hasBlackBishop) {
 			evalInfo.imbalance[color] += BISHOP_PAIR_BONUS;
 		}
-		if (balance!=0 && balance < 2000 && balance > -2000) {
+		if (balance>0) {
 			evalInfo.imbalance[color] += ((8-sidePawnCount)*TRADE_PAWN_PENALTY)*MSE(balance/100);
 			evalInfo.imbalance[color] += ((7-sideMinors-sideMajors)*TRADE_PIECE_BONUS)*MSE(balance/100);
 		}
