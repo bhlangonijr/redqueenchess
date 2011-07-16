@@ -53,8 +53,8 @@ const int QUEEN_ON_7TH_RANK_BONUS = 	 MS(+10,+15);
 const int PASSER_AND_KING_BONUS = 		 MS(+0,+5);
 const int PAWN_END_GAME_BONUS = 		 MS(+0,+15);
 
-const int TRADE_PAWN_PENALTY =           MS(-3,-5);
-const int TRADE_PIECE_BONUS =            MS(+4,+7);
+const int TRADE_PAWN_PENALTY =           MS(-4,-6);
+const int TRADE_PIECE_BONUS =            MS(+3,+5);
 
 const int knightMobility[9] = {
 		-4*MS(+8,+4),-2*MS(+8,+4),+0*MS(+8,+4),+1*MS(+8,+4),+2*MS(+8,+4),
