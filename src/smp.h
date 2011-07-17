@@ -31,7 +31,6 @@
 #include "moveiterator.h"
 
 const int maxThreads				= 16;
-const int minSplitDepth				= 6;
 const int maxWorkersPerSplitPoint	= 8;
 
 enum ThreadType {

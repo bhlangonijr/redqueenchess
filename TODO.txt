@@ -11,7 +11,8 @@ Ben-Hur Langoni Junior
 	+ Improve concept of mobility	
 3) Create opening book code
 4) Add support to Gaviota's EGTB
-	
+5) Try fractional extensions
+6) Don't extend checks with SEE < 0	
 	
 
 

@@ -301,10 +301,11 @@ void SearchAgent::smpPVSearch(Board board, SimplePVSearch* master,
 		//reductions
 		int reduction=0;
 		int extension=0;
-		if (isKingAttacked || pawnOn7thExtension) {
+		if (isKingAttacked) {
 			extension++;
-		} else if (sp->depth>lmrDepthThreshold && !givingCheck && !passedPawn &&
-				!(*sp->nmMateScore) &&	move.type == MoveIterator::NON_CAPTURE) {
+		} else if (sp->depth>lmrDepthThreshold && !givingCheck &&
+				!passedPawn && !pawnOn7thExtension && !(*sp->nmMateScore) &&
+				move.type == MoveIterator::NON_CAPTURE) {
 			reduction=ss->getReduction(isPV,sp->depth,*sp->moveCounter);
 		}
 		int newDepth=sp->depth-1+extension;

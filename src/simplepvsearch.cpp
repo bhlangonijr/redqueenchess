@@ -310,7 +310,6 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 	MoveIterator::Move move;
 	int moveCounter=0;
 	int bestScore=-maxScore;
-	bool isSingularMove = false;
 	bool nmMateScore=false;
 	while (true) {
 		move = selectMove<false>(board, moves, hashMove, si.ply, si.depth);
@@ -321,15 +320,19 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 			continue;
 		}
 		const bool isHashMove = move.type==MoveIterator::TT_MOVE;
+		int extension=0;
+		if (isKingAttacked) {
+			extension++;
+		}
 		// se
-		if (isHashMove && si.depth > sePVDepth && hashOk && !hashMove.none() && !si.partialSearch &&
-				hashData.depth() >= si.depth-3 && (hashData.flag() & TranspositionTable::LOWER)) {
+		if (extension<1 && isHashMove && si.depth > sePVDepth && hashOk && !hashMove.none()
+				&& !si.partialSearch && hashData.depth() >= si.depth-3 && (hashData.flag() & TranspositionTable::LOWER)) {
 			if (abs(hashData.value()) < winningScore) {
 				const int seValue = hashData.value() - seMargin;
 				SearchInfo seSi(false,hashMove,true,0,seValue,si.depth/2,si.ply,NONPV_NODE,si.splitPoint);
 				const int partialScore = zwSearch(board,seSi);
 				if (partialScore < seValue) {
-					isSingularMove = true;
+					extension++;
 				}
 			}
 		}
@@ -339,10 +342,6 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 		nodes++;
 		const bool givingCheck = board.setInCheck(board.getSideToMove());
 		const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
-		int extension=0;
-		if (isKingAttacked || (isSingularMove && isHashMove)) {
-			extension++;
-		}
 		int newDepth=si.depth-1+extension;
 		SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth,si.ply+1,PV_NODE,si.splitPoint);
 		if (moveCounter==1) {
@@ -505,16 +504,12 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 			if (score >= maxScore-maxSearchPly) {
 				score = si.beta;
 			}
-			bool okToPrune = true;
 			if (si.depth>6) {
 				SearchInfo newSi(false,emptyMove,si.alpha,si.beta,si.depth-reduction,
 						si.ply+1,NONPV_NODE,si.splitPoint);
-				const int newScore = zwSearch(board, newSi);
-				if (newScore<si.beta) {
-					okToPrune = false;
-				}
+				score = zwSearch(board, newSi);
 			}
-			if (okToPrune) {
+			if (score >= si.beta) {
 				const TranspositionTable::NodeFlag flag = currentScore!=-maxScore && !isLazyEval?
 						TranspositionTable::NM_LOWER_EVAL:TranspositionTable::NM_LOWER;
 				agent->hashPut(key,score,currentScore,si.depth,si.ply,flag,emptyMove);
@@ -541,7 +536,6 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 	MoveIterator::Move bestMove=emptyMove;
 	int moveCounter=0;
 	int bestScore=-maxScore;
-	bool isSingularMove = false;
 	while (true) {
 		move = selectMove<false>(board, moves, hashMove, si.ply, si.depth);
 		if (move.none()) {
@@ -551,14 +545,18 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 			continue;
 		}
 		const bool isHashMove = move.type==MoveIterator::TT_MOVE;
-		if (isHashMove && si.depth > seNonPVDepth && hashOk && !hashMove.none() && !si.partialSearch &&
-				hashData.depth() >= si.depth-3 && (hashData.flag() & TranspositionTable::LOWER)) {
+		int extension=0;
+		if (isKingAttacked) {
+			extension++;
+		}
+		if (extension<1 && isHashMove && si.depth > seNonPVDepth && hashOk && !hashMove.none() &&
+				!si.partialSearch && hashData.depth() >= si.depth-3 && (hashData.flag() & TranspositionTable::LOWER)) {
 			if (abs(hashData.value()) < winningScore) {
 				const int seValue = hashData.value() - seMargin;
 				SearchInfo seSi(false,hashMove,true,0,seValue,si.depth/2,si.ply,NONPV_NODE,si.splitPoint);
 				const int partialScore = zwSearch(board,seSi);
 				if (partialScore < seValue) {
-					isSingularMove = true;
+					extension++;
 				}
 			}
 		}
@@ -593,10 +591,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		}
 		//reductions
 		int reduction=0;
-		int extension=0;
-		if (isKingAttacked || (isSingularMove && isHashMove)) {
-			extension++;
-		} else if (si.depth>lmrDepthThreshold && !givingCheck &&
+		if (extension<1 && si.depth>lmrDepthThreshold && !givingCheck &&
 				!pawnOn7thExtension && !nmMateScore && !passedPawn &&
 				move.type == MoveIterator::NON_CAPTURE) {
 			reduction=getReduction(false,si.depth,moveCounter);

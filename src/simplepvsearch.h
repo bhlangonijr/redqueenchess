@@ -41,6 +41,7 @@ const int mateRangeScore = 300;
 const int maxSearchDepth = 80;
 const int maxSearchPly = 100;
 const int maxMoveCount = 64;
+const int minSplitDepth	= 6;
 // internal iterative deepening
 const int allowIIDAtPV = 6;
 const int allowIIDAtNormal = 8;
