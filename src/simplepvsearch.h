@@ -48,6 +48,7 @@ const int allowIIDAtNormal = 8;
 const int iidMargin=160;
 const int easyMargin=400;
 const int deltaMargin=950;
+const int futilityQSMargin=130;
 const int nullMoveMargin=512;
 const int seMargin=35;
 //depth prunning threshold
@@ -187,6 +188,8 @@ public:
 	const int getReduction(const bool isPV, const int depth, const int moveCounter) const;
 
 	const int getFutilityMargin(const int depth, const int moveCounter) const;
+
+	const int getFutilityMargin() const;
 
 	const int getMoveCountMargin(const int depth) const;
 

@@ -720,14 +720,17 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 			break;
 		}
 		const bool isHashMove = move.type==MoveIterator::TT_MOVE;
+		const bool passedPawn = isPawnPush(board,move.to);
+		const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
+		const bool allowFutility = !isKingAttacked && !(si.nodeType==PV_NODE) &&
+				!isHashMove && !pawnOn7thExtension;
 		moveCounter++;
 		nodes++;
 		if (move.promotionPiece==makePiece(sideToMove,ROOK) ||
 				move.promotionPiece==makePiece(sideToMove,BISHOP)	) {
 			continue;
 		}
-		if (!isKingAttacked && !(si.nodeType==PV_NODE) && !isHashMove &&
-				move.promotionPiece == EMPTY) {
+		if (allowFutility) {
 			if (si.depth < qsOnlyRecaptureDepth && move.to != si.move.to) {
 				continue;
 			}
@@ -742,6 +745,18 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 				!givingCheck) {
 			board.undoMove(backup);
 			continue;
+		}
+		if (allowFutility && board.getGamePhase()<ENDGAME &&
+				!board.isPawnFinal() && !passedPawn && !givingCheck ) {
+			const int gain = materialValues[backup.capturedPiece];
+			const int futilityScore = currentScore+gain+getFutilityMargin();
+			if (futilityScore<si.alpha) {
+				if (futilityScore>bestScore) {
+					bestScore=futilityScore;
+				}
+				board.undoMove(backup);
+				continue;
+			}
 		}
 		SearchInfo newSi(false,move,-si.beta,-si.alpha,si.depth-1,si.ply+1,si.nodeType,si.splitPoint);
 		int score = -qSearch(board, newSi);
@@ -825,6 +840,10 @@ const int SimplePVSearch::getReduction(const bool isPV, const int depth, const i
 const int SimplePVSearch::getFutilityMargin(const int depth, const int moveCounter) const {
 	return futilityMargin[std::min(maxSearchDepth,depth)][std::min(maxMoveCount,moveCounter)];
 }
+//get futility margins / QS
+const int SimplePVSearch::getFutilityMargin() const {
+	return futilityQSMargin;
+}
 //get move count margins
 const int SimplePVSearch::getMoveCountMargin(const int depth) const {
 	return moveCountMargin[std::min(maxSearchDepth,depth)];
@@ -835,7 +854,7 @@ const int SimplePVSearch::getRazorMargin(const int depth) {
 }
 //get razor margins
 const int SimplePVSearch::getDeltaMargin(const int depth) {
-	return deltaMargin + depth * 30;
+	return deltaMargin + depth * 5;
 }
 //initialize reduction arrays
 void SimplePVSearch::initialize() {
@@ -846,6 +865,7 @@ void SimplePVSearch::initialize() {
 			reductionTableNonPV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/2.0);
 			futilityMargin[x][y]=static_cast<int>(100.03 * exp(0.35*(double(x))+-double(y*x)*0.01)) +
 					(x>1 ? 90.0 * exp(0.03*(double(x))): 0);
+
 		}
 	}
 }
