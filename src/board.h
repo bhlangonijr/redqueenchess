@@ -350,6 +350,7 @@ public:
 
 	Square getKingSquare(const PieceColor color);
 	bool isPawnFinal();
+	bool isPawnFinal(const Square exclude);
 	bool isCaptureOrPromotion(MoveIterator::Move& move);
 	bool isPawnPromoting();
 	bool isPawnOn6th();
@@ -1352,6 +1353,14 @@ inline Square Board::getKingSquare(const PieceColor color) {
 inline bool Board::isPawnFinal() {
 	Bitboard pieces = getPieces(WHITE_PAWN) | getPieces(BLACK_PAWN) |
 			getPieces(WHITE_KING) | getPieces(BLACK_KING);
+	return !(pieces^getAllPieces());
+}
+
+// remains pawns & kings only?
+inline bool Board::isPawnFinal(const Square exclude) {
+	Bitboard pieces = getPieces(WHITE_PAWN) | getPieces(BLACK_PAWN) |
+			getPieces(WHITE_KING) | getPieces(BLACK_KING);
+	pieces|=squareToBitboard[exclude];
 	return !(pieces^getAllPieces());
 }
 
