@@ -1350,7 +1350,7 @@ inline Square Board::getKingSquare(const PieceColor color) {
 
 // remains pawns & kings only?
 inline bool Board::isPawnFinal() {
-	Bitboard pieces = getPieces(WHITE_PAWN) |	getPieces(BLACK_PAWN) |
+	Bitboard pieces = getPieces(WHITE_PAWN) | getPieces(BLACK_PAWN) |
 			getPieces(WHITE_KING) | getPieces(BLACK_KING);
 	return !(pieces^getAllPieces());
 }

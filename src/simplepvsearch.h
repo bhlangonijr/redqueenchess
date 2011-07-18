@@ -36,6 +36,7 @@
 #include "evaluator.h"
 #include "smp.h"
 // game constants
+const int extUnit = 2;
 const int maxScoreRepetition = 25;
 const int mateRangeScore = 300;
 const int maxSearchDepth = 80;
@@ -74,15 +75,15 @@ enum NodeType {
 
 typedef struct SearchInfo {
 	SearchInfo(): allowNullMove(false), move(MoveIterator::Move()), partialSearch(false),
-			alpha(0), beta(0), depth(0), ply(0), nodeType(NODE_NONE), splitPoint(NULL) {}
+			alpha(0), beta(0), depth(0), ply(0), nodeType(NODE_NONE), splitPoint(NULL), extension(0) {}
 	SearchInfo(const bool _allowNullMove, const MoveIterator::Move _move, const int _alpha, const int _beta,
 			const int _depth, const int _ply, const NodeType _nodeType, SplitPoint* sp):
-				allowNullMove(_allowNullMove), move(_move), partialSearch(false),
-			alpha(_alpha), beta(_beta), depth(_depth), ply(_ply), nodeType(_nodeType), splitPoint(sp) {}
+				allowNullMove(_allowNullMove), move(_move), partialSearch(false), alpha(_alpha), beta(_beta),
+				depth(_depth), ply(_ply), nodeType(_nodeType), splitPoint(sp), extension(0) {}
 	SearchInfo(const bool _allowNullMove, const MoveIterator::Move _move, const bool _partialSearch, const int _alpha,
 			const int _beta, const int _depth, const int _ply, const NodeType _nodeType, SplitPoint* sp):
-				allowNullMove(_allowNullMove), move(_move), partialSearch(_partialSearch),
-				alpha(_alpha), beta(_beta), depth(_depth), ply(_ply), nodeType(_nodeType), splitPoint(sp) {}
+				allowNullMove(_allowNullMove), move(_move), partialSearch(_partialSearch), alpha(_alpha),
+				beta(_beta), depth(_depth), ply(_ply), nodeType(_nodeType), splitPoint(sp), extension(0) {}
 
 	inline void update(const int _depth, const NodeType _nodeType) {
 		depth=_depth;
@@ -105,6 +106,7 @@ typedef struct SearchInfo {
 	int ply;
 	NodeType nodeType;
 	SplitPoint* splitPoint;
+	int extension;
 } SearchInfo;
 }
 
@@ -187,6 +189,9 @@ public:
 	}
 
 	const int getReduction(const bool isPV, const int depth, const int moveCounter) const;
+
+	const int getFractionalExtension(const bool isPV, Board& board, MoveBackup& backup,
+			MoveIterator::Move move, const bool givingCheck, const bool negativeSEE);
 
 	const int getFutilityMargin(const int depth, const int moveCounter) const;
 
