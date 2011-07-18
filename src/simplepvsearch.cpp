@@ -185,7 +185,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 		const int see = evaluator.see<true>(board,move);
 		board.doMove(move,backup);
 		const bool givingCheck = board.setInCheck(board.getSideToMove());
-		const int fractionalExt = getFractionalExtension(true, board, backup, move, givingCheck, see<0);
+		const int fractionalExt = getFractionalExtension(true, board, backup, move, givingCheck, see>=0);
 		int extension=0;
 		if (fractionalExt+si.extension>=extUnit) {
 			extension++;
@@ -341,7 +341,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 		moveCounter++;
 		nodes++;
 		const bool givingCheck = board.setInCheck(board.getSideToMove());
-		const int fractionalExt = getFractionalExtension(true, board, backup, move, givingCheck, see<0);
+		const int fractionalExt = getFractionalExtension(true, board, backup, move, givingCheck, see>=0);
 		int extension=0;
 		if (isSingular || fractionalExt+si.extension>=extUnit) {
 			extension++;
@@ -575,7 +575,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		nodes++;
 		const bool givingCheck = board.setInCheck(board.getSideToMove());
 		int extension=0;
-		const int fractionalExt = getFractionalExtension(false, board, backup, move, givingCheck, see<0);
+		const int fractionalExt = getFractionalExtension(false, board, backup, move, givingCheck, see>=0);
 		if (isSingular || fractionalExt+si.extension>=extUnit) {
 			extension++;
 		}
@@ -845,11 +845,11 @@ const int SimplePVSearch::getReduction(const bool isPV, const int depth, const i
 }
 // get fractional extension
 const int SimplePVSearch::getFractionalExtension(const bool isPV, Board& board, MoveBackup& backup,
-		MoveIterator::Move move, const bool givingCheck, const bool negativeSEE) {
+		MoveIterator::Move move, const bool givingCheck, const bool positiveSEE) {
 	int extension = 0;
 	const bool passedPawnPush = isPawnPush(board,move.to);
 	const bool pawnOn7thRank = move.promotionPiece!=EMPTY;
-	if (givingCheck && negativeSEE) {
+	if (givingCheck && positiveSEE) {
 		extension+=isPV?extUnit:extUnit/2;
 	}
 	if (pawnOn7thRank) {

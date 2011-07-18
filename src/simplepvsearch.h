@@ -191,7 +191,7 @@ public:
 	const int getReduction(const bool isPV, const int depth, const int moveCounter) const;
 
 	const int getFractionalExtension(const bool isPV, Board& board, MoveBackup& backup,
-			MoveIterator::Move move, const bool givingCheck, const bool negativeSEE);
+			MoveIterator::Move move, const bool givingCheck, const bool positiveSEE);
 
 	const int getFutilityMargin(const int depth, const int moveCounter) const;
 
