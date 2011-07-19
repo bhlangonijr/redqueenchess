@@ -182,22 +182,22 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 		MoveBackup backup;
 		int64_t nodes=this->nodes;
 		nodesToGo = getTimeToSearch()<=1000?fastNodesToGo:defaultNodesToGo;
-		const int fractionalExt = getFractionalExtension(true, isKingAttacked, board, move);
 		int extension=0;
-		if (fractionalExt+si.extension>=extUnit) {
+		if (isKingAttacked) {
 			extension++;
 		}
 		board.doMove(move,backup);
 		const bool givingCheck = board.setInCheck(board.getSideToMove());
+		const bool passedPawnPush = isPawnPush(board,move.to);
+		const bool pawnOn7thRank = move.promotionPiece!=EMPTY;
 		int newDepth=si.depth-1+extension;
 		SearchInfo newSi(true,move,-beta,-alpha,newDepth,si.ply+1,PV_NODE,NULL);
-		newSi.extension = extension>0?0:fractionalExt+si.extension;
 		if (score>alpha || moveCounter==1) {
 			newSi.update(newDepth,PV_NODE,-beta,-alpha,move);
 			score = -pvSearch(board, newSi);
 		} else {
 			int reduction=0;
-			if (extension==0 && !isKingAttacked && !givingCheck && fractionalExt==0 &&
+			if (extension==0 && !isKingAttacked && !givingCheck && !passedPawnPush && !pawnOn7thRank &&
 					moveCounter>lateMoveThreshold && si.depth>lmrDepthThresholdRoot &&
 					move.type == MoveIterator::NON_CAPTURE) {
 				reduction=getReduction(true,si.depth,moveCounter);
@@ -320,13 +320,10 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 			continue;
 		}
 		const bool isHashMove = move.type==MoveIterator::TT_MOVE;
-		const int fractionalExt = getFractionalExtension(true, isKingAttacked, board, move);
 		int extension=0;
-		if (fractionalExt+si.extension>=extUnit) {
+		if (isKingAttacked) {
 			extension++;
-		}
-		// se
-		if (extension==0 && isHashMove && si.depth > sePVDepth && hashOk && !hashMove.none()
+		} else if (isHashMove && si.depth > sePVDepth && hashOk && !hashMove.none()
 				&& !si.partialSearch && hashData.depth() >= si.depth-3 &&
 				(hashData.flag() & TranspositionTable::LOWER)) {
 			if (abs(hashData.value()) < winningScore) {
@@ -343,15 +340,16 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 		moveCounter++;
 		nodes++;
 		const bool givingCheck = board.setInCheck(board.getSideToMove());
+		const bool passedPawnPush = isPawnPush(board,move.to);
+		const bool pawnOn7thRank = move.promotionPiece!=EMPTY;
 		int newDepth=si.depth-1+extension;
 		SearchInfo newSi(true,move,-si.beta,-si.alpha,newDepth,si.ply+1,PV_NODE,si.splitPoint);
-		newSi.extension = extension>0?0:fractionalExt+si.extension;
 		if (moveCounter==1) {
 			newSi.update(newDepth,PV_NODE,-si.beta,-si.alpha,move);
 			score = -pvSearch(board, newSi);
 		} else {
 			int reduction=0;
-			if (extension==0 && !isKingAttacked && !givingCheck && fractionalExt==0 &&
+			if (extension==0 && !isKingAttacked && !givingCheck && !passedPawnPush && !pawnOn7thRank &&
 					si.depth>lmrDepthThreshold && move.type == MoveIterator::NON_CAPTURE) {
 				reduction=getReduction(true, si.depth, moveCounter);
 			}
@@ -552,12 +550,9 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		}
 		const bool isHashMove = move.type==MoveIterator::TT_MOVE;
 		int extension=0;
-		const int fractionalExt = getFractionalExtension(false, isKingAttacked, board, move);
-		if (fractionalExt+si.extension>=extUnit) {
+		if (isKingAttacked) {
 			extension++;
-		}
-		// se
-		if (extension==0 && isHashMove && si.depth > seNonPVDepth && hashOk && !hashMove.none() &&
+		} else if (isHashMove && si.depth > seNonPVDepth && hashOk && !hashMove.none() &&
 				!si.partialSearch && hashData.depth() >= si.depth-3 &&
 				(hashData.flag() & TranspositionTable::LOWER)) {
 			if (abs(hashData.value()) < winningScore) {
@@ -574,12 +569,15 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		moveCounter++;
 		nodes++;
 		const bool givingCheck = board.setInCheck(board.getSideToMove());
+		const bool passedPawnPush = isPawnPush(board,move.to);
+		const bool pawnOn7thRank = move.promotionPiece!=EMPTY;
 		//futility
 		if  (	move.type == MoveIterator::NON_CAPTURE &&
 				si.depth < futilityDepth &&
 				!isKingAttacked &&
 				!givingCheck &&
-				fractionalExt==0 &&
+				!passedPawnPush &&
+				!pawnOn7thRank &&
 				!nmMateScore) {
 			if (getMoveCountMargin(si.depth) < moveCounter
 					&& !isMateScore(bestScore) ) {
@@ -597,15 +595,14 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		}
 		//reductions
 		int reduction=0;
-		if (extension==0 && !isKingAttacked && !givingCheck && fractionalExt==0
-				&& si.depth>lmrDepthThreshold && !nmMateScore &&
+		if (extension==0 && !isKingAttacked && !givingCheck && !passedPawnPush &&
+				!pawnOn7thRank && si.depth>lmrDepthThreshold && !nmMateScore &&
 				move.type == MoveIterator::NON_CAPTURE) {
 			reduction=getReduction(false,si.depth,moveCounter);
 		}
 		int newDepth=si.depth-1+extension;
 		SearchInfo newSi(true,move,si.beta,1-si.beta,newDepth-reduction,
 				si.ply+1, NONPV_NODE,si.splitPoint);
-		newSi.extension = extension>0?0:fractionalExt;
 		score = -zwSearch(board, newSi);
 		if (score >= si.beta && reduction>0) {
 			bool research=true;
@@ -723,9 +720,9 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 		}
 		const bool isHashMove = move.type==MoveIterator::TT_MOVE;
 		const bool passedPawn = isPawnPush(board,move.to);
-		const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
+		const bool pawnOn7thRank = move.promotionPiece!=EMPTY;
 		const bool allowFutility = !isKingAttacked && !(si.nodeType==PV_NODE) &&
-				!isHashMove && !pawnOn7thExtension;
+				!isHashMove && !pawnOn7thRank;
 		moveCounter++;
 		nodes++;
 		if (move.promotionPiece==makePiece(sideToMove,ROOK) ||
@@ -837,28 +834,6 @@ const int SimplePVSearch::getReduction(const bool isPV, const int depth, const i
 	int reduction = isPV?reductionTablePV[std::min(maxSearchDepth,depth)][std::min(maxMoveCount,moveCounter)]:
 			reductionTableNonPV[std::min(maxSearchDepth,depth)][std::min(maxMoveCount,moveCounter)];
 	return reduction;
-}
-// get fractional extension
-const int SimplePVSearch::getFractionalExtension(const bool isPV, const bool isKingAttacked,
-		Board& board, MoveIterator::Move move) {
-	int extension = 0;
-	const bool passedPawnPush = isPawnPush(board,move.to);
-	const bool pawnOn7thRank = move.promotionPiece!=EMPTY;
-	if (isKingAttacked) {
-		extension+=isPV?extUnit:extUnit/2;
-	}
-	if (pawnOn7thRank) {
-		extension+=extUnit/2;
-	}
-	if (passedPawnPush && isPV) {
-		extension+=extUnit/2;
-	}
-	if (board.getPiece(move.to) != EMPTY &&
-			board.getPieceType(move.to) != PAWN &&
-			board.isPawnFinal(move.to)) {
-		extension+=extUnit/2;
-	}
-	return extension;
 }
 //get futility margins
 const int SimplePVSearch::getFutilityMargin(const int depth, const int moveCounter) const {
