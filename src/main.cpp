@@ -78,6 +78,5 @@ int main(int argc, char* argv[]) {
 		std::cout << ">redqueen bench<enter> --> Runs a benchmark" << std::endl;
 	}
 	uci->clearUciOption();
-	SearchAgent::getInstance()->shutdown();
 	return 0;
 }

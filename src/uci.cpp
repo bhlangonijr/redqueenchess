@@ -93,6 +93,8 @@ bool Uci::execute() {
 		executeGo();
 		break;
 	case QUIT:
+		executeStop();
+		break;
 	case STOP:
 		executeStop();
 		break;
@@ -239,6 +241,12 @@ void Uci::executePosition() {
 void Uci::executeUciNewGame() {
 	SearchAgent *searchAgent = SearchAgent::getInstance();
 	searchAgent->newGame();
+}
+// execute Stop
+void Uci::executeQuit() {
+	SearchAgent *searchAgent = SearchAgent::getInstance();
+	searchAgent->stopSearch();
+	searchAgent->shutdown();
 }
 // execute Stop
 void Uci::executeStop() {

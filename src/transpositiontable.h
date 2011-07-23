@@ -30,7 +30,7 @@
 #include <cstring>
 #include <cmath>
 #include <stdlib.h>
-const int DEFAULT_INITIAL_SIZE = 64;
+const int DEFAULT_INITIAL_SIZE = 128;
 const int BUCKET_SIZE = 4;
 class TranspositionTable {
 public:
@@ -52,7 +52,7 @@ public:
 	};
 
 	struct HashData {
-		HashData() : _value(0), _evalValue(0), _depth(0), _flag(NODE_NONE),
+		HashData() : _value(-maxScore), _evalValue(-maxScore), _depth(0), _flag(NODE_NONE),
 				_from(NONE), _to(NONE), _promotion(EMPTY), _generation(0) {};
 
 		HashData(const int& value, const int& evalValue, const int& depth, const NodeFlag& flag,

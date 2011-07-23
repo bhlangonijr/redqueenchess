@@ -538,6 +538,9 @@ void SearchAgent::prepareThreadPool() {
 }
 
 void SearchAgent::shutdown() {
+	while (getSearchInProgress()) {
+		// wait for threads termination
+	}
 	for (int i=0;i<threadPoolSize;i++) {
 		if (mainSearcher[i]) {
 			delete mainSearcher[i];

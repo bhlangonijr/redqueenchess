@@ -84,6 +84,7 @@ private:
 	void executePosition();
 	void executeGo();
 	void executeUciNewGame();
+	void executeQuit();
 	void executeStop();
 	void executePonderHit();
 	void executePerft();

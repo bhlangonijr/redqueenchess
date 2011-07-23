@@ -82,7 +82,7 @@ public:
 	void setBoard(Board _board);
 
 	const bool shouldStop() const {
-		return requestStop;
+		return requestStop || quit;
 	}
 
 	inline void lock(pthread_mutex_t* mutex) {
