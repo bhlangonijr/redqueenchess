@@ -46,14 +46,20 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 		}
 		return evalInfo.getEval();
 	}
-	bool doNotLazyEval = evalInfo.getEval() > alpha-lazyEvalMargin && evalInfo.getEval() < beta+lazyEvalMargin;
-	bool doPawnEval = doNotLazyEval || board.isPawnPromoting() || board.isPawnFinal();
-	if (doPawnEval) {
+	bool isNotLazyEval = evalInfo.getEval() > alpha-lazyEvalMargin && evalInfo.getEval() < beta+lazyEvalMargin;
+	isNotLazyEval = isNotLazyEval || board.isPawnPromoting() || board.isPawnFinal();
+	if (isNotLazyEval) {
 		setLazyEval(false);
 		evalInfo.attackers[WHITE_PAWN] = ((evalInfo.pawns[WHITE] & midBoardNoFileA) << 7) |
 				((evalInfo.pawns[WHITE] & midBoardNoFileH) << 9);
 		evalInfo.attackers[BLACK_PAWN] = ((evalInfo.pawns[BLACK] & midBoardNoFileA) >> 9) |
 				((evalInfo.pawns[BLACK] & midBoardNoFileH) >> 7);
+		evalBoardControl(evalInfo.side, evalInfo);
+		evalBoardControl(evalInfo.other, evalInfo);
+		evalThreats(evalInfo.side, evalInfo);
+		evalThreats(evalInfo.other, evalInfo);
+		evalKing(evalInfo.side, evalInfo);
+		evalKing(evalInfo.other, evalInfo);
 		PawnInfo info;
 		if (getPawnInfo(board.getPawnKey(),info)) {
 			evalPawnsFromCache(evalInfo.side, info, evalInfo);
@@ -62,17 +68,6 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 			evalPawns(evalInfo.side, evalInfo);
 			evalPawns(evalInfo.other, evalInfo);
 		}
-		evalInfo.computeEval();
-	}
-	doNotLazyEval = evalInfo.getEval() > alpha-lazyEvalMargin && evalInfo.getEval() < beta+lazyEvalMargin;
-	if (doNotLazyEval) {
-		setLazyEval(false);
-		evalBoardControl(evalInfo.side, evalInfo);
-		evalBoardControl(evalInfo.other, evalInfo);
-		evalThreats(evalInfo.side, evalInfo);
-		evalThreats(evalInfo.other, evalInfo);
-		evalKing(evalInfo.side, evalInfo);
-		evalKing(evalInfo.other, evalInfo);
 		evalInfo.computeEval();
 	}
 	if (isDebugEnabled()) {
@@ -84,17 +79,23 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 void Evaluator::evalKing(PieceColor color, EvalInfo& evalInfo) {
 	const PieceColor other = evalInfo.board.flipSide(color);
 	const Square kingSq = evalInfo.board.getKingSquare(other);
-	const Bitboard kingSquareBB = adjacentSquares[kingSq];
+	const Bitboard shield = evalInfo.board.getPieces(other)&evalInfo.attacks[other];
+	const Bitboard kingSquareBB = adjacentSquares[kingSq]&~shield;
 	int pressure = 0;
+	Bitboard allAttacks = EMPTY_BB;
 	for (int piece=makePiece(color,KNIGHT);piece<=makePiece(color,QUEEN);piece++) {
 		// king area safety
 		const Bitboard attacks = evalInfo.attackers[piece]&kingSquareBB;
 		if (attacks) {
+			allAttacks |= attacks;
 			const int attackCount = pieceType[piece]==KNIGHT?1:bitCount15(attacks);
 			pressure += getKingAttackWeight(piece,attackCount);
 		}
 	}
-	evalInfo.kingThreat[color] += pressure;
+	if (allAttacks) {
+		evalInfo.kingThreat[color] += pressure;
+		evalInfo.kingThreat[color] += bitCount15(allAttacks) * MS(+5,+7);
+	}
 	evalInfo.evalPieces[color] +=
 			evalInfo.board.isCastleDone(color)?DONE_CASTLE_BONUS:
 	evalInfo.board.getCastleRights(color)==NO_CASTLE?-DONE_CASTLE_BONUS:0;
@@ -258,9 +259,6 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 	const Bitboard freeArea = ~(board.getPieces(color) |
 			evalInfo.attackers[makePiece(other,PAWN)]);
 	Bitboard pieces = EMPTY_BB;
-	for (int piece=makePiece(color,KNIGHT);piece<=makePiece(color,QUEEN);piece++) {
-		evalInfo.attackers[piece] = EMPTY_BB;
-	}
 	pieces = evalInfo.board.getAllPieces();
 	pieces = (color==WHITE?pieces>>8:pieces<<8) & evalInfo.board.getPieces(color,PAWN);
 	if (pieces) {

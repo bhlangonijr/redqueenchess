@@ -129,8 +129,8 @@ public:
 		}
 	} PvLine;
 
-	SimplePVSearch(int* _history) : depthToSearch(maxSearchDepth), updateUci(true), startTime(0), searchFixedDepth(false),
-			infinite(false), nodes(0), nodesToGo(defaultNodesToGo), history(_history) {
+	SimplePVSearch(int* _history) : depthToSearch(maxSearchDepth), updateUci(true), timeToSearch(0), startTime(0), searchFixedDepth(false),
+			infinite(false), nodes(0), maxPlySearched(0), nodesToGo(defaultNodesToGo), history(_history) {
 		initMutex();
 	}
 
@@ -346,7 +346,6 @@ private:
 	pthread_mutex_t mutex;
 	pthread_cond_t waitCond;
 	int* history;
-	//SplitPoint* splitPoint;
 	int idSearch(Board& board);
 	int rootSearch(Board& board, SearchInfo& si, PvLine& pv);
 	void uciOutput(PvLine& pv, const int score, const int64_t totalTime,

@@ -276,6 +276,9 @@ public:
 			imbalance[WHITE]=0;
 			imbalance[BLACK]=0;
 			eval=0;
+			for (int piece=WHITE_PAWN;piece<=BLACK_KING;piece++) {
+				attackers[piece] = EMPTY_BB;
+			}
 		}
 		Board& board;
 		PieceColor side;
