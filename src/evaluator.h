@@ -88,7 +88,11 @@ const int queenKingBonus[8] = {
 };
 
 const int kingZoneAttackWeight[ALL_PIECE_TYPE][10] = {
-		{},
+		{//pawns
+				0*MS(+6,+10),1*MS(+6,+10),2*MS(+6,+10),3*MS(+6,+10),4*MS(+6,+10),
+				5*MS(+6,+10),6*MS(+6,+10),7*MS(+6,+10),8*MS(+6,+10),9*MS(+6,+10)
+
+		},
 		{//knight
 				0*MS(+4,+7),1*MS(+4,+7),2*MS(+4,+7),3*MS(+4,+7),4*MS(+4,+7),
 				5*MS(+4,+7),6*MS(+4,+7),7*MS(+4,+7),8*MS(+4,+7),9*MS(+4,+7)
@@ -116,8 +120,8 @@ const int connectedPasserBonus[ALL_PIECE_COLOR][ALL_RANK] = {
 };
 
 const int freePasserBonus[ALL_PIECE_COLOR][ALL_RANK] = {
-		{0,MS(+20,+25),MS(+25,+35),MS(+40,+50),MS(+50,+60),MS(+60,+70),MS(+80,+90),0},
-		{0,MS(+80,+90),MS(+60,+70),MS(+50,+60),MS(+40,+50),MS(+25,+35),MS(+20,+25),0},
+		{0,MS(+5,+7),MS(+7,+13),MS(+13,+15),MS(+30,+40),MS(+60,+70),MS(+80,+90),0},
+		{0,MS(+80,+90),MS(+60,+70),MS(+30,+40),MS(+13,+15),MS(+7,+13),MS(+5,+7),0},
 		{}
 };
 
@@ -276,9 +280,7 @@ public:
 			imbalance[WHITE]=0;
 			imbalance[BLACK]=0;
 			eval=0;
-			for (int piece=WHITE_PAWN;piece<=BLACK_KING;piece++) {
-				attackers[piece] = EMPTY_BB;
-			}
+			memset(attackers, 0, sizeof(Bitboard)*ALL_PIECE_TYPE_BY_COLOR);
 		}
 		Board& board;
 		PieceColor side;
@@ -367,8 +369,7 @@ public:
 	void evalKing(PieceColor color, EvalInfo& evalInfo);
 	void evalPawnsFromCache(PieceColor color, PawnInfo& info, EvalInfo& evalInfo);
 	void evalPawns(PieceColor color, EvalInfo& evalInfo);
-	const int evalPassedPawn(EvalInfo& evalInfo, PieceColor color, const Square from,
-			const bool isPawnFinal, const bool isChained);
+	const int evalPassedPawn(EvalInfo& evalInfo, PieceColor color, const Square from, const bool isChained);
 	void evalBoardControl(PieceColor color, EvalInfo& evalInfo);
 	void evalThreats(PieceColor color, EvalInfo& evalInfo);
 	void evalImbalances(PieceColor color, EvalInfo& evalInfo);

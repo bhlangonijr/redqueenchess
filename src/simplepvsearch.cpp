@@ -87,10 +87,14 @@ int SimplePVSearch::idSearch(Board& board) {
 			aspirationDelta = std::max(abs(delta1)*80/100+abs(delta2)*20/100, 20)+5;
 			rootSearchInfo.alpha = std::max(iterationScore[depth-1]-aspirationDelta,-maxScore);
 			rootSearchInfo.beta  = std::min(iterationScore[depth-1]+aspirationDelta,+maxScore);
+		} else {
+			rootSearchInfo.alpha = -maxScore;
+			rootSearchInfo.beta = maxScore;
 		}
 		while (!(stopped || stop(rootSearchInfo))) {
 			score = rootSearch(board, rootSearchInfo, pv);
-			stopped = score > rootSearchInfo.alpha && score < rootSearchInfo.beta;
+			stopped = (score > rootSearchInfo.alpha && score < rootSearchInfo.beta) ||
+					(rootSearchInfo.alpha==-maxScore && rootSearchInfo.beta==+maxScore);
 			iterationScore[depth]=score;
 			if (!stopped && depth >= aspirationDepth &&
 					abs(iterationScore[depth]) < winningScore) {
