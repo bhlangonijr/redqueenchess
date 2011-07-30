@@ -82,22 +82,76 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 }
 // king eval function
 void Evaluator::evalKing(PieceColor color, EvalInfo& evalInfo) {
-	const PieceColor other = evalInfo.board.flipSide(color);
-	const Square kingSq = evalInfo.board.getKingSquare(other);
+	Board& board = evalInfo.board;
+	const PieceColor other = board.flipSide(color);
+	const Square kingSq = board.getKingSquare(color);
 	const Bitboard kingSquareBB = adjacentSquares[kingSq];
 	int pressure = 0;
-	for (int piece=makePiece(color,PAWN);piece<=makePiece(color,QUEEN);piece++) {
-		// king area safety
-		const Bitboard attacks = evalInfo.attackers[piece]&kingSquareBB;
-		if (attacks) {
-			const int attackCount = pieceType[piece]==KNIGHT?1:bitCount15(attacks);
-			pressure += getKingAttackWeight(piece,attackCount);
+
+	const Bitboard notDefended = evalInfo.attacks[other]&
+			kingSquareBB&~evalInfo.attacks[color];
+
+	const Bitboard queenContactCheck = ~board.getPieces(other)&
+			notDefended&evalInfo.attackers[makePiece(other,QUEEN)];
+
+	if (queenContactCheck) {
+		const Bitboard safeCheck = queenContactCheck &
+				(evalInfo.attackers[makePiece(other,PAWN)] |
+						evalInfo.attackers[makePiece(other,KNIGHT)] |
+						evalInfo.attackers[makePiece(other,BISHOP)] |
+						evalInfo.attackers[makePiece(other,ROOK)]);
+		if (safeCheck) {
+			pressure+=(other==board.getSideToMove()?2:1) *
+					bitCount15(safeCheck)*QUEEN_CHECK_BONUS;
 		}
 	}
-	evalInfo.kingThreat[color] += pressure;
+	const Bitboard rookContactCheck = ~board.getPieces(other)&
+			notDefended&evalInfo.attackers[makePiece(other,ROOK)];
+
+	if (rookContactCheck) {
+		const Bitboard safeCheck = rookContactCheck &
+				(evalInfo.attackers[makePiece(other,PAWN)] |
+						evalInfo.attackers[makePiece(other,KNIGHT)] |
+						evalInfo.attackers[makePiece(other,BISHOP)] |
+						evalInfo.attackers[makePiece(other,QUEEN)]);
+		if (safeCheck) {
+			pressure+= (other==board.getSideToMove()?2:1)*
+					bitCount15(safeCheck)*ROOK_CHECK_BONUS;
+		}
+	}
+
+	const Bitboard clearWay = ~(board.getPieces(other)|evalInfo.attacks[color]);
+	const Bitboard rookAttacks = clearWay&board.getRookAttacks(kingSq);
+	const Bitboard bishopAttacks = clearWay&board.getBishopAttacks(kingSq);
+
+	const Bitboard queenIndirectAttacks = (rookAttacks|bishopAttacks)&
+			evalInfo.attackers[makePiece(other,QUEEN)];
+	if (queenIndirectAttacks) {
+		pressure += bitCount15(queenIndirectAttacks)*INDIRECT_QUEEN_CHECK_BONUS;
+	}
+
+	const Bitboard rookIndirectAttacks = rookAttacks &
+			evalInfo.attackers[makePiece(other,ROOK)];
+	if (rookIndirectAttacks) {
+		pressure += bitCount15(rookIndirectAttacks)*INDIRECT_ROOK_CHECK_BONUS;
+	}
+
+	const Bitboard bishopIndirectAttacks = bishopAttacks &
+			evalInfo.attackers[makePiece(other,BISHOP)];
+	if (bishopIndirectAttacks) {
+		pressure += bitCount15(bishopIndirectAttacks)*INDIRECT_BISHOP_CHECK_BONUS;
+	}
+
+	const Bitboard kinghtIndirectAttacks = board.getKnightAttacks(kingSq) &
+			evalInfo.attackers[makePiece(other,KNIGHT)];
+	if (kinghtIndirectAttacks) {
+		pressure += bitCount15(kinghtIndirectAttacks)*INDIRECT_KNIGHT_CHECK_BONUS;
+	}
+
+	evalInfo.kingThreat[color] = -pressure;
 	evalInfo.evalPieces[color] +=
-			evalInfo.board.isCastleDone(color)?DONE_CASTLE_BONUS:
-	evalInfo.board.getCastleRights(color)==NO_CASTLE?-DONE_CASTLE_BONUS:0;
+			board.isCastleDone(color)?DONE_CASTLE_BONUS:
+	board.getCastleRights(color)==NO_CASTLE?-DONE_CASTLE_BONUS:0;
 }
 
 void Evaluator::evalPawnsFromCache(PieceColor color, PawnInfo& info, EvalInfo& evalInfo) {
@@ -244,29 +298,25 @@ const int Evaluator::evalPassedPawn(EvalInfo& evalInfo, PieceColor color, const 
 void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 	Board& board = evalInfo.board;
 	const PieceColor other = board.flipSide(color);
-	const Square otherKingSq = board.getKingSquare(other);
-	const Bitboard otherKingBB = board.getPieces(other,KING);
 	const Bitboard freeArea = ~(board.getPieces(color) |
 			evalInfo.attackers[makePiece(other,PAWN)]);
 	Bitboard pieces = EMPTY_BB;
-	pieces = evalInfo.board.getAllPieces();
-	pieces = (color==WHITE?pieces>>8:pieces<<8) & evalInfo.board.getPieces(color,PAWN);
+	pieces = board.getAllPieces();
+	pieces = (color==WHITE?pieces>>8:pieces<<8) & board.getPieces(color,PAWN);
 	if (pieces) {
-		evalInfo.mobility[color] += PAWN_MOBILITY_PENALTY * bitCount(pieces);
+		evalInfo.mobility[color] += bitCount15(pieces)*PAWN_MOBILITY_PENALTY;
 	}
 	Square from = NONE;
-	pieces = evalInfo.board.getPieces(color,KNIGHT);
+	pieces = board.getPieces(color,KNIGHT);
 	from = extractLSB(pieces);
 	while ( from!=NONE ) {
-		const Bitboard attacks = evalInfo.board.getKnightAttacks(from);
+		const Bitboard attacks = board.getKnightAttacks(from);
 		evalInfo.mobility[color] += knightMobility[bitCount(attacks&freeArea)];
 		evalInfo.attackers[makePiece(color,KNIGHT)] |= attacks;
-		if (knightOutpostBonus[color][from] && evalInfo.attackers[makePiece(color,PAWN)]&squareToBitboard[from] &&
+		if (knightOutpostBonus[color][from] &&
+				evalInfo.attackers[makePiece(color,PAWN)]&squareToBitboard[from] &&
 				!(evalInfo.attackers[makePiece(other,PAWN)]&squareToBitboard[from])) {
 			evalInfo.evalPieces[color] += knightOutpostBonus[color][from];
-		}
-		if(!(evalInfo.attackers[makePiece(other,PAWN)]&squareToBitboard[from])) {
-			evalInfo.kingThreat[color] += knightKingBonus[squareDistance(from,otherKingSq)];
 		}
 		from = extractLSB(pieces);
 	}
@@ -276,9 +326,6 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 		const Bitboard attacks = board.getBishopAttacks(from);
 		evalInfo.attackers[makePiece(color,BISHOP)] |= attacks;
 		evalInfo.mobility[color] += bishopMobility[bitCount(attacks&freeArea)];
-		if(!(evalInfo.attackers[makePiece(other,PAWN)]&squareToBitboard[from])) {
-			evalInfo.kingThreat[color] += bishopKingBonus[squareDistance(from,otherKingSq)];
-		}
 		from = extractLSB(pieces);
 	}
 	pieces = board.getPieces(color,ROOK);
@@ -288,7 +335,7 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 		evalInfo.attackers[makePiece(color,ROOK)] |= attacks;
 		evalInfo.mobility[color] += rookMobility[bitCount(attacks&freeArea)];
 		if ((squareToBitboard[from] & promoRank[color]) &&
-				(otherKingBB & eighthRank[color])) {
+				(board.getPieces(other,KING) & eighthRank[color])) {
 			evalInfo.evalPieces[color] += ROOK_ON_7TH_RANK_BONUS;
 		}
 		if (!(evalInfo.pawns[color]&fileBB[squareFile[from]])) {
@@ -297,9 +344,6 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 			} else {
 				evalInfo.evalPieces[color] += ROOK_ON_HALF_OPEN_FILE_BONUS;
 			}
-		}
-		if(!(evalInfo.attackers[makePiece(other,PAWN)]&squareToBitboard[from])) {
-			evalInfo.kingThreat[color] += rookKingBonus[squareDistance(from,otherKingSq)];
 		}
 		from = extractLSB(pieces);
 	}
@@ -311,11 +355,8 @@ void Evaluator::evalBoardControl(PieceColor color, EvalInfo& evalInfo) {
 		evalInfo.attackers[makePiece(color,QUEEN)] |= attacks;
 		evalInfo.mobility[color] += MS(queenMobility,queenMobility);
 		if ((squareToBitboard[from] & promoRank[color]) &&
-				(otherKingBB & eighthRank[color])) {
+				(board.getPieces(other,KING) & eighthRank[color])) {
 			evalInfo.evalPieces[color] += QUEEN_ON_7TH_RANK_BONUS;
-		}
-		if(!(evalInfo.attackers[makePiece(other,PAWN)]&squareToBitboard[from])) {
-			evalInfo.kingThreat[color] += queenKingBonus[squareDistance(from,otherKingSq)];
 		}
 		from = extractLSB(pieces);
 	}
@@ -395,7 +436,7 @@ void Evaluator::evalImbalances(PieceColor color, EvalInfo& evalInfo) {
 			const Bitboard otherPawns = board.getPieces(other,PAWN);
 			const bool pawnOnAFile = sidePawns & fileBB[FILE_A];
 			const bool pawnOnHFile = sidePawns & fileBB[FILE_H];
-			if (minors <= 1 && sidePawnCount==1 &&
+			if (minors==1 && sidePawnCount==1 && sideMinors==1 &&
 					otherPawnCount==0 && !board.getPieces(color,KNIGHT)) {
 				if (pawnOnAFile || pawnOnHFile) {
 					const bool wrongBishop = color==WHITE?
@@ -409,7 +450,7 @@ void Evaluator::evalImbalances(PieceColor color, EvalInfo& evalInfo) {
 						evalInfo.drawFlag = true;
 					}
 				}
-			} else if (minors <= 1 && sidePawnCount==1 &&
+			} else if (minors <= 1 && sideMinors==1 && sidePawnCount==1 &&
 					otherPawnCount==1 && !board.getPieces(color,KNIGHT)) {
 				if ((sidePawns & blockedRank[color]) & (color==WHITE?otherPawns>>8:otherPawns<<8)) {
 					if (pawnOnAFile || pawnOnHFile) {
@@ -420,22 +461,30 @@ void Evaluator::evalImbalances(PieceColor color, EvalInfo& evalInfo) {
 						}
 					}
 				}
-			} else if (minors <= 1 && sidePawnCount==0 && otherPawnCount==1) {
-				evalInfo.imbalance[color] += MSE(-balance*95/100); //drawish
+			} else if (minors == 1 && sideMinors==1 &&
+					sidePawnCount==0 && otherPawnCount==1) {
+				evalInfo.imbalance[color] += MSE(-balance*90/100); //drawish
+			} else if (minors==0 && sidePawnCount==1 &&	otherPawnCount==0) {
+				const Square pawnSquare = bitboardToSquare(board.getPieces(color,PAWN));
+				if (pawnSquare!=NONE && (passedMask[color][board.getKingSquare(color)]&
+						passedMask[color][pawnSquare]&otherKing)) {
+					evalInfo.imbalance[color] += MSE(-balance); //draw -- king opposition
+					evalInfo.drawFlag = true;
+				}
 			}
 		}
 	}
 	if (!evalInfo.drawFlag) {
 		if (pawnDiff>0) {
-			evalInfo.imbalance[color] += PAWN_END_GAME_BONUS*pawnDiff;
+			evalInfo.imbalance[color] += pawnDiff*PAWN_END_GAME_BONUS;
 		}
 		if (hasLightBishop && hasBlackBishop) {
 			evalInfo.imbalance[color] += BISHOP_PAIR_BONUS;
 		}
 		if (balance!=0) {
 			const int sign = balance>0?+1:-1;
-			evalInfo.imbalance[color] += (8-sidePawnCount)*TRADE_PAWN_PENALTY*sign;
-			evalInfo.imbalance[color] += (7-sideMinors-sideMajors)*TRADE_PIECE_BONUS*sign;
+			evalInfo.imbalance[color] += (8-sidePawnCount)*sign*TRADE_PAWN_PENALTY;
+			evalInfo.imbalance[color] += (7-sideMinors-sideMajors)*sign*TRADE_PIECE_BONUS;
 		}
 	}
 }

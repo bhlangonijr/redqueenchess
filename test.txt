@@ -229,3 +229,6 @@ test eval
 position fen 8/8/8/8/3k2K1/8/2B4P/8 b - - 0 1
 test eval
 
+
+position fen r4k2/p6R/1n1P1P2/8/2pp2p1/8/PP5K/5R2 w - - 0 45
+test eval
