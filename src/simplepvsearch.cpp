@@ -86,21 +86,15 @@ int SimplePVSearch::idSearch(Board& board) {
 			aspirationDelta = std::max(abs(delta1)*80/100+abs(delta2)*20/100, 20)+5;
 			rootSearchInfo.alpha = std::max(iterationScore[depth-1]-aspirationDelta,-maxScore);
 			rootSearchInfo.beta  = std::min(iterationScore[depth-1]+aspirationDelta,+maxScore);
-		} else {
-			rootSearchInfo.alpha = -maxScore;
-			rootSearchInfo.beta = maxScore;
 		}
-		while (!(stopped || stop(rootSearchInfo))) {
+		while (!(stopped || (stop(rootSearchInfo) && depth>1))) {
 			score = rootSearch(board, rootSearchInfo, pv);
 			stopped = (score > rootSearchInfo.alpha && score < rootSearchInfo.beta) ||
-					(abs(score) < winningScore) ||  depth >= aspirationDepth;
-			if (!stopped) {
-				aspirationDelta = std::max(abs(score-iterationScore[depth]), 20)+5;
-				rootSearchInfo.alpha = std::max(score-aspirationDelta,-maxScore);
-				rootSearchInfo.beta  = std::min(score+aspirationDelta,+maxScore);
-			} else {
-				rootSearchInfo.alpha = -maxScore;
-				rootSearchInfo.beta  = +maxScore;
+					(rootSearchInfo.alpha == -maxScore && rootSearchInfo.beta == maxScore);
+			if (!stopped && abs(score) < winningScore &&  depth >= aspirationDepth) {
+				aspirationDelta += aspirationDelta/2;
+				rootSearchInfo.alpha = std::max(rootSearchInfo.alpha-aspirationDelta,-maxScore);
+				rootSearchInfo.beta  = std::min(rootSearchInfo.beta+aspirationDelta,+maxScore);
 			}
 			iterationScore[depth]=score;
 		}
@@ -225,11 +219,11 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 				}
 			}
 		}
-		move.score=score;
 		board.undoMove(backup);
 		nodes = this->nodes-nodes;
 		updateRootMovesScore(nodes);
 		if(score>=beta) {
+			move.score=score;
 			bestMove=move;
 			pv.moves[0]=bestMove;
 			retrievePvFromHash(board, pv);
@@ -238,6 +232,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 			return score;
 		}
 		if( score > alpha ) {
+			move.score=score;
 			alpha = score;
 			bestMove=move;
 			pv.moves[0]=bestMove;

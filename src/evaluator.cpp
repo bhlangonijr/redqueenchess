@@ -266,7 +266,7 @@ const int Evaluator::evalPassedPawn(EvalInfo& evalInfo, PieceColor color, const 
 	const Square sideKingSq = board.getKingSquare(color);
 	eval += squareDistance(next,otherKingSq)*PASSER_AND_KING_BONUS;
 	eval -= squareDistance(next,sideKingSq)*PASSER_AND_KING_BONUS;
-	/*if (board.getPiece(next)==EMPTY) {
+	if (board.getPiece(next)==EMPTY) {
 		const bool advanced = color==WHITE?squareRank[from]>=RANK_6:
 		squareRank[from]<=RANK_3;
 		if (advanced && !(passedMask[color][from]&board.getPieces(other))) {
@@ -289,7 +289,7 @@ const int Evaluator::evalPassedPawn(EvalInfo& evalInfo, PieceColor color, const 
 				eval += MS(+0,+4);
 			}
 		}
-	}*/
+	}
 	return eval;
 }
 
