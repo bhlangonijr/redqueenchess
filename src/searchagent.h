@@ -33,7 +33,7 @@
 #include "simplepvsearch.h"
 #include "transpositiontable.h"
 #include "uci.h"
-#include "smp.h"
+#include "threadpool.h"
 
 const std::string mainHashName 		= "DefaultHashTable";
 const size_t defaultDepth			= 5;
@@ -327,11 +327,11 @@ public:
 		return threadPoolSize;
 	}
 
-	const ThreadPool& getThread(const int index) {
+	const SearchThread& getThread(const int index) {
 		return threadPool[index];
 	}
 
-	const ThreadPool& getThread() {
+	const SearchThread& getThread() {
 		return threadPool[getCurrentThreadId()];
 	}
 
@@ -399,7 +399,7 @@ private:
 	int64_t moveTime;
 	bool ponder;
 	TranspositionTable* transTable;
-	ThreadPool threadPool[maxThreads];
+	SearchThread threadPool[maxThreads];
 	int history[ALL_PIECE_TYPE_BY_COLOR][ALL_SQUARE];
 	int threadPoolSize;
 	SimplePVSearch* mainSearcher[maxThreads];

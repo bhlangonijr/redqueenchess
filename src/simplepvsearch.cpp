@@ -45,8 +45,6 @@ int SimplePVSearch::getScore() {
 // iterative deepening
 int SimplePVSearch::idSearch(Board& board) {
 	int bestScore = -maxScore;
-	int iterationScore[maxSearchPly];
-	int64_t iterationTime[maxSearchPly];
 	const bool isKingAttacked = board.setInCheck(board.getSideToMove());
 	MoveIterator::Move easyMove;
 	rootSearchInfo.alpha = -maxScore;
@@ -73,10 +71,11 @@ int SimplePVSearch::idSearch(Board& board) {
 		PvLine pv = PvLine();
 		pv.index=0;
 		int score = 0;
-		int aspirationDelta;
+		int aspirationDelta=0;;
 		maxPlySearched = 0;
 		lastDepth=depth;
 		iterationPVChange[depth]=0;
+		iterationScore[depth]=depth>1?iterationScore[depth-1]:-maxScore;
 		rootSearchInfo.depth=depth;
 		rootSearchInfo.ply=0;
 		score=-maxScore;
@@ -94,17 +93,16 @@ int SimplePVSearch::idSearch(Board& board) {
 		while (!(stopped || stop(rootSearchInfo))) {
 			score = rootSearch(board, rootSearchInfo, pv);
 			stopped = (score > rootSearchInfo.alpha && score < rootSearchInfo.beta) ||
-					(rootSearchInfo.alpha==-maxScore && rootSearchInfo.beta==+maxScore);
-			iterationScore[depth]=score;
-			if (!stopped && depth >= aspirationDepth &&
-					abs(iterationScore[depth]) < winningScore) {
-				aspirationDelta = std::max(abs(iterationScore[depth]-iterationScore[depth-1]), 10)+5;
-				rootSearchInfo.alpha = std::max(rootSearchInfo.alpha-aspirationDelta,-maxScore);
-				rootSearchInfo.beta  = std::min(rootSearchInfo.beta+aspirationDelta,+maxScore);
+					(abs(score) < winningScore) ||  depth >= aspirationDepth;
+			if (!stopped) {
+				aspirationDelta = std::max(abs(score-iterationScore[depth]), 20)+5;
+				rootSearchInfo.alpha = std::max(score-aspirationDelta,-maxScore);
+				rootSearchInfo.beta  = std::min(score+aspirationDelta,+maxScore);
 			} else {
 				rootSearchInfo.alpha = -maxScore;
 				rootSearchInfo.beta  = +maxScore;
 			}
+			iterationScore[depth]=score;
 		}
 		iterationTime[depth]=getTickCount()-startTime;
 		if (stop(rootSearchInfo) && depth > 1) {
@@ -227,11 +225,11 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 				}
 			}
 		}
+		move.score=score;
 		board.undoMove(backup);
 		nodes = this->nodes-nodes;
 		updateRootMovesScore(nodes);
 		if(score>=beta) {
-			move.score=score;
 			bestMove=move;
 			pv.moves[0]=bestMove;
 			retrievePvFromHash(board, pv);
@@ -241,7 +239,6 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 		}
 		if( score > alpha ) {
 			alpha = score;
-			move.score=score;
 			bestMove=move;
 			pv.moves[0]=bestMove;
 			retrievePvFromHash(board, pv);

@@ -135,7 +135,7 @@ void* SearchAgent::startThreadSearch() {
 // worker threads loop
 void* SearchAgent::executeThread(const int threadId, SplitPoint* sp) {
 	while (!quit) {
-		ThreadPool& thread = threadPool[threadId];
+		SearchThread& thread = threadPool[threadId];
 		if (getThreadsShouldWait()) {
 			if (sp!=NULL) {
 				sp->shouldStop=true;
@@ -219,7 +219,7 @@ const bool SearchAgent::spawnThreads(Board& board, void* data, const int current
 	sp->hashMove=hashMove;
 	sp->masterThreadId = currentThreadId;
 	for(int i=1;i<threadPoolSize&&i<=maxWorkersPerSplitPoint;i++) {
-		ThreadPool& thread = threadPool[i];
+		SearchThread& thread = threadPool[i];
 		threadId=i;
 		SimplePVSearch* searchSlave = getSearcher(threadId);
 		if (thread.status==THREAD_STATUS_AVAILABLE &&
@@ -514,7 +514,7 @@ void SearchAgent::initializeThreadPool(const int size) {
 
 void SearchAgent::awakeWaitingThreads() {
 	for(int i=1;i<threadPoolSize;i++) {
-		ThreadPool& thread = threadPool[i];
+		SearchThread& thread = threadPool[i];
 		if (thread.status==THREAD_STATUS_WAITING) {
 			wakeUp(&thread.waitCond);
 		}
@@ -523,7 +523,7 @@ void SearchAgent::awakeWaitingThreads() {
 
 void SearchAgent::prepareThreadPool() {
 	for(int i=1;i<threadPoolSize;i++) {
-		ThreadPool& thread = threadPool[i];
+		SearchThread& thread = threadPool[i];
 		getSearcher(i)->resetStats();
 		getSearcher(i)->clearKillers();
 		getSearcher(i)->setSearchFixedDepth(getSearcher(MAIN_THREAD)->isSearchFixedDepth());

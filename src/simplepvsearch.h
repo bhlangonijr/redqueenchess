@@ -34,7 +34,7 @@
 #include <limits.h>
 #include "searchagent.h"
 #include "evaluator.h"
-#include "smp.h"
+#include "threadpool.h"
 // game constants
 const int extUnit = 2;
 const int maxScoreRepetition = 25;
@@ -284,6 +284,9 @@ public:
 		clearKillers();
 		initRootMovesOrder();
 		rootMoves.clear();
+		memset(&iterationScore[0],0,sizeof(int)*(maxSearchPly+1));
+		memset(&iterationPVChange[0],0,sizeof(int)*(maxSearchPly+1));
+		memset(&iterationTime[0],0,sizeof(int64_t)*(maxSearchPly+1));
 	}
 
 	inline void resetStats() {
@@ -334,6 +337,8 @@ private:
 	MoveIterator rootMoves;
 	MoveIterator::Move killer[maxSearchPly+1][2];
 	int iterationPVChange[maxSearchPly+1];
+	int iterationScore[maxSearchPly+1];
+	int64_t iterationTime[maxSearchPly+1];
 	int64_t nodesPerMove[MOVE_LIST_MAX_SIZE];
 	Evaluator evaluator;
 	SearchAgent* agent;

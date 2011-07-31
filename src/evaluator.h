@@ -227,23 +227,24 @@ public:
 				side(board.getSideToMove()),
 				other(board.flipSide(side)),
 				all(board.getAllPieces()),
+				eval(0),
 				drawFlag(false) {
+			int i=0;
 			pawns[WHITE] = board.getPieces(makePiece(WHITE,PAWN));
 			pawns[BLACK] = board.getPieces(makePiece(BLACK,PAWN));
-			evalPieces[WHITE] = 0;
-			evalPieces[BLACK] = 0;
-			evalPawns[WHITE] = 0;
-			evalPawns[BLACK] = 0;
-			mobility[WHITE] = 0;
-			mobility[BLACK] = 0;
-			pieceThreat[WHITE] = 0;
-			pieceThreat[BLACK] = 0;
-			kingThreat[WHITE]=0;
-			kingThreat[BLACK]=0;
-			imbalance[WHITE]=0;
-			imbalance[BLACK]=0;
-			eval=0;
-			memset(attackers, 0, sizeof(Bitboard)*ALL_PIECE_TYPE_BY_COLOR);
+			pawns[COLOR_NONE] = EMPTY_BB;
+			for(i=0;i<ALL_PIECE_COLOR;i++) {
+				evalPieces[i] = 0;
+				evalPawns[i] = 0;
+				mobility[i] = 0;
+				pieceThreat[i] = 0;
+				kingThreat[i]=0;
+				imbalance[i]=0;
+				attacks[i]=0;
+			}
+			for(i=0;i<ALL_PIECE_TYPE_BY_COLOR;i++) {
+				attackers[i]=EMPTY_BB;
+			}
 		}
 		Board& board;
 		PieceColor side;

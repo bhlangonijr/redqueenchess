@@ -24,8 +24,8 @@
  *      Author: bhlangonijr
  */
 
-#ifndef SMP_H_
-#define SMP_H_
+#ifndef THREADPOOL_H_
+#define THREADPOOL_H_
 
 #include "simplepvsearch.h"
 #include "moveiterator.h"
@@ -73,7 +73,6 @@ struct SplitPoint {
 		currentScore=0;
 		moveCounter=0;
 		nmMateScore=0;
-		//board.clearBoard();
 		nodes=0;
 		masterDone=false;
 		shouldStop=false;
@@ -102,21 +101,31 @@ struct SplitPoint {
 	bool shouldStop;
 };
 
-struct ThreadPool {
-	ThreadPool() : threadId(0), threadType(INACTIVE_THREAD), status(THREAD_STATUS_AVAILABLE),
-			splitPoint(NULL), spNumber(0) {
+class SearchThread {
+public:
+
+	SearchThread() : threadId(0), threadType(INACTIVE_THREAD), status(THREAD_STATUS_AVAILABLE),
+	splitPoint(NULL), spNumber(0) {
 		init();
 	}
+
+	~SearchThread() {
+		pthread_mutex_destroy(&mutex);
+		pthread_cond_destroy(&waitCond);
+	}
+
 	inline void init() {
 		pthread_mutex_init(&mutex,NULL);
 		pthread_cond_init(&waitCond,NULL);
 		clear();
 	}
+
 	inline void clear() {
 		status=THREAD_STATUS_AVAILABLE;
 		splitPoint=NULL;
 		spNumber=0;
 	}
+
 	int threadId;
 	ThreadType threadType;
 	ThreadStatus status;
@@ -127,4 +136,4 @@ struct ThreadPool {
 	int spNumber;
 };
 
-#endif /* SMP_H_ */
+#endif /* THREADPOOL_H_ */
