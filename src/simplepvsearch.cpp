@@ -79,22 +79,25 @@ int SimplePVSearch::idSearch(Board& board) {
 		rootSearchInfo.depth=depth;
 		rootSearchInfo.ply=0;
 		score=-maxScore;
-		bool stopped=false;
-		if (depth >= aspirationDepth && abs(iterationScore[depth-1]) < winningScore) {
+		if (depth >= aspirationDepth) {
 			const int delta1 = iterationScore[depth-1]-iterationScore[depth-2];
 			const int delta2 = iterationScore[depth-2]-iterationScore[depth-3];
 			aspirationDelta = std::max(abs(delta1)*80/100+abs(delta2)*20/100, 20)+5;
 			rootSearchInfo.alpha = std::max(iterationScore[depth-1]-aspirationDelta,-maxScore);
 			rootSearchInfo.beta  = std::min(iterationScore[depth-1]+aspirationDelta,+maxScore);
 		}
-		while (!(stopped || (stop(rootSearchInfo) && depth>1))) {
+		bool finished=false;
+		while (!finished) {
 			score = rootSearch(board, rootSearchInfo, pv);
-			stopped = (score > rootSearchInfo.alpha && score < rootSearchInfo.beta) ||
-					(rootSearchInfo.alpha == -maxScore && rootSearchInfo.beta == maxScore);
-			if (!stopped && abs(score) < winningScore &&  depth >= aspirationDepth) {
-				aspirationDelta += aspirationDelta/2;
+			const bool fail = score > rootSearchInfo.alpha && score < rootSearchInfo.beta;
+			const bool fullWidth = rootSearchInfo.alpha == -maxScore && rootSearchInfo.beta == maxScore;
+			finished = fail || fullWidth ||
+					depth < aspirationDepth ||
+					(stop(rootSearchInfo) && depth>1);
+			if (!finished) {
 				rootSearchInfo.alpha = std::max(rootSearchInfo.alpha-aspirationDelta,-maxScore);
 				rootSearchInfo.beta  = std::min(rootSearchInfo.beta+aspirationDelta,+maxScore);
+				aspirationDelta += std::max(abs(score-iterationScore[depth]),5);
 			}
 			iterationScore[depth]=score;
 		}
@@ -119,13 +122,13 @@ int SimplePVSearch::idSearch(Board& board) {
 			}
 		}
 		if (!(searchFixedDepth || infinite)) {
-			if (depth>5 && (abs(iterationScore[depth - 0]) >= maxScore-maxSearchPly &&
-					abs(iterationScore[depth - 1]) >= maxScore-maxSearchPly &&
-					abs(iterationScore[depth - 2]) >= maxScore-maxSearchPly)) {
+			if (depth>5 && (abs(iterationScore[depth]) >= maxScore-maxSearchPly &&
+					abs(iterationScore[depth-1]) >= maxScore-maxSearchPly &&
+					abs(iterationScore[depth-2]) >= maxScore-maxSearchPly)) {
 				break;
 			}
 			if (repetition >= maxScoreRepetition &&
-					iterationScore[depth - 0] == drawScore) {
+					iterationScore[depth-0] == drawScore) {
 				break;
 			}
 			if (depth>1) {
@@ -227,13 +230,15 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 			bestMove=move;
 			pv.moves[0]=bestMove;
 			retrievePvFromHash(board, pv);
+			rootMoves.sortOrderingBy(nodesPerMove);
+			rootMoves.first();
 			uciOutput(pv, bestMove.score, getTickCount()-startTime,
 					agent->hashFull(), si.depth, maxPlySearched, alpha, beta);
 			return score;
 		}
 		if( score > alpha ) {
-			move.score=score;
 			alpha = score;
+			move.score=score;
 			bestMove=move;
 			pv.moves[0]=bestMove;
 			retrievePvFromHash(board, pv);

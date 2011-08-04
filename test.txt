@@ -232,3 +232,13 @@ test eval
 
 position fen r4k2/p6R/1n1P1P2/8/2pp2p1/8/PP5K/5R2 w - - 0 45
 test eval
+
+position fen 6b1/4Kpk1/5r2/8/3B2P1/7R/8/8 w - - 0 1
+setoption name Threads value 1
+go infinite
+
+position fen 8/4k3/3R4/1p1PBK2/2P5/8/8/8 w - - 2 83
+setoption name Threads value 1
+go infinite
+
+
