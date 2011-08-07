@@ -595,7 +595,8 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 				color != getSideToMove() || fromPiece==EMPTY) {
 			return false;
 		}
-		const bool pawnPromoting = fromType==PAWN && (squareToBitboard[move.from] & promoRank[color]);
+		const bool pawnPromoting = fromType==PAWN &&
+				(squareToBitboard[move.from] & promoRank[color]);
 		if (move.promotionPiece!=EMPTY) {
 			if (!pawnPromoting ) {
 				return false;
@@ -661,9 +662,15 @@ inline const bool Board::isAttackedBy(const Square from, const Square to) {
 	switch (pieceType) {
 	case PAWN:
 		if (getSquareFile(from)!=getSquareFile(to)) {
-			attacks=getPawnCaptures(from);
+			const PieceColor other = flipSide(getSideToMove());
+			Bitboard occ = getPieces(other);
+			if (getEnPassant()!=NONE) {
+				occ |= squareToBitboard[getEnPassant()];
+			}
+			attacks=getPawnCaptures(from)&occ;
 		} else {
-			attacks = getPawnMoves(from);
+			attacks = getPawnMoves(from)&
+					getEmptySquares();
 		}
 		break;
 	case KNIGHT:
@@ -785,6 +792,9 @@ inline const Bitboard Board::getRookAttacks(const Square square) {
 
 // return a bitboard with attacked squares by the rook in the given square
 inline const Bitboard Board::getRookAttacks(const Square square, const Bitboard occupied) {
+	if (square==NONE) {
+		return EMPTY_BB;
+	}
 	return R_MAGIC(square, occupied);
 }
 
@@ -795,6 +805,9 @@ inline const Bitboard Board::getBishopAttacks(const Square square) {
 
 // return a bitboard with attacked squares by the bishop in the given square
 inline const Bitboard Board::getBishopAttacks(const Square square, const Bitboard occupied) {
+	if (square==NONE) {
+		return EMPTY_BB;
+	}
 	return B_MAGIC(square, occupied);
 }
 
@@ -805,6 +818,9 @@ inline const Bitboard Board::getQueenAttacks(const Square square) {
 
 // return a bitboard with attacked squares by the queen in the given square
 inline const Bitboard Board::getQueenAttacks(const Square square, const Bitboard occupied) {
+	if (square==NONE) {
+		return EMPTY_BB;
+	}
 	return Q_MAGIC(square, occupied);
 }
 

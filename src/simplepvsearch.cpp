@@ -50,9 +50,9 @@ int SimplePVSearch::idSearch(Board& board) {
 	rootSearchInfo.alpha = -maxScore;
 	rootSearchInfo.beta = maxScore;
 	rootSearchInfo.allowNullMove = false;
-	int searchTime;
+	int64_t searchTime=0;
+	int64_t searchNodes=0;
 	int lastDepth=0;
-	int64_t searchNodes;
 	MoveIterator::Move bestMove;
 	MoveIterator::Move ponderMove;
 	PvLine pvLine = PvLine();
@@ -71,7 +71,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		PvLine pv = PvLine();
 		pv.index=0;
 		int score = 0;
-		int aspirationDelta=0;;
+		int aspirationDelta=0;
 		maxPlySearched = 0;
 		lastDepth=depth;
 		iterationPVChange[depth]=0;
@@ -89,17 +89,25 @@ int SimplePVSearch::idSearch(Board& board) {
 		bool finished=false;
 		while (!finished) {
 			score = rootSearch(board, rootSearchInfo, pv);
-			const bool fail = score > rootSearchInfo.alpha && score < rootSearchInfo.beta;
-			const bool fullWidth = rootSearchInfo.alpha == -maxScore && rootSearchInfo.beta == maxScore;
-			finished = fail || fullWidth ||
+			iterationScore[depth]=score;
+			const bool failLow = score <= rootSearchInfo.alpha;
+			const bool failHigh = score >= rootSearchInfo.beta;
+			const bool fail = failLow || failHigh;
+			const bool fullWidth = rootSearchInfo.alpha == -maxScore &&
+					rootSearchInfo.beta == maxScore;
+			finished = !fail || fullWidth ||
 					depth < aspirationDepth ||
 					(stop(rootSearchInfo) && depth>1);
 			if (!finished) {
-				rootSearchInfo.alpha = std::max(rootSearchInfo.alpha-aspirationDelta,-maxScore);
-				rootSearchInfo.beta  = std::min(rootSearchInfo.beta+aspirationDelta,+maxScore);
-				aspirationDelta += std::max(abs(score-iterationScore[depth]),5);
+				if (failLow) {
+					rootSearchInfo.alpha = std::max(rootSearchInfo.alpha-aspirationDelta,-maxScore);
+				}
+				if (failHigh) {
+					rootSearchInfo.beta  = std::min(rootSearchInfo.beta+aspirationDelta,maxScore);
+				}
+				aspirationDelta = std::max(aspirationDelta*130/100,10);
 			}
-			iterationScore[depth]=score;
+
 		}
 		iterationTime[depth]=getTickCount()-startTime;
 		if (stop(rootSearchInfo) && depth > 1) {

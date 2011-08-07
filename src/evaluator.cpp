@@ -143,7 +143,7 @@ void Evaluator::evalKing(PieceColor color, EvalInfo& evalInfo) {
 	}
 
 	const Bitboard kinghtIndirectAttacks = board.getKnightAttacks(kingSq) &
-			evalInfo.attackers[makePiece(other,KNIGHT)];
+			evalInfo.attackers[makePiece(other,KNIGHT)]&clearWay;
 	if (kinghtIndirectAttacks) {
 		pressure += bitCount15(kinghtIndirectAttacks)*INDIRECT_KNIGHT_CHECK_BONUS;
 	}
