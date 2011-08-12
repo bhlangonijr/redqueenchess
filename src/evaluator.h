@@ -52,14 +52,9 @@ const int ROOK_ON_HALF_OPEN_FILE_BONUS = MS(+10,+10);
 const int QUEEN_ON_7TH_RANK_BONUS = 	 MS(+10,+15);
 const int PASSER_AND_KING_BONUS = 		 MS(+0,+5);
 const int PAWN_END_GAME_BONUS = 		 MS(+0,+15);
+
 const int TRADE_PAWN_PENALTY =           MS(-4,-6);
 const int TRADE_PIECE_BONUS =            MS(+3,+5);
-const int QUEEN_CHECK_BONUS =  	 		MS(+10,+15);
-const int ROOK_CHECK_BONUS =  	 		MS(+6,+11);
-const int INDIRECT_QUEEN_CHECK_BONUS =	MS(+3,+6);
-const int INDIRECT_ROOK_CHECK_BONUS = 	MS(+2,+4);
-const int INDIRECT_KNIGHT_CHECK_BONUS =	MS(+1,+2);
-const int INDIRECT_BISHOP_CHECK_BONUS = MS(+1,+2);
 
 const int knightMobility[9] = {
 		-4*MS(+8,+4),-2*MS(+8,+4),+0*MS(+8,+4),+1*MS(+8,+4),+2*MS(+8,+4),
@@ -76,6 +71,44 @@ const int rookMobility[16] = {
 		+5*MS(+5,+3),+6*MS(+5,+3),+7*MS(+5,+3),+8*MS(+5,+3),+9*MS(+5,+3),+10*MS(+5,+3),+11*MS(+5,+3),+12*MS(+5,+3)
 };
 
+const int knightKingBonus[8] = {
+		6*MS(+2,+4),6*MS(+2,+4),6*MS(+2,+4),4*MS(+2,+4),3*MS(+2,+4),2*MS(+2,+4),1*MS(+2,+4),0*MS(+2,+4)
+};
+
+const int bishopKingBonus[8] = {
+		7*MS(+2,+4),6*MS(+2,+4),5*MS(+2,+4),4*MS(+2,+4),3*MS(+2,+4),2*MS(+2,+4),1*MS(+2,+4),0*MS(+2,+4)
+};
+
+const int rookKingBonus[8] = {
+		7*MS(+4,+6),6*MS(+4,+6),5*MS(+4,+6),4*MS(+4,+6),3*MS(+4,+6),2*MS(+4,+6),1*MS(+4,+6),0*MS(+4,+6)
+};
+
+const int queenKingBonus[8] = {
+		7*MS(+5,+7),6*MS(+5,+7),5*MS(+5,+7),4*MS(+5,+7),3*MS(+5,+7),2*MS(+5,+7),1*MS(+5,+7),0*MS(+5,+7)
+};
+
+const int kingZoneAttackWeight[ALL_PIECE_TYPE][10] = {
+		{},
+		{//knight
+				0*MS(+4,+7),1*MS(+4,+7),2*MS(+4,+7),3*MS(+4,+7),4*MS(+4,+7),
+				5*MS(+4,+7),6*MS(+4,+7),7*MS(+4,+7),8*MS(+4,+7),9*MS(+4,+7)
+		},
+		{// bishop
+				0*MS(+4,+7),1*MS(+4,+7),2*MS(+4,+7),3*MS(+4,+7),4*MS(+4,+7),
+				5*MS(+4,+7),6*MS(+4,+7),7*MS(+4,+7),8*MS(+4,+7),9*MS(+4,+7)
+		},
+		{// rook
+				0*MS(+5,+8),1*MS(+5,+8),2*MS(+5,+8),3*MS(+5,+8),4*MS(+5,+8),
+				5*MS(+5,+8),6*MS(+5,+8),7*MS(+5,+8),8*MS(+5,+8),9*MS(+5,+8)
+		},
+		{// queen
+				0*MS(+6,+10),1*MS(+6,+10),2*MS(+6,+10),3*MS(+6,+10),4*MS(+6,+10),
+				5*MS(+6,+10),6*MS(+6,+10),7*MS(+6,+10),8*MS(+6,+10),9*MS(+6,+10)
+		},
+		{},
+		{}
+};
+
 const int connectedPasserBonus[ALL_PIECE_COLOR][ALL_RANK] = {
 		{0,MS(+20,+25),MS(+25,+35),MS(+30,+40),MS(+35,+45),MS(+50,+60),MS(+60,+90),0},
 		{0,MS(+60,+90),MS(+50,+60),MS(+35,+45),MS(+30,+40),MS(+25,+35),MS(+20,+25),0},
@@ -83,8 +116,8 @@ const int connectedPasserBonus[ALL_PIECE_COLOR][ALL_RANK] = {
 };
 
 const int freePasserBonus[ALL_PIECE_COLOR][ALL_RANK] = {
-		{0,MS(+5,+7),MS(+7,+13),MS(+13,+15),MS(+30,+40),MS(+60,+70),MS(+80,+90),0},
-		{0,MS(+80,+90),MS(+60,+70),MS(+30,+40),MS(+13,+15),MS(+7,+13),MS(+5,+7),0},
+		{0,MS(+20,+25),MS(+25,+35),MS(+40,+50),MS(+50,+60),MS(+60,+70),MS(+80,+90),0},
+		{0,MS(+80,+90),MS(+60,+70),MS(+50,+60),MS(+40,+50),MS(+25,+35),MS(+20,+25),0},
 		{}
 };
 
@@ -227,24 +260,22 @@ public:
 				side(board.getSideToMove()),
 				other(board.flipSide(side)),
 				all(board.getAllPieces()),
-				eval(0),
 				drawFlag(false) {
-			int i=0;
 			pawns[WHITE] = board.getPieces(makePiece(WHITE,PAWN));
 			pawns[BLACK] = board.getPieces(makePiece(BLACK,PAWN));
-			pawns[COLOR_NONE] = EMPTY_BB;
-			for(i=0;i<ALL_PIECE_COLOR;i++) {
-				evalPieces[i] = 0;
-				evalPawns[i] = 0;
-				mobility[i] = 0;
-				pieceThreat[i] = 0;
-				kingThreat[i]=0;
-				imbalance[i]=0;
-				attacks[i]=0;
-			}
-			for(i=0;i<ALL_PIECE_TYPE_BY_COLOR;i++) {
-				attackers[i]=EMPTY_BB;
-			}
+			evalPieces[WHITE] = 0;
+			evalPieces[BLACK] = 0;
+			evalPawns[WHITE] = 0;
+			evalPawns[BLACK] = 0;
+			mobility[WHITE] = 0;
+			mobility[BLACK] = 0;
+			pieceThreat[WHITE] = 0;
+			pieceThreat[BLACK] = 0;
+			kingThreat[WHITE]=0;
+			kingThreat[BLACK]=0;
+			imbalance[WHITE]=0;
+			imbalance[BLACK]=0;
+			eval=0;
 		}
 		Board& board;
 		PieceColor side;
@@ -333,7 +364,8 @@ public:
 	void evalKing(PieceColor color, EvalInfo& evalInfo);
 	void evalPawnsFromCache(PieceColor color, PawnInfo& info, EvalInfo& evalInfo);
 	void evalPawns(PieceColor color, EvalInfo& evalInfo);
-	const int evalPassedPawn(EvalInfo& evalInfo, PieceColor color, const Square from, const bool isChained);
+	const int evalPassedPawn(EvalInfo& evalInfo, PieceColor color, const Square from,
+			const bool isPawnFinal, const bool isChained);
 	void evalBoardControl(PieceColor color, EvalInfo& evalInfo);
 	void evalThreats(PieceColor color, EvalInfo& evalInfo);
 	void evalImbalances(PieceColor color, EvalInfo& evalInfo);
@@ -362,6 +394,10 @@ public:
 		const int mgValue = upperScore(value);
 		const int egValue = lowerScore(value);
 		return (egValue*gamePhase)/maxGamePhase+(mgValue*(maxGamePhase-gamePhase))/maxGamePhase;
+	}
+
+	inline const int getKingAttackWeight(const int piece, const int count) {
+		return kingZoneAttackWeight[pieceType[piece]][count];
 	}
 
 	inline bool getPawnInfo(const Key key, PawnInfo& pawnHash) {

@@ -264,7 +264,7 @@ public:
 
 	template <bool isMoveFromCache>
 	const bool isMoveLegal(MoveIterator::Move& move);
-	const bool isAttackedBy(const Square from, const Square to);
+	const bool isAttackedBy(const MoveIterator::Move& move);
 	const bool isDraw();
 	const bool isCastleDone(const PieceColor color);
 	const bool isCaptureMove(MoveIterator::Move& move);
@@ -591,7 +591,7 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 	const PieceType fromType = pieceType[fromPiece];
 
 	if (isMoveFromCache) {
-		if (color == getPieceColor(move.to) || move.none() ||
+		if (move.none() || color==getPieceColor(move.to) ||
 				color != getSideToMove() || fromPiece==EMPTY) {
 			return false;
 		}
@@ -608,11 +608,11 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 		}
 		if (((fromPiece==WHITE_KING && (move==whiteoo || move==whiteooo)) ||
 				(fromPiece==BLACK_KING && (move==blackoo || move==blackooo)))) {
-			const CastleRight castleRight =
-					(move.to==C1 || move.to==C8) ? QUEEN_SIDE_CASTLE : KING_SIDE_CASTLE;
+			const CastleRight castleRight =	(move.to==C1 || move.to==C8) ?
+					QUEEN_SIDE_CASTLE : KING_SIDE_CASTLE;
 			return canCastle(color, castleRight);
 		}
-		if (!isAttackedBy(move.from, move.to)) {
+		if (!isAttackedBy(move)) {
 			return false;
 		}
 	} else {
@@ -654,44 +654,36 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 }
 
 // Get attacks from a given square
-inline const bool Board::isAttackedBy(const Square from, const Square to) {
-	const PieceTypeByColor fromPiece = getPiece(from);
-	const PieceType pieceType = getPieceType(fromPiece);
-	const Bitboard attacked = squareToBitboard[to];
+inline const bool Board::isAttackedBy(const MoveIterator::Move& move) {
+	const PieceType pieceType = getPieceType(move.from);
 	Bitboard attacks = EMPTY_BB;
 	switch (pieceType) {
 	case PAWN:
-		if (getSquareFile(from)!=getSquareFile(to)) {
-			const PieceColor other = flipSide(getSideToMove());
-			Bitboard occ = getPieces(other);
-			if (getEnPassant()!=NONE) {
-				occ |= squareToBitboard[getEnPassant()];
-			}
-			attacks=getPawnCaptures(from)&occ;
+		if (getSquareFile(move.from)!=getSquareFile(move.to)) {
+			attacks = getPawnCaptures(move.from);
 		} else {
-			attacks = getPawnMoves(from)&
-					getEmptySquares();
+			attacks = getPawnMoves(move.from);
 		}
 		break;
 	case KNIGHT:
-		attacks = getKnightAttacks(from);
+		attacks = getKnightAttacks(move.from);
 		break;
 	case BISHOP:
-		attacks = getBishopAttacks(from);
+		attacks = getBishopAttacks(move.from);
 		break;
 	case ROOK:
-		attacks = getRookAttacks(from);
+		attacks = getRookAttacks(move.from);
 		break;
 	case QUEEN:
-		attacks = getQueenAttacks(from);
+		attacks = getQueenAttacks(move.from);
 		break;
 	case KING:
-		attacks = getKingAttacks(from);
+		attacks = getKingAttacks(move.from);
 		break;
 	default:
-		return false;
+		break;
 	}
-	return attacks & attacked;
+	return attacks & squareToBitboard[move.to];
 }
 
 // verify draw by 50th move rule, 3 fold rep and insuficient material
@@ -792,9 +784,6 @@ inline const Bitboard Board::getRookAttacks(const Square square) {
 
 // return a bitboard with attacked squares by the rook in the given square
 inline const Bitboard Board::getRookAttacks(const Square square, const Bitboard occupied) {
-	if (square==NONE) {
-		return EMPTY_BB;
-	}
 	return R_MAGIC(square, occupied);
 }
 
@@ -805,9 +794,6 @@ inline const Bitboard Board::getBishopAttacks(const Square square) {
 
 // return a bitboard with attacked squares by the bishop in the given square
 inline const Bitboard Board::getBishopAttacks(const Square square, const Bitboard occupied) {
-	if (square==NONE) {
-		return EMPTY_BB;
-	}
 	return B_MAGIC(square, occupied);
 }
 
@@ -818,9 +804,6 @@ inline const Bitboard Board::getQueenAttacks(const Square square) {
 
 // return a bitboard with attacked squares by the queen in the given square
 inline const Bitboard Board::getQueenAttacks(const Square square, const Bitboard occupied) {
-	if (square==NONE) {
-		return EMPTY_BB;
-	}
 	return Q_MAGIC(square, occupied);
 }
 
@@ -862,7 +845,7 @@ inline const Bitboard Board::getPawnMoves(const Square square, const Bitboard oc
 			pawnMoves |= pawnMoves>>8; // double move
 		}
 	}
-	return pawnMoves;
+	return pawnMoves & ~occupied;
 }
 
 // overload method - gets current occupied squares in the board

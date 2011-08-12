@@ -245,3 +245,7 @@ position fen r5k1/p1p4p/3p2p1/2PPp3/4Pb2/2N4K/PP1q3P/5R2 w - - 8 32
 setoption name Threads value 1
 go infinite
 
+
+setoption name Threads value 1
+test bench
+

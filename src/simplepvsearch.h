@@ -129,8 +129,8 @@ public:
 		}
 	} PvLine;
 
-	SimplePVSearch(int* _history) : depthToSearch(maxSearchDepth), updateUci(true), timeToSearch(0), startTime(0), searchFixedDepth(false),
-			infinite(false), nodes(0), maxPlySearched(0), nodesToGo(defaultNodesToGo), history(_history) {
+	SimplePVSearch(int* _history) : depthToSearch(maxSearchDepth), updateUci(true), startTime(0), searchFixedDepth(false),
+			infinite(false), nodes(0), nodesToGo(defaultNodesToGo), history(_history) {
 		initMutex();
 	}
 
@@ -284,9 +284,6 @@ public:
 		clearKillers();
 		initRootMovesOrder();
 		rootMoves.clear();
-		memset(&iterationScore[0],0,sizeof(int)*(maxSearchPly+1));
-		memset(&iterationPVChange[0],0,sizeof(int)*(maxSearchPly+1));
-		memset(&iterationTime[0],0,sizeof(int64_t)*(maxSearchPly+1));
 	}
 
 	inline void resetStats() {
@@ -337,8 +334,6 @@ private:
 	MoveIterator rootMoves;
 	MoveIterator::Move killer[maxSearchPly+1][2];
 	int iterationPVChange[maxSearchPly+1];
-	int iterationScore[maxSearchPly+1];
-	int64_t iterationTime[maxSearchPly+1];
 	int64_t nodesPerMove[MOVE_LIST_MAX_SIZE];
 	Evaluator evaluator;
 	SearchAgent* agent;

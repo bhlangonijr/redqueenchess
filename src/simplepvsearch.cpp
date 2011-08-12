@@ -45,6 +45,8 @@ int SimplePVSearch::getScore() {
 // iterative deepening
 int SimplePVSearch::idSearch(Board& board) {
 	int bestScore = -maxScore;
+	int iterationScore[maxSearchPly];
+	int64_t iterationTime[maxSearchPly];
 	const bool isKingAttacked = board.setInCheck(board.getSideToMove());
 	MoveIterator::Move easyMove;
 	rootSearchInfo.alpha = -maxScore;
@@ -75,7 +77,6 @@ int SimplePVSearch::idSearch(Board& board) {
 		maxPlySearched = 0;
 		lastDepth=depth;
 		iterationPVChange[depth]=0;
-		iterationScore[depth]=depth>1?iterationScore[depth-1]:-maxScore;
 		rootSearchInfo.depth=depth;
 		rootSearchInfo.ply=0;
 		score=-maxScore;

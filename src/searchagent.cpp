@@ -524,6 +524,7 @@ void SearchAgent::awakeWaitingThreads() {
 void SearchAgent::prepareThreadPool() {
 	for(int i=1;i<threadPoolSize;i++) {
 		SearchThread& thread = threadPool[i];
+		thread.clear();
 		getSearcher(i)->resetStats();
 		getSearcher(i)->clearKillers();
 		getSearcher(i)->setSearchFixedDepth(getSearcher(MAIN_THREAD)->isSearchFixedDepth());
@@ -532,7 +533,6 @@ void SearchAgent::prepareThreadPool() {
 		getSearcher(i)->setDepth(getSearcher(MAIN_THREAD)->getDepth());
 		getSearcher(i)->setStartTime(getSearcher(MAIN_THREAD)->getStartTime());
 		getSearcher(i)->setTimeToStop();
-		thread.clear();
 	}
 	freeThreads=threadPoolSize;
 }
