@@ -784,6 +784,9 @@ inline const Bitboard Board::getRookAttacks(const Square square) {
 
 // return a bitboard with attacked squares by the rook in the given square
 inline const Bitboard Board::getRookAttacks(const Square square, const Bitboard occupied) {
+	if (square==NONE) {
+		return EMPTY_BB;
+	}
 	return R_MAGIC(square, occupied);
 }
 
@@ -794,6 +797,9 @@ inline const Bitboard Board::getBishopAttacks(const Square square) {
 
 // return a bitboard with attacked squares by the bishop in the given square
 inline const Bitboard Board::getBishopAttacks(const Square square, const Bitboard occupied) {
+	if (square==NONE) {
+		return EMPTY_BB;
+	}
 	return B_MAGIC(square, occupied);
 }
 
@@ -804,6 +810,9 @@ inline const Bitboard Board::getQueenAttacks(const Square square) {
 
 // return a bitboard with attacked squares by the queen in the given square
 inline const Bitboard Board::getQueenAttacks(const Square square, const Bitboard occupied) {
+	if (square==NONE) {
+		return EMPTY_BB;
+	}
 	return Q_MAGIC(square, occupied);
 }
 

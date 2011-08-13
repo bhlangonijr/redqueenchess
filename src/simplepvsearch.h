@@ -129,8 +129,8 @@ public:
 		}
 	} PvLine;
 
-	SimplePVSearch(int* _history) : depthToSearch(maxSearchDepth), updateUci(true), startTime(0), searchFixedDepth(false),
-			infinite(false), nodes(0), nodesToGo(defaultNodesToGo), history(_history) {
+	SimplePVSearch(int* _history) : depthToSearch(maxSearchDepth), updateUci(true), timeToSearch(0), startTime(0), searchFixedDepth(false),
+			infinite(false), nodes(0), maxPlySearched(0), nodesToGo(defaultNodesToGo), history(_history) {
 		initMutex();
 	}
 

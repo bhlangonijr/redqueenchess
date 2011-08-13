@@ -91,21 +91,16 @@ int SimplePVSearch::idSearch(Board& board) {
 		while (!finished) {
 			score = rootSearch(board, rootSearchInfo, pv);
 			iterationScore[depth]=score;
-			const bool failLow = score <= rootSearchInfo.alpha;
-			const bool failHigh = score >= rootSearchInfo.beta;
-			const bool fail = failLow || failHigh;
+			const bool fail = score <= rootSearchInfo.alpha ||
+					score >= rootSearchInfo.beta;
 			const bool fullWidth = rootSearchInfo.alpha == -maxScore &&
 					rootSearchInfo.beta == maxScore;
 			finished = !fail || fullWidth ||
 					depth < aspirationDepth ||
 					(stop(rootSearchInfo) && depth>1);
 			if (!finished) {
-				if (failLow) {
-					rootSearchInfo.alpha = std::max(rootSearchInfo.alpha-aspirationDelta,-maxScore);
-				}
-				if (failHigh) {
-					rootSearchInfo.beta  = std::min(rootSearchInfo.beta+aspirationDelta,maxScore);
-				}
+				rootSearchInfo.alpha = std::max(rootSearchInfo.alpha-aspirationDelta,-maxScore);
+				rootSearchInfo.beta  = std::min(rootSearchInfo.beta+aspirationDelta,+maxScore);
 				aspirationDelta = std::max(aspirationDelta*130/100,10);
 			}
 
