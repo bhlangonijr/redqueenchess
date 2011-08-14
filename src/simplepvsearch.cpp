@@ -52,8 +52,6 @@ int SimplePVSearch::idSearch(Board& board) {
 	rootSearchInfo.alpha = -maxScore;
 	rootSearchInfo.beta = maxScore;
 	rootSearchInfo.allowNullMove = false;
-	int64_t searchTime=0;
-	int64_t searchNodes=0;
 	int lastDepth=0;
 	MoveIterator::Move bestMove;
 	MoveIterator::Move ponderMove;
@@ -111,8 +109,6 @@ int SimplePVSearch::idSearch(Board& board) {
 		}
 		bestMove=pv.moves[0];
 		ponderMove=pv.moves[1];
-		searchTime=getTickCount()-startTime;
-		searchNodes=nodes;
 		pvLine.copy(pv);
 		if (score > bestScore) {
 			bestScore = score;

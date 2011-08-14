@@ -387,19 +387,38 @@ void Evaluator::evalImbalances(PieceColor color, EvalInfo& evalInfo) {
 	const int minors = sideMinors + otherMinors;
 	const int majors = sideMajors + otherMajors;
 
-	if (totalPieceCount < 6) {
-		if (majors==0 && pawnCount==0 && balance >= 0) {
+	if (totalPieceCount < 6 && balance > 0) {
+		if (majors==0 && pawnCount==0) {
 			if (minors <= 1 || (minors == 2 && sideMinors==otherMinors)) {
 				evalInfo.imbalance[color] += MSE(-balance); //draw
 				evalInfo.drawFlag = true;
 			} else if (minors <= 3 && otherMinors>0) {
-				evalInfo.imbalance[color] += MSE(-balance*90/100); //drawish -
+				evalInfo.imbalance[color] += MSE(-balance*95/100); //drawish -
 			} else if (minors <= 2 && sideMinors==2 &&
 					otherMinors==0 && !board.getPieces(color,BISHOP)) {
 				evalInfo.imbalance[color] += MSE(-balance); //draw - KNN vs K
 				evalInfo.drawFlag = true;
 			}
-		} else if (majors==0 && pawnCount<=2 &&	balance >= 0) {
+		} else if (majors<=2 && minors <= 3 && pawnCount==0) {
+			if (sideMajors==1 && otherMajors==1 &&
+					sideMinors==0 && otherMinors <= 1) {
+				evalInfo.imbalance[color] += MSE(-balance*90/100); //drawish
+			} else if (sideMajors==1 && otherMajors==0 &&
+					sideMinors==0 && otherMinors >= 2) {
+				if (board.getPieces(color,QUEEN)) {
+					evalInfo.imbalance[color] += MSE(-balance*50/100); //drawish
+				} else {
+					evalInfo.imbalance[color] += MSE(-balance*90/100); //drawish
+				}
+			} else if (sideMajors==0 && otherMajors==1 &&
+					sideMinors>=2 && otherMinors==0 ) {
+				if (sideMinors==3) {
+					evalInfo.imbalance[color] += MSE(-balance*40/100); //drawish
+				} else {
+					evalInfo.imbalance[color] += MSE(-balance*90/100); //drawish
+				}
+			}
+		} else if (majors==0 && pawnCount<=2) {
 			const Bitboard sidePawns = board.getPieces(color,PAWN);
 			const Bitboard otherPawns = board.getPieces(other,PAWN);
 			const bool pawnOnAFile = sidePawns & fileBB[FILE_A];
@@ -412,15 +431,18 @@ void Evaluator::evalImbalances(PieceColor color, EvalInfo& evalInfo) {
 							(pawnOnAFile && hasBlackBishop):
 							(pawnOnHFile && hasBlackBishop) ||
 							(pawnOnAFile && hasLightBishop);
-					if ((pawnOnAFile && wrongBishop && (otherKing & kingFileACorner[other])) ||
-							(pawnOnHFile && wrongBishop && (otherKing & kingFileHCorner[other]))) {
+					if ((pawnOnAFile && wrongBishop &&
+							(otherKing & kingFileACorner[other])) ||
+							(pawnOnHFile && wrongBishop &&
+									(otherKing & kingFileHCorner[other]))) {
 						evalInfo.imbalance[color] += MSE(-balance); //draw -- wrong bishop
 						evalInfo.drawFlag = true;
 					}
 				}
-			} else if (minors <= 1 && sideMinors==1 && sidePawnCount==1 &&
+			} else if (minors == 1 && sideMinors==1 && sidePawnCount==1 &&
 					otherPawnCount==1 && !board.getPieces(color,KNIGHT)) {
-				if ((sidePawns & blockedRank[color]) & (color==WHITE?otherPawns>>8:otherPawns<<8)) {
+				if ((sidePawns & blockedRank[color]) &
+						(color==WHITE?otherPawns>>8:otherPawns<<8)) {
 					if (pawnOnAFile || pawnOnHFile) {
 						if ((pawnOnAFile && (otherKing & blockRankOnAFile[other])) ||
 								(pawnOnHFile && (otherKing & blockRankOnHFile[other]))) {
