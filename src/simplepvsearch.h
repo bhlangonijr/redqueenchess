@@ -593,7 +593,8 @@ inline bool SimplePVSearch::isPawnPush(Board& board, Square& square) {
 
 // time is up?
 inline const bool SimplePVSearch::timeIsUp() {
-	if (searchFixedDepth || infinite || nodes & nodesToGo) {
+	if (searchFixedDepth ||
+			infinite || (nodes & nodesToGo)) {
 		return false;
 	}
 	return getTickCount()>=timeToStop;

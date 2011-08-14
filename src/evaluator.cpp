@@ -97,7 +97,7 @@ void Evaluator::evalKing(PieceColor color, EvalInfo& evalInfo) {
 	evalInfo.kingThreat[color] += pressure;
 	evalInfo.evalPieces[color] +=
 			evalInfo.board.isCastleDone(color)?DONE_CASTLE_BONUS:
-	evalInfo.board.getCastleRights(color)==NO_CASTLE?-DONE_CASTLE_BONUS:0;
+					evalInfo.board.getCastleRights(color)==NO_CASTLE?-DONE_CASTLE_BONUS:0;
 }
 
 void Evaluator::evalPawnsFromCache(PieceColor color, PawnInfo& info, EvalInfo& evalInfo) {
@@ -107,7 +107,7 @@ void Evaluator::evalPawnsFromCache(PieceColor color, PawnInfo& info, EvalInfo& e
 	Bitboard passed=info.passers[color] & pawns;
 	if (passed) {
 		const Bitboard pawnsAndKing = evalInfo.board.getPieces(other,PAWN) |
-				 evalInfo.board.getPieces(other,KING);
+				evalInfo.board.getPieces(other,KING);
 		const bool otherHasOnlyPawns = !(pawnsAndKing^evalInfo.board.getPieces(other));
 		Square from = extractLSB(passed);
 		while ( from!=NONE ) {
@@ -130,12 +130,12 @@ void Evaluator::evalPawns(PieceColor color, EvalInfo& evalInfo) {
 	Bitboard passers=EMPTY_BB;
 	int passedBonus=0;
 	int eval=0;
-	const Bitboard pawnsAndKing = board.getPieces(other,PAWN) |
-			board.getPieces(other,KING);
-	const bool otherHasOnlyPawns = !(pawnsAndKing^board.getPieces(other));
 	//penalyze doubled, isolated and backward pawns
 	//bonus to passer and candidates
 	if (pawns) {
+		const Bitboard pawnsAndKing = board.getPieces(other,PAWN) |
+				board.getPieces(other,KING);
+		const bool otherHasOnlyPawns = !(pawnsAndKing^board.getPieces(other));
 		Bitboard pieces=pawns;
 		Square from = extractLSB(pieces);
 		while ( from!=NONE ) {
@@ -220,7 +220,7 @@ const int Evaluator::evalPassedPawn(EvalInfo& evalInfo, PieceColor color,
 	eval -= squareDistance(next,sideKingSq)*PASSER_AND_KING_BONUS;
 	if (board.getPiece(next)==EMPTY) {
 		const bool advanced = color==WHITE?squareRank[from]>=RANK_6:
-		squareRank[from]<=RANK_3;
+				squareRank[from]<=RANK_3;
 		if (advanced && !(passedMask[color][from]&board.getPieces(other))) {
 			if (!board.isAttacked(color,next)) {
 				eval += freePasserBonus[color][squareRank[from]];
@@ -454,5 +454,7 @@ void Evaluator::evalImbalances(PieceColor color, EvalInfo& evalInfo) {
 			evalInfo.imbalance[color] += (8-sidePawnCount)*sign*TRADE_PAWN_PENALTY;
 			evalInfo.imbalance[color] += (7-sideMinors-sideMajors)*sign*TRADE_PIECE_BONUS;
 		}
+		evalInfo.imbalance[color] += color==board.getSideToMove()?+TEMPO_BONUS:-TEMPO_BONUS;
+		evalInfo.imbalance[color] += -MSE(board.getMoveCounter()-(board.getSideToMove()?1:0));
 	}
 }

@@ -60,6 +60,7 @@ const int INDIRECT_QUEEN_CHECK_BONUS =	MS(+3,+6);
 const int INDIRECT_ROOK_CHECK_BONUS = 	MS(+2,+4);
 const int INDIRECT_KNIGHT_CHECK_BONUS =	MS(+1,+2);
 const int INDIRECT_BISHOP_CHECK_BONUS = MS(+1,+2);
+const int TEMPO_BONUS				  = MS(+13,+5);
 
 const int knightMobility[9] = {
 		-4*MS(+8,+4),-2*MS(+8,+4),+0*MS(+8,+4),+1*MS(+8,+4),+2*MS(+8,+4),
