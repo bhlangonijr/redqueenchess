@@ -482,6 +482,12 @@ const int pieceSquareTable[ALL_PIECE_TYPE][ALL_SQUARE]={
 
 const Bitboard promoRank[ALL_PIECE_COLOR]={rankBB[RANK_7],rankBB[RANK_2],EMPTY_BB};
 const Bitboard eighthRank[ALL_PIECE_COLOR]={rankBB[RANK_8],rankBB[RANK_1],EMPTY_BB};
+const Bitboard shelterArea[ALL_PIECE_COLOR]={
+		rankBB[RANK_1]|rankBB[RANK_2]|rankBB[RANK_3],
+		rankBB[RANK_8]|rankBB[RANK_7]|rankBB[RANK_6],
+		EMPTY_BB
+};
+
 // piece phase increment values
 enum PiecePhase {
 	PAWN_PHASE_INCREMENT=		1,

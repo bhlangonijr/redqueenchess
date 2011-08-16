@@ -82,18 +82,112 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 }
 // king eval function
 void Evaluator::evalKing(PieceColor color, EvalInfo& evalInfo) {
-	const PieceColor other = evalInfo.board.flipSide(color);
-	const Square kingSq = evalInfo.board.getKingSquare(other);
-	const Bitboard kingSquareBB = adjacentSquares[kingSq];
+	Board& board = evalInfo.board;
+	const PieceColor other = board.flipSide(color);
+	const Square kingSq = board.getKingSquare(other);
+	const Bitboard kingAreaBB = adjacentSquares[kingSq];
 	int pressure = 0;
-	for (int piece=makePiece(color,KNIGHT);piece<=makePiece(color,QUEEN);piece++) {
-		// king area safety
-		const Bitboard attacks = evalInfo.attackers[piece]&kingSquareBB;
+	//score attack weight
+	for (int piece=makePiece(color,PAWN);piece<=makePiece(color,QUEEN);piece++) {
+		const Bitboard attacks = evalInfo.attackers[piece]&kingAreaBB;
 		if (attacks) {
-			const int attackCount = pieceType[piece]==KNIGHT?1:bitCount15(attacks);
+			const int attackCount = bitCount15(attacks);
 			pressure += getKingAttackWeight(piece,attackCount);
 		}
 	}
+	// score contact checks
+	const Bitboard notDefended = evalInfo.attacks[color]&
+			kingAreaBB&~evalInfo.attacks[other];
+
+	const Bitboard queenContactCheck = ~board.getPieces(color)&
+			notDefended&evalInfo.attackers[makePiece(color,QUEEN)];
+
+	if (queenContactCheck) {
+		const Bitboard safeCheck = queenContactCheck &
+				(evalInfo.attackers[makePiece(color,PAWN)] |
+						evalInfo.attackers[makePiece(color,KNIGHT)] |
+						evalInfo.attackers[makePiece(color,BISHOP)] |
+						evalInfo.attackers[makePiece(color,ROOK)]);
+		if (safeCheck) {
+			pressure+=(color==board.getSideToMove()?2:1) *
+					bitCount15(safeCheck)*QUEEN_CHECK_BONUS;
+		}
+	}
+	const Bitboard rookContactCheck = ~board.getPieces(color)&
+			notDefended&evalInfo.attackers[makePiece(color,ROOK)];
+
+	if (rookContactCheck) {
+		const Bitboard safeCheck = rookContactCheck &
+				(evalInfo.attackers[makePiece(other,PAWN)] |
+						evalInfo.attackers[makePiece(color,KNIGHT)] |
+						evalInfo.attackers[makePiece(color,BISHOP)] |
+						evalInfo.attackers[makePiece(color,QUEEN)]);
+		if (safeCheck) {
+			pressure+= (color==board.getSideToMove()?2:1)*
+					bitCount15(safeCheck)*ROOK_CHECK_BONUS;
+		}
+	}
+
+	const Bitboard clearWay = ~(board.getPieces(color)|evalInfo.attacks[other]);
+	const Bitboard rookAttacks = clearWay&board.getRookAttacks(kingSq);
+	const Bitboard bishopAttacks = clearWay&board.getBishopAttacks(kingSq);
+
+	const Bitboard queenIndirectAttacks = (rookAttacks|bishopAttacks)&
+			evalInfo.attackers[makePiece(color,QUEEN)];
+	if (queenIndirectAttacks) {
+		pressure += bitCount15(queenIndirectAttacks)*
+				INDIRECT_QUEEN_CHECK_BONUS;
+	}
+
+	const Bitboard rookIndirectAttacks = rookAttacks &
+			evalInfo.attackers[makePiece(color,ROOK)];
+	if (rookIndirectAttacks) {
+		pressure += bitCount15(rookIndirectAttacks)*
+				INDIRECT_ROOK_CHECK_BONUS;
+	}
+
+	const Bitboard bishopIndirectAttacks = bishopAttacks &
+			evalInfo.attackers[makePiece(color,BISHOP)];
+	if (bishopIndirectAttacks) {
+		pressure += bitCount15(bishopIndirectAttacks)*
+				INDIRECT_BISHOP_CHECK_BONUS;
+	}
+
+	const Bitboard kinghtIndirectAttacks = board.getKnightAttacks(kingSq)&
+			evalInfo.attackers[makePiece(color,KNIGHT)]&clearWay;
+	if (kinghtIndirectAttacks) {
+		pressure += bitCount15(kinghtIndirectAttacks)*
+				INDIRECT_KNIGHT_CHECK_BONUS;
+	}
+	//quality of opponent's shelter
+	if ((board.getPieces(color,QUEEN) || board.getPieces(color,ROOK)) &&
+			(board.getPieces(other,KING)&shelterArea[other])) {
+		const Rank kingRank = squareRank[kingSq];
+		const int sign = other==WHITE?+1:-1;
+		int shelterScore=0;
+		const File fileFixed = squareFile[kingSq]==FILE_H?FILE_G:
+				squareFile[kingSq]==FILE_A?FILE_B:squareFile[kingSq];
+		const Square sqFixed = board.makeSquare(kingRank,fileFixed);
+		const Bitboard shieldPawns = passedMask[other][sqFixed]&
+				evalInfo.pawns[other];
+		const Bitboard layer1 = shieldPawns&
+				rankBB[Rank(kingRank+sign*1)];
+		const Bitboard layer2 = shieldPawns&
+				rankBB[Rank(kingRank+sign*2)];
+		const Bitboard shield = layer1 |
+				(color==WHITE?layer2>>8:layer2<<8);
+		const Bitboard openfiles = passedMask[other][sqFixed]&
+				rankBB[RANK_5]&evalInfo.openfiles[color];
+		const int countOpenFiles = bitCount15(openfiles);
+		const int countLayer1 = bitCount15(layer1);
+		const int countShield = bitCount15(shield);
+
+		shelterScore = (countShield * std::max(countLayer1,1)) *
+				SHELTER_BONUS;
+		shelterScore += countOpenFiles * SHELTER_OPEN_FILE_PENALTY;
+		pressure -= shelterScore;
+	}
+
 	evalInfo.kingThreat[color] += pressure;
 	evalInfo.evalPieces[color] +=
 			evalInfo.board.isCastleDone(color)?DONE_CASTLE_BONUS:
@@ -104,6 +198,7 @@ void Evaluator::evalPawnsFromCache(PieceColor color, PawnInfo& info, EvalInfo& e
 	const Bitboard pawns = evalInfo.pawns[color];
 	const PieceColor other =  evalInfo.board.flipSide(color);
 	evalInfo.evalPawns[color]+=info.value[color];
+	evalInfo.openfiles[color]=info.openfiles[color];
 	Bitboard passed=info.passers[color] & pawns;
 	if (passed) {
 		const Bitboard pawnsAndKing = evalInfo.board.getPieces(other,PAWN) |
@@ -128,6 +223,7 @@ void Evaluator::evalPawns(PieceColor color, EvalInfo& evalInfo) {
 	const Bitboard pawns = evalInfo.pawns[color];
 	const Bitboard otherPawns = evalInfo.pawns[other];
 	Bitboard passers=EMPTY_BB;
+	Bitboard closedfiles=EMPTY_BB;
 	int passedBonus=0;
 	int eval=0;
 	//penalyze doubled, isolated and backward pawns
@@ -148,6 +244,7 @@ void Evaluator::evalPawns(PieceColor color, EvalInfo& evalInfo) {
 			const bool isChained = chainSquares&allButThePawn;
 			const bool halfOpenFile = !(fileBB[squareFile[from]]&otherPawns);
 			bool isBackward = false;
+			closedfiles|=fileBB[squareFile[from]];
 			if (isDoubled) {
 				eval += DOUBLED_PAWN_PENALTY;
 			}
@@ -187,7 +284,8 @@ void Evaluator::evalPawns(PieceColor color, EvalInfo& evalInfo) {
 			from = extractLSB(pieces);
 		}
 	}
-	setPawnInfo(board.getPawnKey(),eval,color,passers);
+	setPawnInfo(board.getPawnKey(),eval,color,passers,~closedfiles);
+	evalInfo.openfiles[color]=~closedfiles;
 	evalInfo.evalPawns[color] += eval+passedBonus;
 }
 // Eval passed pawns

@@ -60,6 +60,8 @@ const int INDIRECT_QUEEN_CHECK_BONUS =	MS(+3,+6);
 const int INDIRECT_ROOK_CHECK_BONUS = 	MS(+2,+4);
 const int INDIRECT_KNIGHT_CHECK_BONUS =	MS(+1,+2);
 const int INDIRECT_BISHOP_CHECK_BONUS = MS(+1,+2);
+const int SHELTER_BONUS				  = MS(+2,+0);
+const int SHELTER_OPEN_FILE_PENALTY   = MS(-9,-0);
 const int TEMPO_BONUS				  = MS(+13,+5);
 
 const int knightMobility[9] = {
@@ -94,22 +96,25 @@ const int queenKingBonus[8] = {
 };
 
 const int kingZoneAttackWeight[ALL_PIECE_TYPE][10] = {
-		{},
+		{//pawns
+				0*MS(+3,+0),1*MS(+3,+0),2*MS(+3,+0),3*MS(+3,+0),4*MS(+3,+0),
+				5*MS(+3,+0),6*MS(+3,+0),7*MS(+3,+0),8*MS(+3,+0),9*MS(+3,+0)
+		},
 		{//knight
-				0*MS(+4,+7),1*MS(+4,+7),2*MS(+4,+7),3*MS(+4,+7),4*MS(+4,+7),
-				5*MS(+4,+7),6*MS(+4,+7),7*MS(+4,+7),8*MS(+4,+7),9*MS(+4,+7)
+				0*MS(+4,+1),1*MS(+3,+1),2*MS(+3,+1),3*MS(+3,+1),4*MS(+3,+1),
+				5*MS(+3,+1),6*MS(+3,+1),7*MS(+3,+1),8*MS(+3,+1),9*MS(+3,+1)
 		},
 		{// bishop
-				0*MS(+4,+7),1*MS(+4,+7),2*MS(+4,+7),3*MS(+4,+7),4*MS(+4,+7),
-				5*MS(+4,+7),6*MS(+4,+7),7*MS(+4,+7),8*MS(+4,+7),9*MS(+4,+7)
+				0*MS(+3,+1),1*MS(+3,+1),2*MS(+3,+1),3*MS(+3,+1),4*MS(+3,+1),
+				5*MS(+3,+1),6*MS(+3,+1),7*MS(+3,+1),8*MS(+3,+1),9*MS(+3,+1)
 		},
 		{// rook
-				0*MS(+5,+8),1*MS(+5,+8),2*MS(+5,+8),3*MS(+5,+8),4*MS(+5,+8),
-				5*MS(+5,+8),6*MS(+5,+8),7*MS(+5,+8),8*MS(+5,+8),9*MS(+5,+8)
+				0*MS(+4,+2),1*MS(+4,+2),2*MS(+4,+2),3*MS(+4,+2),4*MS(+4,+2),
+				5*MS(+4,+2),6*MS(+4,+2),7*MS(+4,+2),8*MS(+4,+2),9*MS(+4,+2)
 		},
 		{// queen
-				0*MS(+6,+10),1*MS(+6,+10),2*MS(+6,+10),3*MS(+6,+10),4*MS(+6,+10),
-				5*MS(+6,+10),6*MS(+6,+10),7*MS(+6,+10),8*MS(+6,+10),9*MS(+6,+10)
+				0*MS(+5,+3),1*MS(+5,+3),2*MS(+5,+3),3*MS(+5,+3),4*MS(+5,+3),
+				5*MS(+5,+3),6*MS(+5,+3),7*MS(+5,+3),8*MS(+5,+3),9*MS(+5,+3)
 		},
 		{},
 		{}
@@ -280,6 +285,7 @@ public:
 				kingThreat[i]=0;
 				imbalance[i]=0;
 				attacks[i]=0;
+				openfiles[i]=0;
 			}
 			for(i=0;i<ALL_PIECE_TYPE_BY_COLOR;i++) {
 				attackers[i]=EMPTY_BB;
@@ -292,6 +298,7 @@ public:
 		Bitboard attackers[ALL_PIECE_TYPE_BY_COLOR];
 		Bitboard attacks[ALL_PIECE_COLOR];
 		Bitboard pawns[ALL_PIECE_COLOR];
+		Bitboard openfiles[ALL_PIECE_COLOR];
 		int kingThreat[ALL_PIECE_COLOR];
 		int evalPieces[ALL_PIECE_COLOR];
 		int evalPawns[ALL_PIECE_COLOR];
@@ -364,6 +371,7 @@ public:
 		Key key;
 		int value[ALL_PIECE_COLOR-1];
 		Bitboard passers[ALL_PIECE_COLOR-1];
+		Bitboard openfiles[ALL_PIECE_COLOR-1];
 	}__attribute__ ((aligned(64)));
 
 	Evaluator();
@@ -414,6 +422,8 @@ public:
 			pawnHash.key=entry.key;
 			pawnHash.passers[WHITE]=entry.passers[WHITE];
 			pawnHash.passers[BLACK]=entry.passers[BLACK];
+			pawnHash.openfiles[WHITE]=entry.openfiles[WHITE];
+			pawnHash.openfiles[BLACK]=entry.openfiles[BLACK];
 			pawnHash.value[WHITE]=entry.value[WHITE];
 			pawnHash.value[BLACK]=entry.value[BLACK];
 			return true;
@@ -421,11 +431,13 @@ public:
 		return false;
 	}
 
-	inline void setPawnInfo(const Key key, const int value, const PieceColor color, const Bitboard passers) {
+	inline void setPawnInfo(const Key key, const int value, const PieceColor color,
+			const Bitboard passers, const Bitboard openfiles) {
 		PawnInfo& entry = pawnInfo[static_cast<size_t>(key) & (pawnHashSize-1)];
 		entry.key=key;
 		entry.value[color]=value;
 		entry.passers[color]=passers;
+		entry.openfiles[color]=openfiles;
 	}
 
 	inline void cleanPawnInfo() {

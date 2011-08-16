@@ -47,7 +47,7 @@ int SimplePVSearch::idSearch(Board& board) {
 	int bestScore = -maxScore;
 	int iterationScore[maxSearchPly];
 	int64_t iterationTime[maxSearchPly];
-	const bool isKingAttacked = board.setInCheck(board.getSideToMove());
+	board.setInCheck(board.getSideToMove());
 	MoveIterator::Move easyMove;
 	rootSearchInfo.alpha = -maxScore;
 	rootSearchInfo.beta = maxScore;
@@ -56,11 +56,7 @@ int SimplePVSearch::idSearch(Board& board) {
 	MoveIterator::Move bestMove;
 	MoveIterator::Move ponderMove;
 	PvLine pvLine = PvLine();
-	if (!isKingAttacked) {
-		board.generateAllMoves(rootMoves, board.getSideToMove());
-	} else {
-		board.generateEvasions(rootMoves, board.getSideToMove());
-	}
+	board.generateAllMoves(rootMoves, board.getSideToMove());
 	filterLegalMoves(board,rootMoves);
 	scoreRootMoves(board,rootMoves);
 	rootMoves.sort();
