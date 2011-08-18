@@ -88,10 +88,10 @@ void Evaluator::evalKing(PieceColor color, EvalInfo& evalInfo) {
 	const Bitboard kingAreaBB = adjacentSquares[kingSq];
 	int pressure = 0;
 	//score attack weight
-	for (int piece=makePiece(color,PAWN);piece<=makePiece(color,QUEEN);piece++) {
+	for (int piece=makePiece(color,KNIGHT);piece<=makePiece(color,QUEEN);piece++) {
 		const Bitboard attacks = evalInfo.attackers[piece]&kingAreaBB;
 		if (attacks) {
-			const int attackCount = bitCount15(attacks);
+			const int attackCount = pieceType[piece]==KNIGHT?1:bitCount15(attacks);
 			pressure += getKingAttackWeight(piece,attackCount);
 		}
 	}
