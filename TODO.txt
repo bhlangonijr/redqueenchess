@@ -3,16 +3,10 @@ REDQUEEN CHESS ENGINE TODO LIST:
 Ben-Hur Langoni Junior
 
 1) Try Monte Carlo & Boltzmann in search
-2) Improve Evaluator class with more imbalances & piece evaluation
-	+ Create material tables
-	+ Add elementary endings knowledge
-	+ King shelter & Pawn storm knowledge
-	+ Improve bishop mobility	
-	+ Improve concept of mobility	
-3) Create opening book code
-4) Add support to Gaviota's EGTB
-5) Try fractional extensions
-6) Don't extend checks with SEE < 0	
+2) Create opening book code
+3) Add support to Gaviota's EGTB
+4) Try fractional extensions
+5) Don't extend checks with SEE < 0	
 	
 
 

@@ -377,7 +377,7 @@ public:
 	Evaluator();
 	virtual ~Evaluator();
 	const int evaluate(Board& board, const int alpha, const int beta);
-	void evalKing(PieceColor color, EvalInfo& evalInfo);
+	void evalKingPressure(PieceColor color, EvalInfo& evalInfo);
 	void evalPawnsFromCache(PieceColor color, PawnInfo& info, EvalInfo& evalInfo);
 	void evalPawns(PieceColor color, EvalInfo& evalInfo);
 	const int evalPassedPawn(EvalInfo& evalInfo, PieceColor color,
@@ -409,7 +409,8 @@ public:
 	inline const static int interpolate(const int value, const int gamePhase) {
 		const int mgValue = upperScore(value);
 		const int egValue = lowerScore(value);
-		return (egValue*gamePhase)/maxGamePhase+(mgValue*(maxGamePhase-gamePhase))/maxGamePhase;
+		return (egValue*gamePhase)/maxGamePhase+
+				(mgValue*(maxGamePhase-gamePhase))/maxGamePhase;
 	}
 
 	inline const int getKingAttackWeight(const int piece, const int count) {
@@ -445,7 +446,8 @@ public:
 	}
 
 private:
-	Bitboard getLeastValuablePiece(Board& board, Bitboard attackers, PieceColor& color, PieceTypeByColor& piece);
+	Bitboard getLeastValuablePiece(Board& board, Bitboard attackers,
+			PieceColor& color, PieceTypeByColor& piece);
 	PawnInfo pawnInfo[pawnHashSize];
 	bool debug;
 	bool lazyEval;
@@ -526,7 +528,8 @@ inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {
 	return gain[0];
 }
 
-inline Bitboard Evaluator::getLeastValuablePiece(Board& board, Bitboard attackers, PieceColor& color, PieceTypeByColor& piece) {
+inline Bitboard Evaluator::getLeastValuablePiece(Board& board, Bitboard attackers,
+		PieceColor& color, PieceTypeByColor& piece) {
 	const int first = makePiece(color,PAWN);
 	const int last = makePiece(color,KING);
 	for(register int pieceType = first; pieceType <= last; pieceType++) {

@@ -358,6 +358,7 @@ private:
 	void scoreMoves(Board& board, MoveIterator& moves);
 	void scoreRootMoves(Board& board, MoveIterator& moves);
 	void retrievePvFromHash(Board& board, PvLine& pv);
+	void updateHashWithPv(Board& board, PvLine& pv);
 	void filterLegalMoves(Board& board, MoveIterator& moves);
 	void initRootMovesOrder();
 	void updateRootMovesScore(const int64_t value);

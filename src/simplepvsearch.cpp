@@ -55,7 +55,6 @@ int SimplePVSearch::idSearch(Board& board) {
 	int lastDepth=0;
 	MoveIterator::Move bestMove;
 	MoveIterator::Move ponderMove;
-	PvLine pvLine = PvLine();
 	board.generateAllMoves(rootMoves, board.getSideToMove());
 	filterLegalMoves(board,rootMoves);
 	scoreRootMoves(board,rootMoves);
@@ -63,9 +62,10 @@ int SimplePVSearch::idSearch(Board& board) {
 	if (rootMoves.get(0).score > rootMoves.get(1).score + easyMargin ) {
 		easyMove=rootMoves.get(0);
 	}
+	PvLine pv = PvLine();
+	pv.index=0;
+
 	for (int depth = 1; depth <= depthToSearch; depth++) {
-		PvLine pv = PvLine();
-		pv.index=0;
 		int score = 0;
 		int aspirationDelta=0;
 		maxPlySearched = 0;
@@ -74,7 +74,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		rootSearchInfo.depth=depth;
 		rootSearchInfo.ply=0;
 		score=-maxScore;
-		if (depth >= aspirationDepth) {
+		if (depth >= aspirationDepth /*&& abs(iterationScore[depth-1]) < winningScore*/) {
 			const int delta1 = iterationScore[depth-1]-iterationScore[depth-2];
 			const int delta2 = iterationScore[depth-2]-iterationScore[depth-3];
 			aspirationDelta = std::max(abs(delta1)*80/100+abs(delta2)*20/100, 20)+5;
@@ -85,12 +85,18 @@ int SimplePVSearch::idSearch(Board& board) {
 		while (!finished) {
 			score = rootSearch(board, rootSearchInfo, pv);
 			iterationScore[depth]=score;
+			updateHashWithPv(board,pv);
+			uciOutput(pv, bestMove.score, getTickCount()-startTime,
+					agent->hashFull(), rootSearchInfo.depth, maxPlySearched,
+					rootSearchInfo.alpha, rootSearchInfo.beta);
+
 			const bool fail = score <= rootSearchInfo.alpha ||
 					score >= rootSearchInfo.beta;
 			const bool fullWidth = rootSearchInfo.alpha == -maxScore &&
 					rootSearchInfo.beta == maxScore;
 			finished = !fail || fullWidth ||
 					depth < aspirationDepth ||
+					//abs(score) >= winningScore ||
 					(stop(rootSearchInfo) && depth>1);
 			if (!finished) {
 				rootSearchInfo.alpha = std::max(rootSearchInfo.alpha-aspirationDelta,-maxScore);
@@ -105,7 +111,6 @@ int SimplePVSearch::idSearch(Board& board) {
 		}
 		bestMove=pv.moves[0];
 		ponderMove=pv.moves[1];
-		pvLine.copy(pv);
 		if (score > bestScore) {
 			bestScore = score;
 		}
@@ -154,7 +159,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		bestMove=rootMoves.get(0);
 		ponderMove=emptyMove;
 	}
-	uciOutput(pvLine, bestMove.score, getTickCount()-startTime, agent->hashFull(),
+	uciOutput(pv, bestMove.score, getTickCount()-startTime, agent->hashFull(),
 			lastDepth, maxPlySearched, rootSearchInfo.alpha, rootSearchInfo.beta);
 	uciOutput(bestMove,ponderMove);
 	return bestMove.score;
@@ -228,19 +233,15 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 			retrievePvFromHash(board, pv);
 			rootMoves.sortOrderingBy(nodesPerMove);
 			rootMoves.first();
-			uciOutput(pv, bestMove.score, getTickCount()-startTime,
-					agent->hashFull(), si.depth, maxPlySearched, alpha, beta);
 			return score;
 		}
-		if( score > alpha ) {
+		if(score>alpha || moveCounter==1) {
 			alpha = score;
 			move.score=score;
 			bestMove=move;
 			pv.moves[0]=bestMove;
 			retrievePvFromHash(board, pv);
 			iterationPVChange[si.depth]++;
-			uciOutput(pv, bestMove.score, getTickCount()-startTime,
-					agent->hashFull(), si.depth, maxPlySearched, alpha, beta);
 		}
 		uciOutput(move, moveCounter);
 	}
@@ -805,22 +806,51 @@ inline void SimplePVSearch::retrievePvFromHash(Board& board, PvLine& pv) {
 	MoveBackup backup[maxSearchPly];
 	int i=0;
 	board.doMove(pv.moves[0],backup[0]);
+	board.setInCheck(board.getSideToMove());
 	pv.index=1;
 	for (i=1;i<maxSearchPly;i++) {
 		TranspositionTable::HashData hashData;
 		if (!agent->hashGet(board.getKey(), hashData, i)) {
+			pv.moves[i].clear();
 			break;
 		}
 		MoveIterator::Move move = hashData.move();
-		if (!board.isMoveLegal<true>(move)) {
-			break;
-		}
-		if (board.isDraw() && i>1) {
+		if ((board.isDraw() && i>1) ||
+				!board.isMoveLegal<true>(move)) {
+			pv.moves[i].clear();
 			break;
 		}
 		pv.moves[i]=move;
 		pv.index=i;
 		board.doMove(move,backup[i]);
+		board.setInCheck(board.getSideToMove());
+	}
+	while (--i>=0) {
+		board.undoMove(backup[i]);
+	}
+}
+//retrieve PV from transposition table
+inline void SimplePVSearch::updateHashWithPv(Board& board, PvLine& pv) {
+	if (pv.moves[0].none()) {
+		return;
+	}
+	if (!board.isMoveLegal<true>(pv.moves[0])) {
+		return;
+	}
+	MoveBackup backup[maxSearchPly];
+	int i=0;
+	while (!pv.moves[i].none()) {
+		TranspositionTable::HashData hashData;
+		const bool found = agent->hashGet(board.getKey(), hashData, i);
+		if (!found || hashData.move() != pv.moves[i]) {
+			const int score = board.isInCheck()?-maxScore:
+					evaluator.evaluate(board,-maxScore,maxScore);
+			agent->hashPut(board.getKey(),score,score,0,i,
+					TranspositionTable::NODE_EVAL,pv.moves[i]);
+		}
+		board.doMove(pv.moves[i],backup[i]);
+		board.setInCheck(board.getSideToMove());
+		i++;
 	}
 	while (--i>=0) {
 		board.undoMove(backup[i]);

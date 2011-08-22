@@ -71,8 +71,8 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 		evalBoardControl(evalInfo.other, evalInfo);
 		evalThreats(evalInfo.side, evalInfo);
 		evalThreats(evalInfo.other, evalInfo);
-		evalKing(evalInfo.side, evalInfo);
-		evalKing(evalInfo.other, evalInfo);
+		evalKingPressure(evalInfo.side, evalInfo);
+		evalKingPressure(evalInfo.other, evalInfo);
 		evalInfo.computeEval();
 	}
 	if (isDebugEnabled()) {
@@ -81,7 +81,7 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 	return evalInfo.getEval();
 }
 // king eval function
-void Evaluator::evalKing(PieceColor color, EvalInfo& evalInfo) {
+void Evaluator::evalKingPressure(PieceColor color, EvalInfo& evalInfo) {
 	Board& board = evalInfo.board;
 	const PieceColor other = board.flipSide(color);
 	const Square kingSq = board.getKingSquare(other);
@@ -501,6 +501,11 @@ void Evaluator::evalImbalances(PieceColor color, EvalInfo& evalInfo) {
 			if (sideMajors==1 && otherMajors==1 &&
 					sideMinors==0 && otherMinors <= 1) {
 				evalInfo.imbalance[color] += MSE(-balance*90/100); //drawish
+			} else if (sideMajors==1 && otherMajors==1 &&
+					sideMinors==1 && otherMinors == 0) {
+				if (balance<=drawishMaxValue) {
+					evalInfo.imbalance[color] += MSE(-balance*95/100); //drawish
+				}
 			} else if (sideMajors==1 && otherMajors==0 &&
 					sideMinors==0 && otherMinors >= 2) {
 				if (board.getPieces(color,QUEEN)) {
