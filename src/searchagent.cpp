@@ -452,6 +452,7 @@ int64_t SearchAgent::addExtraTime(const int iteration, int* iterationPVChange) {
 	const int64_t newSearchTime = std::max(int64_t(10),getSearcher(MAIN_THREAD)->getTimeToSearch()-timeThinking) +
 			getTimeToSearch(timeThinking)*weight/100;
 	getSearcher(MAIN_THREAD)->setTimeToSearch(newSearchTime);
+	getSearcher(MAIN_THREAD)->setTimeToStop(getSearcher(MAIN_THREAD)->getStartTime()+newSearchTime);
 	return newSearchTime;
 }
 

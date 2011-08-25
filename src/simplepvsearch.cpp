@@ -31,10 +31,10 @@ static int moveCountMargin[maxSearchDepth+1];
 // root search
 void SimplePVSearch::search(Board board) {
 	prepareToSearch();
-	startTime = getTickCount();
+	setStartTime(getTickCount());
 	setTimeToStop();
 	searchScore = idSearch(board);
-	time = getTickCount()-startTime;
+	time = getTickCount()-getStartTime();
 }
 
 // get current score
@@ -74,7 +74,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		rootSearchInfo.depth=depth;
 		rootSearchInfo.ply=0;
 		score=-maxScore;
-		if (depth >= aspirationDepth /*&& abs(iterationScore[depth-1]) < winningScore*/) {
+		if (depth >= aspirationDepth) {
 			const int delta1 = iterationScore[depth-1]-iterationScore[depth-2];
 			const int delta2 = iterationScore[depth-2]-iterationScore[depth-3];
 			aspirationDelta = std::max(abs(delta1)*80/100+abs(delta2)*20/100, 20)+5;
@@ -86,7 +86,7 @@ int SimplePVSearch::idSearch(Board& board) {
 			score = rootSearch(board, rootSearchInfo, pv);
 			iterationScore[depth]=score;
 			updateHashWithPv(board,pv);
-			uciOutput(pv, bestMove.score, getTickCount()-startTime,
+			uciOutput(pv, score, getTickCount()-startTime,
 					agent->hashFull(), rootSearchInfo.depth, maxPlySearched,
 					rootSearchInfo.alpha, rootSearchInfo.beta);
 
@@ -96,7 +96,6 @@ int SimplePVSearch::idSearch(Board& board) {
 					rootSearchInfo.beta == maxScore;
 			finished = !fail || fullWidth ||
 					depth < aspirationDepth ||
-					//abs(score) >= winningScore ||
 					(stop(rootSearchInfo) && depth>1);
 			if (!finished) {
 				rootSearchInfo.alpha = std::max(rootSearchInfo.alpha-aspirationDelta,-maxScore);
@@ -379,12 +378,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 		if (score>=si.beta) {
 			bestScore=score;
 			bestMove=move;
-			TranspositionTable::NodeFlag flag = currentScore!=-maxScore && !isLazyEval?
-					TranspositionTable::LOWER_EVAL:TranspositionTable::LOWER ;
-			agent->updateHistory(board,bestMove,si.depth);
-			updateKillers(board,bestMove,si.ply);
-			agent->hashPut(key,bestScore,currentScore,si.depth,si.ply,flag,bestMove);
-			return bestScore;
+			break;
 		}
 		if (score>bestScore) {
 			bestScore=score;
@@ -398,7 +392,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 			if (agent->spawnThreads(board, &si, getThreadId(), &moves, &move, &hashMove,
 					&bestScore, &si.alpha, &currentScore, &moveCounter, &nmMateScore)) {
 				if (bestScore>=si.beta) {
-					return bestScore;
+					break;
 				}
 			}
 		}
@@ -407,7 +401,12 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 		return si.partialSearch?oldAlpha:isKingAttacked?-maxScore+si.ply:drawScore;
 	}
 	TranspositionTable::NodeFlag flag;
-	if (bestScore>oldAlpha) {
+	if (bestScore>=si.beta) {
+		flag = currentScore!=-maxScore && !isLazyEval?
+				TranspositionTable::LOWER_EVAL:TranspositionTable::LOWER ;
+		agent->updateHistory(board,bestMove,si.depth);
+		updateKillers(board,bestMove,si.ply);
+	} else if (bestScore>oldAlpha) {
 		flag = currentScore!=-maxScore && !isLazyEval?
 				TranspositionTable::EXACT_EVAL:TranspositionTable::EXACT;
 	} else {
@@ -621,12 +620,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		if (score>=si.beta) {
 			bestScore=score;
 			bestMove=move;
-			TranspositionTable::NodeFlag flag = currentScore!=-maxScore && !isLazyEval?
-					TranspositionTable::LOWER_EVAL:TranspositionTable::LOWER;
-			agent->updateHistory(board,bestMove,si.depth);
-			updateKillers(board,bestMove,si.ply);
-			agent->hashPut(key,bestScore,currentScore,si.depth,si.ply,flag,bestMove);
-			return bestScore;
+			break;
 		}
 		if (score>bestScore) {
 			bestScore=score;
@@ -637,7 +631,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 			if (agent->spawnThreads(board, &si, getThreadId(), &moves, &move, &hashMove,
 					&bestScore, &si.alpha, &currentScore, &moveCounter, &nmMateScore)) {
 				if (bestScore>=si.beta) {
-					return bestScore;
+					break;
 				}
 			}
 		}
@@ -645,10 +639,18 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 	if (!moveCounter) {
 		return si.partialSearch?si.beta-1:isKingAttacked?-maxScore+si.ply:drawScore;
 	}
-	TranspositionTable::NodeFlag flag = currentScore!=-maxScore && !isLazyEval?
-			TranspositionTable::UPPER_EVAL:TranspositionTable::UPPER;
-	bestMove=emptyMove;
-	agent->hashPut(key,bestScore,currentScore,si.depth,si.ply,flag,emptyMove);
+	TranspositionTable::NodeFlag flag;
+	if (bestScore>=si.beta) {
+		flag = currentScore!=-maxScore && !isLazyEval?
+				TranspositionTable::LOWER_EVAL:TranspositionTable::LOWER;
+		agent->updateHistory(board,bestMove,si.depth);
+		updateKillers(board,bestMove,si.ply);
+	} else {
+		flag = currentScore!=-maxScore && !isLazyEval?
+				TranspositionTable::UPPER_EVAL:TranspositionTable::UPPER;
+		bestMove=emptyMove;
+	}
+	agent->hashPut(key,bestScore,currentScore,si.depth,si.ply,flag,bestMove);
 	return bestScore;
 }
 

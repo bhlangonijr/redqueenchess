@@ -278,7 +278,7 @@ public:
 	}
 
 	inline void updateHistory(Board& board, MoveIterator::Move& move, int depth) {
-		if (board.isCaptureMove(move) || move.promotionPiece != EMPTY || move.none()) {
+		if (board.isCaptureOrPromotion(move) || move.none()) {
 			return;
 		}
 		int* h = &history[board.getPiece(move.from)][move.to];
