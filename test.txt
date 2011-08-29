@@ -50,7 +50,7 @@ go infinite
 
 position fen 8/8/8/8/3k4/1b6/6K1/8 w - - 0 1
 go infinite
-
+setoption name Threads value 1
 position fen 6k1/6p1/8/8/8/8/6K1/8 w - - 0 1
 go infinite
 

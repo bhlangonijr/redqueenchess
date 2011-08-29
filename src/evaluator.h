@@ -45,24 +45,24 @@ const int BACKWARD_OPEN_PAWN_PENALTY =   MS(-17,-13);
 const int DONE_CASTLE_BONUS=       		 MS(+20,-1);
 const int CONNECTED_PAWN_BONUS =   		 MS(+5,-1);
 const int BISHOP_PAIR_BONUS = 	   		 MS(+30,+45);
-const int UNSTOPPABLE_PAWN_BONUS = 		 MS(+300,+300);
+const int UNSTOPPABLE_PAWN_BONUS = 		 MS(+800,+1000);
 const int ROOK_ON_7TH_RANK_BONUS = 		 MS(+15,+25);
 const int ROOK_ON_OPEN_FILE_BONUS = 	 MS(+17,+17);
 const int ROOK_ON_HALF_OPEN_FILE_BONUS = MS(+10,+10);
 const int QUEEN_ON_7TH_RANK_BONUS = 	 MS(+10,+15);
 const int PASSER_AND_KING_BONUS = 		 MS(+0,+5);
 const int PAWN_END_GAME_BONUS = 		 MS(+0,+15);
-const int TRADE_PAWN_PENALTY =           MS(-4,-6);
-const int TRADE_PIECE_BONUS =            MS(+3,+5);
-const int QUEEN_CHECK_BONUS =  	 		MS(+10,+15);
-const int ROOK_CHECK_BONUS =  	 		MS(+6,+11);
-const int INDIRECT_QUEEN_CHECK_BONUS =	MS(+3,+6);
-const int INDIRECT_ROOK_CHECK_BONUS = 	MS(+2,+4);
-const int INDIRECT_KNIGHT_CHECK_BONUS =	MS(+1,+2);
-const int INDIRECT_BISHOP_CHECK_BONUS = MS(+1,+2);
-const int SHELTER_BONUS				  = MS(+2,+0);
-const int SHELTER_OPEN_FILE_PENALTY   = MS(-9,-0);
-const int TEMPO_BONUS				  = MS(+13,+5);
+const int TRADE_PAWN_PENALTY =           MS(-3,-4);
+const int TRADE_PIECE_PENALTY =          MS(-2,-4);
+const int QUEEN_CHECK_BONUS =  	 		 MS(+10,+15);
+const int ROOK_CHECK_BONUS =  	 		 MS(+6,+11);
+const int INDIRECT_QUEEN_CHECK_BONUS =	 MS(+3,+6);
+const int INDIRECT_ROOK_CHECK_BONUS = 	 MS(+2,+4);
+const int INDIRECT_KNIGHT_CHECK_BONUS =	 MS(+1,+2);
+const int INDIRECT_BISHOP_CHECK_BONUS =  MS(+1,+2);
+const int SHELTER_BONUS				  =  MS(+2,+0);
+const int SHELTER_OPEN_FILE_PENALTY   =  MS(-9,-0);
+const int TEMPO_BONUS				  =  MS(+13,+5);
 
 const int knightMobility[9] = {
 		-4*MS(+8,+4),-2*MS(+8,+4),+0*MS(+8,+4),+1*MS(+8,+4),+2*MS(+8,+4),
@@ -286,6 +286,7 @@ public:
 				imbalance[i]=0;
 				attacks[i]=0;
 				openfiles[i]=0;
+				bestUnstoppable[i]=7;
 			}
 			for(i=0;i<ALL_PIECE_TYPE_BY_COLOR;i++) {
 				attackers[i]=EMPTY_BB;
@@ -305,6 +306,7 @@ public:
 		int mobility[ALL_PIECE_COLOR];
 		int pieceThreat[ALL_PIECE_COLOR];
 		int imbalance[ALL_PIECE_COLOR];
+		int bestUnstoppable[ALL_PIECE_COLOR];
 		int eval;
 		bool drawFlag;
 
@@ -384,8 +386,12 @@ public:
 			const Square from, const bool isChained, const bool otherHasOnlyPawns);
 	void evalBoardControl(PieceColor color, EvalInfo& evalInfo);
 	void evalThreats(PieceColor color, EvalInfo& evalInfo);
-	void evalImbalances(PieceColor color, EvalInfo& evalInfo);
+	void evalImbalances(EvalInfo& evalInfo);
 	const bool isPawnPassed(Board& board, const Square from);
+	const bool isPawnUnstoppable(Board& board, const PieceColor color,
+			const Square from, const bool otherHasNoMajorPieces);
+	const int verifyUnstoppablePawn(Board& board, const PieceColor color,
+			const Square from, const bool otherHasNoMajorPieces);
 	const void setGameStage(const GamePhase phase);
 	template <bool lazySee>
 	const int see(Board& board, MoveIterator::Move& move);
@@ -461,6 +467,27 @@ inline const bool Evaluator::isPawnPassed(Board& board, const Square from) {
 	return !(passedMask[color][from]&otherPawns);
 }
 
+// verify if pawn is unstoppable
+inline const bool Evaluator::isPawnUnstoppable(Board& board, const PieceColor color,
+		const Square from, const bool otherHasNoMajorPieces) {
+	return verifyUnstoppablePawn(board,color,from,otherHasNoMajorPieces)>-1;
+}
+// verify if pawn is unstoppable
+inline const int Evaluator::verifyUnstoppablePawn(Board& board, const PieceColor color,
+		const Square from, const bool otherHasNoMajorPieces) {
+	if (otherHasNoMajorPieces) {
+		const PieceColor other = board.flipSide(color);
+		const Rank rank = color==WHITE?RANK_8:RANK_1;
+		const Square target = board.makeSquare(rank,squareFile[from]);
+		const int delta1 = squareDistance(from,target);
+		const int delta2 = squareDistance(board.getKingSquare(other),target);
+		const int otherMove=(board.getSideToMove()==other?1:0);
+		if (std::min(5,delta1)<delta2-otherMove) {
+			return delta1;
+		}
+	}
+	return -1;
+}
 // static exchange evaluation
 template <bool lazySee>
 inline const int Evaluator::see(Board& board, MoveIterator::Move& move) {

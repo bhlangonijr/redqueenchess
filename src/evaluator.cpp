@@ -37,8 +37,7 @@ Evaluator::~Evaluator() {
 const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 	EvalInfo evalInfo(board);
 	setLazyEval(true);
-	evalImbalances(evalInfo.side, evalInfo);
-	evalImbalances(evalInfo.other, evalInfo);
+	evalImbalances(evalInfo);
 	evalInfo.computeEval();
 	if (evalInfo.drawFlag) {
 		if (isDebugEnabled()) {
@@ -214,6 +213,10 @@ void Evaluator::evalPawnsFromCache(PieceColor color, PawnInfo& info, EvalInfo& e
 					isChained,otherHasOnlyPawns);
 			from = extractLSB(passed);
 		}
+		if (evalInfo.bestUnstoppable[other]-evalInfo.bestUnstoppable[color]>=
+				2-(evalInfo.board.getSideToMove()==color?0:1)) {
+			evalInfo.evalPawns[color]+=UNSTOPPABLE_PAWN_BONUS;
+		}
 	}
 }
 // pawns eval function
@@ -245,6 +248,7 @@ void Evaluator::evalPawns(PieceColor color, EvalInfo& evalInfo) {
 			const bool halfOpenFile = !(fileBB[squareFile[from]]&otherPawns);
 			bool isBackward = false;
 			closedfiles|=fileBB[squareFile[from]];
+			eval += pawnWeight[color][squareFile[from]];
 			if (isDoubled) {
 				eval += DOUBLED_PAWN_PENALTY;
 			}
@@ -287,6 +291,10 @@ void Evaluator::evalPawns(PieceColor color, EvalInfo& evalInfo) {
 	setPawnInfo(board.getPawnKey(),eval,color,passers,~closedfiles);
 	evalInfo.openfiles[color]=~closedfiles;
 	evalInfo.evalPawns[color] += eval+passedBonus;
+	if (evalInfo.bestUnstoppable[other]-evalInfo.bestUnstoppable[color]>=
+			2-(board.getSideToMove()==color?0:1)) {
+		evalInfo.evalPawns[color]+=UNSTOPPABLE_PAWN_BONUS;
+	}
 }
 // Eval passed pawns
 const int Evaluator::evalPassedPawn(EvalInfo& evalInfo, PieceColor color,
@@ -300,16 +308,9 @@ const int Evaluator::evalPassedPawn(EvalInfo& evalInfo, PieceColor color,
 	} else {
 		eval += passedPawnBonus[color][squareRank[from]];
 	}
-	eval += pawnWeight[color][squareFile[from]];
-	if (otherHasOnlyPawns) {
-		const Rank rank = color==WHITE?RANK_8:RANK_1;
-		const Square target = board.makeSquare(rank,squareFile[from]);
-		const int delta1 = squareDistance(from,target);
-		const int delta2 = squareDistance(otherKingSq,target);
-		const int otherMove=(board.getSideToMove()==other?1:0);
-		if (std::min(5,delta1)<delta2-otherMove) {
-			eval += UNSTOPPABLE_PAWN_BONUS;
-		}
+	const int dist = verifyUnstoppablePawn(board, color, from, otherHasOnlyPawns);
+	if (dist>-1) {
+		evalInfo.bestUnstoppable[color]=std::min(evalInfo.bestUnstoppable[color],dist);
 	}
 	const Rank r = color==WHITE?squareRank[from+8]:squareRank[from-8];
 	const Square next = board.makeSquare(r,squareFile[from]);
@@ -457,22 +458,19 @@ void Evaluator::evalThreats(PieceColor color, EvalInfo& evalInfo) {
 	}
 }
 // End game eval
-void Evaluator::evalImbalances(PieceColor color, EvalInfo& evalInfo) {
+void Evaluator::evalImbalances(EvalInfo& evalInfo) {
 	Board& board = evalInfo.board;
+	const int balance = board.getMaterial(evalInfo.side)-
+			board.getMaterial(evalInfo.other);
+	const PieceColor color = balance>=0?evalInfo.side:evalInfo.other;
 	const PieceColor other = board.flipSide(color);
 	const int sidePawnCount = board.getPieceCount(makePiece(color,PAWN));
 	const int otherPawnCount = board.getPieceCount(makePiece(other,PAWN));
 	const int pawnCount = sidePawnCount + otherPawnCount;
-	const Bitboard bishop = board.getPieces(color,BISHOP);
 	const Bitboard otherKing = board.getPieces(other,KING);
 	const int pawnDiff = sidePawnCount-otherPawnCount;
-	const bool hasLightBishop = bishop & WHITE_SQUARES;
-	const bool hasBlackBishop = bishop & BLACK_SQUARES;
 	const int totalPieceCount = board.getPieceCount(color)+
 			board.getPieceCount(other);
-	const int balance = board.getMaterial(color)-
-			board.getMaterial(other);
-
 	const int sideMinors = board.getPieceCount(makePiece(color,BISHOP))+
 			board.getPieceCount(makePiece(color,KNIGHT));
 	const int otherMinors = board.getPieceCount(makePiece(other,BISHOP))+
@@ -527,32 +525,39 @@ void Evaluator::evalImbalances(PieceColor color, EvalInfo& evalInfo) {
 			const bool pawnOnAFile = sidePawns & fileBB[FILE_A];
 			const bool pawnOnHFile = sidePawns & fileBB[FILE_H];
 			if (minors==1 && sidePawnCount==1 && sideMinors==1 &&
-					otherPawnCount==0 && !board.getPieces(color,KNIGHT)) {
-				if (pawnOnAFile || pawnOnHFile) {
-					const bool wrongBishop = color==WHITE?
-							(pawnOnHFile && hasLightBishop) ||
-							(pawnOnAFile && hasBlackBishop):
-							(pawnOnHFile && hasBlackBishop) ||
-							(pawnOnAFile && hasLightBishop);
-					if ((pawnOnAFile && wrongBishop &&
-							(otherKing & kingFileACorner[other])) ||
-							(pawnOnHFile && wrongBishop &&
-									(otherKing & kingFileHCorner[other]))) {
-						evalInfo.imbalance[color] += MSE(-balance); //draw -- wrong bishop
+					otherPawnCount<=1 && !board.getPieces(color,KNIGHT) &&
+					(pawnOnAFile || pawnOnHFile)) {// rook pawns
+				const bool hasLightBishop = board.getPieces(color,BISHOP) & WHITE_SQUARES;
+				const bool hasBlackBishop = board.getPieces(color,BISHOP) & BLACK_SQUARES;
+				const bool wrongBishop = color==WHITE?
+						(pawnOnHFile && hasLightBishop) ||
+						(pawnOnAFile && hasBlackBishop):
+						(pawnOnHFile && hasBlackBishop) ||
+						(pawnOnAFile && hasLightBishop);
+				if ((pawnOnAFile && wrongBishop &&
+						(otherKing & kingFileACorner[other])) ||
+						(pawnOnHFile && wrongBishop &&
+								(otherKing & kingFileHCorner[other]))) {
+					evalInfo.imbalance[color] += MSE(-balance); //draw -- wrong bishop
+					evalInfo.drawFlag = true;
+				} else if ((sidePawns & blockedRank[color]) &
+						(color==WHITE?otherPawns>>8:otherPawns<<8)) {
+					if ((pawnOnAFile && (otherKing & blockRankOnAFile[other])) ||
+							(pawnOnHFile && (otherKing & blockRankOnHFile[other]))) {
+						evalInfo.imbalance[color] += MSE(-balance); //draw -- rook pawn
 						evalInfo.drawFlag = true;
 					}
 				}
-			} else if (minors == 1 && sideMinors==1 && sidePawnCount==1 &&
-					otherPawnCount==1 && !board.getPieces(color,KNIGHT)) {
-				if ((sidePawns & blockedRank[color]) &
-						(color==WHITE?otherPawns>>8:otherPawns<<8)) {
-					if (pawnOnAFile || pawnOnHFile) {
-						if ((pawnOnAFile && (otherKing & blockRankOnAFile[other])) ||
-								(pawnOnHFile && (otherKing & blockRankOnHFile[other]))) {
-							evalInfo.imbalance[color] += MSE(-balance); //draw -- rook pawn
-							evalInfo.drawFlag = true;
-						}
-					}
+			} else if (minors == 2 && sideMinors==1 && otherMinors==1 &&
+					sidePawnCount==1 && otherPawnCount==0) {
+				if (((board.getPieces(color,BISHOP)&BLACK_SQUARES) &&
+						(board.getPieces(other,BISHOP)&WHITE_SQUARES)) ||
+						((board.getPieces(color,BISHOP)&WHITE_SQUARES) &&
+								(board.getPieces(other,BISHOP)&BLACK_SQUARES))) {
+
+					evalInfo.imbalance[color] += MSE(-balance*95/100); //drawish
+				} else {
+					evalInfo.imbalance[color] += MSE(-balance*70/100); //drawish
 				}
 			} else if (minors == 1 && sideMinors==1 &&
 					sidePawnCount==0 && otherPawnCount==1) {
@@ -570,16 +575,30 @@ void Evaluator::evalImbalances(PieceColor color, EvalInfo& evalInfo) {
 	if (!evalInfo.drawFlag) {
 		if (pawnDiff>0) {
 			evalInfo.imbalance[color] += pawnDiff*PAWN_END_GAME_BONUS;
+		} else if (pawnDiff<0) {
+			evalInfo.imbalance[other] += (-pawnDiff)*PAWN_END_GAME_BONUS;
 		}
+		const bool hasLightBishop = board.getPieces(color,BISHOP) & WHITE_SQUARES;
+		const bool hasBlackBishop = board.getPieces(color,BISHOP) & BLACK_SQUARES;
 		if (hasLightBishop && hasBlackBishop) {
 			evalInfo.imbalance[color] += BISHOP_PAIR_BONUS;
 		}
-		if (balance!=0) {
-			const int sign = balance>0?+1:-1;
-			evalInfo.imbalance[color] += (8-sidePawnCount)*sign*TRADE_PAWN_PENALTY;
-			evalInfo.imbalance[color] += (7-sideMinors-sideMajors)*sign*TRADE_PIECE_BONUS;
+		const bool otherHasLightBishop = board.getPieces(other,BISHOP) & WHITE_SQUARES;
+		const bool otherHasBlackBishop = board.getPieces(other,BISHOP) & BLACK_SQUARES;
+		if (otherHasLightBishop && otherHasBlackBishop) {
+			evalInfo.imbalance[other] += BISHOP_PAIR_BONUS;
 		}
-		evalInfo.imbalance[color] += color==board.getSideToMove()?+TEMPO_BONUS:-TEMPO_BONUS;
+		if (balance!=0) {
+			evalInfo.imbalance[color] += (16-pawnCount)*TRADE_PAWN_PENALTY;
+			evalInfo.imbalance[other] += (14-minors-majors)*TRADE_PIECE_PENALTY;
+		}
+		if (color==board.getSideToMove()) {
+			evalInfo.imbalance[color] += TEMPO_BONUS;
+		} else {
+			evalInfo.imbalance[other] += TEMPO_BONUS;
+		}
 		evalInfo.imbalance[color] += -MSE(board.getMoveCounter()-(board.getSideToMove()?1:0));
+		evalInfo.imbalance[other] += -MSE(board.getMoveCounter()-(board.getSideToMove()?1:0));
+
 	}
 }
