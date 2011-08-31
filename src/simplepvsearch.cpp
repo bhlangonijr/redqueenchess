@@ -56,7 +56,7 @@ int SimplePVSearch::idSearch(Board& board) {
 	MoveIterator::Move bestMove;
 	MoveIterator::Move ponderMove;
 	board.generateAllMoves(rootMoves, board.getSideToMove());
-	filterLegalMoves(board,rootMoves);
+	filterLegalMoves(board,rootMoves,agent->getSearchMoves());
 	scoreRootMoves(board,rootMoves);
 	rootMoves.sort();
 	if (rootMoves.get(0).score > rootMoves.get(1).score + easyMargin ) {
@@ -794,7 +794,8 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 }
 
 const bool SimplePVSearch::stop(SearchInfo& info) {
-	if (timeIsUp() || agent->shouldStop()) {
+	if (timeIsUp() || agent->shouldStop() ||
+			(agent->getSearchNodes()>0 && nodes >= agent->getSearchNodes())) {
 		return true;
 	}
 	return info.splitPoint!=NULL && info.splitPoint->shouldStop;

@@ -35,6 +35,7 @@
 #include "searchagent.h"
 #include "evaluator.h"
 #include "threadpool.h"
+#include "stringutil.h"
 // game constants
 const int extUnit = 2;
 const int maxScoreRepetition = 25;
@@ -359,7 +360,8 @@ private:
 	void scoreRootMoves(Board& board, MoveIterator& moves);
 	void retrievePvFromHash(Board& board, PvLine& pv);
 	void updateHashWithPv(Board& board, PvLine& pv);
-	void filterLegalMoves(Board& board, MoveIterator& moves);
+	void filterLegalMoves(Board& board, MoveIterator& moves,
+			std::string searchMoves);
 	void initRootMovesOrder();
 	void updateRootMovesScore(const int64_t value);
 };
@@ -560,9 +562,11 @@ inline void SimplePVSearch::scoreRootMoves(Board& board, MoveIterator& moves) {
 }
 
 // filter the move list to only legal moves
-inline void SimplePVSearch::filterLegalMoves(Board& board, MoveIterator& moves) {
+inline void SimplePVSearch::filterLegalMoves(Board& board, MoveIterator& moves,
+		std::string searchMoves) {
 	MoveIterator newMoves;
 	moves.first();
+	const bool isSearchMoves=(searchMoves!="none");
 	while (moves.hasNext()) {
 		MoveIterator::Move& move = moves.next();
 		MoveBackup backup;
@@ -571,7 +575,10 @@ inline void SimplePVSearch::filterLegalMoves(Board& board, MoveIterator& moves) 
 			board.undoMove(backup);
 			continue;
 		}
-		newMoves.add(move);
+		if (!(isSearchMoves &&
+				!StringUtil::containsString(searchMoves, move.toString()))) {
+			newMoves.add(move);
+		}
 		board.undoMove(backup);
 	}
 	moves.clear();

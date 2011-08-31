@@ -191,33 +191,32 @@ void Uci::executeSetOption() {
 // execute go uci command
 void Uci::executeGo() {
 	SearchAgent *searchAgent = SearchAgent::getInstance();
+	searchAgent->clearParameters();
 	if (containsString(this->rawInput, "wtime")) {
 		searchAgent->setSearchMode(SearchAgent::SEARCH_TIME);
 		searchAgent->setWhiteTime(toLong(getMiddleString(this->rawInput,"wtime "," ")));
 		searchAgent->setWhiteIncrement(toLong(getMiddleString(this->rawInput,"winc "," ")));
 		searchAgent->setBlackTime(toLong(getMiddleString(this->rawInput,"btime "," ")));
 		searchAgent->setBlackIncrement(toLong(getMiddleString(this->rawInput,"binc ")));
-		searchAgent->setMovesToGo(toInt(getMiddleString(this->rawInput,"movestogo ")));
 	} else if (containsString(this->rawInput, "go depth")) {
 		searchAgent->setSearchMode(SearchAgent::SEARCH_DEPTH);
 		searchAgent->setDepth(toInt(getMiddleString(this->rawInput,"go depth ")));
-	} else if (containsString(this->rawInput, "go movestogo")) {
-		searchAgent->setSearchMode(SearchAgent::SEARCH_MOVESTOGO);
-		searchAgent->setMovesToGo(toInt(getMiddleString(this->rawInput,"go movestogo ")));
 	} else if (containsString(this->rawInput, "go movetime")) {
 		searchAgent->setSearchMode(SearchAgent::SEARCH_MOVETIME);
 		searchAgent->setMoveTime(toLong(getMiddleString(this->rawInput,"go movetime ")));
 	} else if (containsString(this->rawInput, "go infinite")) {
 		searchAgent->setSearchMode(SearchAgent::SEARCH_INFINITE);
-	} else if (containsString(this->rawInput, "go searchmoves")) {
-		searchAgent->setSearchMode(SearchAgent::SEARCH_MOVES);
-		// TODO implement SEARCH MOVES mode
 	} else if (containsString(this->rawInput, "go ponder")) {
 		searchAgent->setSearchMode(SearchAgent::SEARCH_INFINITE);
-	} else {
-		// in case of invalid parameters
-		searchAgent->setSearchMode(SearchAgent::SEARCH_DEPTH);
-		searchAgent->setDepth(1);
+	}
+	if (containsString(this->rawInput, "movestogo ")) {
+		searchAgent->setMovesToGo(toInt(getMiddleString(this->rawInput,"movestogo ")));
+	}
+	if (containsString(this->rawInput, "searchmoves ")) {
+		searchAgent->setSearchMoves(getMiddleString(this->rawInput,"searchmoves "));
+	}
+	if (containsString(this->rawInput, "nodes ")) {
+		searchAgent->setSearchNodes(toLong(getMiddleString(this->rawInput,"nodes ")));
 	}
 	searchAgent->setPonder(containsString(this->rawInput, " ponder"));
 	searchAgent->startSearch();
@@ -231,10 +230,10 @@ void Uci::executePosition() {
 	} else if (containsString(this->rawInput,"position fen ")) {
 		std::string startPosMoves = getMiddleString(this->rawInput,"position fen ");
 		searchAgent->setPositionFromFEN(startPosMoves);
-		 if (containsString(this->rawInput," moves ")) {
-			 startPosMoves = getMiddleString(this->rawInput," moves ");
-			 searchAgent->setPositionFromSAN(startPosMoves,false);
-		 }
+		if (containsString(this->rawInput," moves ")) {
+			startPosMoves = getMiddleString(this->rawInput," moves ");
+			searchAgent->setPositionFromSAN(startPosMoves,false);
+		}
 	}
 }
 // execute position uci command

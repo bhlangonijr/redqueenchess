@@ -73,11 +73,12 @@ class SearchAgent {
 public:
 
 	enum SearchMode {
-		SEARCH_TIME, SEARCH_DEPTH, SEARCH_MOVESTOGO, SEARCH_MOVETIME, SEARCH_MOVES, SEARCH_INFINITE
+		SEARCH_TIME, SEARCH_DEPTH, SEARCH_MOVESTOGO, SEARCH_MOVETIME, SEARCH_MOVES, SEARCH_INFINITE, SEARCH_NODES
 	};
 
 	static SearchAgent* getInstance();
 	void newGame();
+	void clearParameters();
 	const Board getBoard() const;
 	void setBoard(Board _board);
 
@@ -209,6 +210,22 @@ public:
 		movesToGo = _movesToGo;
 	}
 
+	inline const int64_t getSearchNodes() const {
+		return searchNodes;
+	}
+
+	inline void setSearchNodes(int64_t _searchNodes) {
+		searchNodes = _searchNodes;
+	}
+
+	inline const std::string getSearchMoves() const {
+		return searchMoves;
+	}
+
+	inline void setSearchMoves(std::string moves) {
+		searchMoves = moves;
+	}
+
 	inline const int64_t getMoveTime() const {
 		return moveTime;
 	}
@@ -266,7 +283,7 @@ public:
 					(allowNullMove || !(hashData.flag() & TranspositionTable::NODE_NULL)) &&
 					(hashData.depth()>=depth) &&
 					(((hashData.flag() & TranspositionTable::LOWER) && hashData.value() >= beta) ||
-					((hashData.flag() & TranspositionTable::UPPER) && hashData.value() <= alpha));
+							((hashData.flag() & TranspositionTable::UPPER) && hashData.value() <= alpha));
 		} else {
 			okToPrune = false;
 		}
@@ -396,6 +413,8 @@ private:
 	int64_t blackIncrement;
 	int depth;
 	int movesToGo;
+	int64_t searchNodes;
+	std::string searchMoves;
 	int64_t moveTime;
 	bool ponder;
 	TranspositionTable* transTable;

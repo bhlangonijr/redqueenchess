@@ -44,7 +44,7 @@ SearchAgent* SearchAgent::getInstance () {
 
 SearchAgent::SearchAgent() : searchMode(SEARCH_TIME), searchInProgress(false), requestStop(false), quit(false),
 		hashSize(defaultHashSize),	threadNumber(1), whiteTime(0), whiteIncrement(0), blackTime(0),
-		blackIncrement(0), depth(defaultDepth), movesToGo(0), moveTime(0), ponder(false),
+		blackIncrement(0), depth(defaultDepth), movesToGo(0), searchNodes(0), searchMoves("none"), moveTime(0), ponder(false),
 		freeThreads(0), threadShouldWait(false) {
 	memset(mainSearcher,0,sizeof(SimplePVSearch*)*maxThreads);
 	// creates initial hashtables
@@ -56,15 +56,20 @@ void SearchAgent::newGame() {
 	board.setInitialPosition();
 	clearHash();
 	setSearchMode(SEARCH_TIME);
+	getSearcher(MAIN_THREAD)->cleanUp();
+}
+
+void SearchAgent::clearParameters() {
 	setWhiteTime(0);
 	setWhiteIncrement(0);
 	setBlackTime(0);
 	setBlackIncrement(0);
 	setDepth(defaultDepth);
 	setMovesToGo(0);
+	setSearchNodes(0);
+	setSearchMoves("none");
 	setMoveTime(0);
 	setPonder(false);
-	getSearcher(MAIN_THREAD)->cleanUp();
 }
 
 // get board
