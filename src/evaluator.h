@@ -46,6 +46,7 @@ const int DONE_CASTLE_BONUS=       		 MS(+20,-1);
 const int CONNECTED_PAWN_BONUS =   		 MS(+5,-1);
 const int BISHOP_PAIR_BONUS = 	   		 MS(+30,+45);
 const int UNSTOPPABLE_PAWN_BONUS = 		 MS(+800,+800);
+const int UNSTOPPABLE_CANDIDATE_BONUS =	 MS(+250,+250);
 const int ROOK_ON_7TH_RANK_BONUS = 		 MS(+15,+25);
 const int ROOK_ON_OPEN_FILE_BONUS = 	 MS(+17,+17);
 const int ROOK_ON_HALF_OPEN_FILE_BONUS = MS(+10,+10);
@@ -451,6 +452,13 @@ public:
 		memset(pawnInfo, 0, pawnHashSize * sizeof(PawnInfo));
 	}
 
+	inline void setUnstoppableBonus(const PieceColor color, EvalInfo& evalInfo) {
+		if (evalInfo.bestUnstoppable[evalInfo.board.flipSide(color)]-
+				evalInfo.bestUnstoppable[color]>=2) {
+			evalInfo.evalPawns[color]+=UNSTOPPABLE_PAWN_BONUS;
+		}
+	}
+
 private:
 	Bitboard getLeastValuablePiece(Board& board, Bitboard attackers,
 			PieceColor& color, PieceTypeByColor& piece);
@@ -470,11 +478,12 @@ inline const bool Evaluator::isPawnPassed(Board& board, const Square from) {
 // verify if pawn is unstoppable
 inline const bool Evaluator::isPawnUnstoppable(Board& board, const PieceColor color,
 		const Square from, const bool otherHasNoMajorPieces) {
-	return verifyUnstoppablePawn(board,color,from,otherHasNoMajorPieces)>-1;
+	return verifyUnstoppablePawn(board,color,from,otherHasNoMajorPieces)<100;
 }
 // verify if pawn is unstoppable
 inline const int Evaluator::verifyUnstoppablePawn(Board& board, const PieceColor color,
 		const Square from, const bool otherHasNoMajorPieces) {
+	int dist=100;
 	if (otherHasNoMajorPieces) {
 		const PieceColor other = board.flipSide(color);
 		const Rank rank = color==WHITE?RANK_8:RANK_1;
@@ -483,11 +492,11 @@ inline const int Evaluator::verifyUnstoppablePawn(Board& board, const PieceColor
 		const int delta2 = squareDistance(board.getKingSquare(other),target);
 		const int otherMove=(board.getSideToMove()==other?1:0);
 		const int inPath = bitCount15(frontSquares[color][from]&board.getPieces(color));
-		if (std::min(5,delta1)+inPath<delta2-otherMove) {
-			return delta1;
+		if (std::min(5,delta1+inPath)<delta2-otherMove) {
+			dist = delta1+inPath+otherMove;
 		}
 	}
-	return -1;
+	return dist;
 }
 // static exchange evaluation
 template <bool lazySee>

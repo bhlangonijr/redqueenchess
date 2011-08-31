@@ -249,3 +249,17 @@ go infinite
 setoption name Threads value 1
 test bench
 
+;unstoppable pawns
+;draw
+position fen 8/8/8/8/P5p1/8/K5k1/8 b - - 0 1
+test eval
+
+;black wins
+position fen 8/7k/8/8/P5p1/8/K7/8 b - - 0 1
+test eval
+
+position fen 8/8/1P6/8/P5p1/8/K5k1/8 b - - 0 1
+test eval
+;white wins
+
+

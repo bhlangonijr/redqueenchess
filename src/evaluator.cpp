@@ -61,6 +61,8 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 			evalPawns(evalInfo.side, evalInfo);
 			evalPawns(evalInfo.other, evalInfo);
 		}
+		setUnstoppableBonus(evalInfo.side, evalInfo);
+		setUnstoppableBonus(evalInfo.other, evalInfo);
 		evalInfo.computeEval();
 	}
 	doNotLazyEval = evalInfo.getEval() > alpha-lazyEvalMargin && evalInfo.getEval() < beta+lazyEvalMargin;
@@ -213,10 +215,6 @@ void Evaluator::evalPawnsFromCache(PieceColor color, PawnInfo& info, EvalInfo& e
 					isChained,otherHasOnlyPawns);
 			from = extractLSB(passed);
 		}
-		if (evalInfo.bestUnstoppable[other]-evalInfo.bestUnstoppable[color]>=
-				2-(evalInfo.board.getSideToMove()==color?0:1)) {
-			evalInfo.evalPawns[color]+=UNSTOPPABLE_PAWN_BONUS;
-		}
 	}
 }
 // pawns eval function
@@ -248,7 +246,6 @@ void Evaluator::evalPawns(PieceColor color, EvalInfo& evalInfo) {
 			const bool halfOpenFile = !(fileBB[squareFile[from]]&otherPawns);
 			bool isBackward = false;
 			closedfiles|=fileBB[squareFile[from]];
-			eval += pawnWeight[color][squareFile[from]];
 			if (isDoubled) {
 				eval += DOUBLED_PAWN_PENALTY;
 			}
@@ -291,10 +288,6 @@ void Evaluator::evalPawns(PieceColor color, EvalInfo& evalInfo) {
 	setPawnInfo(board.getPawnKey(),eval,color,passers,~closedfiles);
 	evalInfo.openfiles[color]=~closedfiles;
 	evalInfo.evalPawns[color] += eval+passedBonus;
-	if (evalInfo.bestUnstoppable[other]-evalInfo.bestUnstoppable[color]>=
-			2-(board.getSideToMove()==color?0:1)) {
-		evalInfo.evalPawns[color]+=UNSTOPPABLE_PAWN_BONUS;
-	}
 }
 // Eval passed pawns
 const int Evaluator::evalPassedPawn(EvalInfo& evalInfo, PieceColor color,
@@ -308,9 +301,11 @@ const int Evaluator::evalPassedPawn(EvalInfo& evalInfo, PieceColor color,
 	} else {
 		eval += passedPawnBonus[color][squareRank[from]];
 	}
+	eval += pawnWeight[color][squareFile[from]];
 	const int dist = verifyUnstoppablePawn(board, color, from, otherHasOnlyPawns);
-	if (dist>-1) {
-		evalInfo.bestUnstoppable[color]=std::min(evalInfo.bestUnstoppable[color],dist);
+	if (dist<evalInfo.bestUnstoppable[color]) {
+		evalInfo.bestUnstoppable[color]=dist;
+		eval += UNSTOPPABLE_CANDIDATE_BONUS;
 	}
 	const Rank r = color==WHITE?squareRank[from+8]:squareRank[from-8];
 	const Square next = board.makeSquare(r,squareFile[from]);
