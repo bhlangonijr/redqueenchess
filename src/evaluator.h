@@ -45,15 +45,15 @@ const int BACKWARD_OPEN_PAWN_PENALTY =   MS(-17,-13);
 const int DONE_CASTLE_BONUS=       		 MS(+20,-1);
 const int CONNECTED_PAWN_BONUS =   		 MS(+5,-1);
 const int BISHOP_PAIR_BONUS = 	   		 MS(+30,+45);
-const int UNSTOPPABLE_PAWN_BONUS = 		 MS(+800,+1000);
+const int UNSTOPPABLE_PAWN_BONUS = 		 MS(+800,+800);
 const int ROOK_ON_7TH_RANK_BONUS = 		 MS(+15,+25);
 const int ROOK_ON_OPEN_FILE_BONUS = 	 MS(+17,+17);
 const int ROOK_ON_HALF_OPEN_FILE_BONUS = MS(+10,+10);
 const int QUEEN_ON_7TH_RANK_BONUS = 	 MS(+10,+15);
 const int PASSER_AND_KING_BONUS = 		 MS(+0,+5);
 const int PAWN_END_GAME_BONUS = 		 MS(+0,+15);
-const int TRADE_PAWN_PENALTY =           MS(-3,-4);
-const int TRADE_PIECE_PENALTY =          MS(-2,-4);
+const int TRADE_PAWN_PENALTY =           MS(-4,-6);
+const int TRADE_PIECE_PENALTY =          MS(-3,-5);
 const int QUEEN_CHECK_BONUS =  	 		 MS(+10,+15);
 const int ROOK_CHECK_BONUS =  	 		 MS(+6,+11);
 const int INDIRECT_QUEEN_CHECK_BONUS =	 MS(+3,+6);
@@ -62,7 +62,7 @@ const int INDIRECT_KNIGHT_CHECK_BONUS =	 MS(+1,+2);
 const int INDIRECT_BISHOP_CHECK_BONUS =  MS(+1,+2);
 const int SHELTER_BONUS				  =  MS(+2,+0);
 const int SHELTER_OPEN_FILE_PENALTY   =  MS(-9,-0);
-const int TEMPO_BONUS				  =  MS(+13,+5);
+const int TEMPO_BONUS				  =  MS(+10,+10);
 
 const int knightMobility[9] = {
 		-4*MS(+8,+4),-2*MS(+8,+4),+0*MS(+8,+4),+1*MS(+8,+4),+2*MS(+8,+4),
@@ -286,7 +286,7 @@ public:
 				imbalance[i]=0;
 				attacks[i]=0;
 				openfiles[i]=0;
-				bestUnstoppable[i]=7;
+				bestUnstoppable[i]=100;
 			}
 			for(i=0;i<ALL_PIECE_TYPE_BY_COLOR;i++) {
 				attackers[i]=EMPTY_BB;
@@ -482,7 +482,8 @@ inline const int Evaluator::verifyUnstoppablePawn(Board& board, const PieceColor
 		const int delta1 = squareDistance(from,target);
 		const int delta2 = squareDistance(board.getKingSquare(other),target);
 		const int otherMove=(board.getSideToMove()==other?1:0);
-		if (std::min(5,delta1)<delta2-otherMove) {
+		const int inPath = bitCount15(frontSquares[color][from]&board.getPieces(color));
+		if (std::min(5,delta1)+inPath<delta2-otherMove) {
 			return delta1;
 		}
 	}
