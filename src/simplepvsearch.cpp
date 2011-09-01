@@ -223,6 +223,10 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 			}
 		}
 		board.undoMove(backup);
+		if (stop(si)) {
+			return 0;
+		}
+		this->nodes++;
 		nodes = this->nodes-nodes;
 		updateRootMovesScore(nodes);
 		if(score>=beta) {
@@ -335,7 +339,6 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 		MoveBackup backup;
 		board.doMove(move,backup);
 		moveCounter++;
-		nodes++;
 		const bool givingCheck = board.setInCheck(board.getSideToMove());
 		const bool passedPawnPush = isPawnPush(board,move.to);
 		const bool pawnOn7thRank = move.promotionPiece!=EMPTY;
@@ -375,6 +378,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 		if (stop(si)) {
 			return 0;
 		}
+		nodes++;
 		if (score>=si.beta) {
 			bestScore=score;
 			bestMove=move;
@@ -564,7 +568,6 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		MoveBackup backup;
 		board.doMove(move,backup);
 		moveCounter++;
-		nodes++;
 		const bool givingCheck = board.setInCheck(board.getSideToMove());
 		const bool passedPawnPush = isPawnPush(board,move.to);
 		const bool pawnOn7thRank = move.promotionPiece!=EMPTY;
@@ -617,6 +620,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		if (stop(si)) {
 			return 0;
 		}
+		nodes++;
 		if (score>=si.beta) {
 			bestScore=score;
 			bestMove=move;
@@ -724,7 +728,6 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 		const bool allowFutility = !isKingAttacked && !(si.nodeType==PV_NODE) &&
 				!isHashMove && !pawnOn7thRank;
 		moveCounter++;
-		nodes++;
 		if (move.promotionPiece==makePiece(sideToMove,ROOK) ||
 				move.promotionPiece==makePiece(sideToMove,BISHOP)	) {
 			continue;
@@ -763,6 +766,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 		if (stop(si)) {
 			return 0;
 		}
+		nodes++;
 		if( score >= si.beta ) {
 			const TranspositionTable::NodeFlag flag = currentScore!=-maxScore && !isLazyEval?
 					TranspositionTable::LOWER_EVAL:TranspositionTable::LOWER;
@@ -794,8 +798,11 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 }
 
 const bool SimplePVSearch::stop(SearchInfo& info) {
-	if (timeIsUp() || agent->shouldStop() ||
-			(agent->getSearchNodes()>0 && nodes >= agent->getSearchNodes())) {
+	if ((agent->getSearchNodes()>0 &&
+			agent->getSearcher(MAIN_THREAD)->getSearchedNodes() >= agent->getSearchNodes())) {
+		return true;
+	}
+	if (timeIsUp() || agent->shouldStop()) {
 		return true;
 	}
 	return info.splitPoint!=NULL && info.splitPoint->shouldStop;
