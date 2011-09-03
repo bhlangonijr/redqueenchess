@@ -276,7 +276,10 @@ public:
 				other(board.flipSide(side)),
 				all(board.getAllPieces()),
 				eval(0),
-				drawFlag(false) {
+				positionalWeight(100),
+				tacticalWeight(100),
+				drawFlag(false),
+				weightedEval(false){
 			int i=0;
 			pawns[WHITE] = board.getPieces(makePiece(WHITE,PAWN));
 			pawns[BLACK] = board.getPieces(makePiece(BLACK,PAWN));
@@ -312,10 +315,13 @@ public:
 		int imbalance[ALL_PIECE_COLOR];
 		int bestUnstoppable[ALL_PIECE_COLOR];
 		int eval;
+		int positionalWeight;
+		int tacticalWeight;
 		bool drawFlag;
+		bool weightedEval;
 
 		inline const int getScore() {
-			return (!drawFlag?(evalPieces[side]-evalPieces[other]) +
+			const int score=(!drawFlag?(evalPieces[side]-evalPieces[other]) +
 					(evalPawns[side]-evalPawns[other]) +
 					(mobility[side]-mobility[other]) +
 					(pieceThreat[side]-pieceThreat[other]) +
@@ -323,6 +329,28 @@ public:
 					(board.getPieceSquareValue(side)-
 					board.getPieceSquareValue(other)):0)+
 					(imbalance[side]-imbalance[other]);
+			return interpolate(score,board.getGamePhase())+
+								(board.getMaterial(side)-board.getMaterial(other));
+		}
+
+		inline const int getTacticalScore() {
+			return (board.getMaterial(side)-board.getMaterial(other))+
+					interpolate((imbalance[side]-imbalance[other]),
+							board.getGamePhase());
+		}
+
+		inline const int getPositionalScore() {
+			if (drawFlag) {
+				return 0;
+			}
+			return interpolate((evalPieces[side]-evalPieces[other]) +
+					(evalPawns[side]-evalPawns[other]) +
+					(mobility[side]-mobility[other]) +
+					(pieceThreat[side]-pieceThreat[other]) +
+					(kingThreat[side]-kingThreat[other]) +
+					(board.getPieceSquareValue(side)-
+					board.getPieceSquareValue(other)),
+							board.getGamePhase());
 		}
 
 		inline const int getEval() {
@@ -330,8 +358,12 @@ public:
 		}
 
 		inline void computeEval() {
-			eval = interpolate(getScore(),board.getGamePhase())+
-					(board.getMaterial(side)-board.getMaterial(other));
+			if (weightedEval) {
+				eval += getTacticalScore()*tacticalWeight/100;
+				eval += getPositionalScore()*positionalWeight/100;
+			} else {
+				eval = getScore();
+			}
 			normalize();
 		}
 
@@ -341,6 +373,12 @@ public:
 			} else if (eval<-maxScore) {
 				eval=-maxScore;
 			}
+		}
+
+		inline void setWeigthedEval(const int tactical, const int positional) {
+			positionalWeight=positional;
+			tacticalWeight=tactical;
+			weightedEval=!(positional==100&&tactical==100);
 		}
 
 		inline std::string toString() {
@@ -416,6 +454,22 @@ public:
 		this->lazyEval = _lazyEval;
 	}
 
+	inline const int getPositionalWeight() const {
+		return positionalWeight;
+	}
+
+	inline void setPositionalWeight(const int positional) {
+		positionalWeight=positional;
+	}
+
+	inline const int getTacticalWeight() const {
+		return tacticalWeight;
+	}
+
+	inline void setTacticalWeight(const int tactical) {
+		tacticalWeight=tactical;
+	}
+
 	inline const static int interpolate(const int value, const int gamePhase) {
 		const int mgValue = upperScore(value);
 		const int egValue = lowerScore(value);
@@ -468,6 +522,9 @@ private:
 	PawnInfo pawnInfo[pawnHashSize];
 	bool debug;
 	bool lazyEval;
+	int positionalWeight;
+	int tacticalWeight;
+
 };
 
 // verify if pawn is passer

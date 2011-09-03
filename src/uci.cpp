@@ -172,20 +172,26 @@ void Uci::executeSetOption() {
 	} catch (std::exception &e) {
 		std::cout << "Exception(Uci.cpp): " << e.what() << std::endl;
 	}
-	// Handle button command Clear Hash
+
 	if (optionName=="Clear Hash") {
 		SearchAgent::getInstance()->clearHash();
-	}
-	// Handle Thread Number
-	if (optionName=="Threads") {
+	} else if (optionName=="Threads") {
 		SearchAgent::getInstance()->setThreadNumber(toInt(this->getUciOption("Threads").getValue()));
 		SearchAgent::getInstance()->initializeThreadPool(SearchAgent::getInstance()->getThreadNumber());
-	}
-	// Handle Hash Size
-	if (optionName=="Hash") {
+	} else if (optionName=="Hash") {
 		SearchAgent::getInstance()->setHashSize(toInt(this->getUciOption("Hash").getValue()));
 		SearchAgent::getInstance()->destroyHash();
 		SearchAgent::getInstance()->createHash();
+	} else if (optionName=="Positional_Evaluation_Weight") {
+		for(int i=0;i<SearchAgent::getInstance()->getThreadPoolSize();i++) {
+			SearchAgent::getInstance()->getSearcher(i)->getEvaluator().
+					setPositionalWeight(toInt(this->getUciOption("Positional_Evaluation_Weight").getValue()));
+		}
+	} else if (optionName=="Tactical_Evaluation_Weight") {
+		for(int i=0;i<SearchAgent::getInstance()->getThreadPoolSize();i++) {
+			SearchAgent::getInstance()->getSearcher(i)->getEvaluator().
+					setTacticalWeight(toInt(this->getUciOption("Tactical_Evaluation_Weight").getValue()));
+		}
 	}
 }
 // execute go uci command

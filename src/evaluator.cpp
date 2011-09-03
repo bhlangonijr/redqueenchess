@@ -26,7 +26,8 @@
 
 #include "evaluator.h"
 
-Evaluator::Evaluator() : debug(false), lazyEval(false) {
+Evaluator::Evaluator() : debug(false), lazyEval(false),
+positionalWeight(100), tacticalWeight(100) {
 	cleanPawnInfo();
 }
 
@@ -37,6 +38,7 @@ Evaluator::~Evaluator() {
 const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 	EvalInfo evalInfo(board);
 	setLazyEval(true);
+	evalInfo.setWeigthedEval(getTacticalWeight(),getPositionalWeight());
 	evalImbalances(evalInfo);
 	evalInfo.computeEval();
 	if (evalInfo.drawFlag) {

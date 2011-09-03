@@ -56,6 +56,8 @@ int main(int argc, char* argv[]) {
 	options.push_back(new UciOption("Hash",UciOption::SPIN,"128","128",1,4096,""));
 	options.push_back(new UciOption("Threads",UciOption::SPIN,paramNumProcs,paramNumProcs,1,16,""));
 	options.push_back(new UciOption("Ponder",UciOption::CHECK,"true","true"));
+	options.push_back(new UciOption("Positional_Evaluation_Weight",UciOption::SPIN,"100","100",1,200,""));
+	options.push_back(new UciOption("Tactical_Evaluation_Weight",UciOption::SPIN,"100","100",1,200,""));
 	options.push_back(new UciOption("Clear Hash",UciOption::BUTTON,"",""));
 	// set options into uci handler
 	uci->setUciOption(options);

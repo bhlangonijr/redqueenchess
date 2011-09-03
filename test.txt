@@ -263,3 +263,12 @@ test eval
 ;white wins
 
 
+setoption name Threads value 1
+setoption name Positional_Evaluation_Weight value 200
+setoption name Tactical_Evaluation_Weight value 1
+go depth 20
+
+setoption name Threads value 1
+setoption name Positional_Evaluation_Weight 100
+setoption name Tactical_Evaluation_Weight 100
+
