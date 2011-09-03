@@ -55,6 +55,9 @@ const int PASSER_AND_KING_BONUS = 		 MS(+0,+5);
 const int PAWN_END_GAME_BONUS = 		 MS(+0,+15);
 const int TRADE_PAWN_PENALTY =           MS(-4,-6);
 const int TRADE_PIECE_PENALTY =          MS(-3,-5);
+const int TRADE_PAWN_BONUS =             MS(+1,+2);
+const int TRADE_PIECE_BONUS =          	 MS(+2,+2);
+
 const int QUEEN_CHECK_BONUS =  	 		 MS(+10,+15);
 const int ROOK_CHECK_BONUS =  	 		 MS(+6,+11);
 const int INDIRECT_QUEEN_CHECK_BONUS =	 MS(+3,+6);

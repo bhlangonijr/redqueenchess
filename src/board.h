@@ -275,6 +275,7 @@ public:
 	const Bitboard getPieces(const PieceTypeByColor piece) const;
 	const Bitboard getPieces(const PieceColor color, const PieceType pieceType) const;
 	const PieceTypeByColor getPiece(const Square square) const;
+	const int getPieceCount(const PieceColor color, const PieceType pieceType) const;
 	const int getPieceCount(const PieceTypeByColor piece) const;
 	const int getPieceCount(const PieceColor color ) const;
 	const int getMaterial(const PieceColor color) const;
@@ -750,6 +751,11 @@ inline const Bitboard Board::getPieces(const PieceColor color, const PieceType p
 // get pieces by square
 inline const PieceTypeByColor Board::getPiece(const Square square) const {
 	return currentBoard.square[square];
+}
+
+// get piece count by type
+inline const int Board::getPieceCount(const PieceColor color, const PieceType pieceType) const {
+	return currentBoard.pieceCount[makePiece(color,pieceType)];
 }
 
 // get piece count by type

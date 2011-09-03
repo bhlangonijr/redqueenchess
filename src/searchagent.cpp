@@ -291,7 +291,8 @@ void SearchAgent::smpPVSearch(Board board, SimplePVSearch* master,
 				board.undoMove(backup);
 				continue;
 			}
-			const int futilityScore = *sp->currentScore + ss->getFutilityMargin(sp->depth, *sp->moveCounter);
+			const int futilityScore = *sp->currentScore +
+					ss->getFutilityMargin(sp->depth, *sp->moveCounter);
 			master->lock();
 			if (futilityScore < sp->beta) {
 				if (futilityScore>*sp->bestScore) {
@@ -343,12 +344,6 @@ void SearchAgent::smpPVSearch(Board board, SimplePVSearch* master,
 				*sp->bestScore=score;
 				*sp->bestMove=move;
 				sp->shouldStop=true;
-				updateHistory(board,*sp->bestMove,sp->depth);
-				master->updateKillers(board,*sp->bestMove,sp->ply);
-				TranspositionTable::NodeFlag flag = *sp->currentScore!=-maxScore?
-						TranspositionTable::LOWER_EVAL:TranspositionTable::LOWER ;
-				hashPut(board.getKey(),*sp->bestScore,*sp->currentScore,
-						sp->depth,sp->ply,flag,*sp->bestMove);
 				master->unlock();
 				return;
 			}

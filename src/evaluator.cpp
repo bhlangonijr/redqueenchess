@@ -459,22 +459,27 @@ void Evaluator::evalImbalances(EvalInfo& evalInfo) {
 			board.getMaterial(evalInfo.other);
 	const PieceColor color = balance>=0?evalInfo.side:evalInfo.other;
 	const PieceColor other = board.flipSide(color);
-	const int sidePawnCount = board.getPieceCount(makePiece(color,PAWN));
-	const int otherPawnCount = board.getPieceCount(makePiece(other,PAWN));
+	const int sidePawnCount = board.getPieceCount(color,PAWN);
+	const int otherPawnCount = board.getPieceCount(other,PAWN);
 	const int pawnCount = sidePawnCount + otherPawnCount;
 	const Bitboard otherKing = board.getPieces(other,KING);
 	const int pawnDiff = sidePawnCount-otherPawnCount;
 	const int totalPieceCount = board.getPieceCount(color)+
 			board.getPieceCount(other);
-	const int sideMinors = board.getPieceCount(makePiece(color,BISHOP))+
-			board.getPieceCount(makePiece(color,KNIGHT));
-	const int otherMinors = board.getPieceCount(makePiece(other,BISHOP))+
-			board.getPieceCount(makePiece(other,KNIGHT));
-	const int sideMajors = board.getPieceCount(makePiece(color,ROOK))+
-			board.getPieceCount(makePiece(color,QUEEN));
-	const int otherMajors = board.getPieceCount(makePiece(other,ROOK))+
-			board.getPieceCount(makePiece(other,QUEEN));
-
+	const int sideMinors = board.getPieceCount(color,BISHOP)+
+			board.getPieceCount(color,KNIGHT);
+	const int otherMinors = board.getPieceCount(other,BISHOP)+
+			board.getPieceCount(other,KNIGHT);
+	const int sideMajors = board.getPieceCount(color,ROOK)+
+			board.getPieceCount(color,QUEEN);
+	const int otherMajors = board.getPieceCount(other,ROOK)+
+			board.getPieceCount(other,QUEEN);
+	const Bitboard sideBishop = board.getPieces(color,BISHOP);
+	const Bitboard otherBishop = board.getPieces(other,BISHOP);
+	const bool hasLightBishop = sideBishop&WHITE_SQUARES;
+	const bool hasDarkBishop = sideBishop&BLACK_SQUARES;
+	const bool otherHasLightBishop = otherBishop&WHITE_SQUARES;
+	const bool otherHasDarkBishop = otherBishop&BLACK_SQUARES;
 	const int minors = sideMinors + otherMinors;
 	const int majors = sideMajors + otherMajors;
 
@@ -513,7 +518,7 @@ void Evaluator::evalImbalances(EvalInfo& evalInfo) {
 					drawishness=90;
 				}
 			}
-		} else if (majors==0 && majors<=2 && pawnCount<=2) {
+		} else if (majors==0 && minors<=2 && pawnCount<=5) {
 			const Bitboard sidePawns = board.getPieces(color,PAWN);
 			const Bitboard otherPawns = board.getPieces(other,PAWN);
 			const bool pawnOnAFile = sidePawns & fileBB[FILE_A];
@@ -522,10 +527,10 @@ void Evaluator::evalImbalances(EvalInfo& evalInfo) {
 					otherPawnCount<=1 && !board.getPieces(color,KNIGHT)) {
 				if (pawnOnAFile || pawnOnHFile) {
 					const bool wrongBishop = color==WHITE?
-							(pawnOnHFile && (board.getPieces(color,BISHOP)&WHITE_SQUARES)) ||
-							(pawnOnAFile && (board.getPieces(color,BISHOP)&BLACK_SQUARES)):
-							(pawnOnHFile && (board.getPieces(color,BISHOP)&BLACK_SQUARES)) ||
-							(pawnOnAFile && (board.getPieces(color,BISHOP)&WHITE_SQUARES));
+							(pawnOnHFile && hasLightBishop) ||
+							(pawnOnAFile && hasDarkBishop):
+							(pawnOnHFile && hasDarkBishop) ||
+							(pawnOnAFile && hasLightBishop);
 					if ((otherPawnCount==0 && pawnOnAFile && wrongBishop &&
 							(otherKing & kingFileACorner[other])) ||
 							(pawnOnHFile && wrongBishop &&
@@ -541,10 +546,18 @@ void Evaluator::evalImbalances(EvalInfo& evalInfo) {
 				}
 			} else if (minors == 2 && sideMinors==1 && otherMinors==1 &&
 					sidePawnCount==1 && otherPawnCount==0) {
-				drawishness=40;
+				if ((hasLightBishop && otherHasLightBishop) ||
+						(hasDarkBishop && otherHasDarkBishop) ) {
+					drawishness=40;
+				} else {
+					drawishness=80;
+				}
 			} else if (minors == 1 && sideMinors==1 &&
 					sidePawnCount==0 && otherPawnCount==1) {
 				drawishness=90;
+			} else if (minors == 1 && sideMinors==1 &&
+					sidePawnCount==0 && otherPawnCount>=2) {
+				drawishness=100+30*otherPawnCount;
 			} else if (minors==0 && sidePawnCount==1 &&	otherPawnCount==0) {
 				const Square pawnSquare = bitboardToSquare(board.getPieces(color,PAWN));
 				if (pawnSquare!=NONE && (passedMask[color][board.getKingSquare(color)]&
@@ -562,19 +575,19 @@ void Evaluator::evalImbalances(EvalInfo& evalInfo) {
 		} else if (pawnDiff<0) {
 			evalInfo.imbalance[other] += (-pawnDiff)*PAWN_END_GAME_BONUS;
 		}
-		const bool hasLightBishop = board.getPieces(color,BISHOP) & WHITE_SQUARES;
-		const bool hasBlackBishop = board.getPieces(color,BISHOP) & BLACK_SQUARES;
-		if (hasLightBishop && hasBlackBishop) {
+		if (hasLightBishop && hasDarkBishop) {
 			evalInfo.imbalance[color] += BISHOP_PAIR_BONUS;
 		}
-		const bool otherHasLightBishop = board.getPieces(other,BISHOP) & WHITE_SQUARES;
-		const bool otherHasBlackBishop = board.getPieces(other,BISHOP) & BLACK_SQUARES;
-		if (otherHasLightBishop && otherHasBlackBishop) {
+		if (otherHasLightBishop && otherHasDarkBishop) {
 			evalInfo.imbalance[other] += BISHOP_PAIR_BONUS;
 		}
 		if (balance!=0) {
 			evalInfo.imbalance[color] += (8-sidePawnCount)*TRADE_PAWN_PENALTY;
 			evalInfo.imbalance[other] += (7-otherMinors-otherMajors)*TRADE_PIECE_PENALTY;
+
+			evalInfo.imbalance[other] += (pawnCount)*TRADE_PAWN_BONUS;
+			evalInfo.imbalance[color] += (minors+majors)*TRADE_PIECE_BONUS;
+
 		}
 		if (color==board.getSideToMove()) {
 			evalInfo.imbalance[color] += TEMPO_BONUS;

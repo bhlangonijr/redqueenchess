@@ -86,9 +86,11 @@ int SimplePVSearch::idSearch(Board& board) {
 			score = rootSearch(board, rootSearchInfo, pv);
 			iterationScore[depth]=score;
 			updateHashWithPv(board,pv);
-			uciOutput(pv, score, getTickCount()-startTime,
-					agent->hashFull(), rootSearchInfo.depth, maxPlySearched,
-					rootSearchInfo.alpha, rootSearchInfo.beta);
+			if (!stop(rootSearchInfo)) {
+				uciOutput(pv, score, getTickCount()-startTime,
+						agent->hashFull(), rootSearchInfo.depth, maxPlySearched,
+						rootSearchInfo.alpha, rootSearchInfo.beta);
+			}
 
 			const bool fail = score <= rootSearchInfo.alpha ||
 					score >= rootSearchInfo.beta;
