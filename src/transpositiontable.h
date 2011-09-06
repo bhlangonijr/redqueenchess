@@ -212,15 +212,18 @@ inline bool TranspositionTable::hashPut(const HashKey key, const int value, cons
 			}
 			replace=entry;
 			break;
-		} else if (x==0) {
-			continue;
 		}
-		const int b1 = entry->_generation==generation;
-		const int b2 = replace->_generation==generation;
-		const int b3 = replace->_depth>entry->_depth;
-		if ((!b1 && b2) || (!(b1 ^ b2) && b3)) {
+		if ((entry->generation()<replace->generation()) ||
+				(entry->generation()==replace->generation() &&
+				replace->depth()>entry->depth())) {
 			replace=entry;
 		}
+/*		const int b1 = entry->generation()==generation;
+		const int b2 = replace->generation()==generation;
+		const int b3 = replace->depth()>entry->depth();
+		if ((!b1 && b2) || (!(b1 ^ b2) && b3)) {
+			replace=entry;
+		}*/
 	}
 	replace->update(key,value,evalValue,depth,flag,move,generation);
 	writes++;
@@ -232,10 +235,10 @@ inline bool TranspositionTable::hashGet(const HashKey key, HashData& hashData) {
 	for (int x=0;x<BUCKET_SIZE;x++,entry++) {
 		if (entry->key==key) {
 			hashData.key=entry->key;
-			hashData._value= entry->_value;
-			hashData._evalValue= entry->_evalValue;
-			hashData._depth=entry->_depth;
-			hashData._flag=entry->_flag;
+			hashData._value= entry->value();
+			hashData._evalValue= entry->evalValue();
+			hashData._depth=entry->depth();
+			hashData._flag=entry->flag();
 			hashData._from=entry->_from;
 			hashData._to=entry->_to;
 			hashData._promotion=entry->_promotion;
