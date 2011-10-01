@@ -250,7 +250,7 @@ public:
 
 	inline bool hashPut(const Key _key, int value, int evalValue, const int depth, const int ply,
 			const TranspositionTable::NodeFlag flag, MoveIterator::Move move) {
-		TranspositionTable::HashKey key=static_cast<TranspositionTable::HashKey>(_key>>32);
+		TranspositionTable::HashKey key=(TranspositionTable::HashKey)(_key>>32);
 		if (value >= maxScore-100) {
 			value -= ply;
 		} else if (value <= -maxScore+100) {
@@ -260,7 +260,7 @@ public:
 	}
 
 	inline bool hashGet(const Key _key, TranspositionTable::HashData& hashData, const int ply) {
-		TranspositionTable::HashKey key=static_cast<TranspositionTable::HashKey>(_key>>32);
+		TranspositionTable::HashKey key=(TranspositionTable::HashKey)(_key>>32);
 		bool result = transTable->hashGet(key, hashData);
 		if (result) {
 			int value = hashData.value();
@@ -269,8 +269,6 @@ public:
 			} else if (value <= -maxScore+100) {
 				hashData.setValue(value+ply);
 			}
-		} else {
-			hashData.clear();
 		}
 		return result;
 	}
@@ -279,11 +277,11 @@ public:
 			const int depth, const bool allowNullMove, const int alpha, const int beta) {
 		const bool result = hashGet(_key, hashData, ply);
 		if (result) {
-			okToPrune =
+			okToPrune = //(hashData.generation()>=transTable->getGeneration()-3) &&
 					(allowNullMove || !(hashData.flag() & TranspositionTable::NODE_NULL)) &&
 					(hashData.depth()>=depth) &&
 					(((hashData.flag() & TranspositionTable::LOWER) && hashData.value() >= beta) ||
-							((hashData.flag() & TranspositionTable::UPPER) && hashData.value() <= alpha));
+					((hashData.flag() & TranspositionTable::UPPER) && hashData.value() <= alpha));
 		} else {
 			okToPrune = false;
 		}
@@ -308,13 +306,13 @@ public:
 
 #if defined(_SC_NPROCESSORS_ONLN)
 	inline int getNumProcs() {
-		return std::min(static_cast<int>(sysconf( _SC_NPROCESSORS_ONLN )), maxThreads);
+		return std::min((int)(sysconf( _SC_NPROCESSORS_ONLN )), maxThreads);
 	}
 #else
 	inline int getNumProcs() {
 		SYSTEM_INFO sysinfo;
 		GetSystemInfo( &sysinfo );
-		return std::min(static_cast<int>(sysinfo.dwNumberOfProcessors), maxThreads);
+		return std::min((int)(sysinfo.dwNumberOfProcessors), maxThreads);
 	}
 #endif
 

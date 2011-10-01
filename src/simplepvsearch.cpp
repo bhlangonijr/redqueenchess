@@ -33,7 +33,19 @@ void SimplePVSearch::search(Board board) {
 	prepareToSearch();
 	setStartTime(getTickCount());
 	setTimeToStop();
+	Key k1 = board.getKey();
+	Key pk1 = board.getPawnKey();
 	searchScore = idSearch(board);
+	Key k2 = board.getKey();
+	Key pk2 = board.getPawnKey();
+	if (k1!=k2) {
+		std::cerr << "Error in zobrist hash keys!" << std::endl;
+		exit(1);
+	}
+	if (pk1!=pk2) {
+			std::cerr << "Error in zobrist pawn hash keys!" << std::endl;
+			exit(1);
+		}
 	time = getTickCount()-getStartTime();
 }
 
@@ -276,14 +288,14 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 	const int oldAlpha = si.alpha;
 	int score = -maxScore;
 	int currentScore = -maxScore;
-	TranspositionTable::HashData hashData;
-	MoveIterator::Move hashMove;
-	const Key key = si.partialSearch?board.getPartialSearchKey():board.getKey();
 	si.alpha = std::max(-maxScore+si.ply, si.alpha);
 	si.beta = std::min(maxScore-(si.ply+1), si.beta);
 	if (si.alpha>=si.beta) {
 		return si.alpha;
 	}
+	TranspositionTable::HashData hashData;
+	MoveIterator::Move hashMove;
+	const Key key = si.partialSearch?board.getPartialSearchKey():board.getKey();
 	//tt retrieve
 	bool hashOk = agent->hashGet(key, hashData, si.ply);
 	if (hashOk) {
@@ -675,7 +687,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 	const int oldAlpha=si.alpha;
 	// tt retrieve & prunning
 	const bool hashOk = agent->hashGet(okToPrune, key, hashData,
-			si.ply, si.depth, si.allowNullMove, si.alpha, si.beta);
+			si.ply, si.depth, false, si.alpha, si.beta);
 	if (hashOk) {
 		hashMove = hashData.move();
 		if (okToPrune && !(si.nodeType==PV_NODE)) {
@@ -899,9 +911,9 @@ void SimplePVSearch::initialize() {
 	for (int x=0;x<=maxSearchDepth;x++) {
 		moveCountMargin[x]=5 + x * x / 2;
 		for (int y=0;y<maxMoveCount;y++) {
-			reductionTablePV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/3.0);
-			reductionTableNonPV[x][y]=static_cast<int>(!(x&&y)?0.0:floor(log(x)*log(y))/2.0);
-			futilityMargin[x][y]=static_cast<int>(100.03 * exp(0.35*(double(x))+-double(y*x)*0.01)) +
+			reductionTablePV[x][y]=(int)(!(x&&y)?0.0:floor(log(x)*log(y))/3.0);
+			reductionTableNonPV[x][y]=(int)(!(x&&y)?0.0:floor(log(x)*log(y))/2.0);
+			futilityMargin[x][y]=(int)(100.03 * exp(0.35*(double(x))+-double(y*x)*0.01)) +
 					(x>1 ? 90.0 * exp(0.03*(double(x))): 0);
 
 		}

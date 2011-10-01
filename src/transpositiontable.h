@@ -80,21 +80,22 @@ public:
 					PieceTypeByColor(_promotion), MoveIterator::TT_MOVE);
 		}
 		inline int depth() {
-			return static_cast<int>(_depth);
+			return (int)(_depth);
 		}
 		inline int value() {
-			return static_cast<int>(_value);
+			return (int)(_value);
 		}
 		inline int evalValue() {
-			return static_cast<int>(_evalValue);
+			return (int)(_evalValue);
 		}
 		inline int generation() {
-			return static_cast<int>(_generation);
+			return (int)(_generation);
 		}
 		inline void setValue(int value) {
 			_value=int16_t(value);
 		}
 		inline void clear() {
+			key=0L;
 			_value=-maxScore;
 			_evalValue=-maxScore;
 			_depth=-80;
@@ -206,24 +207,20 @@ inline bool TranspositionTable::hashPut(const HashKey key, const int value, cons
 	HashData *entry = transTable[key & _mask].entry;
 	HashData *replace = entry;
 	for (int x=0;x<BUCKET_SIZE;x++,entry++) {
-		if (!entry->key || entry->key==key) {
+		if (!entry->key) {
+			replace=entry;
+			break;
+		}
+		if (entry->key==key) {
 			if (move.none()) {
 				move=entry->move();
 			}
-			replace=entry;
-			break;
 		}
 		if ((entry->generation()<replace->generation()) ||
 				(entry->generation()==replace->generation() &&
 				replace->depth()>entry->depth())) {
 			replace=entry;
 		}
-/*		const int b1 = entry->generation()==generation;
-		const int b2 = replace->generation()==generation;
-		const int b3 = replace->depth()>entry->depth();
-		if ((!b1 && b2) || (!(b1 ^ b2) && b3)) {
-			replace=entry;
-		}*/
 	}
 	replace->update(key,value,evalValue,depth,flag,move,generation);
 	writes++;
@@ -234,15 +231,7 @@ inline bool TranspositionTable::hashGet(const HashKey key, HashData& hashData) {
 	HashData *entry = transTable[key & _mask].entry;
 	for (int x=0;x<BUCKET_SIZE;x++,entry++) {
 		if (entry->key==key) {
-			hashData.key=entry->key;
-			hashData._value= entry->value();
-			hashData._evalValue= entry->evalValue();
-			hashData._depth=entry->depth();
-			hashData._flag=entry->flag();
-			hashData._from=entry->_from;
-			hashData._to=entry->_to;
-			hashData._promotion=entry->_promotion;
-			hashData._generation=entry->_generation;
+				hashData=*entry;
 			return true;
 		}
 	}
@@ -267,7 +256,7 @@ inline bool TranspositionTable::isHashFull() {
 
 inline const int TranspositionTable::hashFull() {
 	double n = double(_size);
-	return static_cast<int>(1000 * (1 - exp(writes * log(1.0 - 1.0/n))));
+	return (int)(1000 * (1 - exp(writes * log(1.0 - 1.0/n))));
 }
 
 inline const std::string TranspositionTable::getId() const {

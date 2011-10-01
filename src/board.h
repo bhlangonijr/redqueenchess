@@ -425,7 +425,7 @@ inline const CastleRight Board::getCastleRights(PieceColor color) const {
 
 // remove castle rights passed as params
 inline void Board::removeCastleRights(const PieceColor color, const CastleRight castle) {
-	currentBoard.castleRight[color]=static_cast<CastleRight>(static_cast<int>(currentBoard.castleRight[color])&(~static_cast<int>(castle)));
+	currentBoard.castleRight[color]=(CastleRight)((int)(currentBoard.castleRight[color])&(~(int)(castle)));
 }
 
 // set castle rights
@@ -509,7 +509,7 @@ inline void Board::setEnPassant(const Square square) {
 
 // flip side
 inline const PieceColor Board::flipSide(const PieceColor color) {
-	return PieceColor(static_cast<int>(color)^1);
+	return PieceColor((int)(color)^1);
 }
 
 // get piece color
@@ -1356,7 +1356,7 @@ inline const GamePhase Board::getGamePhase() {
 
 // set game phase
 inline void Board::setGamePhase(const GamePhase phase) {
-	currentBoard.gamePhase=GamePhase(std::max(0,std::min(maxGamePhase,static_cast<int>(phase))));
+	currentBoard.gamePhase=GamePhase(std::max(0,std::min(maxGamePhase,(int)(phase))));
 }
 
 inline Square Board::getKingSquare(const PieceColor color) {

@@ -482,7 +482,7 @@ public:
 	}
 
 	inline bool getPawnInfo(const Key key, PawnInfo& pawnHash) {
-		PawnInfo& entry = pawnInfo[static_cast<size_t>(key) & (pawnHashSize-1)];
+		PawnInfo& entry = pawnInfo[(size_t)(key) & (pawnHashSize-1)];
 		if (key!=0 && entry.key==key) {
 			pawnHash.key=entry.key;
 			pawnHash.passers[WHITE]=entry.passers[WHITE];
@@ -498,7 +498,7 @@ public:
 
 	inline void setPawnInfo(const Key key, const int value, const PieceColor color,
 			const Bitboard passers, const Bitboard openfiles) {
-		PawnInfo& entry = pawnInfo[static_cast<size_t>(key) & (pawnHashSize-1)];
+		PawnInfo& entry = pawnInfo[(size_t)(key) & (pawnHashSize-1)];
 		entry.key=key;
 		entry.value[color]=value;
 		entry.passers[color]=passers;
@@ -629,9 +629,9 @@ inline Bitboard Evaluator::getLeastValuablePiece(Board& board, Bitboard attacker
 	const int first = makePiece(color,PAWN);
 	const int last = makePiece(color,KING);
 	for(register int pieceType = first; pieceType <= last; pieceType++) {
-		Bitboard pieces = board.getPieces(static_cast<PieceTypeByColor>(pieceType)) & attackers;
+		Bitboard pieces = board.getPieces((PieceTypeByColor)(pieceType)) & attackers;
 		if (pieces) {
-			piece = static_cast<PieceTypeByColor>(pieceType);
+			piece = (PieceTypeByColor)(pieceType);
 			return pieces & -pieces;
 		}
 	}

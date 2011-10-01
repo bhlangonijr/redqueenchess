@@ -32,13 +32,13 @@
 #include <sys/time.h>
 //Bitboard type - unsigned long int (8 bytes)
 typedef uint64_t Bitboard;
-#define SqBB(S)					(0x1ULL << static_cast<int>(S))										// Encode a square enum to a bitboard
+#define SqBB(S)					(0x1ULL << (int)(S))										// Encode a square enum to a bitboard
 #define Sq2Bb(X)				(squareToBitboard[X]) 												// square to bitboard macro
 #define Sq2FA(X)				(fileBB[squareFile[X]]^squareToBitboard[X])							// Encode Square to File Attack
 #define Sq2RA(X)				(rankBB[squareRank[X]]^squareToBitboard[X])							// Encode Square to Rank Attack
 #define Sq2A1(X)				(diagonalA1H8BB[squareToDiagonalA1H8[X]]^squareToBitboard[X])		// Encode Square to Diagonal A1H1 Attack
 #define Sq2H1(X)				(diagonalH1A8BB[squareToDiagonalH1A8[X]]^squareToBitboard[X])		// Encode Square to Diagonal H1A1 Attack
-#define St2Sq(F,R)				(((static_cast<int>(F)-96)+(static_cast<int>(R)-49)*8)-1)			// encode String to Square enum
+#define St2Sq(F,R)				((((int)(F)-96)+((int)(R)-49)*8)-1)			// encode String to Square enum
 #define NFILE(X) ((squareFile[X]!=FILE_H ? fileBB[squareFile[X]+1] : EMPTY_BB) | \
 		(squareFile[X]!=FILE_A ? fileBB[squareFile[X]-1] : EMPTY_BB))
 #define MS(X,Y) ((Y)+((X)<<16))
@@ -608,25 +608,25 @@ inline uint32_t bitCount15(const uint64_t data) {
 // get the bit index from a bitboard
 inline Square bitboardToSquare(const Bitboard& bitboard) {
 	if (!bitboard) {
-		return static_cast<Square>(NONE);
+		return (Square)(NONE);
 	}
 	int square=0;
 	if (!bitScanForward(&square, bitboard)) {
-		return static_cast<Square>(NONE);
+		return (Square)(NONE);
 	}
-	return static_cast<Square>( square );
+	return (Square)( square );
 }
 // extract least significant bit of a bitboard
 inline Square extractLSB(Bitboard& bitboard) {
 	if (!bitboard) {
-		return static_cast<Square>(NONE);
+		return (Square)(NONE);
 	}
 	int square=0;
 	if (!bitScanForward(&square, bitboard)) {
-		return static_cast<Square>(NONE);
+		return (Square)(NONE);
 	}
 	bitboard &= bitboard - 1;
-	return static_cast<Square>(square);
+	return (Square)(square);
 }
 
 inline const PieceTypeByColor makePiece(const PieceColor color, const PieceType type) {
@@ -634,11 +634,11 @@ inline const PieceTypeByColor makePiece(const PieceColor color, const PieceType 
 }
 
 inline const int upperScore(const int value) {
-	return ((static_cast<int16_t>(value >> 15) & 1) + static_cast<int16_t>(value >> 16));
+	return (((int16_t)(value >> 15) & 1) + (int16_t)(value >> 16));
 }
 
 inline const int lowerScore(const int value) {
-	return  static_cast<int16_t>(value & 0xFFFF);
+	return  (int16_t)(value & 0xFFFF);
 }
 
 inline const int makeScore(const int upperValue, const int lowerValue) {
@@ -648,7 +648,7 @@ inline const int makeScore(const int upperValue, const int lowerValue) {
 inline const int64_t getTickCount() {
 	struct timeval t;
 	gettimeofday(&t, NULL);
-	const int64_t r = static_cast<uint64_t>(t.tv_sec*1000 + t.tv_usec/1000);
+	const int64_t r = (uint64_t)(t.tv_sec*1000 + t.tv_usec/1000);
 	return r;
 }
 #endif /* BITBOARD_H_ */

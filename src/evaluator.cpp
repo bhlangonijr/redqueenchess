@@ -47,9 +47,15 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 		}
 		return evalInfo.getEval();
 	}
-	bool doNotLazyEval = evalInfo.getEval() > alpha-lazyEvalMargin && evalInfo.getEval() < beta+lazyEvalMargin;
-	bool doPawnEval = doNotLazyEval || board.isPawnPromoting() || board.isPawnFinal();
-	if (doPawnEval) {
+	int lazyEval=lazyEvalMargin;
+	if (board.isPawnPromoting()) {
+		lazyEval+=200;
+	}
+	if (board.isPawnFinal()) {
+		lazyEval+=100;
+	}
+	bool doNotLazyEval = evalInfo.getEval() > alpha-lazyEval && evalInfo.getEval() < beta+lazyEval;
+	if (doNotLazyEval) {
 		setLazyEval(false);
 		evalInfo.attackers[WHITE_PAWN] = ((evalInfo.pawns[WHITE] & midBoardNoFileA) << 7) |
 				((evalInfo.pawns[WHITE] & midBoardNoFileH) << 9);
@@ -67,7 +73,7 @@ const int Evaluator::evaluate(Board& board, const int alpha, const int beta) {
 		setUnstoppableBonus(evalInfo.other, evalInfo);
 		evalInfo.computeEval();
 	}
-	doNotLazyEval = evalInfo.getEval() > alpha-lazyEvalMargin && evalInfo.getEval() < beta+lazyEvalMargin;
+	doNotLazyEval = evalInfo.getEval() > alpha-lazyEval && evalInfo.getEval() < beta+lazyEval;
 	if (doNotLazyEval) {
 		setLazyEval(false);
 		evalBoardControl(evalInfo.side, evalInfo);

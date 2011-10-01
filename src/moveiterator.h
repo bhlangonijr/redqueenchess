@@ -33,6 +33,10 @@ const int DEFAULT_SCORE = 0;
 class MoveIterator {
 public:
 
+	MoveIterator() {}
+
+	virtual ~MoveIterator() {}
+
 	enum MoveType {
 		UNKNOW=0, TT_MOVE, GOOD_CAPTURE, PROMO_CAPTURE, PROMO_NONCAPTURE,
 		KILLER1, KILLER2, NON_CAPTURE, BAD_CAPTURE, CASTLE, UNKNOW_CAPTURE
@@ -140,7 +144,7 @@ public:
 
 	bool goNextStage() {
 		if (_data.stage<END_STAGE) {
-			_data.stage = IteratorStage(static_cast<int>(_data.stage)+1);
+			_data.stage = IteratorStage((int)(_data.stage)+1);
 			return true;
 		}
 		return false;
@@ -149,9 +153,7 @@ public:
 	const Move& get(const size_t index);
 	const size_t getIndex();
 	const void clearScore();
-	MoveIterator();
 	MoveIterator(const MoveIterator&);
-	virtual ~MoveIterator();
 
 protected:
 	MoveIterator& operator= (const MoveIterator&);
@@ -250,9 +252,80 @@ inline const size_t MoveIterator::getIndex() {
 }
 
 inline const void MoveIterator::clearScore() {
-	for(int i = 0; i <static_cast<int>(_data.size); i++) {
+	for(int i = 0; i <(int)(_data.size); i++) {
 		_data.list[i].score=-maxScore;
 	}
+}
+
+// sort
+inline void MoveIterator::sort() {
+	bool flag=true;
+	for(int i = 0; i <(int)_data.size&&flag; i++){
+		flag=false;
+		for(int j = 0; j <(int) _data.size-1; j++)
+		{
+			if (_data.list[j+1].score > _data.list[j].score) {
+				Move tmp=_data.list[j];
+				_data.list[j]=_data.list[j+1];
+				_data.list[j+1]=tmp;
+				flag=true;
+			}
+		}
+	}
+}
+
+// sort after an index
+inline void MoveIterator::sort(const int after) {
+	bool flag=true;
+	for(int i = after; i<(int)(_data.size)&&flag; i++) {
+		flag=false;
+		for(int j = after; j<(int)(_data.size)-1; j++) {
+			if (_data.list[j+1].score > _data.list[j].score) {
+				Move tmp=_data.list[j];
+				_data.list[j]=_data.list[j+1];
+				_data.list[j+1]=tmp;
+				flag=true;
+			}
+		}
+	}
+}
+
+// sort
+inline void MoveIterator::sort(int64_t* moveScore) {
+	bool flag=true;
+	for(int i = 0; i <(int)(_data.size)&&flag; i++) {
+		flag=false;
+		for(int j = 0; j <(int)(_data.size)-1; j++) {
+			if (_data.list[j+1].score > _data.list[j].score) {
+				Move tmp=_data.list[j];
+				_data.list[j]=_data.list[j+1];
+				_data.list[j+1]=tmp;
+				const int64_t tmpLong = moveScore[j];
+				moveScore[j]=moveScore[j+1];
+				moveScore[j+1]=tmpLong;
+				flag=true;
+			}
+		}
+	}
+}
+// sort root moves
+inline void MoveIterator::sortOrderingBy(int64_t moveScore[MOVE_LIST_MAX_SIZE]) {
+	bool flag=true;
+	for(int i = 0; i <(int)(_data.size)&&flag; i++) {
+		flag=false;
+		for(int j = 0; j <(int)(_data.size)-1; j++) {
+			if (moveScore[j+1] > moveScore[j]) {
+				Move tmp=_data.list[j];
+				_data.list[j]=_data.list[j+1];
+				_data.list[j+1]=tmp;
+				const int64_t tmpLong = moveScore[j];
+				moveScore[j]=moveScore[j+1];
+				moveScore[j+1]=tmpLong;
+				flag=true;
+			}
+		}
+	}
+	sort(moveScore);
 }
 
 #endif /* MOVEITERATOR_H_ */
