@@ -269,6 +269,8 @@ public:
 			} else if (value <= -maxScore+100) {
 				hashData.setValue(value+ply);
 			}
+		} else {
+			hashData.clear();
 		}
 		return result;
 	}

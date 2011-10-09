@@ -207,14 +207,12 @@ inline bool TranspositionTable::hashPut(const HashKey key, const int value, cons
 	HashData *entry = transTable[key & _mask].entry;
 	HashData *replace = entry;
 	for (int x=0;x<BUCKET_SIZE;x++,entry++) {
-		if (!entry->key) {
-			replace=entry;
-			break;
-		}
-		if (entry->key==key) {
+		if (!entry->key || entry->key==key) {
 			if (move.none()) {
 				move=entry->move();
 			}
+			replace=entry;
+			break;
 		}
 		if ((entry->generation()<replace->generation()) ||
 				(entry->generation()==replace->generation() &&

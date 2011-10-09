@@ -33,19 +33,7 @@ void SimplePVSearch::search(Board board) {
 	prepareToSearch();
 	setStartTime(getTickCount());
 	setTimeToStop();
-	Key k1 = board.getKey();
-	Key pk1 = board.getPawnKey();
 	searchScore = idSearch(board);
-	Key k2 = board.getKey();
-	Key pk2 = board.getPawnKey();
-	if (k1!=k2) {
-		std::cerr << "Error in zobrist hash keys!" << std::endl;
-		exit(1);
-	}
-	if (pk1!=pk2) {
-			std::cerr << "Error in zobrist pawn hash keys!" << std::endl;
-			exit(1);
-		}
 	time = getTickCount()-getStartTime();
 }
 

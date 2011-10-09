@@ -285,6 +285,8 @@ public:
 	void generateCaptures(MoveIterator& moves, const PieceColor side);
 	void generateQuiesMoves(MoveIterator& moves, const PieceColor side);
 	void generateNonCaptures(MoveIterator& moves, const PieceColor side);
+	Bitboard getDCPieces(const Bitboard pseudoAttacks, const Bitboard attackingPieces,
+			const Bitboard attacks, const Bitboard discoveredCandidates, const Bitboard sidePieces, const bool diagonalAttacks);
 	void generateNonCaptureChecks(MoveIterator& moves, const PieceColor side);
 	void generateEvasions(MoveIterator& moves, const PieceColor side);
 	void generateAllMoves(MoveIterator& moves, const PieceColor side);
@@ -928,7 +930,32 @@ inline void Board::generateQuiesMoves(MoveIterator& moves, const PieceColor side
 	generatePromotion(moves, side, getEmptySquares());
 }
 
-// generate checks
+// Get the discovered check pieces
+inline Bitboard Board::getDCPieces(const Bitboard pseudoAttacks,
+		const Bitboard attackingPieces,	const Bitboard attacks,
+		const Bitboard discoveredCandidates,
+		const Bitboard sidePieces, const bool diagonalAttacks) {
+	Bitboard dcs = pseudoAttacks&attackingPieces?
+			(pseudoAttacks & attacks & sidePieces):EMPTY_BB;
+	Bitboard result = EMPTY_BB;
+	Square from = extractLSB(dcs);
+	while ( from!=NONE ) {
+		const Bitboard dc = squareToBitboard[from];
+		if (dc&~discoveredCandidates&~attackingPieces&~result) {
+			const Bitboard sliderAttacks = diagonalAttacks ?
+					getBishopAttacks(from) : getRookAttacks(from);
+			const Bitboard attackingDc = pseudoAttacks &
+					sliderAttacks & attackingPieces;
+			if (attackingDc) {
+				result |= dc;
+			}
+		}
+		from = extractLSB(dcs);
+	}
+	return result;
+}
+
+// generate non capture checks
 inline void Board::generateNonCaptureChecks(MoveIterator& moves, const PieceColor side) {
 
 	const PieceColor otherSide = flipSide(side);
@@ -943,37 +970,41 @@ inline void Board::generateNonCaptureChecks(MoveIterator& moves, const PieceColo
 	const Bitboard rook = getPieces(side,ROOK);
 	const Bitboard queen = getPieces(side,QUEEN);
 
-	const Bitboard bishopAndQueen = (bishop | queen);
-	const Bitboard rookAndQueen = (rook | queen);
+	const Bitboard bishopAndQueen = (bishop|queen);
+	const Bitboard rookAndQueen = (rook|queen);
 
 	const Bitboard bishopAttacks = bishopAndQueen ? getBishopAttacks(kingSquare) : EMPTY_BB;
 	const Bitboard rookAttacks = rookAndQueen ? getRookAttacks(kingSquare) : EMPTY_BB;
-	const Bitboard knightAttacks = getKnightAttacks(kingSquare);
-	const Bitboard pawnAttacks = getPawnAttacks(kingSquare,otherSide);
+	const Bitboard knightAttacks = knight ? getKnightAttacks(kingSquare) : EMPTY_BB;
+	const Bitboard pawnAttacks = pawn ? getPawnAttacks(kingSquare,otherSide) : EMPTY_BB;
+	const Bitboard rookPseudoAttacks = fileAttacks[kingSquare]|rankAttacks[kingSquare];
+	const Bitboard bishopPseudoAttacks = diagA1H8Attacks[kingSquare]|diagH1A8Attacks[kingSquare];
 
 	Bitboard discoverCandidate = EMPTY_BB;
 
-	if (rookAndQueen && rookAttacks && !(rookAttacks&rookAndQueen)) {
-		Bitboard dc = fileAttacks[kingSquare]&rookAndQueen?(fileAttacks[kingSquare] & sidePieces):EMPTY_BB;
-		dc |= rankAttacks[kingSquare]&rookAndQueen?(rankAttacks[kingSquare] & sidePieces):EMPTY_BB;
+	const Bitboard rookAndQueenDc = ~rookAttacks&rookAndQueen&rookPseudoAttacks;
+	if (rookAndQueen && rookAttacks && rookAndQueenDc) {
+		Bitboard dc = getDCPieces(rookPseudoAttacks,rookAndQueenDc,rookAttacks,
+				discoverCandidate,sidePieces, false);
 		if (dc) {
 			generateBishopMoves(moves, side, empty & ~bishopAttacks, dc&bishop);
 			discoverCandidate=dc;
 		}
 	}
-
-	if (bishopAndQueen && bishopAttacks && !(bishopAttacks&bishopAndQueen)) {
-		Bitboard dc = diagA1H8Attacks[kingSquare]&bishopAndQueen?(diagA1H8Attacks[kingSquare] & sidePieces):EMPTY_BB;
-		dc |= diagH1A8Attacks[kingSquare]&bishopAndQueen?(diagH1A8Attacks[kingSquare] & sidePieces):EMPTY_BB;
+	const Bitboard bishopAndQueenDc = ~bishopAttacks&bishopAndQueen&bishopPseudoAttacks;
+	if (bishopAndQueen && bishopAttacks && bishopAndQueenDc) {
+		Bitboard dc = getDCPieces(bishopPseudoAttacks,bishopAndQueenDc,bishopAttacks,
+				discoverCandidate,sidePieces, true);
 		if (dc) {
-			generatePawnMoves(moves, side, empty & ~pawnAttacks, dc&pawn);
-			generateRookMoves(moves, side, empty & ~rookAttacks, dc&rook);
+			generatePawnMoves(moves, side, empty & ~pawnAttacks, discoverCandidate&pawn);
+			generateRookMoves(moves, side, empty & ~rookAttacks, discoverCandidate&rook);
 			discoverCandidate|=dc;
 		}
 	}
 
 	if (discoverCandidate) {
-		generateKnightMoves(moves, side, empty & ~knightAttacks, discoverCandidate&knight);
+		generateKnightMoves(moves, side, empty & ~knightAttacks,
+				discoverCandidate&knight);
 		generateKingMoves(moves, side, discoverCandidate&king);
 	}
 
