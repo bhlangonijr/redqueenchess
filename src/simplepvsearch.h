@@ -143,6 +143,8 @@ public:
 	int pvSearch(Board& board,  SearchInfo& si);
 	int zwSearch(Board& board,  SearchInfo& si);
 	int qSearch(Board& board,  SearchInfo& si);
+	void smpPVSearch(Board board, SimplePVSearch* master,
+			SimplePVSearch* ss, SplitPoint* sp);
 	int64_t perft(Board& board, int depth, int ply);
 	int getScore();
 	void clearKillers();

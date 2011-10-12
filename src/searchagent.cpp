@@ -168,7 +168,7 @@ void* SearchAgent::executeThread(const int threadId, SplitPoint* sp) {
 		SimplePVSearch* searchSlave = getSearcher(threadId);
 		if (thread.status==THREAD_STATUS_WORKING &&
 				(sp==NULL || (sp!=NULL && !sp->masterDone))) {
-			smpPVSearch(splitPoint->board,searchMaster,searchSlave,splitPoint);
+			searchMaster->smpPVSearch(splitPoint->board,searchMaster,searchSlave,splitPoint);
 			lock(&mutex1);
 			if (sp==NULL) {
 				splitPoint->workers--;
@@ -253,111 +253,6 @@ const bool SearchAgent::spawnThreads(Board& board, void* data, const int current
 	unlock(&mutex1);
 	return splitOk;
 };
-
-// parallel search
-void SearchAgent::smpPVSearch(Board board, SimplePVSearch* master,
-		SimplePVSearch* ss, SplitPoint* sp) {
-	if (sp==NULL) {
-		return;
-	}
-	const bool isKingAttacked = board.isInCheck();
-	const bool isPV = sp->isPV;
-	int score = 0;
-	MoveIterator::Move move;
-	while (sp->moves) {
-		master->lock();
-		move = master->selectMove<false>(board, *sp->moves, *sp->hashMove, sp->ply, sp->depth);
-		(*sp->moveCounter)++;
-		master->unlock();
-		if (move.none()) {
-			break;
-		}
-		MoveBackup backup;
-		board.doMove(move,backup);
-		const bool givingCheck = board.setInCheck(board.getSideToMove());
-		const bool passedPawn = ss->isPawnPush(board,move.to);
-		const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
-		//futility
-		if  (	!isPV &&
-				move.type == MoveIterator::NON_CAPTURE &&
-				sp->depth < futilityDepth &&
-				!isKingAttacked &&
-				!givingCheck &&
-				!pawnOn7thExtension &&
-				!passedPawn &&
-				!*sp->nmMateScore) {
-			if (ss->getMoveCountMargin(sp->depth) < *sp->moveCounter
-					&& !master->isMateScore(*sp->bestScore) ) {
-				board.undoMove(backup);
-				continue;
-			}
-			const int futilityScore = *sp->currentScore +
-					ss->getFutilityMargin(sp->depth, *sp->moveCounter);
-			master->lock();
-			if (futilityScore < sp->beta) {
-				if (futilityScore>*sp->bestScore) {
-					*sp->bestScore=futilityScore;
-				}
-				master->unlock();
-				board.undoMove(backup);
-				continue;
-			}
-			master->unlock();
-		}
-		//reductions
-		int reduction=0;
-		int extension=0;
-		if (isKingAttacked) {
-			extension++;
-		} else if (sp->depth>lmrDepthThreshold && !givingCheck &&
-				!passedPawn && !pawnOn7thExtension && !(*sp->nmMateScore) &&
-				move.type == MoveIterator::NON_CAPTURE) {
-			reduction=ss->getReduction(isPV,sp->depth,*sp->moveCounter);
-		}
-		int newDepth=sp->depth-1+extension;
-		SearchInfo newSi(true,move,sp->beta,1-sp->beta, newDepth-reduction, sp->ply+1, NONPV_NODE, sp);
-		if (isPV) {
-			newSi.update(newDepth-reduction,NONPV_NODE,-sp->beta,-(*sp->currentAlpha),move);
-		}
-		score = -ss->zwSearch(board, newSi);
-		bool research=isPV?score > *sp->currentAlpha &&
-				score < sp->beta:score >= sp->beta && reduction>0;
-		if (research) {
-			if (reduction>2) {
-				newSi.update(newDepth-1,NONPV_NODE);
-				score = -ss->zwSearch(board, newSi);
-				research=(score >= sp->beta);
-			}
-			if (research) {
-				newSi.update(newDepth,NONPV_NODE);
-				score = -ss->zwSearch(board, newSi);
-			}
-			if (isPV && score > *sp->currentAlpha && score < sp->beta) {
-				newSi.update(newDepth,PV_NODE);
-				score = -ss->pvSearch(board, newSi);
-			}
-		}
-		board.undoMove(backup);
-		master->lock();
-		if (!master->stop(newSi) && sp->moves) {
-			if (score>=sp->beta) {
-				*sp->bestScore=score;
-				*sp->bestMove=move;
-				sp->shouldStop=true;
-				master->unlock();
-				return;
-			}
-			if (score>*sp->bestScore) {
-				*sp->bestScore=score;
-				if(score>*sp->currentAlpha ) {
-					*sp->currentAlpha=score;
-					*sp->bestMove=move;
-				}
-			}
-		}
-		master->unlock();
-	}
-}
 
 // start search
 void SearchAgent::startSearch() {

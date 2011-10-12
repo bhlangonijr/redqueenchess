@@ -600,14 +600,10 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 		}
 		const bool pawnPromoting = fromType==PAWN &&
 				(squareToBitboard[move.from] & promoRank[color]);
-		if (move.promotionPiece!=EMPTY) {
-			if (!pawnPromoting ) {
-				return false;
-			}
-		} else {
-			if (pawnPromoting) {
-				return false;
-			}
+		const bool hasPromoPiece=move.promotionPiece!=EMPTY;
+
+		if (hasPromoPiece != pawnPromoting) {
+			return false;
 		}
 		if (((fromPiece==WHITE_KING && (move==whiteoo || move==whiteooo)) ||
 				(fromPiece==BLACK_KING && (move==blackoo || move==blackooo)))) {
@@ -623,37 +619,34 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 			return true;
 		}
 	}
-	const Square kingSq = (fromType==KING?move.to:getKingSquare(color));
-	const PieceColor other = flipSide(color);
-	Bitboard otherPieces = getPieces(other);
-	if (getPiece(move.to)!=EMPTY) {
-		otherPieces^=squareToBitboard[move.to];
-	} else if (fromType==PAWN && getEnPassant()!=NONE &&
-			getSquareFile(move.from)!=getSquareFile(move.to) &&
-			(getSquareFile(move.to) == getSquareFile(getEnPassant()))) {
-		otherPieces^=squareToBitboard[getEnPassant()];
+
+	if (fromType==KING) {
+		return !isAttacked(color,move.to);
 	}
 
-	Bitboard board = getPieces(color);
-	board ^= squareToBitboard[move.from];
-	board |= squareToBitboard[move.to];
-	board |= otherPieces;
-
-	const Bitboard diagonalAttacks = diagA1H8Attacks[kingSq]|diagH1A8Attacks[kingSq];
-	const Bitboard lineAttacks = fileAttacks[kingSq]|rankAttacks[kingSq];
+	const Square kingSq = getKingSquare(color);
+	const PieceColor other = flipSide(color);
+	const Bitboard moveTo = squareToBitboard[move.to];
+	const Bitboard moveFrom = squareToBitboard[move.from];
+	const Bitboard allPieces = (getAllPieces()^moveFrom)|moveTo;
 
 	const Bitboard bishopAndQueens = ((getPieces(other,BISHOP) |
-			getPieces(other,QUEEN))&otherPieces&diagonalAttacks);
+			getPieces(other,QUEEN)))&~moveTo;
+
+	if (bishopAndQueens &&
+			(getBishopAttacks(kingSq,allPieces)&bishopAndQueens)) {
+		return false;
+	}
 
 	const Bitboard rookAndQueens = ((getPieces(other,ROOK) |
-			getPieces(other,QUEEN))&otherPieces&lineAttacks);
+			getPieces(other,QUEEN)))&~moveTo;
 
-	return !((bishopAndQueens?getBishopAttacks(kingSq,board)&bishopAndQueens:EMPTY_BB) ||
-			(rookAndQueens?getRookAttacks(kingSq,board)&rookAndQueens:EMPTY_BB) ||
-			(getKnightAttacks(kingSq,board) & (getPieces(other,KNIGHT)&otherPieces)) ||
-			(getPawnAttacks(kingSq,color) & (getPieces(other,PAWN)&otherPieces)) ||
-			(getKingAttacks(kingSq,board) & (getPieces(other,KING)&otherPieces)));
+	if (rookAndQueens &&
+			(getRookAttacks(kingSq,allPieces)&rookAndQueens)) {
+		return false;
+	}
 
+	return true;
 }
 
 // Get attacks from a given square
@@ -1411,7 +1404,7 @@ inline bool Board::isPawnFinal(const Square exclude) {
 
 // capture or promotion
 inline bool Board::isCaptureOrPromotion(MoveIterator::Move& move) {
-	return isCaptureMove(move) ||	move.promotionPiece != EMPTY;
+	return isCaptureMove(move) || move.promotionPiece != EMPTY;
 }
 
 // pawn promoting

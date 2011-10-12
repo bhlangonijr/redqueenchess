@@ -279,11 +279,22 @@ public:
 			const int depth, const bool allowNullMove, const int alpha, const int beta) {
 		const bool result = hashGet(_key, hashData, ply);
 		if (result) {
-			okToPrune = //(hashData.generation()>=transTable->getGeneration()-3) &&
+			okToPrune =
 					(allowNullMove || !(hashData.flag() & TranspositionTable::NODE_NULL)) &&
 					(hashData.depth()>=depth) &&
 					(((hashData.flag() & TranspositionTable::LOWER) && hashData.value() >= beta) ||
-					((hashData.flag() & TranspositionTable::UPPER) && hashData.value() <= alpha));
+							((hashData.flag() & TranspositionTable::UPPER) && hashData.value() <= alpha));
+		} else {
+			okToPrune = false;
+		}
+		return result;
+	}
+
+	inline bool hashGet(bool& okToPrune, const Key _key, TranspositionTable::HashData& hashData, const int ply,
+			const int depth) {
+		const bool result = hashGet(_key, hashData, ply);
+		if (result) {
+			okToPrune =	(hashData.depth()>=depth) && (hashData.flag() & TranspositionTable::EXACT);
 		} else {
 			okToPrune = false;
 		}
