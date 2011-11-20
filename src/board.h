@@ -36,6 +36,7 @@
 #include "bitboard.h"
 #include "moveiterator.h"
 #include "magicmoves.h"
+#include "parameter.h"
 
 namespace BoardTypes{
 

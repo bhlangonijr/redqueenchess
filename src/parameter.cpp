@@ -16,22 +16,21 @@
 
     You should have received a copy of the GNU General Public License
     along with Redqueen.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 /*
- * Constant.h
+ * parameter.cpp
  *
- *  Created on: Feb 12, 2009
+ *  Created on: Nov 20, 2011
  *      Author: bhlangonijr
  */
 
-#ifndef CONSTANT_H_
-#define CONSTANT_H_
+#include "parameter.h"
 
-namespace Constant {
-const static std::string ENGINE_NAME = "RedQueen";
-const static std::string ENGINE_AUTHOR = "Ben-Hur Carlos Vieira Langoni Junior";
-const static std::string ENGINE_VERSION = "1.0.0.692";
-const static std::string ENGINE_COPYRIGHT = ENGINE_NAME + ". Copyright (C) 2008-2011 " + ENGINE_AUTHOR + ". ";
+Parameter::Parameter() {
+
+
 }
 
-#endif /* CONSTANT_H_ */
+Parameter::~Parameter() {
+
+}

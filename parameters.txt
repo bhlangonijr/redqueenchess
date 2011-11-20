@@ -1,0 +1,262 @@
+# redqueen parameters configuration file
+
+#middlegame piece square table
+# A1  = first value, A2 = second value, etc
+PAWN_PST_MIDDLEGAME = 
++0 +0 +0 +0 +0 +0 +0 +0 
+-21 -9 -3 +4 +4 -3 -9 -21 
+-20 -8 -2 +5 +5 -2 -8 -20 
+-19 -7 -1 +6 +6 -1 -7 -19 
+-17 -5 +1 +8 +8 +1 -5 -17 
+-16 -4 +0 +9 +9 +0 -4 -16 
+-15 -3 +3 +10 +10 +3 -3 -15 
++0 +0 +0 +0 +0 +0 +0 +0;
+ 
+KNIGHT_PST_MIDDLEGAME = 
+-56 -40 -29 -25 -25 -29 -40 -56  
+-34 -18 -7 -3 -3 -7 -18 -34 
+-18 -2 +9 +13 +13 +9 -2 -18 
+-9 +7 +18 +22 +22 +18 +7 -9 
+-3 +13 +24 +28 +28 +24 +13 -3 
+-5 +11 +22 +26 +26 +22 +11 -5 
+-14 +0 +13 +17 +17 +13 +0 -14 
+-118 -19 -8 -4 -4 -8 -19 -118; 
+
+BISHOP_PST_MIDDLEGAME = 
+-5 -6 -9 -11 -11 -9 -6 -5  
+-1 +5 +0 +0 +0 +0 +5 -1 
+-4 +0 +9 +8 +8 +9 +0 -4 
+-6 +0 +8 +17 +17 +8 +0 -6 
+-6 +0 +8 +17 +17 +8 +0 -6 
+-4 +0 +9 +8 +8 +9 +0 -4 
+-1 +5 +0 +0 +0 +0 +5 -1 
++0 -1 -4 -6 -6 -4 -1 +0; 
+
+ROOK_PST_MIDDLEGAME = 
+-2 +0 +6 +10 +10 +6 +0 -2  
+-2 +0 +6 +10 +10 +6 +0 -2 
+-2 +0 +6 +10 +10 +6 +0 -2 
+-2 +0 +6 +10 +10 +6 +0 -2 
+-2 +0 +6 +10 +10 +6 +0 -2 
+-2 +0 +6 +10 +10 +6 +0 -2 
+-2 +0 +6 +10 +10 +6 +0 -2 
+-2 +0 +6 +10 +10 +6 +0 -2;
+ 
+QUEEN_PST_MIDDLEGAME = 
+-14 -10 -7 -5 -5 -7 -10 -14  
+-5 +1 +3 +5 +5 +3 +1 -5 
+-2 +3 +7 +8 +8 +7 +3 -2 
++0 +5 +8 +11 +11 +8 +5 +0 
++0 +5 +8 +11 +11 +8 +5 +0 
+-2 +3 +7 +8 +8 +7 +3 -2 
+-5 +1 +3 +5 +5 +3 +1 -5 
+-9 -5 -2 +0 +0 -2 -5 -9;
+ 
+KING_PST_MIDDLEGAME =
++46 +51 +21 +1 +1 +21 +51 +46 
++43 +48 +18 -2 -2 +18 +48 +43 
++40 +45 +15 -5 -5 +15 +45 +40 
++37 +42 +12 -8 -8 +12 +42 +37 
++32 +37 +7 -13 -13 +7 +37 +32 
++27 +32 +0 -18 -18 +0 +32 +27 
++17 +22 -8 -28 -28 -8 +22 +17 
++7 +12 -18 -38 -38 -18 +12 +7; 
+
+#endgame piece square table
+PAWN_PST_ENDGAME = 
++0 +0 +0 +0 +0 +0 +0 +0 
+-5 -7 -9 -11 -11 -9 -7 -5 
+-5 -7 -9 -11 -11 -9 -7 -5 
+-4 -6 -8 -10 -10 -8 -6 -4 
+-3 -5 -7 -9 -9 -7 -5 -3 
+-2 -4 -6 -8 -8 -6 -4 -2 
++0 -2 -4 -6 -6 -4 -2 +0 
++0 +0 +0 +0 +0 +0 +0 +0 ;
+
+KNIGHT_PST_ENDGAME = 
+-20 -15 -10 -7 -7 -10 -15 -20  
+-13 -6 -2 +0 +0 -2 -6 -13 
+-8 -2 +3 +5 +5 +3 -2 -8 
+-4 +1 +6 +10 +10 +6 +1 -4 
+-2 +3 +8 +12 +12 +8 +3 -2 
+-1 +5 +10 +12 +12 +10 +5 -1 
+-6 +1 +5 +7 +7 +5 +1 -6 
+-13 -8 -3 +0 +0 -3 -8 -13;
+ 
+BISHOP_PST_ENDGAME = 
++0 -1 -2 -2 -2 -2 -1 +0  
+-1 +1 +0 +0 +0 +0 +1 -1 
+-2 +0 +5 +4 +4 +5 +0 -2 
+-2 +0 +4 +7 +7 +4 +0 -2 
+-2 +0 +4 +7 +7 +4 +0 -2 
+-2 +0 +5 +4 +4 +5 +0 -2 
+-1 +1 +0 +0 +0 +0 +1 -1 
++0 -1 -2 -2 -2 -2 -1 +0; 
+
+ROOK_PST_ENDGAME = 
++0 +0 +0 +0 +0 +0 +0 +0 
++0 +0 +0 +0 +0 +0 +0 +0 
++0 +0 +0 +0 +0 +0 +0 +0 
++0 +0 +0 +0 +0 +0 +0 +0 
++1 +1 +1 +1 +1 +1 +1 +1 
++1 +1 +1 +1 +1 +1 +1 +1 
++1 +1 +1 +1 +1 +1 +1 +1 
+-2 -2 -2 -2 -2 -2 -2 -2;
+ 
+QUEEN_PST_ENDGAME = 
+-14 -9 -7 -6 -6 -7 -9 -14 
+-9 -4 -2 -2 -2 -2 -4 -9 
+-7 -2 +0 +3 +3 +0 -2 -7 
+-6 -2 +3 +6 +6 +3 -2 -6 
+-6 -2 +3 +6 +6 +3 -2 -6 
+-7 -2 +0 +3 +3 +0 -2 -7 
+-9 -4 -2 -2 -2 -2 -4 -9 
+-14 -9 -7 -6 -6 -7 -9 -14; 
+
+KING_PST_ENDGAME = 
+-72 -49 -33 -27 -27 -33 -49 -72  
+-39 -14 -2 +4 +4 -2 -14 -39 
+-28 -7 +8 +14 +14 +8 -7 -28 
+-22 -2 +14 +23 +23 +14 -2 -22 
+-17 +4 +19 +28 +28 +19 +4 -17 
+-23 -2 +13 +19 +19 +13 -2 -23 
+-34 -9 +3 +9 +9 +3 -9 -34 
+-52 -29 -13 -7 -7 -13 -29 -52;
+
+#evaluation terms
+# first value: middlegame bonus/penalty
+# second value: endgame bonus/penalty
+DOUBLED_PAWN_PENALTY = -10 -16;
+PAWN_MOBILITY_PENALTY = -5-7;
+ISOLATED_PAWN_PENALTY = -20 -10;
+ISOLATED_OPEN_PAWN_PENALTY = -20 -20;
+BACKWARD_PAWN_PENALTY = -13 -10;
+BACKWARD_OPEN_PAWN_PENALTY = -17 -13;
+DONE_CASTLE_BONUS= +20 -1;
+CONNECTED_PAWN_BONUS = +5 -1;
+BISHOP_PAIR_BONUS = +30 +45;
+UNSTOPPABLE_PAWN_BONUS = +500 +500;
+UNSTOPPABLE_CANDIDATE_BONUS = +50 +50;
+ROOK_ON_7TH_RANK_BONUS = +15 +25;
+ROOK_ON_OPEN_FILE_BONUS = +17 +17;
+ROOK_ON_HALF_OPEN_FILE_BONUS = +10 +10;
+QUEEN_ON_7TH_RANK_BONUS = +10 +15;
+PASSER_AND_KING_BONUS = +0 +5;
+PAWN_END_GAME_BONUS = +0 +15;
+TRADE_PAWN_PENALTY = -4 -6;
+TRADE_PIECE_PENALTY = -3 -5;
+TRADE_PAWN_BONUS = +1 +2;
+TRADE_PIECE_BONUS = +2 +2;
+QUEEN_CHECK_BONUS = +10 +15;
+ROOK_CHECK_BONUS = +6 +11;
+INDIRECT_QUEEN_CHECK_BONUS = +3 +6;
+INDIRECT_ROOK_CHECK_BONUS = +2 +4;
+INDIRECT_KNIGHT_CHECK_BONUS = +1 +2;
+INDIRECT_BISHOP_CHECK_BONUS = +1 +2;
+SHELTER_BONUS = +2 +0;
+SHELTER_OPEN_FILE_PENALTY = -9 -0;
+TEMPO_BONUS	=  +10 +10;
+
+#mobility bonuses per number of dominated squares
+# 0 squares = first value, 1 square = second value, 2 squares = third value, etc
+KNIGHT_MOBILITY_MIDDLEGAME = -32 -16 +0 +8 +16 +24 +32 +40 +48;
+BISHOP_MOBILITY_MIDDLEGAME = -42 -24 -12 +0 +6 +12 +18 +24 +30 +36 +42 +48 +54 +60 +60 +60;
+ROOK_MOBILITY_MIDDLEGAME = -40 -30 -15 -5 +5 +10 +15 +20 +25 +30 +35 +40 +45 +50 +55 +60;
+
+KNIGHT_MOBILITY_ENDGAME = -16 -8 +0 +4 +8 +12 +16 +20 +24;
+BISHOP_MOBILITY_ENDGAME = -28 -16 -8 +0 +4 +8 +12 +16 +20 +24 +28 +32 +36 +40 +44 +48;
+ROOK_MOBILITY_ENDGAME = -24 -18 -9 -3 +3 +6 +9 +12 +15 +18 +21 +24 +27 +30 +33 +36;
+
+#king tropism bonuses
+#bonus for staying closer to the opposite king
+KNIGHT_TROPISM_ENDGAME = +24 +24 +24 +16 +12 +8 +4 +0;
+BISHOP_TROPISM_ENDGAME = +28 +24 +20 +16 +12 +8 +4 +0;
+ROOK_TROPISM_ENDGAME = +42 +36 +30 +24 +18 +12 +6 +0;
+QUEEN_TROPISM_ENDGAME = +49 +42 +35 +28 +21 +14 +7 +0;
+
+KNIGHT_TROPISM_MIDDLEGAME = +12 +12 +12 +8 +6 +4 +2 +0;
+BISHOP_TROPISM_MIDDLEGAME = +14 +12 +10 +8 +6 +4 +2 +0;
+ROOK_TROPISM_MIDDLEGAME = +28 +24 +20 +16 +12 +8 +4 +0;
+QUEEN_TROPISM_MIDDLEGAME = +35 +30 +25 +20 +15 +10 +5 +0;
+
+#king attack zone weights by piece type
+#bonus for the number of pieces of a given type attacking the zone around the opposite king
+# the first value = 0 piece of type XX attacking the king, the second value = 1 piece of type XX attacking the king, etc
+PAWN_ATTACK_WEIGHT_MIDDLEGAME = +0 +3 +6 +9 +12 +15 +18 +21 +24 +27;
+KNIGHT_ATTACK_WEIGHT_MIDDLEGAME = +0,+4 +8 +12 +16 +20 +24 +28 +32 +36;
+BISHOP_ATTACK_WEIGHT_MIDDLEGAME = +0,+4 +8 +12 +16 +20 +24 +28 +32 +36;
+ROOK_ATTACK_WEIGHT_MIDDLEGAME = +0 +5 +10 +15 +20 +25 +30 +35 +40 +45;
+QUEEN_ATTACK_WEIGHT_MIDDLEGAME = +0 +6 +12 +18 +24 +30 +36 +42 +48 +54;
+
+PAWN_ATTACK_WEIGHT_ENDGAME = +0 +0 +0 +0 +0 +0 +0 +0 +0 +0
+KNIGHT_ATTACK_WEIGHT_ENDGAME = +0 +7 +14 +21 +28 +35 +42 +49 +56 +63;
+BISHOP_ATTACK_WEIGHT_ENDGAME = +0 +7 +14 +21 +28 +35 +42 +49 +56 +63;
+ROOK_ATTACK_WEIGHT_ENDGAME = +0 +8 +16 +24 +32 +40 +48 +56 +64 +72;
+QUEEN_ATTACK_WEIGHT_ENDGAME = +0 +10 +20 +30 +40 +50 +60 +70 +80 +90;
+
+#connected passer bonus by rank - from whites point of view
+# RANK 1 = first value, RANK 2 = second value, etc
+CONNECTED_PASSER_BONUS_MIDDLEGAME = +0 +20 +25 +30 +35 +50 +60 +0;
+CONNECTED_PASSER_BONUS_ENDGAME = +0 +25 +35 +40 +45 +60 +90 +0;
+
+#free passer bonus by rank - from whites point of view
+# RANK 1 = first value, RANK 2 = second value, etc
+FREE_PASSER_BONUS_MIDDLEGAME = +0 +20 +25 +40 +50 +60 +80 +0;
+FREE_PASSER_BONUS_ENDGAME = +0 +25 +35 +50 +60 +70 +90 +0;
+
+#passed pawn bonus by rank - from whites point of view
+# RANK 1 = first value, RANK 2 = second value, etc
+PASSED_PAWN_BONUS_MIDDLEGAME = +0 +5 +10 +20 +40 +60 +90 +0;
+PASSED_PAWN_BONUS_ENDGAME = +0 +10 +20 +40 +80 +100 +120 +0;
+
+#candidate passer bonus by rank - from whites point of view
+# RANK 1 = first value, RANK 2 = second value, etc
+CANDIDATE_PASSER_BONUS_MIDDLEGAME = +0 +5 +10 +17 +30 +53 +0 +0;
+CANDIDATE_PASSER_BONUS_ENDGAME = +0 +7 +15 +25 +40 +71 +0 +0;
+
+#pawn weight by file A=first value, B=second value, etc
+PAWN_WEIGHT_MIDDLEGAME = +0 -3 -2 +1 +1 -2 -3 +0;
+PAWN_WEIGHT_ENDGAME = +0 -2 -1 +2 +2 -1 -2 +0;
+
+#bonus for controling space
+SPACE_BONUS_MIDDLEGAME = +0 +0 +5 +7 +9 +15 +20 +25 +30	+35 +45 +50 +60 +70 +80 +90 +100 +100;
+
+SPACE_BONUS_ENDGAME = +0 +0 +5 +7 +9 +13 +17 +23 +27 +33 +45 +50 +60 +70 +80 +90 +100 +100;
+
+#threat bonus 
+#this is a static eval bonus for pieces that directly attacks another piece
+#The first bonus value is for the pawn, followed by knight, bishop, rook, queen and king
+
+PAWN_THREAT_BONUS_MIDDLEGAME = +0 +2 +2 +3 +15 +20 +0;
+KNIGHT_THREAT_BONUS_MIDDLEGAME = +0 +5 +5 +5 +10 +15 +0;
+BISHOP_THREAT_BONUS_MIDDLEGAME = +0 +5 +5 +5 +10 +15 +0;
+ROOK_THREAT_BONUS_MIDDLEGAME = +0 +3 +3 +0 +5 +10 +0;
+QUEEN_THREAT_BONUS_MIDDLEGAME = +0 +2 +2 +2 +0 +10 +0;
+
+PAWN_THREAT_BONUS_ENDGAME = +0 +3 +3 +5 +20 +25 +0;
+KNIGHT_THREAT_BONUS_ENDGAME = +0 +10 +10 +10 +15 +20 +0;
+BISHOP_THREAT_BONUS_ENDGAME = +0 +10 +10 +10 +15 +20 +0;
+ROOK_THREAT_BONUS_ENDGAME = +0 +5 +5 +0 +10 +15 +0;
+QUEEN_THREAT_BONUS_ENDGAME = +0 +4 +4 +4 +0 +15 +0;
+
+#knight outpost bonus - from white's point of view
+# square A1 = first value, A2 = second value, ... H8 = last value
+KNIGHT_OUTPOST_BONUS_MIDDLEGAME = 
++0 +0 +0 +0 +0 +0 +0 +0
++0 +0 +0 +0 +0 +0 +0 +0
++0 +0 +5 +7 +7 +5 +0 +0
++0 +4 +7 +12 +12 +7 +4 +0
++0 +4 +7 +12 +12 +7 +4 +0
++0 +0 +0 +0 +0 +0 +0 +0
++0 +0 +0 +0 +0 +0 +0 +0
++0 +0 +0 +0 +0 +0 +0 +0;
+ 
+KNIGHT_OUTPOST_BONUS_ENDGAME = 
++0 +0 +0 +0 +0 +0 +0 +0
++0 +0 +0 +0 +0 +0 +0 +0
++0 +0 +3 +5 +5 +3 +0 +0
++0 +2 +5 +10 +10 +5 +2 +0
++0 +2 +5 +10 +10 +5 +2 +0
++0 +0 +0 +0 +0 +0 +0 +0
++0 +0 +0 +0 +0 +0 +0 +0
++0 +0 +0 +0 +0 +0 +0 +0;

@@ -43,6 +43,11 @@ typedef uint64_t Bitboard;
 		(squareFile[X]!=FILE_A ? fileBB[squareFile[X]-1] : EMPTY_BB))
 #define MS(X,Y) ((Y)+((X)<<16))
 #define MSE(X)  ((X)+((X)<<16))
+#define FSQUARE(COLOR,BB,X) (BB&(COLOR==WHITE?(~(squareToBitboard[X]-1)):(squareToBitboard[X]-1)))&(~(rankBB[squareRank[X]]))
+#define PM(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]] | neighborFiles[X]), X))
+#define BP(COLOR, X) ((FSQUARE((COLOR==WHITE?BLACK:WHITE), (neighborFiles[X]), X)) | (rankBB[squareRank[X]] & adjacentSquares[X]))
+#define FQ(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]]), X))
+
 const int ALL_PIECE_TYPE =				7;  														// pawn, knight, bishop, rook, queen, king
 const int ALL_PIECE_TYPE_BY_COLOR =		13; 														// (black, white) X (pawn, knight, bishop, rook, queen, king) + empty
 const int ALL_PIECE_COLOR	=			3;  														// black, white, none
@@ -415,67 +420,75 @@ const Bitboard neighborFiles[ALL_SQUARE]={
 		NFILE(A7), NFILE(B7), NFILE(C7), NFILE(D7), NFILE(E7), NFILE(F7), NFILE(G7), NFILE(H7),
 		NFILE(A8), NFILE(B8), NFILE(C8), NFILE(D8), NFILE(E8), NFILE(F8), NFILE(G8), NFILE(H8)
 };
-// middlegame & endgame piece square table
-const int pieceSquareTable[ALL_PIECE_TYPE][ALL_SQUARE]={
-		{ // pawns
-				MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0),
-				MS(-21, -5), MS( -9, -7), MS( -3, -9), MS(  4,-11), MS(  4,-11), MS( -3, -9), MS( -9, -7), MS(-21, -5),
-				MS(-20, -5), MS( -8, -7), MS( -2, -9), MS(  5,-11), MS(  5,-11), MS( -2, -9), MS( -8, -7), MS(-20, -5),
-				MS(-19, -4), MS( -7, -6), MS( -1, -8), MS(  6,-10), MS(  6,-10), MS( -1, -8), MS( -7, -6), MS(-19, -4),
-				MS(-17, -3), MS( -5, -5), MS(  1, -7), MS(  8, -9), MS(  8, -9), MS(  1, -7), MS( -5, -5), MS(-17, -3),
-				MS(-16, -2), MS( -4, -4), MS(  0, -6), MS(  9, -8), MS(  9, -8), MS(  0, -6), MS( -4, -4), MS(-16, -2),
-				MS(-15,  0), MS( -3, -2), MS(  3, -4), MS( 10, -6), MS( 10, -6), MS(  3, -4), MS( -3, -2), MS(-15,  0),
-				MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0),
+
+const Bitboard passedMask[ALL_PIECE_COLOR][ALL_SQUARE]= {
+		{
+				PM(WHITE,A1), PM(WHITE,B1), PM(WHITE,C1), PM(WHITE,D1), PM(WHITE,E1), PM(WHITE,F1), PM(WHITE,G1), PM(WHITE,H1),
+				PM(WHITE,A2), PM(WHITE,B2), PM(WHITE,C2), PM(WHITE,D2), PM(WHITE,E2), PM(WHITE,F2), PM(WHITE,G2), PM(WHITE,H2),
+				PM(WHITE,A3), PM(WHITE,B3), PM(WHITE,C3), PM(WHITE,D3), PM(WHITE,E3), PM(WHITE,F3), PM(WHITE,G3), PM(WHITE,H3),
+				PM(WHITE,A4), PM(WHITE,B4), PM(WHITE,C4), PM(WHITE,D4), PM(WHITE,E4), PM(WHITE,F4), PM(WHITE,G4), PM(WHITE,H4),
+				PM(WHITE,A5), PM(WHITE,B5), PM(WHITE,C5), PM(WHITE,D5), PM(WHITE,E5), PM(WHITE,F5), PM(WHITE,G5), PM(WHITE,H5),
+				PM(WHITE,A6), PM(WHITE,B6), PM(WHITE,C6), PM(WHITE,D6), PM(WHITE,E6), PM(WHITE,F6), PM(WHITE,G6), PM(WHITE,H6),
+				PM(WHITE,A7), PM(WHITE,B7), PM(WHITE,C7), PM(WHITE,D7), PM(WHITE,E7), PM(WHITE,F7), PM(WHITE,G7), PM(WHITE,H7),
+				PM(WHITE,A8), PM(WHITE,B8), PM(WHITE,C8), PM(WHITE,D8), PM(WHITE,E8), PM(WHITE,F8), PM(WHITE,G8), PM(WHITE,H8)
 		},
-		{ // knights
-				MS(-56,-20), MS(-40,-15), MS(-29,-10), MS(-25, -7), MS(-25, -7), MS(-29,-10), MS(-40,-15), MS(-56,-20),
-				MS(-34,-13), MS(-18, -6), MS( -7, -2), MS( -3,  0), MS( -3,  0), MS( -7, -2), MS(-18, -6), MS(-34,-13),
-				MS(-18, -8), MS( -2, -2), MS(  9,  3), MS( 13,  5), MS( 13,  5), MS(  9,  3), MS( -2, -2), MS(-18, -8),
-				MS( -9, -4), MS(  7,  1), MS( 18,  6), MS( 22, 10), MS( 22, 10), MS( 18,  6), MS(  7,  1), MS( -9, -4),
-				MS( -3, -2), MS( 13,  3), MS( 24,  8), MS( 28, 12), MS( 28, 12), MS( 24,  8), MS( 13,  3), MS( -3, -2),
-				MS( -5, -1), MS( 11,  5), MS( 22, 10), MS( 26, 12), MS( 26, 12), MS( 22, 10), MS( 11,  5), MS( -5, -1),
-				MS(-14, -6), MS(  0,  1), MS( 13,  5), MS( 17,  7), MS( 17,  7), MS( 13,  5), MS(  0,  1), MS(-14, -6),
-				MS(-118,-13), MS(-19, -8), MS( -8, -3), MS( -4,  0), MS( -4,  0), MS( -8, -3), MS(-19, -8), MS(-118,-13),
+		{
+				PM(BLACK,A1), PM(BLACK,B1), PM(BLACK,C1), PM(BLACK,D1), PM(BLACK,E1), PM(BLACK,F1), PM(BLACK,G1), PM(BLACK,H1),
+				PM(BLACK,A2), PM(BLACK,B2), PM(BLACK,C2), PM(BLACK,D2), PM(BLACK,E2), PM(BLACK,F2), PM(BLACK,G2), PM(BLACK,H2),
+				PM(BLACK,A3), PM(BLACK,B3), PM(BLACK,C3), PM(BLACK,D3), PM(BLACK,E3), PM(BLACK,F3), PM(BLACK,G3), PM(BLACK,H3),
+				PM(BLACK,A4), PM(BLACK,B4), PM(BLACK,C4), PM(BLACK,D4), PM(BLACK,E4), PM(BLACK,F4), PM(BLACK,G4), PM(BLACK,H4),
+				PM(BLACK,A5), PM(BLACK,B5), PM(BLACK,C5), PM(BLACK,D5), PM(BLACK,E5), PM(BLACK,F5), PM(BLACK,G5), PM(BLACK,H5),
+				PM(BLACK,A6), PM(BLACK,B6), PM(BLACK,C6), PM(BLACK,D6), PM(BLACK,E6), PM(BLACK,F6), PM(BLACK,G6), PM(BLACK,H6),
+				PM(BLACK,A7), PM(BLACK,B7), PM(BLACK,C7), PM(BLACK,D7), PM(BLACK,E7), PM(BLACK,F7), PM(BLACK,G7), PM(BLACK,H7),
+				PM(BLACK,A8), PM(BLACK,B8), PM(BLACK,C8), PM(BLACK,D8), PM(BLACK,E8), PM(BLACK,F8), PM(BLACK,G8), PM(BLACK,H8)
 		},
-		{ // bishops
-				MS( -5,  0), MS( -6, -1), MS( -9, -2), MS(-11, -2), MS(-11, -2), MS( -9, -2), MS( -6, -1), MS( -5,  0),
-				MS( -1, -1), MS(  5,  1), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  5,  1), MS( -1, -1),
-				MS( -4, -2), MS(  0,  0), MS(  9,  5), MS(  8,  4), MS(  8,  4), MS(  9,  5), MS(  0,  0), MS( -4, -2),
-				MS( -6, -2), MS(  0,  0), MS(  8,  4), MS( 17,  7), MS( 17,  7), MS(  8,  4), MS(  0,  0), MS( -6, -2),
-				MS( -6, -2), MS(  0,  0), MS(  8,  4), MS( 17,  7), MS( 17,  7), MS(  8,  4), MS(  0,  0), MS( -6, -2),
-				MS( -4, -2), MS(  0,  0), MS(  9,  5), MS(  8,  4), MS(  8,  4), MS(  9,  5), MS(  0,  0), MS( -4, -2),
-				MS( -1, -1), MS(  5,  1), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  0,  0), MS(  5,  1), MS( -1, -1),
-				MS(  0,  0), MS( -1, -1), MS( -4, -2), MS( -6, -2), MS( -6, -2), MS( -4, -2), MS( -1, -1), MS(  0,  0),
+		{}
+};
+
+const Bitboard backwardPawnMask[ALL_PIECE_COLOR][ALL_SQUARE]= {
+		{
+				BP(WHITE,A1), BP(WHITE,B1), BP(WHITE,C1), BP(WHITE,D1), BP(WHITE,E1), BP(WHITE,F1), BP(WHITE,G1), BP(WHITE,H1),
+				BP(WHITE,A2), BP(WHITE,B2), BP(WHITE,C2), BP(WHITE,D2), BP(WHITE,E2), BP(WHITE,F2), BP(WHITE,G2), BP(WHITE,H2),
+				BP(WHITE,A3), BP(WHITE,B3), BP(WHITE,C3), BP(WHITE,D3), BP(WHITE,E3), BP(WHITE,F3), BP(WHITE,G3), BP(WHITE,H3),
+				BP(WHITE,A4), BP(WHITE,B4), BP(WHITE,C4), BP(WHITE,D4), BP(WHITE,E4), BP(WHITE,F4), BP(WHITE,G4), BP(WHITE,H4),
+				BP(WHITE,A5), BP(WHITE,B5), BP(WHITE,C5), BP(WHITE,D5), BP(WHITE,E5), BP(WHITE,F5), BP(WHITE,G5), BP(WHITE,H5),
+				BP(WHITE,A6), BP(WHITE,B6), BP(WHITE,C6), BP(WHITE,D6), BP(WHITE,E6), BP(WHITE,F6), BP(WHITE,G6), BP(WHITE,H6),
+				BP(WHITE,A7), BP(WHITE,B7), BP(WHITE,C7), BP(WHITE,D7), BP(WHITE,E7), BP(WHITE,F7), BP(WHITE,G7), BP(WHITE,H7),
+				BP(WHITE,A8), BP(WHITE,B8), BP(WHITE,C8), BP(WHITE,D8), BP(WHITE,E8), BP(WHITE,F8), BP(WHITE,G8), BP(WHITE,H8)
 		},
-		{ // rooks
-				MS( -2,  0), MS(  0,  0), MS(  6,  0), MS( 10,  0), MS( 10,  0), MS(  6,  0), MS(  0,  0), MS( -2,  0),
-				MS( -2,  0), MS(  0,  0), MS(  6,  0), MS( 10,  0), MS( 10,  0), MS(  6,  0), MS(  0,  0), MS( -2,  0),
-				MS( -2,  0), MS(  0,  0), MS(  6,  0), MS( 10,  0), MS( 10,  0), MS(  6,  0), MS(  0,  0), MS( -2,  0),
-				MS( -2,  0), MS(  0,  0), MS(  6,  0), MS( 10,  0), MS( 10,  0), MS(  6,  0), MS(  0,  0), MS( -2,  0),
-				MS( -2,  1), MS(  0,  1), MS(  6,  1), MS( 10,  1), MS( 10,  1), MS(  6,  1), MS(  0,  1), MS( -2,  1),
-				MS( -2,  1), MS(  0,  1), MS(  6,  1), MS( 10,  1), MS( 10,  1), MS(  6,  1), MS(  0,  1), MS( -2,  1),
-				MS( -2,  1), MS(  0,  1), MS(  6,  1), MS( 10,  1), MS( 10,  1), MS(  6,  1), MS(  0,  1), MS( -2,  1),
-				MS( -2, -2), MS(  0, -2), MS(  6, -2), MS( 10, -2), MS( 10, -2), MS(  6, -2), MS(  0, -2), MS( -2, -2),
+		{
+				BP(BLACK,A1), BP(BLACK,B1), BP(BLACK,C1), BP(BLACK,D1), BP(BLACK,E1), BP(BLACK,F1), BP(BLACK,G1), BP(BLACK,H1),
+				BP(BLACK,A2), BP(BLACK,B2), BP(BLACK,C2), BP(BLACK,D2), BP(BLACK,E2), BP(BLACK,F2), BP(BLACK,G2), BP(BLACK,H2),
+				BP(BLACK,A3), BP(BLACK,B3), BP(BLACK,C3), BP(BLACK,D3), BP(BLACK,E3), BP(BLACK,F3), BP(BLACK,G3), BP(BLACK,H3),
+				BP(BLACK,A4), BP(BLACK,B4), BP(BLACK,C4), BP(BLACK,D4), BP(BLACK,E4), BP(BLACK,F4), BP(BLACK,G4), BP(BLACK,H4),
+				BP(BLACK,A5), BP(BLACK,B5), BP(BLACK,C5), BP(BLACK,D5), BP(BLACK,E5), BP(BLACK,F5), BP(BLACK,G5), BP(BLACK,H5),
+				BP(BLACK,A6), BP(BLACK,B6), BP(BLACK,C6), BP(BLACK,D6), BP(BLACK,E6), BP(BLACK,F6), BP(BLACK,G6), BP(BLACK,H6),
+				BP(BLACK,A7), BP(BLACK,B7), BP(BLACK,C7), BP(BLACK,D7), BP(BLACK,E7), BP(BLACK,F7), BP(BLACK,G7), BP(BLACK,H7),
+				BP(BLACK,A8), BP(BLACK,B8), BP(BLACK,C8), BP(BLACK,D8), BP(BLACK,E8), BP(BLACK,F8), BP(BLACK,G8), BP(BLACK,H8)
 		},
-		{ //queen
-				MS(-14,-14), MS(-10, -9), MS( -7, -7), MS( -5, -6), MS( -5, -6), MS( -7, -7), MS(-10, -9), MS(-14,-14),
-				MS( -5, -9), MS(  1, -4), MS(  3, -2), MS(  5, -2), MS(  5, -2), MS(  3, -2), MS(  1, -4), MS( -5, -9),
-				MS( -2, -7), MS(  3, -2), MS(  7,  0), MS(  8,  3), MS(  8,  3), MS(  7,  0), MS(  3, -2), MS( -2, -7),
-				MS(  0, -6), MS(  5, -2), MS(  8,  3), MS( 11,  6), MS( 11,  6), MS(  8,  3), MS(  5, -2), MS(  0, -6),
-				MS(  0, -6), MS(  5, -2), MS(  8,  3), MS( 11,  6), MS( 11,  6), MS(  8,  3), MS(  5, -2), MS(  0, -6),
-				MS( -2, -7), MS(  3, -2), MS(  7,  0), MS(  8,  3), MS(  8,  3), MS(  7,  0), MS(  3, -2), MS( -2, -7),
-				MS( -5, -9), MS(  1, -4), MS(  3, -2), MS(  5, -2), MS(  5, -2), MS(  3, -2), MS(  1, -4), MS( -5, -9),
-				MS( -9,-14), MS( -5, -9), MS( -2, -7), MS(  0, -6), MS(  0, -6), MS( -2, -7), MS( -5, -9), MS( -9,-14),
+		{}
+};
+
+const Bitboard frontSquares[ALL_PIECE_COLOR][ALL_SQUARE]= {
+		{
+				FQ(WHITE,A1), FQ(WHITE,B1), FQ(WHITE,C1), FQ(WHITE,D1), FQ(WHITE,E1), FQ(WHITE,F1), FQ(WHITE,G1), FQ(WHITE,H1),
+				FQ(WHITE,A2), FQ(WHITE,B2), FQ(WHITE,C2), FQ(WHITE,D2), FQ(WHITE,E2), FQ(WHITE,F2), FQ(WHITE,G2), FQ(WHITE,H2),
+				FQ(WHITE,A3), FQ(WHITE,B3), FQ(WHITE,C3), FQ(WHITE,D3), FQ(WHITE,E3), FQ(WHITE,F3), FQ(WHITE,G3), FQ(WHITE,H3),
+				FQ(WHITE,A4), FQ(WHITE,B4), FQ(WHITE,C4), FQ(WHITE,D4), FQ(WHITE,E4), FQ(WHITE,F4), FQ(WHITE,G4), FQ(WHITE,H4),
+				FQ(WHITE,A5), FQ(WHITE,B5), FQ(WHITE,C5), FQ(WHITE,D5), FQ(WHITE,E5), FQ(WHITE,F5), FQ(WHITE,G5), FQ(WHITE,H5),
+				FQ(WHITE,A6), FQ(WHITE,B6), FQ(WHITE,C6), FQ(WHITE,D6), FQ(WHITE,E6), FQ(WHITE,F6), FQ(WHITE,G6), FQ(WHITE,H6),
+				FQ(WHITE,A7), FQ(WHITE,B7), FQ(WHITE,C7), FQ(WHITE,D7), FQ(WHITE,E7), FQ(WHITE,F7), FQ(WHITE,G7), FQ(WHITE,H7),
+				FQ(WHITE,A8), FQ(WHITE,B8), FQ(WHITE,C8), FQ(WHITE,D8), FQ(WHITE,E8), FQ(WHITE,F8), FQ(WHITE,G8), FQ(WHITE,H8)
 		},
-		{	//king
-				MS( 46,-72), MS( 51,-49), MS( 21,-33), MS(  1,-27), MS(  1,-27), MS( 21,-33), MS( 51,-49), MS( 46,-72),
-				MS( 43,-39), MS( 48,-14), MS( 18, -2), MS( -2,  4), MS( -2,  4), MS( 18, -2), MS( 48,-14), MS( 43,-39),
-				MS( 40,-28), MS( 45, -7), MS( 15,  8), MS( -5, 14), MS( -5, 14), MS( 15,  8), MS( 45, -7), MS( 40,-28),
-				MS( 37,-22), MS( 42, -2), MS( 12, 14), MS( -8, 23), MS( -8, 23), MS( 12, 14), MS( 42, -2), MS( 37,-22),
-				MS( 32,-17), MS( 37,  4), MS(  7, 19), MS(-13, 28), MS(-13, 28), MS(  7, 19), MS( 37,  4), MS( 32,-17),
-				MS( 27,-23), MS( 32, -2), MS(  0, 13), MS(-18, 19), MS(-18, 19), MS(  0, 13), MS( 32, -2), MS( 27,-23),
-				MS( 17,-34), MS( 22, -9), MS( -8,  3), MS(-28,  9), MS(-28,  9), MS( -8,  3), MS( 22, -9), MS( 17,-34),
-				MS(  7,-52), MS( 12,-29), MS(-18,-13), MS(-38, -7), MS(-38, -7), MS(-18,-13), MS( 12,-29), MS(  7,-52),
+		{
+				FQ(BLACK,A1), FQ(BLACK,B1), FQ(BLACK,C1), FQ(BLACK,D1), FQ(BLACK,E1), FQ(BLACK,F1), FQ(BLACK,G1), FQ(BLACK,H1),
+				FQ(BLACK,A2), FQ(BLACK,B2), FQ(BLACK,C2), FQ(BLACK,D2), FQ(BLACK,E2), FQ(BLACK,F2), FQ(BLACK,G2), FQ(BLACK,H2),
+				FQ(BLACK,A3), FQ(BLACK,B3), FQ(BLACK,C3), FQ(BLACK,D3), FQ(BLACK,E3), FQ(BLACK,F3), FQ(BLACK,G3), FQ(BLACK,H3),
+				FQ(BLACK,A4), FQ(BLACK,B4), FQ(BLACK,C4), FQ(BLACK,D4), FQ(BLACK,E4), FQ(BLACK,F4), FQ(BLACK,G4), FQ(BLACK,H4),
+				FQ(BLACK,A5), FQ(BLACK,B5), FQ(BLACK,C5), FQ(BLACK,D5), FQ(BLACK,E5), FQ(BLACK,F5), FQ(BLACK,G5), FQ(BLACK,H5),
+				FQ(BLACK,A6), FQ(BLACK,B6), FQ(BLACK,C6), FQ(BLACK,D6), FQ(BLACK,E6), FQ(BLACK,F6), FQ(BLACK,G6), FQ(BLACK,H6),
+				FQ(BLACK,A7), FQ(BLACK,B7), FQ(BLACK,C7), FQ(BLACK,D7), FQ(BLACK,E7), FQ(BLACK,F7), FQ(BLACK,G7), FQ(BLACK,H7),
+				FQ(BLACK,A8), FQ(BLACK,B8), FQ(BLACK,C8), FQ(BLACK,D8), FQ(BLACK,E8), FQ(BLACK,F8), FQ(BLACK,G8), FQ(BLACK,H8)
 		},
 		{}
 };
