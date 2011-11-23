@@ -28,13 +28,22 @@
 #ifndef UCI_H_
 #define UCI_H_
 
+#include <iostream>
+#include <string>
+#include <exception>
 #include <vector>
 #include "ucioption.h"
+#include "stringutil.h"
+#include "constant.h"
+#include "searchagent.h"
+#include "board.h"
+
 #define NU_COMMANDS 13
 
 static const std::string strCommand[NU_COMMANDS] = {
 		"none","quit","uci","ucinewgame","isready","position","setoption","go","stop","perft","ponderhit","test","unknow"
 };
+
 // Singleton to Handle Universal Chess Interface
 class Uci {
 

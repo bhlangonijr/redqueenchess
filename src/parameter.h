@@ -26,7 +26,14 @@
 
 #ifndef PARAMETER_H_
 #define PARAMETER_H_
+#include <iostream>
+#include <fstream>
 #include "bitboard.h"
+#include "stringutil.h"
+
+#define MAX_PARAMS 90
+
+using namespace StringUtil;
 
 // middlegame & endgame piece square table
 static int pieceSquareTable[ALL_PIECE_TYPE][ALL_SQUARE]={
@@ -250,17 +257,285 @@ static int knightOutpostBonus[ALL_PIECE_COLOR][ALL_SQUARE] = {
 		{}
 };
 
-class Parameter {
-public:
-	Parameter();
-	virtual ~Parameter();
+const std::string allParameters[MAX_PARAMS] = {
+		"PAWN_PST_MIDDLEGAME",
+		"KNIGHT_PST_MIDDLEGAME",
+		"BISHOP_PST_MIDDLEGAME",
+		"ROOK_PST_MIDDLEGAME",
+		"QUEEN_PST_MIDDLEGAME",
+		"KING_PST_MIDDLEGAME",
+		"PAWN_PST_ENDGAME",
+		"KNIGHT_PST_ENDGAME",
+		"BISHOP_PST_ENDGAME",
+		"ROOK_PST_ENDGAME",
+		"QUEEN_PST_ENDGAME",
+		"KING_PST_ENDGAME",
+		"DOUBLED_PAWN_PENALTY",
+		"PAWN_MOBILITY_PENALTY",
+		"ISOLATED_PAWN_PENALTY",
+		"ISOLATED_OPEN_PAWN_PENALTY",
+		"BACKWARD_PAWN_PENALTY",
+		"BACKWARD_OPEN_PAWN_PENALTY",
+		"DONE_CASTLE_BONUS",
+		"CONNECTED_PAWN_BONUS",
+		"BISHOP_PAIR_BONUS",
+		"UNSTOPPABLE_PAWN_BONUS",
+		"UNSTOPPABLE_CANDIDATE_BONUS",
+		"ROOK_ON_7TH_RANK_BONUS",
+		"ROOK_ON_OPEN_FILE_BONUS",
+		"ROOK_ON_HALF_OPEN_FILE_BONUS",
+		"QUEEN_ON_7TH_RANK_BONUS",
+		"PASSER_AND_KING_BONUS",
+		"PAWN_END_GAME_BONUS",
+		"TRADE_PAWN_PENALTY",
+		"TRADE_PIECE_PENALTY",
+		"TRADE_PAWN_BONUS",
+		"TRADE_PIECE_BONUS",
+		"QUEEN_CHECK_BONUS",
+		"ROOK_CHECK_BONUS",
+		"INDIRECT_QUEEN_CHECK_BONUS",
+		"INDIRECT_ROOK_CHECK_BONUS",
+		"INDIRECT_KNIGHT_CHECK_BONUS",
+		"INDIRECT_BISHOP_CHECK_BONUS",
+		"SHELTER_BONUS",
+		"SHELTER_OPEN_FILE_PENALTY",
+		"TEMPO_BONUS",
+		"KNIGHT_MOBILITY_MIDDLEGAME",
+		"BISHOP_MOBILITY_MIDDLEGAME",
+		"ROOK_MOBILITY_MIDDLEGAME",
+		"KNIGHT_MOBILITY_ENDGAME",
+		"BISHOP_MOBILITY_ENDGAME",
+		"ROOK_MOBILITY_ENDGAME",
+		"KNIGHT_TROPISM_ENDGAME",
+		"BISHOP_TROPISM_ENDGAME",
+		"ROOK_TROPISM_ENDGAME",
+		"QUEEN_TROPISM_ENDGAME",
+		"KNIGHT_TROPISM_MIDDLEGAME",
+		"BISHOP_TROPISM_MIDDLEGAME",
+		"ROOK_TROPISM_MIDDLEGAME",
+		"QUEEN_TROPISM_MIDDLEGAME",
+		"PAWN_ATTACK_WEIGHT_MIDDLEGAME",
+		"KNIGHT_ATTACK_WEIGHT_MIDDLEGAME",
+		"BISHOP_ATTACK_WEIGHT_MIDDLEGAME",
+		"ROOK_ATTACK_WEIGHT_MIDDLEGAME",
+		"QUEEN_ATTACK_WEIGHT_MIDDLEGAME",
+		"PAWN_ATTACK_WEIGHT_ENDGAME",
+		"KNIGHT_ATTACK_WEIGHT_ENDGAME",
+		"BISHOP_ATTACK_WEIGHT_ENDGAME",
+		"ROOK_ATTACK_WEIGHT_ENDGAME",
+		"QUEEN_ATTACK_WEIGHT_ENDGAME",
+		"CONNECTED_PASSER_BONUS_MIDDLEGAME",
+		"CONNECTED_PASSER_BONUS_ENDGAME",
+		"FREE_PASSER_BONUS_MIDDLEGAME",
+		"FREE_PASSER_BONUS_ENDGAME",
+		"PASSED_PAWN_BONUS_MIDDLEGAME",
+		"PASSED_PAWN_BONUS_ENDGAME",
+		"CANDIDATE_PASSER_BONUS_MIDDLEGAME",
+		"CANDIDATE_PASSER_BONUS_ENDGAME",
+		"PAWN_WEIGHT_MIDDLEGAME",
+		"PAWN_WEIGHT_ENDGAME",
+		"SPACE_BONUS_MIDDLEGAME",
+		"SPACE_BONUS_ENDGAME",
+		"PAWN_THREAT_BONUS_MIDDLEGAME",
+		"KNIGHT_THREAT_BONUS_MIDDLEGAME",
+		"BISHOP_THREAT_BONUS_MIDDLEGAME",
+		"ROOK_THREAT_BONUS_MIDDLEGAME",
+		"QUEEN_THREAT_BONUS_MIDDLEGAME",
+		"PAWN_THREAT_BONUS_ENDGAME",
+		"KNIGHT_THREAT_BONUS_ENDGAME",
+		"BISHOP_THREAT_BONUS_ENDGAME",
+		"ROOK_THREAT_BONUS_ENDGAME",
+		"QUEEN_THREAT_BONUS_ENDGAME",
+		"KNIGHT_OUTPOST_BONUS_MIDDLEGAME",
+		"KNIGHT_OUTPOST_BONUS_ENDGAME"
+};
 
-	static void readParameters(std::string fileName ) {
+static bool useSettings;
+static std::string settingsFile;
 
+inline bool checkParameter(std::string name) {
+	bool result=false;
+	for(int i=0;i<MAX_PARAMS;i++) {
+		if (allParameters[i]==name) {
+			result=true;
+			break;
+		}
+	}
+	return result;
+}
 
+inline std::string readParameter(std::string name, std::string parameters) {
+	if (!checkParameter(name)) {
+		std::cerr << "Parameter doesn't exist: " << name << std::endl;
+		exit(0);
+	}
+	std::string result = parameters;
+	normalizeString(result);
+	result = getMiddleString(result,name+" = ",";");
+	result += " ";
+	return result;
+}
 
+//valueType 0 full int, 1 low int, 2 high int
+inline void readIntArray(int* array, std::string values, size_t size) {
+
+	size_t last = 0;
+	size_t position = values.find(" ");
+	size_t p=0;
+	while ( position != std::string::npos && p < size)  {
+		std::string value = values.substr(last,(position-last));
+		int v = toInt(value);
+		array[p++] = v;
+		last=position+1;
+		position = values.find(" ", position+1);
+	}
+}
+
+inline void updateArray(int* high, int* low, int* array, std::string parameters,
+		std::string mid, std::string end, size_t size, bool revert = false) {
+	readIntArray(high,readParameter(mid,parameters),size);
+	readIntArray(low,readParameter(end,parameters),size);
+	for (size_t i=0;i<size;i++) {
+		array[(revert?-1:1)*i+(revert?size-1:0)] = MS(high[i],low[i]);
+	}
+}
+
+inline void updateParameter(int* array, int* param,
+		std::string name, std::string parameters,size_t size) {
+	readIntArray(array,readParameter(name,parameters),size);
+	*param = MS(array[0],array[1]);
+}
+
+//setoption name Custom Settings File Path value parameters.txt
+inline void readParameters(std::string fileName) {
+	std::string line;
+	std::ifstream file(fileName.c_str());
+	std::string str = "";
+
+	if (file.is_open()) {
+		while (file.good()) {
+			std::getline (file,line);
+			if (line.find("#",0)!=std::string::npos) {
+				continue;
+			}
+			str += line;
+		}
+		file.close();
+
+		int low[64];
+		int high[64];
+
+		memset(low, 0, sizeof(int)*64);
+		memset(high, 0, sizeof(int)*64);
+		//update piece square table
+		updateArray(high,low,&pieceSquareTable[PAWN][0],str,"PAWN_PST_MIDDLEGAME","PAWN_PST_ENDGAME",64);
+		updateArray(high,low,&pieceSquareTable[KNIGHT][0],str,"KNIGHT_PST_MIDDLEGAME","KNIGHT_PST_ENDGAME",64);
+		updateArray(high,low,&pieceSquareTable[BISHOP][0],str,"BISHOP_PST_MIDDLEGAME","BISHOP_PST_ENDGAME",64);
+		updateArray(high,low,&pieceSquareTable[ROOK][0],str,"ROOK_PST_MIDDLEGAME","ROOK_PST_ENDGAME",64);
+		updateArray(high,low,&pieceSquareTable[QUEEN][0],str,"QUEEN_PST_MIDDLEGAME","QUEEN_PST_ENDGAME",64);
+		updateArray(high,low,&pieceSquareTable[KING][0],str,"KING_PST_MIDDLEGAME","KING_PST_ENDGAME",64);
+
+		//update evaluation parameters
+		updateParameter(high,&DOUBLED_PAWN_PENALTY,"DOUBLED_PAWN_PENALTY",str,2);
+		updateParameter(high,&PAWN_MOBILITY_PENALTY,"PAWN_MOBILITY_PENALTY",str,2);
+		updateParameter(high,&ISOLATED_PAWN_PENALTY,"ISOLATED_PAWN_PENALTY",str,2);
+		updateParameter(high,&ISOLATED_OPEN_PAWN_PENALTY,"ISOLATED_OPEN_PAWN_PENALTY",str,2);
+		updateParameter(high,&BACKWARD_PAWN_PENALTY,"BACKWARD_PAWN_PENALTY",str,2);
+		updateParameter(high,&BACKWARD_OPEN_PAWN_PENALTY,"BACKWARD_OPEN_PAWN_PENALTY",str,2);
+		updateParameter(high,&DONE_CASTLE_BONUS,"DONE_CASTLE_BONUS",str,2);
+		updateParameter(high,&CONNECTED_PAWN_BONUS,"CONNECTED_PAWN_BONUS",str,2);
+		updateParameter(high,&BISHOP_PAIR_BONUS,"BISHOP_PAIR_BONUS",str,2);
+		updateParameter(high,&UNSTOPPABLE_PAWN_BONUS,"UNSTOPPABLE_PAWN_BONUS",str,2);
+		updateParameter(high,&UNSTOPPABLE_CANDIDATE_BONUS,"UNSTOPPABLE_CANDIDATE_BONUS",str,2);
+		updateParameter(high,&ROOK_ON_7TH_RANK_BONUS,"ROOK_ON_7TH_RANK_BONUS",str,2);
+		updateParameter(high,&ROOK_ON_OPEN_FILE_BONUS,"ROOK_ON_OPEN_FILE_BONUS",str,2);
+		updateParameter(high,&ROOK_ON_HALF_OPEN_FILE_BONUS,"ROOK_ON_HALF_OPEN_FILE_BONUS",str,2);
+		updateParameter(high,&QUEEN_ON_7TH_RANK_BONUS,"QUEEN_ON_7TH_RANK_BONUS",str,2);
+		updateParameter(high,&PASSER_AND_KING_BONUS,"PASSER_AND_KING_BONUS",str,2);
+		updateParameter(high,&PAWN_END_GAME_BONUS,"PAWN_END_GAME_BONUS",str,2);
+		updateParameter(high,&TRADE_PAWN_PENALTY,"TRADE_PAWN_PENALTY",str,2);
+		updateParameter(high,&TRADE_PIECE_PENALTY,"TRADE_PIECE_PENALTY",str,2);
+		updateParameter(high,&TRADE_PAWN_BONUS,"TRADE_PAWN_BONUS",str,2);
+		updateParameter(high,&TRADE_PIECE_BONUS,"TRADE_PIECE_BONUS",str,2);
+		updateParameter(high,&QUEEN_CHECK_BONUS,"QUEEN_CHECK_BONUS",str,2);
+		updateParameter(high,&ROOK_CHECK_BONUS,"ROOK_CHECK_BONUS",str,2);
+		updateParameter(high,&INDIRECT_QUEEN_CHECK_BONUS,"INDIRECT_QUEEN_CHECK_BONUS",str,2);
+		updateParameter(high,&INDIRECT_ROOK_CHECK_BONUS,"INDIRECT_ROOK_CHECK_BONUS",str,2);
+		updateParameter(high,&INDIRECT_KNIGHT_CHECK_BONUS,"INDIRECT_KNIGHT_CHECK_BONUS",str,2);
+		updateParameter(high,&INDIRECT_BISHOP_CHECK_BONUS,"INDIRECT_BISHOP_CHECK_BONUS",str,2);
+		updateParameter(high,&SHELTER_BONUS,"SHELTER_BONUS",str,2);
+		updateParameter(high,&SHELTER_OPEN_FILE_PENALTY,"SHELTER_OPEN_FILE_PENALTY",str,2);
+		updateParameter(high,&TEMPO_BONUS,"TEMPO_BONUS",str,2);
+
+		//update mobility
+		updateArray(high,low,&knightMobility[0],str,"KNIGHT_MOBILITY_MIDDLEGAME","KNIGHT_MOBILITY_ENDGAME",9);
+		updateArray(high,low,&bishopMobility[0],str,"BISHOP_MOBILITY_MIDDLEGAME","BISHOP_MOBILITY_ENDGAME",9);
+		updateArray(high,low,&rookMobility[0],str,"ROOK_MOBILITY_MIDDLEGAME","ROOK_MOBILITY_ENDGAME",9);
+
+		//update king tropism
+		updateArray(high,low,&knightKingBonus[0],str,"KNIGHT_TROPISM_MIDDLEGAME","KNIGHT_TROPISM_ENDGAME",8);
+		updateArray(high,low,&bishopKingBonus[0],str,"BISHOP_TROPISM_MIDDLEGAME","BISHOP_TROPISM_ENDGAME",8);
+		updateArray(high,low,&rookKingBonus[0],str,"ROOK_TROPISM_MIDDLEGAME","ROOK_TROPISM_ENDGAME",8);
+		updateArray(high,low,&queenKingBonus[0],str,"QUEEN_TROPISM_MIDDLEGAME","QUEEN_TROPISM_ENDGAME",8);
+
+		//update attack weight by piece
+		updateArray(high,low,&kingZoneAttackWeight[PAWN][0],str,"PAWN_ATTACK_WEIGHT_MIDDLEGAME","PAWN_ATTACK_WEIGHT_ENDGAME",10);
+		updateArray(high,low,&kingZoneAttackWeight[KNIGHT][0],str,"KNIGHT_ATTACK_WEIGHT_MIDDLEGAME","KNIGHT_ATTACK_WEIGHT_ENDGAME",10);
+		updateArray(high,low,&kingZoneAttackWeight[BISHOP][0],str,"BISHOP_ATTACK_WEIGHT_MIDDLEGAME","BISHOP_ATTACK_WEIGHT_ENDGAME",10);
+		updateArray(high,low,&kingZoneAttackWeight[ROOK][0],str,"ROOK_ATTACK_WEIGHT_MIDDLEGAME","ROOK_ATTACK_WEIGHT_ENDGAME",10);
+		updateArray(high,low,&kingZoneAttackWeight[QUEEN][0],str,"QUEEN_ATTACK_WEIGHT_MIDDLEGAME","QUEEN_ATTACK_WEIGHT_ENDGAME",10);
+
+		//update passed pawn terms
+		updateArray(high,low,&connectedPasserBonus[WHITE][0],str,"CONNECTED_PASSER_BONUS_MIDDLEGAME","CONNECTED_PASSER_BONUS_ENDGAME",ALL_RANK);
+		updateArray(high,low,&connectedPasserBonus[BLACK][0],str,"CONNECTED_PASSER_BONUS_MIDDLEGAME","CONNECTED_PASSER_BONUS_ENDGAME",ALL_RANK,true);
+		updateArray(high,low,&freePasserBonus[WHITE][0],str,"FREE_PASSER_BONUS_MIDDLEGAME","FREE_PASSER_BONUS_ENDGAME",ALL_RANK);
+		updateArray(high,low,&freePasserBonus[BLACK][0],str,"FREE_PASSER_BONUS_MIDDLEGAME","FREE_PASSER_BONUS_ENDGAME",ALL_RANK,true);
+		updateArray(high,low,&passedPawnBonus[WHITE][0],str,"PASSED_PAWN_BONUS_MIDDLEGAME","PASSED_PAWN_BONUS_ENDGAME",ALL_RANK);
+		updateArray(high,low,&passedPawnBonus[BLACK][0],str,"PASSED_PAWN_BONUS_MIDDLEGAME","PASSED_PAWN_BONUS_ENDGAME",ALL_RANK,true);
+		updateArray(high,low,&candidatePasserBonus[WHITE][0],str,"CANDIDATE_PASSER_BONUS_MIDDLEGAME","CANDIDATE_PASSER_BONUS_ENDGAME",ALL_RANK);
+		updateArray(high,low,&candidatePasserBonus[BLACK][0],str,"CANDIDATE_PASSER_BONUS_MIDDLEGAME","CANDIDATE_PASSER_BONUS_ENDGAME",ALL_RANK,true);
+
+		//pawn weight
+		updateArray(high,low,&pawnWeight[WHITE][0],str,"PAWN_WEIGHT_MIDDLEGAME","PAWN_WEIGHT_ENDGAME",ALL_FILE);
+		updateArray(high,low,&pawnWeight[BLACK][0],str,"PAWN_WEIGHT_MIDDLEGAME","PAWN_WEIGHT_ENDGAME",ALL_FILE,true);
+
+		//space
+		updateArray(high,low,&spaceBonus[0],str,"SPACE_BONUS_MIDDLEGAME","SPACE_BONUS_ENDGAME",18);
+
+		//threat bonus
+		updateArray(high,low,&threatBonus[PAWN][0],str,"PAWN_THREAT_BONUS_MIDDLEGAME","PAWN_THREAT_BONUS_ENDGAME",ALL_PIECE_TYPE);
+		updateArray(high,low,&threatBonus[KNIGHT][0],str,"KNIGHT_THREAT_BONUS_MIDDLEGAME","KNIGHT_THREAT_BONUS_ENDGAME",ALL_PIECE_TYPE);
+		updateArray(high,low,&threatBonus[BISHOP][0],str,"BISHOP_THREAT_BONUS_MIDDLEGAME","BISHOP_THREAT_BONUS_ENDGAME",ALL_PIECE_TYPE);
+		updateArray(high,low,&threatBonus[ROOK][0],str,"ROOK_THREAT_BONUS_MIDDLEGAME","ROOK_THREAT_BONUS_ENDGAME",ALL_PIECE_TYPE);
+		updateArray(high,low,&threatBonus[QUEEN][0],str,"QUEEN_THREAT_BONUS_MIDDLEGAME","QUEEN_THREAT_BONUS_ENDGAME",ALL_PIECE_TYPE);
+
+		//knight outpost bonus
+		updateArray(high,low,&knightOutpostBonus[WHITE][0],str,"KNIGHT_OUTPOST_BONUS_MIDDLEGAME","KNIGHT_OUTPOST_BONUS_ENDGAME",64);
+		updateArray(high,low,&knightOutpostBonus[BLACK][0],str,"KNIGHT_OUTPOST_BONUS_MIDDLEGAME","KNIGHT_OUTPOST_BONUS_ENDGAME",64,true);
+
+		std::cout << "info Loaded parameters." << std::endl;
+
+	} else {
+		std::cout << "info Unable to open file: " << fileName << std::endl;
 	}
 
-};
+}
+
+inline std::string getSettingsFile() {
+	return settingsFile;
+}
+
+inline bool isUseSettings() {
+	return useSettings;
+}
+
+inline void setSettingsFile(std::string _settingsFile) {
+	settingsFile = _settingsFile;
+}
+
+inline void setUseSettings(bool _useSettings) {
+	useSettings = _useSettings;
+}
+
 
 #endif /* PARAMETER_H_ */

@@ -38,6 +38,8 @@
 #include "magicmoves.h"
 #include "parameter.h"
 
+class Parameter;
+
 namespace BoardTypes{
 
 //used for hashing

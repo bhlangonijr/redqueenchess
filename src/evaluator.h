@@ -30,8 +30,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include <sstream>
-#include "board.h"
 #include "bitboard.h"
+#include "board.h"
 
 const int lazyEvalMargin=200;
 const size_t pawnHashSize=1<<18;

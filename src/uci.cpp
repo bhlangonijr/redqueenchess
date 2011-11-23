@@ -23,15 +23,7 @@
  *  Created on: Feb 7, 2009
  *      Author: bhlangonijr
  */
-#include <iostream>
-#include <string>
-#include <vector>
-#include <exception>
 #include "uci.h"
-#include "stringutil.h"
-#include "constant.h"
-#include "searchagent.h"
-#include "board.h"
 
 using namespace StringUtil;
 
@@ -41,7 +33,8 @@ Uci* Uci::getInstance () {
 	if (uci == 0) {
 		uci = new Uci();
 	}
-	return uci;}
+	return uci;
+}
 
 Uci::Uci() {
 
@@ -192,6 +185,13 @@ void Uci::executeSetOption() {
 			SearchAgent::getInstance()->getSearcher(i)->getEvaluator().
 					setTacticalWeight(toInt(this->getUciOption("Tactical_Evaluation_Weight").getValue()));
 		}
+	}  else if (optionName=="Use Custom Engine Settings?") {
+		bool useSettings = this->getUciOption("Use Custom Engine Settings?").getValue()=="true"?true:false;
+		setUseSettings(useSettings);
+	} else if (optionName=="Custom Settings File Path") {
+		std::string settings = this->getUciOption("Custom Settings File Path").getValue();
+		setSettingsFile(settings);
+		readParameters(settings);
 	}
 }
 // execute go uci command

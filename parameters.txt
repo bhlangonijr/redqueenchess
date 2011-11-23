@@ -127,12 +127,12 @@ KING_PST_ENDGAME =
 # first value: middlegame bonus/penalty
 # second value: endgame bonus/penalty
 DOUBLED_PAWN_PENALTY = -10 -16;
-PAWN_MOBILITY_PENALTY = -5-7;
+PAWN_MOBILITY_PENALTY = -5 -7;
 ISOLATED_PAWN_PENALTY = -20 -10;
 ISOLATED_OPEN_PAWN_PENALTY = -20 -20;
 BACKWARD_PAWN_PENALTY = -13 -10;
 BACKWARD_OPEN_PAWN_PENALTY = -17 -13;
-DONE_CASTLE_BONUS= +20 -1;
+DONE_CASTLE_BONUS = +20 -1;
 CONNECTED_PAWN_BONUS = +5 -1;
 BISHOP_PAIR_BONUS = +30 +45;
 UNSTOPPABLE_PAWN_BONUS = +500 +500;
@@ -155,7 +155,7 @@ INDIRECT_KNIGHT_CHECK_BONUS = +1 +2;
 INDIRECT_BISHOP_CHECK_BONUS = +1 +2;
 SHELTER_BONUS = +2 +0;
 SHELTER_OPEN_FILE_PENALTY = -9 -0;
-TEMPO_BONUS	=  +10 +10;
+TEMPO_BONUS = +10 +10;
 
 #mobility bonuses per number of dominated squares
 # 0 squares = first value, 1 square = second value, 2 squares = third value, etc
@@ -188,7 +188,7 @@ BISHOP_ATTACK_WEIGHT_MIDDLEGAME = +0,+4 +8 +12 +16 +20 +24 +28 +32 +36;
 ROOK_ATTACK_WEIGHT_MIDDLEGAME = +0 +5 +10 +15 +20 +25 +30 +35 +40 +45;
 QUEEN_ATTACK_WEIGHT_MIDDLEGAME = +0 +6 +12 +18 +24 +30 +36 +42 +48 +54;
 
-PAWN_ATTACK_WEIGHT_ENDGAME = +0 +0 +0 +0 +0 +0 +0 +0 +0 +0
+PAWN_ATTACK_WEIGHT_ENDGAME = +0 +0 +0 +0 +0 +0 +0 +0 +0 +0;
 KNIGHT_ATTACK_WEIGHT_ENDGAME = +0 +7 +14 +21 +28 +35 +42 +49 +56 +63;
 BISHOP_ATTACK_WEIGHT_ENDGAME = +0 +7 +14 +21 +28 +35 +42 +49 +56 +63;
 ROOK_ATTACK_WEIGHT_ENDGAME = +0 +8 +16 +24 +32 +40 +48 +56 +64 +72;
@@ -220,7 +220,6 @@ PAWN_WEIGHT_ENDGAME = +0 -2 -1 +2 +2 -1 -2 +0;
 
 #bonus for controling space
 SPACE_BONUS_MIDDLEGAME = +0 +0 +5 +7 +9 +15 +20 +25 +30	+35 +45 +50 +60 +70 +80 +90 +100 +100;
-
 SPACE_BONUS_ENDGAME = +0 +0 +5 +7 +9 +13 +17 +23 +27 +33 +45 +50 +60 +70 +80 +90 +100 +100;
 
 #threat bonus 
@@ -242,21 +241,21 @@ QUEEN_THREAT_BONUS_ENDGAME = +0 +4 +4 +4 +0 +15 +0;
 #knight outpost bonus - from white's point of view
 # square A1 = first value, A2 = second value, ... H8 = last value
 KNIGHT_OUTPOST_BONUS_MIDDLEGAME = 
-+0 +0 +0 +0 +0 +0 +0 +0
-+0 +0 +0 +0 +0 +0 +0 +0
-+0 +0 +5 +7 +7 +5 +0 +0
-+0 +4 +7 +12 +12 +7 +4 +0
-+0 +4 +7 +12 +12 +7 +4 +0
-+0 +0 +0 +0 +0 +0 +0 +0
-+0 +0 +0 +0 +0 +0 +0 +0
++0 +0 +0 +0 +0 +0 +0 +0 
++0 +0 +0 +0 +0 +0 +0 +0 
++0 +0 +5 +7 +7 +5 +0 +0 
++0 +4 +7 +12 +12 +7 +4 +0 
++0 +4 +7 +12 +12 +7 +4 +0 
++0 +0 +0 +0 +0 +0 +0 +0 
++0 +0 +0 +0 +0 +0 +0 +0 
 +0 +0 +0 +0 +0 +0 +0 +0;
  
 KNIGHT_OUTPOST_BONUS_ENDGAME = 
-+0 +0 +0 +0 +0 +0 +0 +0
-+0 +0 +0 +0 +0 +0 +0 +0
-+0 +0 +3 +5 +5 +3 +0 +0
-+0 +2 +5 +10 +10 +5 +2 +0
-+0 +2 +5 +10 +10 +5 +2 +0
-+0 +0 +0 +0 +0 +0 +0 +0
-+0 +0 +0 +0 +0 +0 +0 +0
++0 +0 +0 +0 +0 +0 +0 +0 
++0 +0 +0 +0 +0 +0 +0 +0 
++0 +0 +3 +5 +5 +3 +0 +0 
++0 +2 +5 +10 +10 +5 +2 +0 
++0 +2 +5 +10 +10 +5 +2 +0 
++0 +0 +0 +0 +0 +0 +0 +0 
++0 +0 +0 +0 +0 +0 +0 +0 
 +0 +0 +0 +0 +0 +0 +0 +0;

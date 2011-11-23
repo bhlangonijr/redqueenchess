@@ -63,7 +63,7 @@ void normalizeString(std::string &str) {
 std::string getMiddleString(const std::string source, const std::string before, const std::string after) {
 	std::string result="";
 	size_t posFirst=source.find(before);
-	size_t posLast=source.find(after);
+	size_t posLast=source.find(after,posFirst);
 	try {
 		if (posFirst!=std::string::npos&&posFirst!=std::string::npos){
 			result=source.substr(posFirst+before.length(),posLast-(posFirst+before.length()));
