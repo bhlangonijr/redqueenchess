@@ -370,9 +370,15 @@ inline std::string readParameter(std::string name, std::string parameters) {
 		exit(0);
 	}
 	std::string result = parameters;
+	result = getMiddleString(result,name,";");
+	size_t n = result.find("=");
+	if (n!=std::string::npos) {
+		result = result.erase(0,n+1);
+	}
+	if (result.at(0)==' ') {
+		result = result.erase(0,1);
+	}
 	normalizeString(result);
-	result = getMiddleString(result,name+" = ",";");
-	result += " ";
 	return result;
 }
 
@@ -421,6 +427,7 @@ inline void readParameters(std::string fileName) {
 			str += line;
 		}
 		file.close();
+		normalizeString(str);
 
 		int low[64];
 		int high[64];
