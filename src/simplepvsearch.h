@@ -202,6 +202,15 @@ public:
 	const int getRazorMargin(const int depth);
 
 	const int getDeltaMargin(const int depth);
+    bool isCompletedIteration() const
+    {
+        return completedIteration;
+    }
+
+    void setCompletedIteration(bool completedIteration)
+    {
+        this->completedIteration = completedIteration;
+    }
 
 	inline const void setTimeToSearch(const int64_t value) {
 		timeToSearch = value;
@@ -349,6 +358,7 @@ private:
 	pthread_mutex_t mutex;
 	pthread_cond_t waitCond;
 	int* history;
+	bool completedIteration;
 	int idSearch(Board& board);
 	int rootSearch(Board& board, SearchInfo& si, PvLine& pv);
 	void uciOutput(PvLine& pv, const int score, const int64_t totalTime,

@@ -272,3 +272,8 @@ setoption name Threads value 1
 setoption name Positional_Evaluation_Weight 100
 setoption name Tactical_Evaluation_Weight 100
 
+
+setoption name Threads value 1
+position fen 1Q6/5kpp/2p4r/b4p2/P2R4/1N4P1/5PKP/4q3 b - - 0 1
+go wtime 100000 btime 100000
+

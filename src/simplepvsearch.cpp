@@ -59,9 +59,11 @@ int SimplePVSearch::idSearch(Board& board) {
 	filterLegalMoves(board,rootMoves,agent->getSearchMoves());
 	scoreRootMoves(board,rootMoves);
 	rootMoves.sort();
+	setCompletedIteration(false);
 	if (rootMoves.get(0).score > rootMoves.get(1).score + easyMargin ) {
 		easyMove=rootMoves.get(0);
 	}
+	bestMove=rootMoves.get(0);
 	PvLine pv = PvLine();
 	pv.index=0;
 
@@ -82,8 +84,12 @@ int SimplePVSearch::idSearch(Board& board) {
 			rootSearchInfo.beta  = std::min(iterationScore[depth-1]+aspirationDelta,+maxScore);
 		}
 		bool finished=false;
+		setCompletedIteration(false);
 		while (!finished) {
 			score = rootSearch(board, rootSearchInfo, pv);
+			if (!stop(rootSearchInfo)) {
+				setCompletedIteration(true);
+			}
 			iterationScore[depth]=score;
 			updateHashWithPv(board,pv);
 			if (!stop(rootSearchInfo)) {
@@ -106,14 +112,16 @@ int SimplePVSearch::idSearch(Board& board) {
 			}
 
 		}
+		if (isCompletedIteration()) {
+			bestMove=pv.moves[0];
+			ponderMove=pv.moves[1];
+			if (score > bestScore) {
+				bestScore = score;
+			}
+		}
 		iterationTime[depth]=getTickCount()-startTime;
 		if (stop(rootSearchInfo) && depth > 1) {
 			break;
-		}
-		bestMove=pv.moves[0];
-		ponderMove=pv.moves[1];
-		if (score > bestScore) {
-			bestScore = score;
 		}
 		int repetition=0;
 		for (int x=depth-1;x>=1;x--) {
@@ -142,16 +150,17 @@ int SimplePVSearch::idSearch(Board& board) {
 				break;
 			}
 			if (depth>7) {
-				if (!easyMove.none() && easyMove==bestMove && nodesPerMove[0]>=nodes*85/100 &&
+				if (!easyMove.none() && easyMove==bestMove &&
+						nodesPerMove[0]>=nodes*85/100 &&
 						iterationTime[depth] > timeToSearch/2) {
 					break;
 				}
 			}
 			if (depth > 6 && depth < 40 &&
-					iterationPVChange[depth]>0 && iterationPVChange[depth-1]>0) {
+					iterationPVChange[depth]>0) {
 				agent->addExtraTime(depth,iterationPVChange);
 			}
-			if (iterationTime[depth] > timeToSearch*70/100) {
+			if (iterationTime[depth] > getTimeToSearch()*70/100) {
 				break;
 			}
 		}
