@@ -185,11 +185,11 @@ void Uci::executeSetOption() {
 			SearchAgent::getInstance()->getSearcher(i)->getEvaluator().
 					setTacticalWeight(toInt(this->getUciOption("Tactical_Evaluation_Weight").getValue()));
 		}
-	}  else if (optionName=="Use Custom Engine Settings?") {
-		bool useSettings = this->getUciOption("Use Custom Engine Settings?").getValue()=="true"?true:false;
+	}  else if (optionName=="Use_Custom_Engine_Settings?") {
+		bool useSettings = this->getUciOption("Use_Custom_Engine_Settings?").getValue()=="true"?true:false;
 		setUseSettings(useSettings);
-	} else if (optionName=="Custom Settings File Path") {
-		std::string settings = this->getUciOption("Custom Settings File Path").getValue();
+	} else if (optionName=="Custom_Settings_File_Path") {
+		std::string settings = this->getUciOption("Custom_Settings_File_Path").getValue();
 		setSettingsFile(settings);
 		readParameters(settings);
 	}

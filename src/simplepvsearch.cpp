@@ -283,15 +283,11 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 	}
 	TranspositionTable::HashData hashData;
 	MoveIterator::Move hashMove;
-	bool okToPrune=false;
 	const Key key = si.partialSearch?board.getPartialSearchKey():board.getKey();
-	// tt retrieve & prunning
-	bool hashOk = agent->hashGet(okToPrune, key, hashData, si.ply, si.depth);
+	//tt retrieve
+	bool hashOk = agent->hashGet(key, hashData, si.ply);
 	if (hashOk) {
 		hashMove = hashData.move();
-		if (okToPrune) {
-			return hashData.value();
-		}
 	}
 	const bool isKingAttacked = board.isInCheck();
 	bool isLazyEval=false;

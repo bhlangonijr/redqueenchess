@@ -412,7 +412,7 @@ inline void updateParameter(int* array, int* param,
 	*param = MS(array[0],array[1]);
 }
 
-//setoption name Custom Settings File Path value parameters.txt
+//setoption name Custom_Settings_File_Path value parameters.txt
 inline void readParameters(std::string fileName) {
 	std::string line;
 	std::ifstream file(fileName.c_str());
