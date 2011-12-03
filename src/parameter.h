@@ -32,6 +32,7 @@
 #include "stringutil.h"
 
 #define MAX_PARAMS 90
+const int DELTA_MAX = 7;
 
 using namespace StringUtil;
 
@@ -256,6 +257,8 @@ static int knightOutpostBonus[ALL_PIECE_COLOR][ALL_SQUARE] = {
 		},
 		{}
 };
+
+static int squareDelta[ALL_SQUARE][ALL_SQUARE];
 
 const std::string allParameters[MAX_PARAMS] = {
 		"PAWN_PST_MIDDLEGAME",
@@ -542,6 +545,34 @@ inline void setSettingsFile(std::string _settingsFile) {
 
 inline void setUseSettings(bool _useSettings) {
 	useSettings = _useSettings;
+}
+
+// print a bitboard in a readble form
+inline void printBitboard(Bitboard bb) {
+	for(long x=0;x<64;x++) {
+		if ((0x1ULL << x)&bb) {
+			std::cout << "1";
+		} else {
+			std::cout << "0";
+		}
+		if ((x+1) % 8 == 0) std::cout << std::endl;
+	}
+	std::cout << std::endl;
+}
+
+// initialize bitboards
+inline void initializeBitboards() {
+	for (int x=0;x<ALL_SQUARE;x++) {
+		for (int y=0;y<ALL_SQUARE;y++) {
+			const int delta1 = abs(squareRank[x]-squareRank[y]);
+			const int delta2 = abs(squareFile[x]-squareFile[y]);
+			squareDelta[x][y] = std::max(delta1, delta2);
+		}
+	}
+}
+
+inline int squareDistance(const Square from, const Square to) {
+	return squareDelta[from][to];
 }
 
 
