@@ -593,6 +593,7 @@ template <bool isMoveFromCache>
 inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 
 	const PieceTypeByColor fromPiece=getPiece(move.from);
+	const PieceTypeByColor toPiece=getPiece(move.to);
 	const PieceColor color = getPieceColor(move.from);
 	const PieceType fromType = pieceType[fromPiece];
 
@@ -646,6 +647,26 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 
 	if (rookAndQueens &&
 			(getRookAttacks(kingSq,allPieces)&rookAndQueens)) {
+		return false;
+	}
+
+	const Bitboard knights = (getPieces(other,KNIGHT))&~moveTo;
+
+	if (knights &&
+			(getKnightAttacks(kingSq,allPieces)&knights)) {
+		return false;
+	}
+
+	Bitboard pawns = (getPieces(other,PAWN))&~moveTo;
+
+	if (pawns && fromType==PAWN &&
+			toPiece == EMPTY && getEnPassant()!=NONE &&
+			getSquareFile(move.from)!=getSquareFile(move.to)) {
+		pawns &= ~squareToBitboard[getEnPassant()];
+	}
+
+	if (pawns &&
+			(getPawnAttacks(kingSq,color)&pawns)) {
 		return false;
 	}
 
