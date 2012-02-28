@@ -625,10 +625,12 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 	}
 
 	if (fromType==KING) {
-		return !isAttacked(color,move.to);
+		if (isAttacked(color,move.to)) {
+			return false;
+		}
 	}
 
-	const Square kingSq = getKingSquare(color);
+	const Square kingSq = fromType==KING?move.to:getKingSquare(color);
 	const PieceColor other = flipSide(color);
 	const Bitboard moveTo = squareToBitboard[move.to];
 	const Bitboard moveFrom = squareToBitboard[move.from];
