@@ -198,6 +198,7 @@ void Uci::executeSetOption() {
 void Uci::executeGo() {
 	SearchAgent *searchAgent = SearchAgent::getInstance();
 	searchAgent->clearParameters();
+	searchAgent->setSearchMode(SearchAgent::SEARCH_NONE);
 	if (containsString(this->rawInput, "wtime")) {
 		searchAgent->setSearchMode(SearchAgent::SEARCH_TIME);
 		searchAgent->setWhiteTime(toLong(getMiddleString(this->rawInput,"wtime "," ")));
@@ -222,6 +223,9 @@ void Uci::executeGo() {
 		searchAgent->setSearchMoves(getMiddleString(this->rawInput,"searchmoves "));
 	}
 	if (containsString(this->rawInput, "nodes ")) {
+		if (searchAgent->getSearchMode()==SearchAgent::SEARCH_NONE) {
+			searchAgent->setSearchMode(SearchAgent::SEARCH_INFINITE);
+		}
 		searchAgent->setSearchNodes(toLong(getMiddleString(this->rawInput,"nodes ")));
 	}
 	searchAgent->setPonder(containsString(this->rawInput, " ponder"));
