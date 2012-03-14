@@ -1,6 +1,6 @@
 /*
 	Redqueen Chess Engine
-    Copyright (C) 2008-2011 Ben-Hur Carlos Vieira Langoni Junior
+    Copyright (C) 2008-2012 Ben-Hur Carlos Vieira Langoni Junior
 
     This file is part of Redqueen Chess Engine.
 
@@ -78,7 +78,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		if (depth >= aspirationDepth) {
 			const int delta1 = iterationScore[depth-1]-iterationScore[depth-2];
 			const int delta2 = iterationScore[depth-2]-iterationScore[depth-3];
-			aspirationDelta = std::max(abs(delta1)*80/100+abs(delta2)*20/100, 20)+5;
+			aspirationDelta = std::max(abs(delta1)*80/100+abs(delta2)*20/100, 10)+5;
 			rootSearchInfo.alpha = std::max(iterationScore[depth-1]-aspirationDelta,-maxScore);
 			rootSearchInfo.beta  = std::min(iterationScore[depth-1]+aspirationDelta,+maxScore);
 		}
@@ -105,9 +105,12 @@ int SimplePVSearch::idSearch(Board& board) {
 					depth < aspirationDepth ||
 					(stop(rootSearchInfo) && depth>1);
 			if (!finished) {
-				rootSearchInfo.alpha = std::max(rootSearchInfo.alpha-aspirationDelta,-maxScore);
-				rootSearchInfo.beta  = std::min(rootSearchInfo.beta+aspirationDelta,+maxScore);
-				aspirationDelta = std::max(aspirationDelta*130/100,10);
+				if (score <= rootSearchInfo.alpha) {
+					rootSearchInfo.alpha = std::max(rootSearchInfo.alpha-aspirationDelta,-maxScore);
+				} else if (score >= rootSearchInfo.beta) {
+					rootSearchInfo.beta  = std::min(rootSearchInfo.beta+aspirationDelta,+maxScore);
+				}
+				aspirationDelta = std::max(aspirationDelta/2,10);
 			}
 
 		}

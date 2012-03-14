@@ -1,6 +1,6 @@
 /*
 	Redqueen Chess Engine
-    Copyright (C) 2008-2011 Ben-Hur Carlos Vieira Langoni Junior
+    Copyright (C) 2008-2012 Ben-Hur Carlos Vieira Langoni Junior
 
     This file is part of Redqueen Chess Engine.
 
@@ -59,7 +59,6 @@ const int aspirationDepth=6;
 const int futilityDepth=7;
 const int nullMoveDepth=5;
 const int razorDepth=4;
-const int hardPruneDepth=3;
 const int qsOnlyRecaptureDepth=-6;
 const int lmrDepthThresholdRoot=2;
 const int lmrDepthThreshold=1;

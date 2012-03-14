@@ -1,6 +1,6 @@
 /*
 	Redqueen Chess Engine
-    Copyright (C) 2008-2011 Ben-Hur Carlos Vieira Langoni Junior
+    Copyright (C) 2008-2012 Ben-Hur Carlos Vieira Langoni Junior
 
     This file is part of Redqueen Chess Engine.
 
@@ -30,8 +30,8 @@
 namespace Constant {
 const static std::string ENGINE_NAME = "RedQueen";
 const static std::string ENGINE_AUTHOR = "Ben-Hur Carlos Vieira Langoni Junior";
-const static std::string ENGINE_VERSION = "1.0.0.700";
-const static std::string ENGINE_COPYRIGHT = ENGINE_NAME + ". Copyright (C) 2008-2011 " + ENGINE_AUTHOR + ". ";
+const static std::string ENGINE_VERSION = "1.0.0.701";
+const static std::string ENGINE_COPYRIGHT = ENGINE_NAME + ". Copyright (C) 2008-2012 " + ENGINE_AUTHOR + ". ";
 }
 
 #endif /* CONSTANT_H_ */

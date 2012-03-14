@@ -1,6 +1,6 @@
 
 	Redqueen Chess Engine
-	Copyright (C) 2008-2011 Ben-Hur Carlos Vieira Langoni Junior
+	Copyright (C) 2008-2012 Ben-Hur Carlos Vieira Langoni Junior
 
 Introduction ---------------------------------------------------------------------
 
