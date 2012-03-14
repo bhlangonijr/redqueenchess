@@ -1017,8 +1017,9 @@ void SimplePVSearch::initialize() {
 		for (int y=0;y<maxMoveCount;y++) {
 			reductionTablePV[x][y]=(int)(!(x&&y)?0.0:floor(log(x)*log(y))/2.3);
 			reductionTableNonPV[x][y]=(int)(!(x&&y)?0.0:floor(log(x)*log(y))/1.5);
-			futilityMargin[x][y]=(int)(100.03 * exp(0.35*(double(x))+-double(y*x)*0.01)) +
+			futilityMargin[x][y]=(int)(100.03 * exp(0.23*(double(x))+-double(y*x)*0.01)) +
 					(x>1 ? 90.0 * exp(0.03*(double(x))): 0);
+			std::cout << x << "," << y << " = " << futilityMargin[x][y] << std::endl;
 
 		}
 	}
