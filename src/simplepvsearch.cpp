@@ -110,7 +110,7 @@ int SimplePVSearch::idSearch(Board& board) {
 				} else if (score >= rootSearchInfo.beta) {
 					rootSearchInfo.beta  = std::min(rootSearchInfo.beta+aspirationDelta,+maxScore);
 				}
-				aspirationDelta = std::max(aspirationDelta/2,10);
+				aspirationDelta += std::max(aspirationDelta/2,10);
 			}
 
 		}
