@@ -105,12 +105,9 @@ int SimplePVSearch::idSearch(Board& board) {
 					depth < aspirationDepth ||
 					(stop(rootSearchInfo) && depth>1);
 			if (!finished) {
-				if (score <= rootSearchInfo.alpha) {
-					rootSearchInfo.alpha = std::max(rootSearchInfo.alpha-aspirationDelta,-maxScore);
-				} else if (score >= rootSearchInfo.beta) {
-					rootSearchInfo.beta  = std::min(rootSearchInfo.beta+aspirationDelta,+maxScore);
-				}
-				aspirationDelta += std::max(aspirationDelta/2,10);
+				rootSearchInfo.alpha = std::max(rootSearchInfo.alpha-aspirationDelta,-maxScore);
+				rootSearchInfo.beta  = std::min(rootSearchInfo.beta+aspirationDelta,+maxScore);
+				aspirationDelta = std::max(aspirationDelta*130/100,10);
 			}
 
 		}
@@ -1015,8 +1012,8 @@ void SimplePVSearch::initialize() {
 	for (int x=0;x<=maxSearchDepth;x++) {
 		moveCountMargin[x]=5 + x * x / 2;
 		for (int y=0;y<maxMoveCount;y++) {
-			reductionTablePV[x][y]=(int)(!(x&&y)?0.0:floor(log(x)*log(y))/2.3);
-			reductionTableNonPV[x][y]=(int)(!(x&&y)?0.0:floor(log(x)*log(y))/1.5);
+			reductionTablePV[x][y]=(int)(!(x&&y)?0.0:floor(log(x)*log(y))/3.0);
+			reductionTableNonPV[x][y]=(int)(!(x&&y)?0.0:floor(log(x)*log(y))/2.0);
 			futilityMargin[x][y]=(int)(100.03 * exp(0.23*(double(x))+-double(y*x)*0.01)) +
 					(x>1 ? 90.0 * exp(0.03*(double(x))): 0);
 			//std::cout << x << "," << y << " = " << futilityMargin[x][y] << std::endl;
