@@ -616,7 +616,7 @@ inline const bool SimplePVSearch::timeIsUp() {
 			infinite || (nodes & nodesToGo)) {
 		return false;
 	}
-	return getTickCount()>=timeToStop;
+	return getTickCount()>=getTimeToStop();
 }
 
 inline void SimplePVSearch::uciOutput(PvLine& pv, const int score, const int64_t totalTime,

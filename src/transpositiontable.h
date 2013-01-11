@@ -52,7 +52,7 @@ public:
 	};
 
 	struct HashData {
-		HashData() : _value(-maxScore), _evalValue(-maxScore), _depth(0), _flag(NODE_NONE),
+		HashData() : key(0),_value(-maxScore), _evalValue(-maxScore), _depth(0), _flag(NODE_NONE),
 				_from(NONE), _to(NONE), _promotion(EMPTY), _generation(0) {};
 
 		HashData(const int& value, const int& evalValue, const int& depth, const NodeFlag& flag,

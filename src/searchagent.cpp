@@ -315,9 +315,14 @@ const int64_t SearchAgent::getTimeToSearch(const int64_t usedTime) {
 	int64_t time=board.getSideToMove()==WHITE? getWhiteTime():getBlackTime();
 	int64_t incTime=board.getSideToMove()==WHITE?getWhiteIncrement():getBlackIncrement();
 	int64_t movesLeft = defaultGameSize;
-	time-=usedTime+30;
+	time-=usedTime;
 	if (movesToGo>0) {
-		movesLeft = std::min(movesToGo,15);
+		movesLeft = std::min(movesToGo,20);
+		if (movesToGo==1) {
+			time=time*60/100;
+		} else {
+			time=time*90/100;
+		}
 	} else {
 		for (int x=0;x<timeTableSize;x++) {
 			if (time<timeTable[x][1] && time >= timeTable[x][2]) {
@@ -326,6 +331,7 @@ const int64_t SearchAgent::getTimeToSearch(const int64_t usedTime) {
 				break;
 			}
 		}
+		time=time*95/100;
 	}
 	return std::min(time/movesLeft+incTime,time);
 }
