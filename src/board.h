@@ -634,7 +634,16 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 	const PieceColor other = flipSide(color);
 	const Bitboard moveTo = squareToBitboard[move.to];
 	const Bitboard moveFrom = squareToBitboard[move.from];
-	const Bitboard allPieces = (getAllPieces()^moveFrom)|moveTo;
+	Bitboard allPieces = (getAllPieces()^moveFrom)|moveTo;
+
+	Bitboard pawns = (getPieces(other,PAWN))&~moveTo;
+
+	if (pawns && fromType==PAWN &&
+			toPiece == EMPTY && getEnPassant()!=NONE &&
+			getSquareFile(move.from)!=getSquareFile(move.to)) {
+		pawns &= ~squareToBitboard[getEnPassant()];
+		allPieces &= ~squareToBitboard[getEnPassant()];
+	}
 
 	const Bitboard bishopAndQueens = ((getPieces(other,BISHOP) |
 			getPieces(other,QUEEN)))&~moveTo;
@@ -657,14 +666,6 @@ inline const bool Board::isMoveLegal(MoveIterator::Move& move) {
 	if (knights &&
 			(getKnightAttacks(kingSq,allPieces)&knights)) {
 		return false;
-	}
-
-	Bitboard pawns = (getPieces(other,PAWN))&~moveTo;
-
-	if (pawns && fromType==PAWN &&
-			toPiece == EMPTY && getEnPassant()!=NONE &&
-			getSquareFile(move.from)!=getSquareFile(move.to)) {
-		pawns &= ~squareToBitboard[getEnPassant()];
 	}
 
 	if (pawns &&
