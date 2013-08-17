@@ -317,9 +317,9 @@ const int64_t SearchAgent::getTimeToSearch(const int64_t usedTime) {
 	int64_t movesLeft = defaultGameSize;
 	time-=usedTime;
 	if (movesToGo>0) {
-		movesLeft = std::min(movesToGo,20);
+		movesLeft = movesToGo;
 		if (movesToGo==1) {
-			time=time*60/100;
+			time=time*80/100;
 		} else {
 			time=time*90/100;
 		}

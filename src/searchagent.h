@@ -29,6 +29,7 @@
 #include <iostream>
 #include <assert.h>
 #include <pthread.h>
+#include <unistd.h>
 #include "board.h"
 #include "simplepvsearch.h"
 #include "transpositiontable.h"
