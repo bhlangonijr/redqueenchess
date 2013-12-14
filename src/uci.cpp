@@ -198,6 +198,7 @@ void Uci::executeSetOption() {
 void Uci::executeGo() {
 	SearchAgent *searchAgent = SearchAgent::getInstance();
 	searchAgent->clearParameters();
+	searchAgent->clearHash();
 	searchAgent->setSearchMode(SearchAgent::SEARCH_NONE);
 	if (containsString(this->rawInput, "wtime")) {
 		searchAgent->setSearchMode(SearchAgent::SEARCH_TIME);

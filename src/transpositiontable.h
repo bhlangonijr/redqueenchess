@@ -55,11 +55,6 @@ public:
 		HashData() : key(0),_value(-maxScore), _evalValue(-maxScore), _depth(0), _flag(NODE_NONE),
 				_from(NONE), _to(NONE), _promotion(EMPTY), _generation(0) {};
 
-		HashData(const int& value, const int& evalValue, const int& depth, const NodeFlag& flag,
-				const MoveIterator::Move& move, const int& generation) :
-					_value(value), _evalValue(evalValue), _depth(depth), _flag(flag), _from(move.from), _to(move.to),
-					_promotion(move.promotionPiece), _generation(generation)  {};
-
 		inline void update(const HashKey hashKey, const int& value, const int& evalValue, const int& depth,
 				const NodeFlag& flag, const MoveIterator::Move& move, const int& generation) {
 			key=hashKey;
