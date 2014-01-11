@@ -156,7 +156,7 @@ int SimplePVSearch::idSearch(Board& board) {
 				}
 			}
 			if (depth > 6 && depth < 40 &&
-					iterationPVChange[depth]>0) {
+					iterationPVChange[depth]>1) {
 				agent->addExtraTime(depth,iterationPVChange);
 			}
 			if (iterationTime[depth] > getTimeToSearch()*70/100) {

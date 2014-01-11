@@ -436,7 +436,7 @@ private:
 	SimplePVSearch* mainSearcher[maxThreads];
 	int currentThread;
 	int freeThreads;
-	bool threadShouldWait;
+	volatile bool threadShouldWait;
 	static pthread_mutex_t mutex;
 	static pthread_cond_t waitCond;
 	static pthread_mutex_t mutex1;

@@ -53,8 +53,8 @@ int main(int argc, char* argv[]) {
 	std::string paramNumProcs = StringUtil::toStr(SearchAgent::getInstance()->getNumProcs());
 	// creating uci options
 	std::vector< UciOption *> options;
-	options.push_back(new UciOption("Hash",UciOption::SPIN,"128","128",1,4096,""));
-	options.push_back(new UciOption("Threads",UciOption::SPIN,paramNumProcs,paramNumProcs,1,16,""));
+	options.push_back(new UciOption("Hash",UciOption::SPIN,"128","128",1,16384,""));
+	options.push_back(new UciOption("Threads",UciOption::SPIN,"1",paramNumProcs,1,32,""));
 	options.push_back(new UciOption("Ponder",UciOption::CHECK,"true","true"));
 	options.push_back(new UciOption("Positional_Evaluation_Weight",UciOption::SPIN,"100","100",1,200,""));
 	options.push_back(new UciOption("Tactical_Evaluation_Weight",UciOption::SPIN,"100","100",1,200,""));
@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
 	options.push_back(new UciOption("Clear Hash",UciOption::BUTTON,"",""));
 	// set options into uci handler
 	uci->setUciOption(options);
-	SearchAgent::getInstance()->setThreadNumber(SearchAgent::getInstance()->getNumProcs());
+	SearchAgent::getInstance()->setThreadNumber(1);
 	SearchAgent::getInstance()->initializeThreadPool(SearchAgent::getInstance()->getThreadNumber());
 	std::cout << Constant::ENGINE_COPYRIGHT << std::endl;
 	if (argc<=1) {

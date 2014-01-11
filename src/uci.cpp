@@ -36,7 +36,7 @@ Uci* Uci::getInstance () {
 	return uci;
 }
 
-Uci::Uci() {
+Uci::Uci() : command(UNKNOW) {
 
 }
 // wait to get user input
@@ -198,7 +198,7 @@ void Uci::executeSetOption() {
 void Uci::executeGo() {
 	SearchAgent *searchAgent = SearchAgent::getInstance();
 	searchAgent->clearParameters();
-	searchAgent->clearHash();
+
 	searchAgent->setSearchMode(SearchAgent::SEARCH_NONE);
 	if (containsString(this->rawInput, "wtime")) {
 		searchAgent->setSearchMode(SearchAgent::SEARCH_TIME);

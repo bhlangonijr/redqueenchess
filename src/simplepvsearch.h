@@ -340,8 +340,8 @@ private:
 	int64_t time;
 	bool searchFixedDepth;
 	bool infinite;
-	int64_t nodes;
-	int64_t timeToStop;
+	volatile int64_t nodes;
+	volatile int64_t timeToStop;
 	MoveIterator rootMoves;
 	MoveIterator::Move killer[maxSearchPly+1][2];
 	int iterationPVChange[maxSearchPly+1];

@@ -98,7 +98,7 @@ struct MoveBackup {
 // the board node representation
 struct Node {
 
-	Node () : key(0ULL), pawnKey(0ULL), piece(), moveCounter(0),
+	Node () :key(0ULL), pawnKey(0ULL), piece(),  enPassant(NONE), sideToMove(WHITE), moveCounter(0),
 			halfMoveCounter(0), gamePhase(OPENING), inCheck(false) {}
 
 	Node (const Node& node) : key(node.key), pawnKey(node.pawnKey), piece( node.piece ),
