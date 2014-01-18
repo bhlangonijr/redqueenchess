@@ -52,12 +52,12 @@ const int iidMargin=160;
 const int easyMargin=400;
 const int deltaMargin=950;
 const int futilityQSMargin=130;
-const int nullMoveMargin=512;
+const int nullMoveMargin=150;
 const int seMargin=35;
 //depth prunning threshold
 const int aspirationDepth=6;
 const int futilityDepth=6;
-const int nullMoveDepth=4;
+const int nullMoveDepth=2;
 const int razorDepth=4;
 const int qsOnlyRecaptureDepth=-6;
 const int lmrDepthThresholdRoot=3;

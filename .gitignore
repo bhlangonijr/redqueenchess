@@ -1,3 +1,5 @@
 .cproject
+.settings/
 .project
 Release/
+/Debug

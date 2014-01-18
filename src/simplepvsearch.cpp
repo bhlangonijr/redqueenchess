@@ -86,6 +86,8 @@ int SimplePVSearch::idSearch(Board& board) {
 		setCompletedIteration(false);
 		while (!finished) {
 			score = rootSearch(board, rootSearchInfo, pv);
+			rootMoves.sort();
+
 			if (!stop(rootSearchInfo)) {
 				setCompletedIteration(true);
 			}
@@ -181,9 +183,8 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 	int beta=si.beta;
 	int moveCounter=0;
 	MoveIterator::Move bestMove;
-	rootMoves.sortOrderingBy(nodesPerMove);
-	rootMoves.first();
 	int score = -maxScore;
+	rootMoves.first();
 	while (rootMoves.hasNext() && !stop(si)) {
 		MoveIterator::Move& move = rootMoves.next();
 		moveCounter++;
@@ -244,8 +245,6 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 			bestMove=move;
 			pv.moves[0]=bestMove;
 			retrievePvFromHash(board, pv);
-			rootMoves.sortOrderingBy(nodesPerMove);
-			rootMoves.first();
 			return score;
 		}
 		if(score>alpha || moveCounter==1) {
@@ -258,8 +257,6 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 		}
 		uciOutput(move, moveCounter);
 	}
-	rootMoves.sortOrderingBy(nodesPerMove);
-	rootMoves.first();
 	if (!moveCounter) {
 		return isKingAttacked?-maxScore+si.ply:drawScore;
 	}
@@ -284,6 +281,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 	const int oldAlpha = si.alpha;
 	int score = -maxScore;
 	int currentScore = -maxScore;
+	bool okToPrune=false;
 	si.alpha = std::max(-maxScore+si.ply, si.alpha);
 	si.beta = std::min(maxScore-(si.ply+1), si.beta);
 	if (si.alpha>=si.beta) {
@@ -292,10 +290,14 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 	TranspositionTable::HashData hashData;
 	MoveIterator::Move hashMove;
 	const Key key = si.partialSearch?board.getPartialSearchKey():board.getKey();
-	//tt retrieve
-	bool hashOk = agent->hashGet(key, hashData, si.ply);
+	// tt retrieve & prunning
+	bool hashOk = agent->hashGet(okToPrune, key, hashData, si.ply, si.depth,
+			si.allowNullMove, si.alpha, si.beta);
 	if (hashOk) {
 		hashMove = hashData.move();
+		if (okToPrune) {
+			return hashData.value();
+		}
 	}
 	const bool isKingAttacked = board.isInCheck();
 	bool isLazyEval=false;

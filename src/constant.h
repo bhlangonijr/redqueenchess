@@ -30,8 +30,8 @@
 namespace Constant {
 const static std::string ENGINE_NAME = "RedQueen";
 const static std::string ENGINE_AUTHOR = "Ben-Hur Carlos Vieira Langoni Junior";
-const static std::string ENGINE_VERSION = "1.1.6";
-const static std::string ENGINE_COPYRIGHT = ENGINE_NAME + ". Copyright (C) 2008-2012 " + ENGINE_AUTHOR + ". ";
+const static std::string ENGINE_VERSION = "1.1.7";
+const static std::string ENGINE_COPYRIGHT = ENGINE_NAME + ". Copyright (C) 2008-2014 " + ENGINE_AUTHOR + ". ";
 }
 
 #endif /* CONSTANT_H_ */
