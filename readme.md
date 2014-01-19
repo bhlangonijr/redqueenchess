@@ -1,88 +1,92 @@
-#Introduction 
+# Introduction 
 
-	RedQueen is a free and open source chess program available for 
-	Windows and Linux. The code has been written in C++ using minimal 
-	library dependencies as possible, so that it could be easily ported 
-	to other OS. RedQueen is an UCI chess engine which means that you 
-	will need to have installed on your computer a chess graphic 
-	interface such as Arena or XBoard/Winboard to be able to play with it.
-	The name RedQueen comes from the Red Queen character in Lewis 
-	Carroll's Through the Looking-Glass novel.
+RedQueen is a free and open source chess program available for 
+Windows and Linux. The code has been written in C++ using minimal 
+library dependencies as possible, so that it could be easily ported 
+to other OS. RedQueen is an UCI chess engine which means that you 
+will need to have installed on your computer a chess graphic 
+interface such as Arena or XBoard/Winboard to be able to play with it.
+The name RedQueen comes from the Red Queen character in Lewis 
+Carroll's Through the Looking-Glass novel.
 
 # Usage 
 
-	Please follow the instructions of your favorite GUI (Arena, 
-	Winboard/Xboard, Scid, Chessbase, etc) to install the engine on it.
+Please follow the instructions of your favorite GUI (Arena, 
+Winboard/Xboard, Scid, Chessbase, etc) to install the engine on it.
+
+RedQueen can be executed from the command line of your Operating
+System. The command:
+
+```
+redqueen bench
+```
 	
-	RedQueen can be executed from the command line of your Operating
-	System. The command:
+will run a benchmark using a pre-defined set of chess positions.
+
+Running RedQueen without arguments will make it enter in the UCI mode. 
+You can query the UCI specification to learn about the
+available commands:
 	
-	redqueen bench
+http://www.shredderchess.com/chess-info/features/uci-universal-chess-interface.html
 	
-	will run a benchmark using a pre-defined set of chess positions.
-	
-	Running RedQueen without arguments will make it enter in the UCI mode. 
-	You can query the UCI specification to learn about the
-	available commands:
-	
-	http://www.shredderchess.com/chess-info/features/uci-universal-chess-interface.html
-	
-	RedQueen have a special command not specified in the UCI
-	documentation. In the UCI mode you can type the command 'test eval'
-	which will display a detailed information on the evaluation of
-	the current chess position. Example.:
-		 
-	position fen 1Q6/5kpp/2p4r/b4p2/P2R4/1N4P1/5PKP/4q3 b - - 0 1
-	test eval
-	Material[WHITE]:          2735
-	Material[BLACK]:          2740
-	Pieces(PST&Other)[WHITE]: -21
-	Pieces(PST&Other)[BLACK]: -39
-	Pawns[WHITE]:             11
-	Pawns[BLACK]:             6
-	Mobility&Space[WHITE]:    47
-	Mobility&Space[BLACK]:    35
-	Pieces threats[WHITE]:    7
-	Pieces threats[BLACK]:    0
-	King threats[WHITE]:      1
-	King threats[BLACK]:      23
-	Endgame score(WHITE):    89
-	Endgame score(BLACK):    28
-	Middlegame score(WHITE): 24
-	Middlegame score(BLACK): 28
-	Main eval:                +15
-	
+RedQueen have a special command not specified in the UCI
+documentation. In the UCI mode you can type the command 'test eval'
+which will display a detailed information on the evaluation of
+the current chess position. Example.:
+
+```	 
+position fen 1Q6/5kpp/2p4r/b4p2/P2R4/1N4P1/5PKP/4q3 b - - 0 1
+test eval
+Material[WHITE]:          2735
+Material[BLACK]:          2740
+Pieces(PST&Other)[WHITE]: -21
+Pieces(PST&Other)[BLACK]: -39
+Pawns[WHITE]:             11
+Pawns[BLACK]:             6
+Mobility&Space[WHITE]:    47
+Mobility&Space[BLACK]:    35
+Pieces threats[WHITE]:    7
+Pieces threats[BLACK]:    0
+King threats[WHITE]:      1
+King threats[BLACK]:      23
+Endgame score(WHITE):    89
+Endgame score(BLACK):    28
+Middlegame score(WHITE): 24
+Middlegame score(BLACK): 28
+Main eval:                +15
+```
+
 # Acknowledgments 
 
-	RedQueen was completely written from the scratch. Although it has taken 
-	many ideas from many open source projects.
-		
-	The following open source projects had directly influenced the 
-	development of RedQueen:
+RedQueen was completely written from the scratch. Although it has taken 
+many ideas from many open source projects.
 	
-	Stockfish
-	Sloppy
-	Sungorus   	
-	Robbolito
-	Crafty
-	Gull
+The following open source projects had directly influenced the 
+development of RedQueen:
+
+Stockfish
+Sloppy
+Sungorus   	
+Robbolito
+Crafty
+Gull
 	
-	RedQueen uses the magic move bitboard generation by Pradyumna Kannan.
+RedQueen uses the magic move bitboard generation by Pradyumna Kannan.
 	
-	RedQueen uses the mersenne twister PRNG by Takuji Nishimura and 
-	Makoto Matsumoto
+RedQueen uses the mersenne twister PRNG by Takuji Nishimura and 
+Makoto Matsumoto
 	
-	The rating lists/testers bellow do an amazing job by testing and 
-	reporting bugs of RedQueen:
+The rating lists/testers bellow do an amazing job by testing and 
+reporting bugs of RedQueen:
 	
-	http://www.husvankempen.de/nunn/
-	http://computerchess.org.uk/ccrl/
-	http://www.tcec-chess.org/
-	
-	Aart Bik did a very nice compile of RedQueen for
-	the Android platform. 	
-	
-	Thanks everyone! :)	
+http://www.husvankempen.de/nunn/
+http://computerchess.org.uk/ccrl/
+http://www.tcec-chess.org/
+
+Aart Bik did a very nice compile of RedQueen for
+the Android platform. 	
+
+Thanks everyone! :)	
 
 # License 
 
@@ -101,14 +105,14 @@
 
 # Final words 
 
-	If you find RedQueen useful, you can help in the following ways:
-	
-	- Testing & reporting bugs
-	- Expert advise (specific chess knowledge)
-	
-	If you have any suggestions/doubts drop me an e-mail:
-	
-	bhlangonijr at google dot com 
+If you find RedQueen useful, you can help in the following ways:
+
+- Testing & reporting bugs
+- Expert advise (specific chess knowledge)
+
+If you have any suggestions/doubts drop me an e-mail:
+
+bhlangonijr at google dot com 
 		
-	Regards,
-	Ben-Hur Carlos Vieira Langoni Junior
+Regards,
+Ben-Hur Carlos Vieira Langoni Junior
