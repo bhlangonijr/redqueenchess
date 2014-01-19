@@ -1,8 +1,4 @@
-
-	Redqueen Chess Engine
-	Copyright (C) 2008-2012 Ben-Hur Carlos Vieira Langoni Junior
-
-Introduction ---------------------------------------------------------------------
+#Introduction 
 
 	RedQueen is a free and open source chess program available for 
 	Windows and Linux. The code has been written in C++ using minimal 
@@ -13,22 +9,7 @@ Introduction -------------------------------------------------------------------
 	The name RedQueen comes from the Red Queen character in Lewis 
 	Carroll's Through the Looking-Glass novel.
 
-License --------------------------------------------------------------------------
-
-    RedQueen is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    RedQueen is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with RedQueen.  If not, see <http://www.gnu.org/licenses/>.
-    
-Usage ----------------------------------------------------------------------------
+# Usage 
 
 	Please follow the instructions of your favorite GUI (Arena, 
 	Winboard/Xboard, Scid, Chessbase, etc) to install the engine on it.
@@ -71,7 +52,7 @@ Usage --------------------------------------------------------------------------
 	Middlegame score(BLACK): 28
 	Main eval:                +15
 	
-Acknowledgments --------------------------------------------------------------------
+# Acknowledgments 
 
 	RedQueen was completely written from the scratch. Although it has taken 
 	many ideas from many open source projects.
@@ -97,36 +78,33 @@ Acknowledgments ----------------------------------------------------------------
 	http://www.husvankempen.de/nunn/
 	http://computerchess.org.uk/ccrl/
 	http://www.tcec-chess.org/
-	http://www.open-aurec.com/chesswar/ 
-	http://vigo.altervista.org/
-	
-	The wizard Jim Ablett make the RedQueen's fast builds 
-	for Windows and Linux platforms.
 	
 	Aart Bik did a very nice compile of RedQueen for
 	the Android platform. 	
 	
 	Thanks everyone! :)	
 
-Where to find it --------------------------------------------------------------------
+# License 
 
-	You can find the source code along with binaries for the Linux and
-	Windows platforms in this website:
-	
-	http://sourceforge.net/projects/redqueenchess/
+    RedQueen is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-Final words -------------------------------------------------------------------------
+    RedQueen is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with RedQueen.  If not, see <http://www.gnu.org/licenses/>.
+
+# Final words 
 
 	If you find RedQueen useful, you can help in the following ways:
 	
 	- Testing & reporting bugs
 	- Expert advise (specific chess knowledge)
-	
-	I don't accept donations. :)
-	
-	You may find support on:
-	
-	http://sourceforge.net/projects/redqueenchess/
 	
 	If you have any suggestions/doubts drop me an e-mail:
 	
