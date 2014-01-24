@@ -342,30 +342,19 @@ const int64_t SearchAgent::getTimeToSearch() {
 
 int64_t SearchAgent::addExtraTime(const int iteration, int* iterationPVChange) {
 	const int64_t timeThinking = getTickCount()-getSearcher(MAIN_THREAD)->getStartTime();
-	const int64_t weight = std::min(int64_t(90), int64_t(iterationPVChange[iteration]*3+
-			iterationPVChange[iteration-1]*1));
-
-	const int64_t totalTime = (board.getSideToMove()==WHITE? getWhiteTime():getBlackTime())
+	const int64_t weight = std::min(int64_t(90), int64_t(iterationPVChange[iteration]*15+
+			iterationPVChange[iteration-1]*5));
+	const int64_t totalTime=(board.getSideToMove()==WHITE? getWhiteTime():getBlackTime())
 			- timeThinking;
-	const int64_t increment = board.getSideToMove()==WHITE? getWhiteIncrement():getBlackIncrement();
-	const int64_t maxPercent = increment >= totalTime ? 90 : 40;
-	const int64_t maxAllowedTime = (totalTime*maxPercent)/100;
-
-	if (getMovesToGo() == 1 || getMovesToGo() == 2 || timeThinking > maxAllowedTime) {
+	if (getMovesToGo()==1 || getMovesToGo()==2 ||
+			timeThinking > (totalTime/30)*100) {
 		return 0;
 	}
-
-	int64_t timeLeft = std::max(0L, getSearcher(MAIN_THREAD)->getTimeToStop() -
-			(getSearcher(MAIN_THREAD)->getTimeToSearch() + getSearcher(MAIN_THREAD)->getStartTime()));
-
-
-	int64_t newSearchTime = std::min(maxAllowedTime,
-			getSearcher(MAIN_THREAD)->getTimeToSearch()-timeLeft-10) +
+	int64_t newSearchTime = 0;
+	newSearchTime = std::max(int64_t(0),getSearcher(MAIN_THREAD)->getTimeToSearch()-timeThinking-10) +
 	(getTimeToSearch(timeThinking)*weight)/100;
-
 	getSearcher(MAIN_THREAD)->setTimeToSearch(newSearchTime);
 	getSearcher(MAIN_THREAD)->setTimeToStop(getSearcher(MAIN_THREAD)->getStartTime()+newSearchTime);
-
 	return newSearchTime;
 }
 

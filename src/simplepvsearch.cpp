@@ -75,18 +75,21 @@ int SimplePVSearch::idSearch(Board& board) {
 		rootSearchInfo.depth=depth;
 		rootSearchInfo.ply=0;
 		score=-maxScore;
+
 		if (depth >= aspirationDepth) {
-			const int delta1 = iterationScore[depth-1]-iterationScore[depth-2];
-			const int delta2 = iterationScore[depth-2]-iterationScore[depth-3];
-			aspirationDelta = std::max(abs(delta1)*80/100+abs(delta2)*20/100, 10)+5;
+			const int delta = iterationScore[depth-1]-iterationScore[depth-2];
+			aspirationDelta = std::max(delta, 10) + 5;
 			rootSearchInfo.alpha = std::max(iterationScore[depth-1]-aspirationDelta,-maxScore);
 			rootSearchInfo.beta  = std::min(iterationScore[depth-1]+aspirationDelta,+maxScore);
 		}
 		bool finished=false;
 		setCompletedIteration(false);
 		while (!finished) {
+			rootMoves.sort();
+			rootMoves.first();
 			score = rootSearch(board, rootSearchInfo, pv);
 			rootMoves.sort();
+			rootMoves.first();
 
 			if (!stop(rootSearchInfo)) {
 				setCompletedIteration(true);
@@ -158,7 +161,7 @@ int SimplePVSearch::idSearch(Board& board) {
 				}
 			}
 			if (depth > 6 && depth < 40 &&
-					iterationPVChange[depth]>1) {
+					iterationPVChange[depth]>0) {
 				agent->addExtraTime(depth,iterationPVChange);
 			}
 			if (iterationTime[depth] > getTimeToSearch()*70/100) {
@@ -248,8 +251,8 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 			return score;
 		}
 		if(score>alpha || moveCounter==1) {
-			alpha = score;
 			move.score=score;
+			alpha = score;
 			bestMove=move;
 			pv.moves[0]=bestMove;
 			retrievePvFromHash(board, pv);
@@ -291,8 +294,7 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 	MoveIterator::Move hashMove;
 	const Key key = si.partialSearch?board.getPartialSearchKey():board.getKey();
 	// tt retrieve & prunning
-	bool hashOk = agent->hashGet(okToPrune, key, hashData, si.ply, si.depth,
-			si.allowNullMove, si.alpha, si.beta);
+	bool hashOk = agent->hashGet(okToPrune, key, hashData, si.ply, si.depth);
 	if (hashOk) {
 		hashMove = hashData.move();
 		if (okToPrune) {
@@ -684,11 +686,14 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 	bool okToPrune=false;
 	const int oldAlpha=si.alpha;
 	// tt retrieve & prunning
-	const bool hashOk = agent->hashGet(okToPrune, key, hashData,
+	const bool hashOk = si.nodeType == PV_NODE ?
+			agent->hashGet(okToPrune, key, hashData,
+						si.ply, si.depth) :
+			agent->hashGet(okToPrune, key, hashData,
 			si.ply, si.depth, si.allowNullMove, si.alpha, si.beta);
 	if (hashOk) {
 		hashMove = hashData.move();
-		if (okToPrune && !(si.nodeType==PV_NODE)) {
+		if (okToPrune) {
 			return hashData.value();
 		}
 	}

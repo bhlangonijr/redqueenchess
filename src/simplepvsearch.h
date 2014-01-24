@@ -52,12 +52,12 @@ const int iidMargin=160;
 const int easyMargin=400;
 const int deltaMargin=950;
 const int futilityQSMargin=130;
-const int nullMoveMargin=150;
+const int nullMoveMargin=512;
 const int seMargin=35;
 //depth prunning threshold
 const int aspirationDepth=6;
 const int futilityDepth=6;
-const int nullMoveDepth=2;
+const int nullMoveDepth=4;
 const int razorDepth=4;
 const int qsOnlyRecaptureDepth=-6;
 const int lmrDepthThresholdRoot=3;
@@ -340,8 +340,8 @@ private:
 	int64_t time;
 	bool searchFixedDepth;
 	bool infinite;
-	volatile int64_t nodes;
-	volatile int64_t timeToStop;
+	int64_t nodes;
+	int64_t timeToStop;
 	MoveIterator rootMoves;
 	MoveIterator::Move killer[maxSearchPly+1][2];
 	int iterationPVChange[maxSearchPly+1];

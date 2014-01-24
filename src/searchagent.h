@@ -280,7 +280,7 @@ public:
 			const int depth, const bool allowNullMove, const int alpha, const int beta) {
 		const bool result = hashGet(_key, hashData, ply);
 		if (result) {
-			okToPrune =
+			okToPrune = hashData.value() != -maxScore &&
 					(allowNullMove || !(hashData.flag() & TranspositionTable::NODE_NULL)) &&
 					(hashData.depth()>=depth) &&
 					(((hashData.flag() & TranspositionTable::LOWER) && hashData.value() >= beta) ||
@@ -295,7 +295,9 @@ public:
 			const int depth) {
 		const bool result = hashGet(_key, hashData, ply);
 		if (result) {
-			okToPrune =	(hashData.depth()>=depth) && (hashData.flag() & TranspositionTable::EXACT);
+			okToPrune =	hashData.value() != -maxScore &&
+					hashData.depth() >= depth && !(hashData.flag() & TranspositionTable::NODE_NULL) &&
+					(hashData.flag() & TranspositionTable::EXACT);
 		} else {
 			okToPrune = false;
 		}
@@ -436,7 +438,7 @@ private:
 	SimplePVSearch* mainSearcher[maxThreads];
 	int currentThread;
 	int freeThreads;
-	volatile bool threadShouldWait;
+	bool threadShouldWait;
 	static pthread_mutex_t mutex;
 	static pthread_cond_t waitCond;
 	static pthread_mutex_t mutex1;
