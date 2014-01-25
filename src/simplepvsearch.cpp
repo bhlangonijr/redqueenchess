@@ -84,6 +84,7 @@ int SimplePVSearch::idSearch(Board& board) {
 		}
 		bool finished=false;
 		setCompletedIteration(false);
+		rootMoves.clearScore();
 		while (!finished) {
 			rootMoves.sort();
 			rootMoves.first();
@@ -520,7 +521,7 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 				score = si.beta;
 			}
 			bool okToPrune = true;
-			if (si.depth>6) {
+			if (si.depth>11) {
 				SearchInfo newSi(false,emptyMove,si.alpha,si.beta,si.depth-reduction,
 						si.ply+1,NONPV_NODE,si.splitPoint);
 				const int newScore = zwSearch(board, newSi);
