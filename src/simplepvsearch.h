@@ -57,20 +57,21 @@ const int seMargin=35;
 //depth prunning threshold
 const int aspirationDepth=6;
 const int futilityDepth=6;
-const int nullMoveDepth=4;
+const int moveCountDepth=14;
+const int nullMoveDepth=2;
 const int razorDepth=4;
 const int qsOnlyRecaptureDepth=-6;
 const int lmrDepthThresholdRoot=3;
 const int lmrDepthThreshold=2;
 const int sePVDepth=7;
 const int seNonPVDepth=9;
-const int lateMoveThreshold=2;
+const int lateMoveThreshold=1;
 const int scoreTable[11]={0,80000,60000,95000,90000,45000,40000,1000,-12000,50050,50000};
 const int64_t defaultNodesToGo=0xFFF;
 const int64_t fastNodesToGo=0xFF;
 namespace SearchTypes {
 enum NodeType {
-	PV_NODE, NONPV_NODE, NODE_NONE
+	PV_NODE, ALL_NODE, CUT_NODE, NODE_NONE
 };
 
 typedef struct SearchInfo {
