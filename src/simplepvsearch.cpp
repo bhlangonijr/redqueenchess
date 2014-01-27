@@ -598,31 +598,33 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 		const bool pawnOn7thRank = move.promotionPiece!=EMPTY;
 		//futility
 		if  (	move.type == MoveIterator::NON_CAPTURE &&
-				si.depth < futilityDepth &&
 				!isKingAttacked &&
 				!givingCheck &&
 				!passedPawnPush &&
 				!pawnOn7thRank &&
 				!nmMateScore) {
-			if (getMoveCountMargin(si.depth) < moveCounter
-					&& !isMateScore(bestScore) ) {
+
+			if (getMoveCountMargin(si.depth) < moveCounter &&
+					si.depth < moveCountDepth && !isMateScore(bestScore) ) {
 				board.undoMove(backup);
 				continue;
 			}
-			const int futilityScore = currentScore + getFutilityMargin(si.depth,moveCounter);
-			if (futilityScore < si.beta) {
-				if (futilityScore>bestScore) {
-					bestScore=futilityScore;
+			if (si.depth < futilityDepth) {
+				const int futilityScore = currentScore + getFutilityMargin(si.depth,moveCounter);
+				if (futilityScore < si.beta) {
+					if (futilityScore>bestScore) {
+						bestScore=futilityScore;
+					}
+					board.undoMove(backup);
+					continue;
 				}
-				board.undoMove(backup);
-				continue;
 			}
 		}
 		//reductions
 		int reduction=0;
 		if (extension==0 && !isKingAttacked && !givingCheck && si.depth>lmrDepthThreshold &&
 				!nmMateScore && move.type == MoveIterator::NON_CAPTURE &&
-				!isHashMove && moveCounter != 1  && killer[si.ply][0] != move && killer[si.ply][1] != move) {
+				!isHashMove && moveCounter != 1 && killer[si.ply][0] != move && killer[si.ply][1] != move) {
 			reduction=getReduction(false, si.depth, moveCounter);
 			if (si.nodeType == CUT_NODE ||
 					agent->getHistory(board.getPiece(move.from), move.to) <= 0) {
@@ -705,9 +707,9 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 	// tt retrieve & prunning
 	const bool hashOk = si.nodeType == PV_NODE ?
 			agent->hashGet(okToPrune, key, hashData,
-						si.ply, si.depth) :
-			agent->hashGet(okToPrune, key, hashData,
-			si.ply, si.depth, si.allowNullMove, si.alpha, si.beta);
+					si.ply, si.depth) :
+					agent->hashGet(okToPrune, key, hashData,
+							si.ply, si.depth, si.allowNullMove, si.alpha, si.beta);
 	if (hashOk) {
 		hashMove = hashData.move();
 		if (okToPrune) {
@@ -735,7 +737,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 		}
 		const int delta = board.isPawnPromoting()?getDeltaMargin(si.depth)*2:getDeltaMargin(si.depth);
 		if (bestScore < si.alpha - delta && !(si.nodeType==PV_NODE) && hashMove.none() &&
-				board.getGamePhase()<ENDGAME && !isMateScore(si.beta)) {
+				!isMateScore(si.beta)) {
 			if (!hashOk && !isLazyEval) {
 				const TranspositionTable::NodeFlag flag = TranspositionTable::NODE_EVAL;
 				agent->hashPut(key,si.alpha,currentScore,-maxSearchPly,si.ply,flag,emptyMove);
@@ -782,8 +784,7 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 			board.undoMove(backup);
 			continue;
 		}
-		if (allowFutility && board.getGamePhase()<ENDGAME &&
-				!board.isPawnFinal() && !passedPawn && !givingCheck ) {
+		if (allowFutility && !board.isPawnFinal() && !passedPawn && !givingCheck ) {
 			const int gain = materialValues[backup.capturedPiece];
 			const int futilityScore = currentScore+gain+getFutilityMargin();
 			if (futilityScore<si.alpha) {
@@ -840,7 +841,7 @@ void SimplePVSearch::smpPVSearch(Board board, SimplePVSearch* master,
 	}
 	const bool isKingAttacked = board.isInCheck();
 	const bool isPV = sp->isPV;
-	int score = 0;
+	int score = -maxScore;
 	MoveIterator::Move move;
 	while (sp->moves) {
 		master->lock();
@@ -889,8 +890,9 @@ void SimplePVSearch::smpPVSearch(Board board, SimplePVSearch* master,
 			extension++;
 		} else if (sp->depth>lmrDepthThreshold && !givingCheck &&
 				!passedPawn && !pawnOn7thExtension && !(*sp->nmMateScore) &&
-				move.type == MoveIterator::NON_CAPTURE) {
-			reduction=ss->getReduction(isPV,sp->depth,*sp->moveCounter);
+				move.type == MoveIterator::NON_CAPTURE && (*sp->moveCounter) != 1 &&
+				killer[sp->ply][0] != move && killer[sp->ply][1] != move) {
+			reduction=ss->getReduction(isPV, sp->depth, *sp->moveCounter);
 		}
 		int newDepth=sp->depth-1+extension;
 		SearchInfo newSi(true,move,sp->beta,1-sp->beta, newDepth-reduction, sp->ply+1, CUT_NODE, sp);
