@@ -241,7 +241,7 @@ const bool SearchAgent::spawnThreads(Board& board, void* data, const int current
 			thread.splitPoint = sp;
 			thread.status = THREAD_STATUS_WORK_ASSIGNED;
 			freeThreads--;
-			if (sp->workers<=maxWorkersPerSplitPoint) {
+			if (sp->workers>=maxWorkersPerSplitPoint) {
 				break;
 			}
 		}
