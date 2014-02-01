@@ -43,9 +43,9 @@ const int mateRangeScore = 300;
 const int maxSearchDepth = 80;
 const int maxSearchPly = 100;
 const int maxMoveCount = 64;
-const int minSplitDepth	= 6;
+const int minSplitDepth	= 3;
 // internal iterative deepening
-const int allowIIDAtPV = 6;
+const int allowIIDAtPV = 5;
 const int allowIIDAtNormal = 8;
 // margin constants
 const int iidMargin=160;
@@ -202,15 +202,15 @@ public:
 	const int getRazorMargin(const int depth);
 
 	const int getDeltaMargin(const int depth);
-    bool isCompletedIteration() const
-    {
-        return completedIteration;
-    }
+	bool isCompletedIteration() const
+	{
+		return completedIteration;
+	}
 
-    void setCompletedIteration(bool completedIteration)
-    {
-        this->completedIteration = completedIteration;
-    }
+	void setCompletedIteration(bool completedIteration)
+	{
+		this->completedIteration = completedIteration;
+	}
 
 	inline const void setTimeToSearch(const int64_t value) {
 		timeToSearch = value;
@@ -284,6 +284,10 @@ public:
 
 	inline MoveIterator::Move* getKillerArray() {
 		return &killer[0][0];
+	}
+
+	inline MoveIterator::Move getKiller(int depth, int type) {
+		return killer[depth][type];
 	}
 
 	inline void cleanUp() {

@@ -136,9 +136,11 @@ void* SearchAgent::startThreadSearch() {
 	pthread_exit(NULL);
 	return NULL;
 }
-
+/*static int64_t count = 0;
+static int64_t sum = 0;*/
 // worker threads loop
 void* SearchAgent::executeThread(const int threadId, SplitPoint* sp) {
+	//int64_t init = getTickCount();
 	while (!quit) {
 		SearchThread& thread = threadPool[threadId];
 		if (getThreadsShouldWait()) {
@@ -181,11 +183,17 @@ void* SearchAgent::executeThread(const int threadId, SplitPoint* sp) {
 				}
 			} else {
 				sp->masterDone = true;
+				//init = getTickCount();
 			}
 			unlock(&mutex1);
 		}
 		if (sp!=NULL && sp->workers<=0 && sp->masterDone) {
-			searchMaster->updateSearchedNodes(sp->nodes);
+			//int64_t r = (getTickCount()-init);
+			searchMaster->updateSearchedNodes(splitPoint->nodes);
+			/*if (r > 0) {
+				count++; sum += r;
+				std::cout << "master waited: " << r << " / count = " << count << " / sum = " << sum <<  std::endl;
+			}*/
 			return NULL;
 		}
 	}
@@ -197,8 +205,8 @@ const bool SearchAgent::spawnThreads(Board& board, void* data, const int current
 		MoveIterator* moves, MoveIterator::Move* move, MoveIterator::Move* hashMove, int* bestScore,
 		int* currentAlpha, int* currentScore, int* moveCounter, bool* nmMateScore) {
 	lock(&mutex1);
-	if (getFreeThreads()<1 || getRequestStop() ||
-			threadPool[currentThreadId].spNumber > 2) {
+	if (currentThreadId > 0 || getFreeThreads()<1 || getRequestStop() ||
+			threadPool[currentThreadId].spNumber >= 1) {
 		unlock(&mutex1);
 		return false;
 	}
