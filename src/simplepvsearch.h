@@ -43,7 +43,7 @@ const int mateRangeScore = 300;
 const int maxSearchDepth = 80;
 const int maxSearchPly = 100;
 const int maxMoveCount = 64;
-const int minSplitDepth	= 3;
+const int minSplitDepth	= 6;
 // internal iterative deepening
 const int allowIIDAtPV = 6;
 const int allowIIDAtNormal = 8;
@@ -143,7 +143,8 @@ public:
 	int pvSearch(Board& board,  SearchInfo& si);
 	int zwSearch(Board& board,  SearchInfo& si);
 	int qSearch(Board& board,  SearchInfo& si);
-	void smpPVSearch(Board board, SimplePVSearch* master, SplitPoint* sp);
+	void smpPVSearch(Board board, SimplePVSearch* master,
+			SimplePVSearch* ss, SplitPoint* sp);
 	int64_t perft(Board& board, int depth, int ply);
 	int getScore();
 	void clearKillers();
@@ -283,10 +284,6 @@ public:
 
 	inline MoveIterator::Move* getKillerArray() {
 		return &killer[0][0];
-	}
-
-	inline MoveIterator::Move getKiller(int depth, int type) {
-		return killer[depth][type];
 	}
 
 	inline void cleanUp() {

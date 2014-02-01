@@ -7,7 +7,6 @@ Ben-Hur Langoni Junior
 3) Add support to Gaviota's EGTB
 4) Try fractional extensions
 5) Don't extend checks with SEE < 0	
-6) Fix KNN vs K ending when there is an enemy pawn left
 	
 
 
