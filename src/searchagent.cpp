@@ -168,8 +168,14 @@ void* SearchAgent::executeThread(const int threadId, SplitPoint* sp) {
 		SimplePVSearch* searchSlave = getSearcher(threadId);
 		if (thread.status==THREAD_STATUS_WORKING &&
 				(sp==NULL || (sp!=NULL && !sp->masterDone))) {
-			Board board(splitPoint->board);
-			searchMaster->smpPVSearch(board,searchMaster,searchSlave,splitPoint);
+			const Board board(splitPoint->board);
+
+			if (sp == NULL) {
+				searchSlave->smpPVSearch(board, searchMaster, splitPoint);
+			} else {
+				searchMaster->smpPVSearch(board, searchMaster, splitPoint);
+			}
+
 			lock(&mutex1);
 			if (sp==NULL) {
 				splitPoint->workers--;
@@ -185,7 +191,7 @@ void* SearchAgent::executeThread(const int threadId, SplitPoint* sp) {
 			unlock(&mutex1);
 		}
 		if (sp!=NULL && sp->workers<=0 && sp->masterDone) {
-			searchMaster->updateSearchedNodes(sp->nodes);
+			searchMaster->updateSearchedNodes(splitPoint->nodes);
 			return NULL;
 		}
 	}
@@ -197,8 +203,8 @@ const bool SearchAgent::spawnThreads(Board& board, void* data, const int current
 		MoveIterator* moves, MoveIterator::Move* move, MoveIterator::Move* hashMove, int* bestScore,
 		int* currentAlpha, int* currentScore, int* moveCounter, bool* nmMateScore) {
 	lock(&mutex1);
-	if (getFreeThreads()<1 || getRequestStop() ||
-			threadPool[currentThreadId].spNumber > 2) {
+	if (currentThreadId > 0 || getFreeThreads()<1 || getRequestStop() ||
+			threadPool[currentThreadId].spNumber >= 1) {
 		unlock(&mutex1);
 		return false;
 	}

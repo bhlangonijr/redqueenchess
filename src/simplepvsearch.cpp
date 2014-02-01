@@ -834,18 +834,21 @@ int SimplePVSearch::qSearch(Board& board, SearchInfo& si) {
 }
 
 // parallel search
-void SimplePVSearch::smpPVSearch(Board board, SimplePVSearch* master,
-		SimplePVSearch* ss, SplitPoint* sp) {
+void SimplePVSearch::smpPVSearch(Board board, SimplePVSearch* master, SplitPoint* sp) {
 	if (sp==NULL) {
 		return;
 	}
+/*	std::cout << "Master = " << master->getThreadId()  << " / Slave = " << getThreadId() << " / depth = " << sp->depth <<
+" / ply = " << sp->ply << " / bestScore = " << *sp->bestScore
+<< " / fen = " << board.getFEN() << std::endl;*/
+
 	const bool isKingAttacked = board.isInCheck();
 	const bool isPV = sp->isPV;
 	int score = -maxScore;
-	MoveIterator::Move move;
+
 	while (sp->moves) {
 		master->lock();
-		move = master->selectMove<false>(board, *sp->moves, *sp->hashMove, sp->ply, sp->depth);
+		MoveIterator::Move move = master->selectMove<false>(board, *sp->moves, *sp->hashMove, sp->ply, sp->depth);
 		(*sp->moveCounter)++;
 		master->unlock();
 		if (move.none()) {
@@ -854,7 +857,7 @@ void SimplePVSearch::smpPVSearch(Board board, SimplePVSearch* master,
 		MoveBackup backup;
 		board.doMove(move,backup);
 		const bool givingCheck = board.setInCheck(board.getSideToMove());
-		const bool passedPawn = ss->isPawnPush(board,move.to);
+		const bool passedPawn = isPawnPush(board,move.to);
 		const bool pawnOn7thExtension = move.promotionPiece!=EMPTY;
 		//futility
 		if  (	!isPV &&
@@ -865,15 +868,15 @@ void SimplePVSearch::smpPVSearch(Board board, SimplePVSearch* master,
 				!pawnOn7thExtension &&
 				!passedPawn &&
 				!*sp->nmMateScore) {
-			if (ss->getMoveCountMargin(sp->depth) < *sp->moveCounter
+			if (getMoveCountMargin(sp->depth) < *sp->moveCounter
 					&& !master->isMateScore(*sp->bestScore) ) {
 				board.undoMove(backup);
 				continue;
 			}
 			const int futilityScore = *sp->currentScore +
-					ss->getFutilityMargin(sp->depth, *sp->moveCounter);
-			master->lock();
+					getFutilityMargin(sp->depth, *sp->moveCounter);
 			if (futilityScore < sp->beta) {
+				master->lock();
 				if (futilityScore>*sp->bestScore) {
 					*sp->bestScore=futilityScore;
 				}
@@ -881,7 +884,6 @@ void SimplePVSearch::smpPVSearch(Board board, SimplePVSearch* master,
 				board.undoMove(backup);
 				continue;
 			}
-			master->unlock();
 		}
 		//reductions
 		int reduction=0;
@@ -891,35 +893,37 @@ void SimplePVSearch::smpPVSearch(Board board, SimplePVSearch* master,
 		} else if (sp->depth>lmrDepthThreshold && !givingCheck &&
 				!passedPawn && !pawnOn7thExtension && !(*sp->nmMateScore) &&
 				move.type == MoveIterator::NON_CAPTURE && (*sp->moveCounter) != 1 &&
-				killer[sp->ply][0] != move && killer[sp->ply][1] != move) {
-			reduction=ss->getReduction(isPV, sp->depth, *sp->moveCounter);
+				master->getKiller(sp->ply, 0) != move && master->getKiller(sp->ply, 1) != move) {
+			reduction=getReduction(isPV, sp->depth, *sp->moveCounter);
 		}
 		int newDepth=sp->depth-1+extension;
-		SearchInfo newSi(true,move,sp->beta,1-sp->beta, newDepth-reduction, sp->ply+1, CUT_NODE, sp);
+		SearchInfo newSi(!isPV,move,sp->beta,1-sp->beta, newDepth-reduction, sp->ply+1,
+				CUT_NODE, sp);
 		if (isPV) {
 			newSi.update(newDepth-reduction,PV_NODE,-sp->beta,-(*sp->currentAlpha),move);
 		}
-		score = -ss->zwSearch(board, newSi);
+		score = isPV ? -pvSearch(board, newSi): -zwSearch(board, newSi);
 		bool research=isPV?score > *sp->currentAlpha &&
 				score < sp->beta:score >= sp->beta && reduction>0;
 		if (research) {
 			if (reduction>2) {
 				newSi.update(newDepth-1,CUT_NODE);
-				score = -ss->zwSearch(board, newSi);
+				score = -zwSearch(board, newSi);
 				research=(score >= sp->beta);
 			}
 			if (research) {
 				newSi.update(newDepth,CUT_NODE);
-				score = -ss->zwSearch(board, newSi);
+				score = -zwSearch(board, newSi);
 			}
 			if (isPV && score > *sp->currentAlpha && score < sp->beta) {
 				newSi.update(newDepth,PV_NODE);
-				score = -ss->pvSearch(board, newSi);
+				score = -pvSearch(board, newSi);
 			}
 		}
 		board.undoMove(backup);
-		master->lock();
+
 		if (!master->stop(newSi) && sp->moves) {
+			master->lock();
 			if (score>=sp->beta) {
 				*sp->bestScore=score;
 				*sp->bestMove=move;
@@ -934,8 +938,9 @@ void SimplePVSearch::smpPVSearch(Board board, SimplePVSearch* master,
 					*sp->bestMove=move;
 				}
 			}
+			master->unlock();
 		}
-		master->unlock();
+
 	}
 }
 
