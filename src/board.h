@@ -91,6 +91,7 @@ struct MoveBackup {
 	Square from;
 	Square to;
 	int halfMoveCounter;
+	int halfNullMoveCounter;
 	GamePhase phase;
 	bool inCheck;
 };
@@ -99,11 +100,11 @@ struct MoveBackup {
 struct Node {
 
 	Node () :key(0ULL), pawnKey(0ULL), piece(),  enPassant(NONE), sideToMove(WHITE), moveCounter(0),
-			halfMoveCounter(0), gamePhase(OPENING), inCheck(false) {}
+			halfMoveCounter(0), halfNullMoveCounter(0), gamePhase(OPENING), inCheck(false) {}
 
 	Node (const Node& node) : key(node.key), pawnKey(node.pawnKey), piece( node.piece ),
-			enPassant( node.enPassant ),sideToMove( node.sideToMove ),
-			moveCounter(node.moveCounter),halfMoveCounter(node.halfMoveCounter),
+			enPassant( node.enPassant ), sideToMove(node.sideToMove), moveCounter(node.moveCounter),
+			halfMoveCounter(node.halfMoveCounter), halfNullMoveCounter(node.halfNullMoveCounter),
 			gamePhase(node.gamePhase), inCheck(node.inCheck) {
 
 		memcpy(square, node.square, ALL_SQUARE * sizeof(PieceTypeByColor));
@@ -163,6 +164,7 @@ struct Node {
 	Key keyHistory[MAX_GAME_LENGTH];
 	int moveCounter;
 	int halfMoveCounter;
+	int halfNullMoveCounter;
 	GamePhase gamePhase;
 	Square kingSquare[ALL_PIECE_COLOR];
 	bool inCheck;
@@ -174,6 +176,7 @@ struct Node {
 		pawnKey=0ULL;
 		moveCounter=0;
 		halfMoveCounter=0;
+		halfNullMoveCounter=0;
 		gamePhase=OPENING;
 		memset(piece.array, 0, sizeof(Bitboard)*ALL_PIECE_TYPE_BY_COLOR);
 		memset(pieceCount, 0, sizeof(int)*ALL_PIECE_TYPE_BY_COLOR);
@@ -348,6 +351,10 @@ public:
 	void increaseHalfMoveCounter();
 	void resetHalfMoveCounter();
 	const int getHalfMoveCounter() const;
+
+	void increaseHalfNullMoveCounter();
+	void resetHalfNullMoveCounter();
+	const int getHalfNullMoveCounter() const;
 
 	void updateKeyHistory();
 
@@ -711,11 +718,6 @@ inline const bool Board::isAttackedBy(const MoveIterator::Move& move) {
 
 // verify draw by 50th move rule, 3 fold rep and insuficient material
 inline const bool Board::isDraw() {
-	for (int x=4;x<=getHalfMoveCounter();x+=2) {
-		if (currentBoard.keyHistory[getMoveCounter()-x]==getKey()) {
-			return true;
-		}
-	}
 	const Bitboard pawns = getPieces(WHITE_PAWN)|getPieces(BLACK_PAWN);
 	if (!pawns) {
 		if (getMaterial(WHITE)+getMaterial(BLACK)<=minimalMaterial) {
@@ -723,7 +725,19 @@ inline const bool Board::isDraw() {
 		}
 	}
 
-	return getHalfMoveCounter()>=100;
+	if (getHalfMoveCounter()>=100 && !isInCheck()) {
+		return true;
+	}
+
+	const int halfMoveCounter = std::min(getHalfMoveCounter(), getHalfNullMoveCounter());
+
+	for (int x = 4; x <= halfMoveCounter; x += 2) {
+		if (currentBoard.keyHistory[getMoveCounter()-x]==getKey()) {
+			return true;
+		}
+	}
+
+	return false;
 
 }
 
@@ -1393,6 +1407,21 @@ inline void Board::resetHalfMoveCounter() {
 // get
 inline const int Board::getHalfMoveCounter() const {
 	return currentBoard.halfMoveCounter;
+}
+
+// increase the game null half move counter
+inline void Board::increaseHalfNullMoveCounter() {
+	currentBoard.halfNullMoveCounter++;
+}
+
+// decrease the game null half move counter
+inline void Board::resetHalfNullMoveCounter() {
+	currentBoard.halfNullMoveCounter=0;
+}
+
+// get
+inline const int Board::getHalfNullMoveCounter() const {
+	return currentBoard.halfNullMoveCounter;
 }
 
 // update key history

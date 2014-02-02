@@ -88,6 +88,7 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	backup.hasBlackQueenCastle=false;
 	backup.phase=getGamePhase();
 	backup.halfMoveCounter =  getHalfMoveCounter();
+	backup.halfNullMoveCounter = getHalfNullMoveCounter();
 	backup.inCheck = isInCheck();
 	removePiece(fromPiece,move.from);
 	setKey(getKey()^zobrist.pieceSquare[fromPiece][move.from]);
@@ -222,8 +223,10 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	}
 	if (reversible) {
 		increaseHalfMoveCounter();
+		increaseHalfNullMoveCounter();
 	} else {
 		resetHalfMoveCounter();
+		resetHalfNullMoveCounter();
 	}
 	if (backup.capturedPiece!=EMPTY) {
 		if (pieceType[backup.capturedPiece]==PAWN) {
@@ -243,6 +246,7 @@ void Board::doMove(const MoveIterator::Move& move, MoveBackup& backup){
 	setKey(getKey()^zobrist.sideToMove[otherSide]);
 	increaseMoveCounter();
 	updateKeyHistory();
+
 }
 // do a null move and set backup info into struct MoveBackup
 void Board::doNullMove(MoveBackup& backup){
@@ -258,16 +262,22 @@ void Board::doNullMove(MoveBackup& backup){
 	backup.hasBlackQueenCastle=false;
 	backup.phase=getGamePhase();
 	backup.halfMoveCounter =  getHalfMoveCounter();
+	backup.halfNullMoveCounter =  getHalfNullMoveCounter();
+
 	increaseHalfMoveCounter();
+	resetHalfNullMoveCounter();
+
 	if (getEnPassant()!=NONE) {
 		setKey(getKey()^zobrist.enPassant[getSquareFile(getEnPassant())]);
 		setEnPassant(NONE);
 	}
+
 	setKey(getKey()^zobrist.sideToMove[getSideToMove()]);
 	setSideToMove(otherSide);
 	setKey(getKey()^zobrist.sideToMove[otherSide]);
-	increaseMoveCounter();
-	updateKeyHistory();
+/*	increaseMoveCounter();
+	updateKeyHistory();*/
+
 }
 // undo a move based on struct MoveBackup
 void Board::undoMove(MoveBackup& backup){
@@ -276,6 +286,7 @@ void Board::undoMove(MoveBackup& backup){
 	removePiece(currentBoard.square[backup.to],backup.to);
 	putPiece(piece,backup.from);
 	currentBoard.halfMoveCounter = backup.halfMoveCounter;
+	currentBoard.halfNullMoveCounter = backup.halfNullMoveCounter;
 	currentBoard.gamePhase=backup.phase;
 	currentBoard.inCheck=backup.inCheck;
 	if (backup.hasCapture) {
@@ -313,8 +324,9 @@ void Board::undoNullMove(MoveBackup& backup){
 	setCastleRights(BLACK, backup.blackCastleRight);
 	setEnPassant(backup.enPassant);
 	currentBoard.halfMoveCounter = backup.halfMoveCounter;
+	currentBoard.halfNullMoveCounter = backup.halfNullMoveCounter;
 	currentBoard.gamePhase=backup.phase;
-	decreaseMoveCounter();
+	//decreaseMoveCounter();
 	setSideToMove(sideToMove);
 	setPawnKey(backup.pawnKey);
 	setKey(backup.key);

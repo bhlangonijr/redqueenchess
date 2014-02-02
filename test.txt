@@ -292,3 +292,13 @@ go wtime 80566 btime 4897021 winc 60000 binc 60000
 r7/1r4k1/pp2p2p/3PPp2/1q1N1PpP/3Q2P1/7K/2R5 b - - 1 35
 ; Kg8??
 
+
+position fen 8/3b4/2p2p2/p1p1k1p1/P1PrPp1p/1P3P1P/1KB3P1/4R3 b - - 85 93 
+go depth 50
+; Re2 ???
+
+position fen 8/3b4/2p2p2/p1p1k1p1/P1PrPp1p/1P3P1P/1KB1R1P1/8 w - - 84 93 
+go depth 30
+; Re1 ???
+
+
