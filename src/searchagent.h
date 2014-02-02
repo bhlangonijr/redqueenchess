@@ -30,6 +30,9 @@
 #include <assert.h>
 #include <pthread.h>
 #include <unistd.h>
+#if defined(_WIN32) || defined(_WIN64)
+	#include <windows.h>
+#endif
 #include "board.h"
 #include "simplepvsearch.h"
 #include "transpositiontable.h"

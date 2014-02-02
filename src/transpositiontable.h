@@ -201,7 +201,7 @@ inline bool TranspositionTable::hashPut(const HashKey key, const int value, cons
 		const NodeFlag flag, MoveIterator::Move& move, const int depth) {
 	HashData *entry = transTable[key & _mask].entry;
 	HashData *replace = entry;
-	for (int x=0;x<BUCKET_SIZE;x++,entry++) {
+	for (int x=0; x<BUCKET_SIZE; ++x, ++entry) {
 		if (!entry->key || entry->key==key) {
 			if (move.none()) {
 				move=entry->move();
@@ -211,7 +211,8 @@ inline bool TranspositionTable::hashPut(const HashKey key, const int value, cons
 		}
 		if ((entry->generation()<replace->generation()) ||
 				(entry->generation()==replace->generation() &&
-				replace->depth()>entry->depth())) {
+				replace->depth()>entry->depth() &&
+				!(entry->flag() & TranspositionTable::EXACT))) {
 			replace=entry;
 		}
 	}
@@ -224,7 +225,7 @@ inline bool TranspositionTable::hashGet(const HashKey key, HashData& hashData) {
 	HashData *entry = transTable[key & _mask].entry;
 	for (int x=0;x<BUCKET_SIZE;x++,entry++) {
 		if (entry->key==key) {
-				hashData=*entry;
+			hashData=*entry;
 			return true;
 		}
 	}

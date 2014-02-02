@@ -251,7 +251,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 		if(score>=beta) {
 			move.score=score;
 			bestMove=move;
-			pv.moves[0]=bestMove;
+			pv.moves[0]=move;
 			retrievePvFromHash(board, pv);
 			return score;
 		}
@@ -259,7 +259,7 @@ int SimplePVSearch::rootSearch(Board& board, SearchInfo& si, PvLine& pv) {
 			move.score=score;
 			alpha = score;
 			bestMove=move;
-			pv.moves[0]=bestMove;
+			pv.moves[0]=move;
 			retrievePvFromHash(board, pv);
 			iterationPVChange[si.depth]++;
 		}
@@ -348,7 +348,8 @@ int SimplePVSearch::pvSearch(Board& board, SearchInfo& si) {
 				(hashData.flag() & TranspositionTable::LOWER)) {
 			if (abs(hashData.value()) < winningScore) {
 				const int seValue = hashData.value() - seMargin;
-				SearchInfo seSi(false, hashMove, true, seValue-1, seValue, si.depth/2,si.ply, ALL_NODE, si.splitPoint);
+				SearchInfo seSi(false, hashMove, true, seValue-1, seValue, si.depth/2,si.ply,
+						si.nodeType, si.splitPoint);
 				const int partialScore = zwSearch(board,seSi);
 				if (partialScore < seValue) {
 					extension++;
@@ -583,7 +584,8 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 				(hashData.flag() & TranspositionTable::LOWER)) {
 			if (abs(hashData.value()) < winningScore) {
 				const int seValue = hashData.value() - seMargin;
-				SearchInfo seSi(false, hashMove, true, seValue-1, seValue, si.depth/2, si.ply, ALL_NODE, si.splitPoint);
+				SearchInfo seSi(false, hashMove, true, seValue-1, seValue, si.depth/2, si.ply,
+						si.nodeType, si.splitPoint);
 				const int partialScore = zwSearch(board,seSi);
 				if (partialScore < seValue) {
 					extension++;
@@ -602,7 +604,8 @@ int SimplePVSearch::zwSearch(Board& board, SearchInfo& si) {
 				!givingCheck &&
 				!passedPawnPush &&
 				!pawnOn7thRank &&
-				!nmMateScore) {
+				!nmMateScore &&
+				extension == 0) {
 
 			if (getMoveCountMargin(si.depth) < moveCounter &&
 					si.depth < moveCountDepth && !isMateScore(bestScore) ) {
