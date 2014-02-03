@@ -301,4 +301,7 @@ position fen 8/3b4/2p2p2/p1p1k1p1/P1PrPp1p/1P3P1P/1KB1R1P1/8 w - - 84 93
 go depth 30
 ; Re1 ???
 
+position fen 8/8/8/8/8/5K2/5R1p/6k1 w - - 1 74 
+go depth 40
+
 

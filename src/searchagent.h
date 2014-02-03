@@ -256,9 +256,9 @@ public:
 			const TranspositionTable::NodeFlag flag, MoveIterator::Move move) {
 		TranspositionTable::HashKey key=(TranspositionTable::HashKey)(_key>>32);
 		if (value >= maxScore-100) {
-			value -= ply;
-		} else if (value <= -maxScore+100) {
 			value += ply;
+		} else if (value <= -maxScore+100) {
+			value -= ply;
 		}
 		return transTable->hashPut(key,value,evalValue,flag,move,depth);
 	}
