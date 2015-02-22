@@ -1061,6 +1061,7 @@ int64_t SimplePVSearch::perft(Board& board, int depth, int ply) {
 		time=getTickCount();
 	}
 	int64_t nodes=0;
+	int64_t partialNodes=0;
 	MoveIterator moves = MoveIterator();
 	MoveIterator::Move move;
 	board.setInCheck(board.getSideToMove());
@@ -1071,7 +1072,9 @@ int64_t SimplePVSearch::perft(Board& board, int depth, int ply) {
 		}
 		MoveBackup backup;
 		board.doMove(move,backup);
-		nodes += perft(board, depth-1, ply+1);
+		partialNodes = perft(board, depth-1, ply+1);
+		nodes += partialNodes;
+		if (ply == 1) std::cout << move.toString() << ": " << partialNodes << std::endl;
 		board.undoMove(backup);
 	}
 	if (ply==1 && isUpdateUci()) {

@@ -402,28 +402,24 @@ void Board::loadFromFEN(const std::string startFENMoves) {
 	std::string tokens = StringUtil::getMiddleString(states, " ");
 	std::string castleRights = tokens.substr(0,tokens.find(" "));
 	// white castle rights
-	if (castleRights.find("KQ")!=std::string::npos) {
+	if (castleRights.find("K")!=std::string::npos && castleRights.find("Q")!=std::string::npos) {
 		this->setCastleRights(WHITE, BOTH_SIDE_CASTLE);
+	} else if (castleRights.find("K")!=std::string::npos) {
+		this->setCastleRights(WHITE, KING_SIDE_CASTLE);
+	} else if (castleRights.find("Q")!=std::string::npos) {
+		this->setCastleRights(WHITE, QUEEN_SIDE_CASTLE);
 	} else {
-		if (castleRights.find("K")!=std::string::npos) {
-			this->setCastleRights(WHITE, KING_SIDE_CASTLE);
-		} else if (castleRights.find("Q")!=std::string::npos) {
-			this->setCastleRights(WHITE, QUEEN_SIDE_CASTLE);
-		} else {
-			this->setCastleRights(WHITE, NO_CASTLE);
-		}
+		this->setCastleRights(WHITE, NO_CASTLE);
 	}
 	// black castle rights
-	if (castleRights.find("kq")!=std::string::npos) {
+	if (castleRights.find("k")!=std::string::npos && castleRights.find("q")!=std::string::npos) {
 		this->setCastleRights(BLACK, BOTH_SIDE_CASTLE);
+	} else if (castleRights.find("k")!=std::string::npos) {
+		this->setCastleRights(BLACK, KING_SIDE_CASTLE);
+	} else if (castleRights.find("q")!=std::string::npos) {
+		this->setCastleRights(BLACK, QUEEN_SIDE_CASTLE);
 	} else {
-		if (castleRights.find("k")!=std::string::npos) {
-			this->setCastleRights(BLACK, KING_SIDE_CASTLE);
-		} else if (castleRights.find("q")!=std::string::npos) {
-			this->setCastleRights(BLACK, QUEEN_SIDE_CASTLE);
-		} else {
-			this->setCastleRights(BLACK, NO_CASTLE);
-		}
+		this->setCastleRights(BLACK, NO_CASTLE);
 	}
 	// en passant
 	tokens = StringUtil::getMiddleString(tokens, " ");
