@@ -72,7 +72,13 @@ const MoveIterator::Move blackoo = MoveIterator::Move(E8,G8,EMPTY);
 const MoveIterator::Move blackooo = MoveIterator::Move(E8,C8,EMPTY);
 // Backup move
 struct MoveBackup {
-	MoveBackup() {}
+	MoveBackup() : key(0ULL), pawnKey(0ULL), enPassant(NONE), phase(OPENING),
+			halfMoveCounter(0), halfNullMoveCounter(0), inCheck(false), hasWhiteKingCastle(false),
+			hasWhiteQueenCastle(false), hasBlackKingCastle(false), hasBlackQueenCastle(false),
+			whiteCastleRight(NO_CASTLE), blackCastleRight(NO_CASTLE), capturedPiece(EMPTY),
+			capturedSquare(NONE), from(NONE), to(NONE), hasCapture(false), hasPromotion(false),
+			movingPiece(EMPTY)
+			{}
 
 	bool hasWhiteKingCastle;
 	bool hasWhiteQueenCastle;
