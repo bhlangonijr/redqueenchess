@@ -3,3 +3,6 @@
 .project
 Release/
 /Debug
+*.o
+.autotools
+redqueen
