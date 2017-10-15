@@ -41,8 +41,9 @@ typedef uint64_t Bitboard;
 #define St2Sq(F,R)				((((int)(F)-96)+((int)(R)-49)*8)-1)			// encode String to Square enum
 #define NFILE(X) ((squareFile[X]!=FILE_H ? fileBB[squareFile[X]+1] : EMPTY_BB) | \
 		(squareFile[X]!=FILE_A ? fileBB[squareFile[X]-1] : EMPTY_BB))
-#define MS(X,Y) ((Y)+((X)<<16))
-#define MSE(X)  ((X)+((X)<<16))
+#define MS(X,Y) ((Y)+(SHIFT(X)))
+#define MSE(X)  ((X)+(SHIFT(X)))
+#define SHIFT(X) (X < 0 ? -(abs(X) << 16) : (abs(X) << 16))
 #define FSQUARE(COLOR,BB,X) (BB&(COLOR==WHITE?(~(squareToBitboard[X]-1)):(squareToBitboard[X]-1)))&(~(rankBB[squareRank[X]]))
 #define PM(COLOR, X) (FSQUARE(COLOR, (fileBB[squareFile[X]] | neighborFiles[X]), X))
 #define BP(COLOR, X) ((FSQUARE((COLOR==WHITE?BLACK:WHITE), (neighborFiles[X]), X)) | (rankBB[squareRank[X]] & adjacentSquares[X]))
