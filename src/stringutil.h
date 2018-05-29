@@ -29,14 +29,21 @@
 
 namespace StringUtil {
 
-const std::string toStr(int value);
-const int toInt(const std::string value);
-const long toLong(const std::string value);
-const int toInt(const char value);
-void normalizeString(std::string &str);
-std::string getMiddleString(const std::string, const std::string, const std::string);
-std::string getMiddleString(const std::string, const std::string);
-const bool containsString(const std::string source, const std::string _substring);
+    const std::string toStr(int value);
+
+    const int toInt(const std::string value);
+
+    const long toLong(const std::string value);
+
+    const int toInt(const char value);
+
+    void normalizeString(std::string &str);
+
+    std::string getMiddleString(const std::string, const std::string, const std::string);
+
+    std::string getMiddleString(const std::string, const std::string);
+
+    const bool containsString(const std::string source, const std::string _substring);
 
 }
 

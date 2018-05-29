@@ -41,62 +41,87 @@
 #define NU_COMMANDS 13
 
 static const std::string strCommand[NU_COMMANDS] = {
-		"none","quit","uci","ucinewgame","isready","position","setoption","go","stop","perft","ponderhit","test","unknow"
+        "none", "quit", "uci", "ucinewgame", "isready", "position", "setoption", "go", "stop", "perft", "ponderhit",
+        "test", "unknow"
 };
 
 // Singleton to Handle Universal Chess Interface
 class Uci {
 
 public:
-	// UCI commands enumeration
-	enum Command {
-		NONE,
-		QUIT,
-		UCI,
-		UCINEWGAME,
-		ISREADY,
-		POSITION,
-		SETOPTION,
-		GO,
-		STOP,
-		PERFT,
-		PONDERHIT,
-		TEST,
-		UNKNOW
-	};
-	static Uci* getInstance();
-	Command getUserInput();
-	bool execute();
-	void setCommand(Command cmd);
-	Command getCommand() const;
-	void setRawInput(const std::string input);
-	std::string getRawInput() const;
-	const UciOption getUciOption(std::string name);
-	void setUciOption(std::vector< UciOption *>);
-	size_t indexOfUciOption(std::string optionName);
-	void clearUciOption();
-	void info(const std::string text) const;
-	void text(const std::string text) const;
-	void executeTest();
+    // UCI commands enumeration
+    enum Command {
+        NONE,
+        QUIT,
+        UCI,
+        UCINEWGAME,
+        ISREADY,
+        POSITION,
+        SETOPTION,
+        GO,
+        STOP,
+        PERFT,
+        PONDERHIT,
+        TEST,
+        UNKNOW
+    };
+
+    static Uci *getInstance();
+
+    Command getUserInput();
+
+    bool execute();
+
+    void setCommand(Command cmd);
+
+    Command getCommand() const;
+
+    void setRawInput(const std::string input);
+
+    std::string getRawInput() const;
+
+    const UciOption getUciOption(std::string name);
+
+    void setUciOption(std::vector<UciOption *>);
+
+    size_t indexOfUciOption(std::string optionName);
+
+    void clearUciOption();
+
+    void info(const std::string text) const;
+
+    void text(const std::string text) const;
+
+    void executeTest();
 
 protected:
-	Uci();
-	Uci(const Uci&);
-	Uci& operator= (const Uci&);
+    Uci();
+
+    Uci(const Uci &);
+
+    Uci &operator=(const Uci &);
 
 private:
-	static Uci* uci;
-	Command command;
-	std::string rawInput;
-	std::vector< UciOption *> uciOption;
-	void executeSetOption();
-	void executePosition();
-	void executeGo();
-	void executeUciNewGame();
-	void executeQuit();
-	void executeStop();
-	void executePonderHit();
-	void executePerft();
+    static Uci *uci;
+    Command command;
+    std::string rawInput;
+    std::vector<UciOption *> uciOption;
+
+    void executeSetOption();
+
+    void executePosition();
+
+    void executeGo();
+
+    void executeUciNewGame();
+
+    void executeQuit();
+
+    void executeStop();
+
+    void executePonderHit();
+
+    void executePerft();
 };
 
 #endif /* UCI_H_ */

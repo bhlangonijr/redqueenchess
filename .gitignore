@@ -6,3 +6,7 @@ Release/
 *.o
 .autotools
 redqueen
+redqueenchess
+.idea/
+CMakeLists.txt
+cmake-build-debug/

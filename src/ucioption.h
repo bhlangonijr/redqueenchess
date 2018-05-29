@@ -29,35 +29,58 @@
 
 class UciOption {
 public:
-	enum OptionType { STRING, SPIN, COMBO, CHECK, BUTTON };
-	UciOption();
-	UciOption(std::string, OptionType, std::string, std::string);
-	UciOption(std::string, OptionType, std::string, std::string, int, int, std::string);
-	virtual ~UciOption();
-	std::string getName() const;
-	OptionType getType() const;
-	std::string getValue() const;
-	std::string getDefaultValue() const;
-	int getMinValue() const;
-	int getMaxValue() const;
-	std::string getComboValues() const;
-	std::string toString() const;
-	std::string toStr(int) const;
-	void setName( std::string );
-	void setType( OptionType );
-	void setValue( std::string );
-	void setDefaultValue( std::string );
-	void setMinValue( int );
-	void setMaxValue( int );
-	void setComboValues( std::string );
+    enum OptionType {
+        STRING, SPIN, COMBO, CHECK, BUTTON
+    };
+
+    UciOption();
+
+    UciOption(std::string, OptionType, std::string, std::string);
+
+    UciOption(std::string, OptionType, std::string, std::string, int, int, std::string);
+
+    virtual ~UciOption();
+
+    std::string getName() const;
+
+    OptionType getType() const;
+
+    std::string getValue() const;
+
+    std::string getDefaultValue() const;
+
+    int getMinValue() const;
+
+    int getMaxValue() const;
+
+    std::string getComboValues() const;
+
+    std::string toString() const;
+
+    std::string toStr(int) const;
+
+    void setName(std::string);
+
+    void setType(OptionType);
+
+    void setValue(std::string);
+
+    void setDefaultValue(std::string);
+
+    void setMinValue(int);
+
+    void setMaxValue(int);
+
+    void setComboValues(std::string);
+
 private:
-	std::string name;
-	OptionType type;
-	std::string value;
-	std::string defaultValue;
-	int minValue;
-	int maxValue;
-	std::string comboValues;
+    std::string name;
+    OptionType type;
+    std::string value;
+    std::string defaultValue;
+    int minValue;
+    int maxValue;
+    std::string comboValues;
 
 };
 
